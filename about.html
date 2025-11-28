@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About | 關於 — Playground</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Deep editorial dark palette - matching main playground */
+      --bg-primary: #0a0a0b;
+      --bg-elevated: #121214;
+      --bg-card: #18181b;
+
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #52525b;
+
+      --accent: #f59e0b;
+      --accent-dim: rgba(245, 158, 11, 0.15);
+      --accent-glow: rgba(245, 158, 11, 0.4);
+
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+
+      /* Typography */
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-mono: 'Space Mono', monospace;
+      --font-body: 'Noto Sans TC', sans-serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--space-xl);
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-lg) 0;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: var(--space-sm) var(--space-md);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .nav-back:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .nav-back svg {
+      transition: transform 0.3s ease;
+    }
+
+    .nav-back:hover svg {
+      transform: translateX(-3px);
+    }
+
+    .header-label {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       MAIN CONTENT - UNDER CONSTRUCTION
+    ======================================== */
+    .main-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4xl) 0;
+      position: relative;
+    }
+
+    /* Background grid pattern */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.5;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
+    }
+
+    /* Animated construction beams */
+    .construction-beam {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+      height: 1px;
+      animation: beamMove 8s linear infinite;
+    }
+
+    .construction-beam:nth-child(1) {
+      top: 20%;
+      left: 0;
+      right: 0;
+      animation-delay: 0s;
+    }
+
+    .construction-beam:nth-child(2) {
+      top: 40%;
+      left: 0;
+      right: 0;
+      animation-delay: 2s;
+    }
+
+    .construction-beam:nth-child(3) {
+      top: 60%;
+      left: 0;
+      right: 0;
+      animation-delay: 4s;
+    }
+
+    .construction-beam:nth-child(4) {
+      top: 80%;
+      left: 0;
+      right: 0;
+      animation-delay: 6s;
+    }
+
+    @keyframes beamMove {
+      0% {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    /* Construction icon */
+    .construction-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto var(--space-2xl);
+      position: relative;
+    }
+
+    .icon-frame {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--border);
+      position: relative;
+      animation: frameRotate 20s linear infinite;
+    }
+
+    .icon-frame::before,
+    .icon-frame::after {
+      content: '';
+      position: absolute;
+      background: var(--accent);
+    }
+
+    .icon-frame::before {
+      top: -1px;
+      left: 20%;
+      right: 20%;
+      height: 1px;
+    }
+
+    .icon-frame::after {
+      bottom: -1px;
+      left: 20%;
+      right: 20%;
+      height: 1px;
+    }
+
+    .icon-inner {
+      position: absolute;
+      inset: 15px;
+      border: 1px dashed var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      animation: dotPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes frameRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes dotPulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.5);
+        opacity: 0.5;
+      }
+    }
+
+    /* Main title */
+    .page-title {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 10vw, 8rem);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-lg);
+    }
+
+    .page-title .line {
+      display: block;
+      overflow: hidden;
+    }
+
+    .page-title .line span {
+      display: block;
+      animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    .page-title .line:nth-child(1) span { animation-delay: 0.2s; }
+    .page-title .line:nth-child(2) span { animation-delay: 0.35s; }
+
+    .page-title em {
+      font-style: italic;
+      color: var(--accent);
+      position: relative;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: var(--space-sm) var(--space-md);
+      border: 1px solid var(--border);
+      margin-bottom: var(--space-2xl);
+      animation: fadeIn 1s ease-out 0.5s backwards;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Description */
+    .page-desc {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text-secondary);
+      max-width: 400px;
+      margin: 0 auto var(--space-2xl);
+      line-height: 1.8;
+      animation: fadeIn 1s ease-out 0.6s backwards;
+    }
+
+    /* Progress indicator */
+    .progress-wrapper {
+      max-width: 300px;
+      margin: 0 auto;
+      animation: fadeIn 1s ease-out 0.7s backwards;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.625rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-sm);
+    }
+
+    .progress-bar {
+      height: 2px;
+      background: var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+      animation: progressPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes progressPulse {
+      0%, 100% {
+        opacity: 1;
+        width: 30%;
+      }
+      50% {
+        opacity: 0.7;
+        width: 35%;
+      }
+    }
+
+    /* Decorative corner marks */
+    .corner-mark {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      pointer-events: none;
+    }
+
+    .corner-mark--tl {
+      top: var(--space-4xl);
+      left: var(--space-xl);
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .corner-mark--tr {
+      top: var(--space-4xl);
+      right: var(--space-xl);
+      border-left: none;
+      border-bottom: none;
+    }
+
+    .corner-mark--bl {
+      bottom: var(--space-4xl);
+      left: var(--space-xl);
+      border-right: none;
+      border-top: none;
+    }
+
+    .corner-mark--br {
+      bottom: var(--space-4xl);
+      right: var(--space-xl);
+      border-left: none;
+      border-top: none;
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 var(--space-lg);
+      }
+
+      .page-title {
+        font-size: clamp(2rem, 12vw, 4rem);
+      }
+
+      .corner-mark {
+        display: none;
+      }
+
+      .construction-icon {
+        width: 60px;
+        height: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Decorative corner marks -->
+  <div class="corner-mark corner-mark--tl" aria-hidden="true"></div>
+  <div class="corner-mark corner-mark--tr" aria-hidden="true"></div>
+  <div class="corner-mark corner-mark--bl" aria-hidden="true"></div>
+  <div class="corner-mark corner-mark--br" aria-hidden="true"></div>
+
+  <div class="page-wrapper">
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container">
+        <div class="header-inner">
+          <a href="index.html" class="nav-back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            返回首頁
+          </a>
+          <span class="header-label">About</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Background elements -->
+      <div class="bg-grid" aria-hidden="true"></div>
+      <div class="construction-beam" aria-hidden="true"></div>
+      <div class="construction-beam" aria-hidden="true"></div>
+      <div class="construction-beam" aria-hidden="true"></div>
+      <div class="construction-beam" aria-hidden="true"></div>
+
+      <div class="content-wrapper">
+        <!-- Construction icon -->
+        <div class="construction-icon" aria-hidden="true">
+          <div class="icon-frame">
+            <div class="icon-inner">
+              <div class="icon-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status badge -->
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span>施工中 / Under Construction</span>
+        </div>
+
+        <!-- Main title -->
+        <h1 class="page-title">
+          <span class="line"><span>關於</span></span>
+          <span class="line"><span><em>即將呈現</em></span></span>
+        </h1>
+
+        <!-- Description -->
+        <p class="page-desc">
+          我們正在精心打造這個頁面。<br>
+          敬請期待更多精彩內容。
+        </p>
+
+        <!-- Progress indicator -->
+        <div class="progress-wrapper">
+          <div class="progress-label">
+            <span>Progress</span>
+            <span>30%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-inner">
+          <p class="footer-text">Playground — 創意實驗場</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
