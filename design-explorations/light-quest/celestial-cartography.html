@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Light Quest - Celestial Cartography</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Cosmic palette */
+      --void: #0a0a12;
+      --deep-space: #12121f;
+      --nebula: #1a1a2e;
+      --twilight: #252542;
+      --stardust: #3d3d5c;
+
+      /* Metallic accents */
+      --copper: #b87333;
+      --copper-light: #d4956a;
+      --gold: #c9a962;
+      --gold-light: #e8d5a3;
+      --rose-gold: #c4a4a4;
+
+      /* Celestial highlights */
+      --aurora-cyan: #5ce1e6;
+      --aurora-purple: #9b5de5;
+      --aurora-pink: #f15bb5;
+      --star-white: #faf8f5;
+      --star-warm: #fff4e6;
+
+      /* Functional */
+      --success: #4ade80;
+      --text-primary: #faf8f5;
+      --text-secondary: rgba(250, 248, 245, 0.7);
+      --text-muted: rgba(250, 248, 245, 0.4);
+
+      /* Typography */
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'Quicksand', 'Noto Sans TC', sans-serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+
+      /* Borders */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--void);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ========================================
+       COSMIC BACKGROUND SYSTEM
+    ======================================== */
+    .cosmic-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .cosmic-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155, 93, 229, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(241, 91, 181, 0.1), transparent),
+        radial-gradient(ellipse 50% 30% at 20% 80%, rgba(92, 225, 230, 0.08), transparent),
+        linear-gradient(180deg, var(--void) 0%, var(--deep-space) 50%, var(--nebula) 100%);
+    }
+
+    /* Animated stars */
+    .stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 40px 70px, var(--star-warm), transparent),
+        radial-gradient(1px 1px at 90px 40px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 160px 120px, var(--gold-light), transparent),
+        radial-gradient(1px 1px at 230px 80px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 300px 150px, var(--aurora-cyan), transparent),
+        radial-gradient(1px 1px at 50px 180px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 180px 220px, var(--star-warm), transparent),
+        radial-gradient(1px 1px at 280px 260px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 120px 300px, var(--aurora-purple), transparent);
+      background-size: 350px 350px;
+      animation: twinkle 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    /* Floating particles */
+    .cosmic-dust {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .dust-particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: var(--gold-light);
+      border-radius: 50%;
+      opacity: 0;
+      animation: float-up 12s ease-in-out infinite;
+    }
+
+    .dust-particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+    .dust-particle:nth-child(2) { left: 25%; animation-delay: 2s; }
+    .dust-particle:nth-child(3) { left: 40%; animation-delay: 4s; }
+    .dust-particle:nth-child(4) { left: 55%; animation-delay: 1s; }
+    .dust-particle:nth-child(5) { left: 70%; animation-delay: 3s; }
+    .dust-particle:nth-child(6) { left: 85%; animation-delay: 5s; }
+    .dust-particle:nth-child(7) { left: 15%; animation-delay: 7s; }
+    .dust-particle:nth-child(8) { left: 60%; animation-delay: 8s; }
+
+    @keyframes float-up {
+      0% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.6;
+      }
+      90% {
+        opacity: 0.6;
+      }
+      100% {
+        transform: translateY(-20vh) scale(1);
+        opacity: 0;
+      }
+    }
+
+    /* ========================================
+       LAYOUT & CONTAINER
+    ======================================== */
+    .app-container {
+      max-width: 428px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh;
+      padding: var(--space-lg);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========================================
+       TYPOGRAPHY
+    ======================================== */
+    .display-title {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      color: var(--star-white);
+    }
+
+    .display-title--lg {
+      font-size: 3rem;
+    }
+
+    .display-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--copper-light);
+    }
+
+    .body-text {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .body-text--sm {
+      font-size: 0.875rem;
+    }
+
+    .label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       BUTTONS
+    ======================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      border: none;
+      border-radius: var(--radius-full);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .btn:hover::before {
+      opacity: 1;
+    }
+
+    .btn--primary {
+      background: linear-gradient(135deg, var(--copper) 0%, var(--gold) 100%);
+      color: var(--void);
+      box-shadow:
+        0 4px 20px rgba(184, 115, 51, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 30px rgba(184, 115, 51, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+
+    .btn--primary:active {
+      transform: translateY(0);
+    }
+
+    .btn--secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid rgba(250, 248, 245, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn--secondary:hover {
+      background: rgba(250, 248, 245, 0.1);
+      border-color: rgba(250, 248, 245, 0.3);
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .btn--ghost:hover {
+      color: var(--text-primary);
+    }
+
+    .btn--lg {
+      padding: var(--space-lg) var(--space-2xl);
+      font-size: 1.125rem;
+    }
+
+    .btn--full {
+      width: 100%;
+    }
+
+    /* Icon button */
+    .btn-icon {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ========================================
+       SCREEN 1: WELCOME / LANDING
+    ======================================== */
+    .welcome-screen {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding-top: var(--space-3xl);
+      padding-bottom: var(--space-3xl);
+    }
+
+    .welcome-logo {
+      margin-bottom: var(--space-2xl);
+      position: relative;
+    }
+
+    .constellation-icon {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      animation: pulse-glow 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        filter: drop-shadow(0 0 20px rgba(201, 169, 98, 0.3));
+      }
+      50% {
+        filter: drop-shadow(0 0 40px rgba(201, 169, 98, 0.5));
+      }
+    }
+
+    .welcome-content {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .welcome-content .display-title {
+      margin-bottom: var(--space-lg);
+    }
+
+    .welcome-content .body-text {
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .welcome-actions {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .welcome-footer {
+      margin-top: auto;
+      padding-top: var(--space-2xl);
+    }
+
+    /* Decorative line */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--stardust), transparent);
+    }
+
+    /* ========================================
+       SCREEN 2: LOGIN SELECTION
+    ======================================== */
+    .login-screen {
+      padding-top: var(--space-3xl);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: var(--space-2xl);
+    }
+
+    .login-header .section-title {
+      margin-bottom: var(--space-sm);
+    }
+
+    .login-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .login-card {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(18, 18, 31, 0.9));
+      border: 1px solid rgba(250, 248, 245, 0.08);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(184, 115, 51, 0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .login-card:hover {
+      border-color: rgba(184, 115, 51, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .login-card:hover::before {
+      opacity: 1;
+    }
+
+    .login-card--recommended {
+      border-color: rgba(184, 115, 51, 0.3);
+    }
+
+    .login-card--recommended::after {
+      content: '推薦';
+      position: absolute;
+      top: var(--space-md);
+      right: var(--space-md);
+      background: linear-gradient(135deg, var(--copper), var(--gold));
+      color: var(--void);
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+    }
+
+    .login-card__icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(250, 248, 245, 0.05);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-md);
+      font-size: 1.5rem;
+    }
+
+    .login-card__title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: var(--space-xs);
+      color: var(--star-white);
+    }
+
+    .login-card__desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       SCREEN 3: CONSTELLATION PROGRESS
+    ======================================== */
+    .progress-screen {
+      padding-top: var(--space-xl);
+    }
+
+    .progress-header {
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+
+    .progress-header .label {
+      margin-bottom: var(--space-sm);
+    }
+
+    .progress-counter {
+      font-family: var(--font-display);
+      font-size: 4rem;
+      font-weight: 400;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: var(--space-sm);
+    }
+
+    .progress-counter span {
+      font-size: 2rem;
+      color: var(--text-muted);
+    }
+
+    .progress-status {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .progress-status--milestone {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* Constellation Map */
+    .constellation-map {
+      position: relative;
+      height: 320px;
+      margin: var(--space-lg) 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .constellation-svg {
+      width: 280px;
+      height: 280px;
+    }
+
+    .star-point {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .star-point:hover {
+      transform: scale(1.2);
+    }
+
+    .star-point--locked .star-outer {
+      fill: var(--twilight);
+      stroke: var(--stardust);
+    }
+
+    .star-point--locked .star-inner {
+      fill: var(--stardust);
+    }
+
+    .star-point--unlocked .star-outer {
+      fill: var(--gold);
+      stroke: var(--gold-light);
+      filter: drop-shadow(0 0 10px rgba(201, 169, 98, 0.6));
+      animation: star-glow 2s ease-in-out infinite;
+    }
+
+    .star-point--unlocked .star-inner {
+      fill: var(--star-white);
+    }
+
+    @keyframes star-glow {
+      0%, 100% {
+        filter: drop-shadow(0 0 10px rgba(201, 169, 98, 0.6));
+      }
+      50% {
+        filter: drop-shadow(0 0 20px rgba(201, 169, 98, 0.8));
+      }
+    }
+
+    .constellation-line {
+      stroke: var(--stardust);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+      opacity: 0.5;
+    }
+
+    .constellation-line--active {
+      stroke: var(--gold);
+      stroke-dasharray: none;
+      opacity: 0.6;
+    }
+
+    /* Checkpoint List */
+    .checkpoint-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: var(--space-lg);
+    }
+
+    .checkpoint-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      transition: background 0.2s;
+    }
+
+    .checkpoint-item:hover {
+      background: rgba(250, 248, 245, 0.03);
+    }
+
+    .checkpoint-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .checkpoint-icon--locked {
+      background: var(--twilight);
+      border: 1px dashed var(--stardust);
+      color: var(--text-muted);
+    }
+
+    .checkpoint-icon--unlocked {
+      background: linear-gradient(135deg, var(--copper), var(--gold));
+      color: var(--void);
+      box-shadow: 0 2px 10px rgba(184, 115, 51, 0.3);
+    }
+
+    .checkpoint-info {
+      flex: 1;
+    }
+
+    .checkpoint-name {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .checkpoint-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .checkpoint-status {
+      font-size: 0.75rem;
+      color: var(--success);
+    }
+
+    /* Fixed bottom action */
+    .fixed-action {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--space-lg);
+      margin: 0 calc(-1 * var(--space-lg));
+      background: linear-gradient(to top, var(--void) 60%, transparent);
+    }
+
+    /* ========================================
+       SCREEN 4: MILESTONE CELEBRATION
+    ======================================== */
+    .milestone-screen {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .milestone-celebration {
+      animation: celebrate-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes celebrate-in {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .milestone-icon {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto var(--space-xl);
+      position: relative;
+    }
+
+    .milestone-icon svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 40px rgba(201, 169, 98, 0.5));
+    }
+
+    .milestone-rays {
+      position: absolute;
+      inset: -20px;
+      animation: rotate-slow 20s linear infinite;
+    }
+
+    @keyframes rotate-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .milestone-content .display-title {
+      margin-bottom: var(--space-md);
+    }
+
+    .milestone-content .body-text {
+      margin-bottom: var(--space-2xl);
+      max-width: 280px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Upgrade prompt */
+    .upgrade-prompt {
+      background: rgba(26, 26, 46, 0.6);
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-top: var(--space-xl);
+      text-align: left;
+    }
+
+    .upgrade-prompt__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+      font-size: 0.875rem;
+      color: var(--aurora-cyan);
+    }
+
+    .upgrade-prompt__text {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .upgrade-prompt__actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    /* ========================================
+       SCREEN 5: WISH FORM
+    ======================================== */
+    .wish-screen {
+      padding-top: var(--space-2xl);
+    }
+
+    .wish-header {
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+
+    .wish-header .display-title {
+      margin-bottom: var(--space-sm);
+    }
+
+    .wish-form {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wish-input-wrapper {
+      position: relative;
+      flex: 1;
+      margin-bottom: var(--space-lg);
+    }
+
+    .wish-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: var(--space-lg);
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(18, 18, 31, 0.9));
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-lg);
+      font-family: var(--font-body);
+      font-size: 1.125rem;
+      line-height: 1.8;
+      color: var(--text-primary);
+      resize: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .wish-textarea::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .wish-textarea:focus {
+      outline: none;
+      border-color: var(--copper);
+      box-shadow: 0 0 0 3px rgba(184, 115, 51, 0.2);
+    }
+
+    .wish-counter {
+      position: absolute;
+      bottom: var(--space-md);
+      right: var(--space-md);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .wish-counter--warning {
+      color: var(--aurora-pink);
+    }
+
+    .wish-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      background: rgba(92, 225, 230, 0.1);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      color: var(--aurora-cyan);
+      margin-bottom: var(--space-xl);
+    }
+
+    /* ========================================
+       SCREEN 6: WISH WALL
+    ======================================== */
+    .wishwall-screen {
+      padding: 0;
+      background: linear-gradient(180deg, var(--void) 0%, #0f0f1a 100%);
+    }
+
+    .wishwall-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: var(--space-lg);
+      background: linear-gradient(to bottom, var(--void) 60%, transparent);
+    }
+
+    .wishwall-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+    }
+
+    .wishwall-count {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: var(--space-xs);
+    }
+
+    .wishwall-content {
+      padding: 0 var(--space-lg) var(--space-2xl);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .wish-card {
+      background: linear-gradient(135deg, rgba(250, 248, 245, 0.05), rgba(250, 248, 245, 0.02));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(250, 248, 245, 0.08);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      animation: wish-appear 0.6s ease-out backwards;
+    }
+
+    .wish-card:nth-child(1) { animation-delay: 0s; }
+    .wish-card:nth-child(2) { animation-delay: 0.1s; }
+    .wish-card:nth-child(3) { animation-delay: 0.2s; }
+    .wish-card:nth-child(4) { animation-delay: 0.3s; }
+    .wish-card:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes wish-appear {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .wish-card--highlight {
+      border-color: var(--gold);
+      background: linear-gradient(135deg, rgba(201, 169, 98, 0.1), rgba(184, 115, 51, 0.05));
+    }
+
+    .wish-card--highlight::before {
+      content: '✨ 你的心願';
+      display: block;
+      font-size: 0.75rem;
+      color: var(--gold);
+      margin-bottom: var(--space-sm);
+      letter-spacing: 0.05em;
+    }
+
+    .wish-card__text {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .wish-card__meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .wish-card__time {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* New wish animation */
+    .wish-card--new {
+      animation: new-wish 1s ease-out;
+    }
+
+    @keyframes new-wish {
+      0% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+        box-shadow: 0 0 40px rgba(201, 169, 98, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(201, 169, 98, 0.5);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        box-shadow: none;
+      }
+    }
+
+    /* ========================================
+       SCANNER MODAL
+    ======================================== */
+    .scanner-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--void);
+    }
+
+    .scanner-modal.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scanner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-lg);
+    }
+
+    .scanner-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .scanner-frame {
+      width: 280px;
+      height: 280px;
+      position: relative;
+    }
+
+    .scanner-frame::before,
+    .scanner-frame::after {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--gold);
+    }
+
+    .scanner-frame::before {
+      top: 0;
+      left: 0;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .scanner-frame::after {
+      top: 0;
+      right: 0;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    .scanner-frame-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .scanner-frame-bottom::before,
+    .scanner-frame-bottom::after {
+      content: '';
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--gold);
+    }
+
+    .scanner-frame-bottom::before {
+      border-right: none;
+      border-top: none;
+    }
+
+    .scanner-frame-bottom::after {
+      border-left: none;
+      border-top: none;
+    }
+
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      animation: scan 2s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+      0%, 100% { top: 10%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      95% { top: 90%; opacity: 0; }
+    }
+
+    .scanner-hint {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--text-secondary);
+    }
+
+    /* ========================================
+       TOAST NOTIFICATIONS
+    ======================================== */
+    .toast-container {
+      position: fixed;
+      top: var(--space-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      width: calc(100% - var(--space-xl) * 2);
+      max-width: 380px;
+    }
+
+    .toast {
+      display: none;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      background: rgba(26, 26, 46, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      animation: toast-in 0.4s ease-out;
+    }
+
+    .toast.show {
+      display: flex;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .toast__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .toast--success .toast__icon {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--success);
+    }
+
+    .toast__content {
+      flex: 1;
+    }
+
+    .toast__title {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .toast__desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* ========================================
+       CONFIRMATION DIALOG
+    ======================================== */
+    .dialog-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: rgba(10, 10, 18, 0.9);
+      backdrop-filter: blur(10px);
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-lg);
+    }
+
+    .dialog-overlay.active {
+      display: flex;
+    }
+
+    .dialog {
+      background: linear-gradient(135deg, var(--nebula), var(--deep-space));
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      animation: dialog-in 0.3s ease-out;
+    }
+
+    @keyframes dialog-in {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .dialog__icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .dialog__title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      margin-bottom: var(--space-sm);
+    }
+
+    .dialog__text {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xl);
+    }
+
+    .dialog__actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .dialog__actions .btn {
+      flex: 1;
+    }
+
+    /* ========================================
+       NAV CONTROLS
+    ======================================== */
+    .demo-nav {
+      position: fixed;
+      bottom: var(--space-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+      background: rgba(26, 26, 46, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-full);
+    }
+
+    .demo-nav button {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.75rem;
+    }
+
+    .demo-nav button:hover {
+      background: rgba(250, 248, 245, 0.1);
+      color: var(--text-primary);
+    }
+
+    .demo-nav button.active {
+      background: var(--gold);
+      color: var(--void);
+    }
+
+    /* ========================================
+       UTILITY CLASSES
+    ======================================== */
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .mt-auto { margin-top: auto; }
+    .mb-0 { margin-bottom: 0; }
+    .gap-sm { gap: var(--space-sm); }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+  </style>
+</head>
+<body>
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg">
+    <div class="stars"></div>
+    <div class="cosmic-dust">
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+      <div class="dust-particle"></div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Screen 1: Welcome -->
+    <div class="screen welcome-screen active" id="screen-welcome">
+      <div class="welcome-logo">
+        <svg class="constellation-icon" viewBox="0 0 120 120" fill="none">
+          <!-- Central star -->
+          <circle cx="60" cy="60" r="8" fill="url(#goldGradient)">
+            <animate attributeName="r" values="8;10;8" dur="3s" repeatCount="indefinite"/>
+          </circle>
+
+          <!-- Orbiting stars -->
+          <g>
+            <circle cx="30" cy="35" r="4" fill="#c9a962"/>
+            <circle cx="90" cy="30" r="3" fill="#d4956a"/>
+            <circle cx="25" cy="80" r="3" fill="#e8d5a3"/>
+            <circle cx="95" cy="75" r="4" fill="#c9a962"/>
+            <circle cx="60" cy="20" r="3" fill="#d4956a"/>
+            <circle cx="40" cy="100" r="3" fill="#c9a962"/>
+            <circle cx="85" cy="95" r="2" fill="#e8d5a3"/>
+          </g>
+
+          <!-- Connection lines -->
+          <path d="M30 35 L60 60 L90 30" stroke="url(#lineGradient)" stroke-width="1" opacity="0.5"/>
+          <path d="M25 80 L60 60 L95 75" stroke="url(#lineGradient)" stroke-width="1" opacity="0.5"/>
+          <path d="M60 20 L60 60" stroke="url(#lineGradient)" stroke-width="1" opacity="0.3"/>
+          <path d="M40 100 L60 60 L85 95" stroke="url(#lineGradient)" stroke-width="1" opacity="0.3"/>
+
+          <defs>
+            <radialGradient id="goldGradient" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#fff4e6"/>
+              <stop offset="100%" stop-color="#c9a962"/>
+            </radialGradient>
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#c9a962" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#d4956a" stop-opacity="0.2"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="welcome-content">
+        <h1 class="display-title display-title--lg">
+          Light <em>Quest</em>
+        </h1>
+        <p class="body-text">
+          在星空中尋找你的星座<br>
+          點亮 7 顆星中的 5 顆<br>
+          解鎖你的心願
+        </p>
+      </div>
+
+      <div class="welcome-actions">
+        <button class="btn btn--primary btn--lg btn--full" onclick="showScreen('login')">
+          開始旅程
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+        <button class="btn btn--ghost" onclick="showInfo()">了解更多</button>
+      </div>
+
+      <div class="welcome-footer">
+        <div class="divider">冬至特別活動</div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Login Selection -->
+    <div class="screen login-screen" id="screen-login">
+      <div class="login-header">
+        <p class="section-title">選擇開始方式</p>
+        <p class="body-text body-text--sm">選擇適合你的方式開始星空旅程</p>
+      </div>
+
+      <div class="login-options">
+        <div class="login-card login-card--recommended" onclick="showScreen('progress')">
+          <div class="login-card__icon">✨</div>
+          <div class="login-card__title">快速開始</div>
+          <div class="login-card__desc">無需登入，立即參與。進度保存在此裝置。</div>
+        </div>
+
+        <div class="login-card" onclick="showScreen('progress')">
+          <div class="login-card__icon">
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+          </div>
+          <div class="login-card__title">使用 Google 登入</div>
+          <div class="login-card__desc">跨裝置同步進度，永不遺失。</div>
+        </div>
+      </div>
+
+      <button class="btn btn--ghost mt-auto" onclick="showScreen('welcome')">
+        ← 返回
+      </button>
+    </div>
+
+    <!-- Screen 3: Progress / Constellation Map -->
+    <div class="screen progress-screen" id="screen-progress">
+      <div class="progress-header">
+        <p class="label">你的星座進度</p>
+        <div class="progress-counter">
+          5<span>/7</span>
+        </div>
+        <p class="progress-status progress-status--milestone">
+          🎉 恭喜！你已解鎖心願
+        </p>
+      </div>
+
+      <!-- Constellation Visualization -->
+      <div class="constellation-map">
+        <svg class="constellation-svg" viewBox="0 0 280 280">
+          <!-- Connection lines -->
+          <line class="constellation-line constellation-line--active" x1="140" y1="60" x2="80" y2="100"/>
+          <line class="constellation-line constellation-line--active" x1="140" y1="60" x2="200" y2="95"/>
+          <line class="constellation-line constellation-line--active" x1="80" y1="100" x2="60" y2="170"/>
+          <line class="constellation-line constellation-line--active" x1="200" y1="95" x2="220" y2="165"/>
+          <line class="constellation-line constellation-line--active" x1="60" y1="170" x2="100" y2="230"/>
+          <line class="constellation-line" x1="220" y1="165" x2="180" y2="225"/>
+          <line class="constellation-line" x1="100" y1="230" x2="180" y2="225"/>
+
+          <!-- Star 1 - Top (unlocked) -->
+          <g class="star-point star-point--unlocked" transform="translate(140, 60)">
+            <circle class="star-outer" r="16" stroke-width="2"/>
+            <circle class="star-inner" r="6"/>
+          </g>
+
+          <!-- Star 2 - Upper left (unlocked) -->
+          <g class="star-point star-point--unlocked" transform="translate(80, 100)">
+            <circle class="star-outer" r="14" stroke-width="2"/>
+            <circle class="star-inner" r="5"/>
+          </g>
+
+          <!-- Star 3 - Upper right (unlocked) -->
+          <g class="star-point star-point--unlocked" transform="translate(200, 95)">
+            <circle class="star-outer" r="14" stroke-width="2"/>
+            <circle class="star-inner" r="5"/>
+          </g>
+
+          <!-- Star 4 - Mid left (unlocked) -->
+          <g class="star-point star-point--unlocked" transform="translate(60, 170)">
+            <circle class="star-outer" r="12" stroke-width="2"/>
+            <circle class="star-inner" r="4"/>
+          </g>
+
+          <!-- Star 5 - Mid right (unlocked) -->
+          <g class="star-point star-point--unlocked" transform="translate(220, 165)">
+            <circle class="star-outer" r="12" stroke-width="2"/>
+            <circle class="star-inner" r="4"/>
+          </g>
+
+          <!-- Star 6 - Bottom left (locked) -->
+          <g class="star-point star-point--locked" transform="translate(100, 230)">
+            <circle class="star-outer" r="10" stroke-width="1" stroke-dasharray="3 3"/>
+            <circle class="star-inner" r="3"/>
+          </g>
+
+          <!-- Star 7 - Bottom right (locked) -->
+          <g class="star-point star-point--locked" transform="translate(180, 225)">
+            <circle class="star-outer" r="10" stroke-width="1" stroke-dasharray="3 3"/>
+            <circle class="star-inner" r="3"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Checkpoint List -->
+      <div class="checkpoint-list">
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">美食探索</div>
+            <div class="checkpoint-desc">品嚐在地美食</div>
+          </div>
+          <div class="checkpoint-status">已完成</div>
+        </div>
+
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">手作體驗</div>
+            <div class="checkpoint-desc">創作專屬作品</div>
+          </div>
+          <div class="checkpoint-status">已完成</div>
+        </div>
+
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">甜湯驛站</div>
+            <div class="checkpoint-desc">冬至暖心甜品</div>
+          </div>
+          <div class="checkpoint-status">已完成</div>
+        </div>
+
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">文化走廊</div>
+            <div class="checkpoint-desc">認識在地故事</div>
+          </div>
+          <div class="checkpoint-status">已完成</div>
+        </div>
+
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">遊戲天地</div>
+            <div class="checkpoint-desc">經典復古遊戲</div>
+          </div>
+          <div class="checkpoint-status">已完成</div>
+        </div>
+
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">表演舞台</div>
+            <div class="checkpoint-desc">欣賞精彩演出</div>
+          </div>
+        </div>
+
+        <div class="checkpoint-item">
+          <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">藝術角落</div>
+            <div class="checkpoint-desc">手工藝品展示</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fixed-action">
+        <button class="btn btn--primary btn--lg btn--full" onclick="showScreen('milestone')">
+          ✨ 寫下我的心願
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen 4: Milestone Celebration -->
+    <div class="screen milestone-screen" id="screen-milestone">
+      <div class="milestone-celebration">
+        <div class="milestone-icon">
+          <svg class="milestone-rays" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="rayGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#c9a962" stop-opacity="0"/>
+                <stop offset="50%" stop-color="#c9a962" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#c9a962" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <g transform="translate(100,100)">
+              <line x1="0" y1="-70" x2="0" y2="-95" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="49" y1="-49" x2="67" y2="-67" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="70" y1="0" x2="95" y2="0" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="49" y1="49" x2="67" y2="67" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="0" y1="70" x2="0" y2="95" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="-49" y1="49" x2="-67" y2="67" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="-70" y1="0" x2="-95" y2="0" stroke="url(#rayGradient)" stroke-width="2"/>
+              <line x1="-49" y1="-49" x2="-67" y2="-67" stroke="url(#rayGradient)" stroke-width="2"/>
+            </g>
+          </svg>
+          <svg viewBox="0 0 160 160" fill="none">
+            <circle cx="80" cy="80" r="50" fill="url(#celebrateGradient)"/>
+            <circle cx="80" cy="80" r="35" fill="url(#celebrateInner)"/>
+            <text x="80" y="90" text-anchor="middle" font-size="32">🌟</text>
+            <defs>
+              <radialGradient id="celebrateGradient" cx="50%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#e8d5a3"/>
+                <stop offset="100%" stop-color="#b87333"/>
+              </radialGradient>
+              <radialGradient id="celebrateInner" cx="50%" cy="30%" r="50%">
+                <stop offset="0%" stop-color="#fff4e6"/>
+                <stop offset="100%" stop-color="#c9a962"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div class="milestone-content">
+          <h1 class="display-title">
+            星座<em>點亮</em>了！
+          </h1>
+          <p class="body-text">
+            你已完成 5 個關卡<br>
+            現在可以將心願送上星空
+          </p>
+
+          <button class="btn btn--primary btn--lg" onclick="showScreen('wish')">
+            寫下心願
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="upgrade-prompt">
+          <div class="upgrade-prompt__header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            保存你的進度？
+          </div>
+          <p class="upgrade-prompt__text">
+            使用 Google 登入可跨裝置同步，永不遺失你的星座。
+          </p>
+          <div class="upgrade-prompt__actions">
+            <button class="btn btn--secondary" style="flex:1">連結 Google</button>
+            <button class="btn btn--ghost">稍後</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5: Wish Form -->
+    <div class="screen wish-screen" id="screen-wish">
+      <div class="wish-header">
+        <h1 class="display-title">寫下你的<em>心願</em></h1>
+        <p class="body-text body-text--sm">讓它與眾人的願望一同閃耀</p>
+      </div>
+
+      <form class="wish-form" onsubmit="submitWish(event)">
+        <div class="wish-input-wrapper">
+          <textarea
+            class="wish-textarea"
+            id="wishInput"
+            placeholder="在這片星空下，我希望..."
+            maxlength="100"
+            oninput="updateCounter()"
+          ></textarea>
+          <div class="wish-counter" id="wishCounter">0/50</div>
+        </div>
+
+        <div class="wish-hint">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          <span>你的心願會匿名顯示在心願牆上，與大家的願望一起閃耀。</span>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--lg btn--full">
+          送出心願
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </form>
+
+      <button class="btn btn--ghost" style="margin-top: var(--space-md)" onclick="showScreen('progress')">
+        ← 返回星座圖
+      </button>
+    </div>
+
+    <!-- Screen 6: Wish Wall -->
+    <div class="screen wishwall-screen" id="screen-wishwall">
+      <div class="wishwall-header">
+        <div class="wishwall-title">
+          <span style="font-size: 1.5rem">🌌</span>
+          <h1 class="section-title">星空心願牆</h1>
+          <span style="font-size: 1.5rem">🌌</span>
+        </div>
+        <p class="wishwall-count">共 42 個心願在閃耀</p>
+      </div>
+
+      <div class="wishwall-content">
+        <div class="wish-card wish-card--highlight wish-card--new">
+          <p class="wish-card__text">希望家人都健康平安，每天都能開心地在一起。</p>
+          <div class="wish-card__meta">
+            <span class="wish-card__time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              剛剛
+            </span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">希望明年能順利畢業，找到喜歡的工作！</p>
+          <div class="wish-card__meta">
+            <span class="wish-card__time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              2 分鐘前
+            </span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">世界和平 🕊️</p>
+          <div class="wish-card__meta">
+            <span class="wish-card__time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              5 分鐘前
+            </span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">希望我的狗狗永遠健康快樂，陪我度過每一天。</p>
+          <div class="wish-card__meta">
+            <span class="wish-card__time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              8 分鐘前
+            </span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">希望能存夠錢帶爸媽去日本玩一趟，看看櫻花和富士山。</p>
+          <div class="wish-card__meta">
+            <span class="wish-card__time">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              12 分鐘前
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scanner Modal -->
+  <div class="scanner-modal" id="scannerModal">
+    <div class="scanner-header">
+      <button class="btn btn--ghost" onclick="closeScanner()">取消</button>
+      <span class="label">掃描關卡 QR</span>
+      <div style="width:60px"></div>
+    </div>
+
+    <div class="scanner-viewport">
+      <div class="scanner-frame">
+        <div class="scanner-line"></div>
+        <div class="scanner-frame-bottom"></div>
+      </div>
+    </div>
+
+    <div class="scanner-hint">
+      <p class="body-text--sm">將 QR 碼對準框框內</p>
+      <p class="label" style="margin-top: var(--space-sm)">已完成：5/7</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container">
+    <div class="toast toast--success" id="toast">
+      <div class="toast__icon">✓</div>
+      <div class="toast__content">
+        <div class="toast__title">關卡完成！</div>
+        <div class="toast__desc">進度：5/7 ✨</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <div class="dialog-overlay" id="confirmDialog">
+    <div class="dialog">
+      <div class="dialog__icon">🌟</div>
+      <h2 class="dialog__title">準備好了嗎？</h2>
+      <p class="dialog__text">
+        你的心願將匿名顯示在心願牆上，與大家的願望一起閃耀。
+      </p>
+      <div class="dialog__actions">
+        <button class="btn btn--secondary" onclick="closeDialog()">再想想</button>
+        <button class="btn btn--primary" onclick="confirmWish()">送出心願</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Navigation -->
+  <nav class="demo-nav" id="demoNav">
+    <button class="active" onclick="showScreen('welcome')" title="首頁">1</button>
+    <button onclick="showScreen('login')" title="登入">2</button>
+    <button onclick="showScreen('progress')" title="進度">3</button>
+    <button onclick="showScreen('milestone')" title="達標">4</button>
+    <button onclick="showScreen('wish')" title="心願">5</button>
+    <button onclick="showScreen('wishwall')" title="心願牆">6</button>
+  </nav>
+
+  <script>
+    // Screen navigation
+    function showScreen(screenId) {
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+
+      // Show target screen
+      const targetScreen = document.getElementById('screen-' + screenId);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+      }
+
+      // Update nav buttons
+      const navButtons = document.querySelectorAll('.demo-nav button');
+      const screenOrder = ['welcome', 'login', 'progress', 'milestone', 'wish', 'wishwall'];
+      const index = screenOrder.indexOf(screenId);
+      navButtons.forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+    }
+
+    // Scanner modal
+    function openScanner() {
+      document.getElementById('scannerModal').classList.add('active');
+    }
+
+    function closeScanner() {
+      document.getElementById('scannerModal').classList.remove('active');
+    }
+
+    // Toast notification
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Wish form
+    function updateCounter() {
+      const input = document.getElementById('wishInput');
+      const counter = document.getElementById('wishCounter');
+      const length = input.value.length;
+      counter.textContent = `${length}/50`;
+      counter.classList.toggle('wish-counter--warning', length > 50);
+    }
+
+    function submitWish(event) {
+      event.preventDefault();
+      document.getElementById('confirmDialog').classList.add('active');
+    }
+
+    function closeDialog() {
+      document.getElementById('confirmDialog').classList.remove('active');
+    }
+
+    function confirmWish() {
+      closeDialog();
+      showScreen('wishwall');
+      showToast();
+    }
+
+    // Info modal (placeholder)
+    function showInfo() {
+      alert('Light Quest 是一個 QR 掃描闖關系統。掃描 7 個關卡中的任意 5 個，解鎖心願表達，與大家的願望一起閃耀！');
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeScanner();
+        closeDialog();
+      }
+    });
+  </script>
+</body>
+</html>

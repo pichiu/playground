@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Light Quest - Paper Poetry</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Ma+Shan+Zheng&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Warm paper palette */
+      --paper-cream: #faf6f0;
+      --paper-ivory: #f5efe6;
+      --paper-warm: #ede4d8;
+      --paper-tan: #d4c5b5;
+      --paper-brown: #b8a795;
+
+      /* Ink colors */
+      --ink-black: #2d2a26;
+      --ink-sepia: #5c4a3a;
+      --ink-rust: #8b5a3c;
+      --ink-burgundy: #722f37;
+      --ink-navy: #2c3e50;
+
+      /* Accent colors */
+      --vermillion: #e74c3c;
+      --gold-seal: #c9a227;
+      --jade: #27ae60;
+      --terracotta: #d35400;
+
+      /* Watercolor washes */
+      --wash-pink: rgba(231, 76, 60, 0.08);
+      --wash-gold: rgba(201, 162, 39, 0.1);
+      --wash-blue: rgba(44, 62, 80, 0.06);
+      --wash-green: rgba(39, 174, 96, 0.08);
+
+      /* Typography */
+      --font-display: 'Ma Shan Zheng', 'Crimson Pro', cursive;
+      --font-heading: 'Crimson Pro', Georgia, serif;
+      --font-body: 'Noto Sans TC', sans-serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+
+      /* Borders */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--paper-cream);
+      color: var(--ink-black);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ========================================
+       PAPER TEXTURE BACKGROUND
+    ======================================== */
+    .paper-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, var(--paper-cream) 0%, var(--paper-ivory) 100%);
+    }
+
+    /* Watercolor wash decoration */
+    .paper-bg::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      right: -20%;
+      width: 60%;
+      height: 40%;
+      background: radial-gradient(ellipse, var(--wash-pink), transparent 70%);
+      transform: rotate(-15deg);
+      pointer-events: none;
+    }
+
+    .paper-bg::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -10%;
+      width: 50%;
+      height: 35%;
+      background: radial-gradient(ellipse, var(--wash-gold), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ========================================
+       LAYOUT & CONTAINER
+    ======================================== */
+    .app-container {
+      max-width: 428px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh;
+      padding: var(--space-lg);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* ========================================
+       TYPOGRAPHY
+    ======================================== */
+    .brush-title {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 400;
+      line-height: 1.3;
+      color: var(--ink-sepia);
+      letter-spacing: 0.05em;
+    }
+
+    .brush-title--xl {
+      font-size: 4rem;
+    }
+
+    .serif-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--ink-black);
+      letter-spacing: 0.02em;
+    }
+
+    .body-text {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--ink-sepia);
+    }
+
+    .body-text--sm {
+      font-size: 0.875rem;
+    }
+
+    .label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--paper-brown);
+    }
+
+    .handwritten {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+    }
+
+    /* ========================================
+       DECORATIVE ELEMENTS
+    ======================================== */
+    .divider-ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-md) 0;
+      color: var(--paper-tan);
+    }
+
+    .divider-ornament::before,
+    .divider-ornament::after {
+      content: '';
+      width: 40px;
+      height: 1px;
+      background: var(--paper-tan);
+    }
+
+    .seal {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .seal::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--vermillion);
+      border-radius: 50%;
+      transform: rotate(-10deg);
+    }
+
+    .seal::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1px solid var(--vermillion);
+      border-radius: 50%;
+      transform: rotate(5deg);
+    }
+
+    .seal-text {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: var(--vermillion);
+      transform: rotate(-5deg);
+    }
+
+    /* Stamp effect */
+    .stamp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid currentColor;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transform: rotate(-3deg);
+      position: relative;
+    }
+
+    .stamp--complete {
+      color: var(--jade);
+      background: rgba(39, 174, 96, 0.05);
+    }
+
+    .stamp--pending {
+      color: var(--paper-brown);
+      border-style: dashed;
+    }
+
+    /* Washi tape effect */
+    .washi-tape {
+      position: relative;
+      padding: var(--space-md);
+    }
+
+    .washi-tape::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 20%;
+      width: 80px;
+      height: 24px;
+      background: linear-gradient(90deg, var(--wash-pink), rgba(231, 76, 60, 0.15));
+      transform: rotate(-2deg);
+    }
+
+    /* ========================================
+       BUTTONS
+    ======================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .btn--primary {
+      background: var(--vermillion);
+      color: white;
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    }
+
+    .btn--primary:hover {
+      background: #c0392b;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+    }
+
+    .btn--primary:active {
+      transform: translateY(0);
+    }
+
+    .btn--secondary {
+      background: transparent;
+      color: var(--ink-sepia);
+      border: 1.5px solid var(--paper-tan);
+    }
+
+    .btn--secondary:hover {
+      background: var(--paper-warm);
+      border-color: var(--ink-rust);
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--ink-sepia);
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .btn--ghost:hover {
+      color: var(--ink-black);
+    }
+
+    .btn--lg {
+      padding: var(--space-lg) var(--space-2xl);
+      font-size: 1.125rem;
+    }
+
+    .btn--full {
+      width: 100%;
+    }
+
+    /* Brush stroke button */
+    .btn--brush {
+      background: none;
+      border: none;
+      position: relative;
+      color: white;
+      padding: var(--space-md) var(--space-2xl);
+    }
+
+    .btn--brush::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--vermillion);
+      transform: skewX(-5deg) rotate(-1deg);
+      border-radius: 4px;
+      z-index: -1;
+    }
+
+    .btn--brush:hover::before {
+      transform: skewX(-3deg) rotate(-0.5deg) scale(1.02);
+    }
+
+    /* ========================================
+       SCREEN 1: WELCOME
+    ======================================== */
+    .welcome-screen {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding-top: var(--space-3xl);
+    }
+
+    .welcome-header {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .welcome-icon {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto var(--space-lg);
+      position: relative;
+    }
+
+    .lantern-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .welcome-subtitle {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--ink-rust);
+      margin-bottom: var(--space-sm);
+    }
+
+    .welcome-desc {
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .welcome-poetry {
+      margin: var(--space-2xl) 0;
+      padding: var(--space-lg);
+      border-left: 2px solid var(--paper-tan);
+    }
+
+    .welcome-poetry p {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--ink-sepia);
+      line-height: 2;
+    }
+
+    .welcome-actions {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .welcome-footer {
+      margin-top: auto;
+      padding-top: var(--space-2xl);
+    }
+
+    .welcome-footer-text {
+      font-size: 0.75rem;
+      color: var(--paper-brown);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+    }
+
+    /* ========================================
+       SCREEN 2: LOGIN
+    ======================================== */
+    .login-screen {
+      padding-top: var(--space-2xl);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+
+    .login-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .login-card {
+      background: white;
+      border: 1px solid var(--paper-warm);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--vermillion);
+      transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+
+    .login-card:hover {
+      border-color: var(--paper-tan);
+      box-shadow: 0 4px 20px rgba(45, 42, 38, 0.08);
+    }
+
+    .login-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .login-card--recommended {
+      border-color: var(--vermillion);
+    }
+
+    .login-card--recommended::after {
+      content: '推薦';
+      position: absolute;
+      top: var(--space-md);
+      right: var(--space-md);
+      background: var(--vermillion);
+      color: white;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    .login-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-sm);
+    }
+
+    .login-card__icon {
+      width: 40px;
+      height: 40px;
+      background: var(--paper-ivory);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .login-card__title {
+      font-family: var(--font-heading);
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--ink-black);
+    }
+
+    .login-card__desc {
+      font-size: 0.875rem;
+      color: var(--ink-sepia);
+      padding-left: calc(40px + var(--space-md));
+    }
+
+    /* ========================================
+       SCREEN 3: PROGRESS (STAMP COLLECTION)
+    ======================================== */
+    .progress-screen {
+      padding-top: var(--space-xl);
+    }
+
+    .progress-header {
+      text-align: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .progress-header .label {
+      margin-bottom: var(--space-xs);
+    }
+
+    .progress-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      color: var(--ink-sepia);
+      margin-bottom: var(--space-sm);
+    }
+
+    .progress-counter {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: var(--space-xs);
+    }
+
+    .progress-counter__current {
+      font-family: var(--font-heading);
+      font-size: 3rem;
+      font-weight: 600;
+      color: var(--vermillion);
+    }
+
+    .progress-counter__total {
+      font-size: 1.5rem;
+      color: var(--paper-brown);
+    }
+
+    .progress-status {
+      margin-top: var(--space-sm);
+      font-size: 0.875rem;
+      color: var(--jade);
+      font-weight: 500;
+    }
+
+    /* Stamp Collection Grid */
+    .stamp-collection {
+      background: white;
+      border: 1px solid var(--paper-warm);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+      position: relative;
+    }
+
+    .stamp-collection::before {
+      content: '集章卡';
+      position: absolute;
+      top: -10px;
+      left: var(--space-lg);
+      background: var(--paper-cream);
+      padding: 0 var(--space-sm);
+      font-size: 0.75rem;
+      color: var(--paper-brown);
+      letter-spacing: 0.1em;
+    }
+
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-md);
+    }
+
+    .stamp-slot {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--paper-tan);
+      border-radius: var(--radius-md);
+      transition: all 0.3s ease;
+      position: relative;
+      background: var(--paper-ivory);
+    }
+
+    .stamp-slot--collected {
+      border-style: solid;
+      border-color: var(--vermillion);
+      background: white;
+    }
+
+    .stamp-slot--collected::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      background:
+        radial-gradient(circle at 30% 30%, var(--vermillion) 0%, var(--vermillion) 20%, transparent 20%),
+        radial-gradient(circle at 70% 30%, var(--vermillion) 0%, var(--vermillion) 15%, transparent 15%),
+        radial-gradient(circle at 50% 60%, var(--vermillion) 0%, var(--vermillion) 25%, transparent 25%),
+        radial-gradient(circle at 30% 70%, var(--vermillion) 0%, var(--vermillion) 12%, transparent 12%),
+        radial-gradient(circle at 70% 75%, var(--vermillion) 0%, var(--vermillion) 18%, transparent 18%);
+      opacity: 0.15;
+      border-radius: var(--radius-sm);
+    }
+
+    .stamp-slot__icon {
+      font-size: 1.5rem;
+      margin-bottom: 2px;
+    }
+
+    .stamp-slot--collected .stamp-slot__icon {
+      color: var(--vermillion);
+    }
+
+    .stamp-slot__name {
+      font-size: 0.625rem;
+      color: var(--ink-sepia);
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .stamp-slot--collected .stamp-slot__name {
+      font-weight: 600;
+    }
+
+    /* Progress Bar */
+    .progress-bar-wrapper {
+      margin-bottom: var(--space-lg);
+    }
+
+    .progress-bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: var(--space-xs);
+      font-size: 0.75rem;
+      color: var(--ink-sepia);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--paper-warm);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar__fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--vermillion), var(--terracotta));
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    /* Checkpoint List */
+    .checkpoint-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .checkpoint-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--paper-warm);
+    }
+
+    .checkpoint-item:last-child {
+      border-bottom: none;
+    }
+
+    .checkpoint-number {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .checkpoint-number--complete {
+      background: var(--vermillion);
+      color: white;
+    }
+
+    .checkpoint-number--pending {
+      background: var(--paper-warm);
+      color: var(--paper-brown);
+    }
+
+    .checkpoint-info {
+      flex: 1;
+    }
+
+    .checkpoint-name {
+      font-weight: 500;
+      margin-bottom: 2px;
+      color: var(--ink-black);
+    }
+
+    .checkpoint-item--pending .checkpoint-name {
+      color: var(--ink-sepia);
+    }
+
+    .checkpoint-desc {
+      font-size: 0.75rem;
+      color: var(--paper-brown);
+    }
+
+    .checkpoint-check {
+      color: var(--jade);
+      font-size: 1.25rem;
+    }
+
+    /* Fixed bottom */
+    .fixed-action {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--space-lg);
+      margin: 0 calc(-1 * var(--space-lg));
+      background: linear-gradient(to top, var(--paper-cream) 80%, transparent);
+    }
+
+    /* ========================================
+       SCREEN 4: MILESTONE
+    ======================================== */
+    .milestone-screen {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .milestone-badge {
+      width: 140px;
+      height: 140px;
+      margin: 0 auto var(--space-xl);
+      position: relative;
+      animation: badge-appear 0.6s ease-out;
+    }
+
+    @keyframes badge-appear {
+      0% {
+        opacity: 0;
+        transform: scale(0.5) rotate(-20deg);
+      }
+      60% {
+        transform: scale(1.1) rotate(5deg);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    .milestone-badge svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .milestone-content .brush-title {
+      margin-bottom: var(--space-md);
+    }
+
+    .milestone-content .body-text {
+      margin-bottom: var(--space-xl);
+      max-width: 280px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Upgrade card */
+    .upgrade-card {
+      background: white;
+      border: 1px solid var(--paper-warm);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-top: var(--space-xl);
+      text-align: left;
+    }
+
+    .upgrade-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--ink-navy);
+    }
+
+    .upgrade-card__text {
+      font-size: 0.875rem;
+      color: var(--ink-sepia);
+      margin-bottom: var(--space-md);
+    }
+
+    .upgrade-card__actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    /* ========================================
+       SCREEN 5: WISH FORM
+    ======================================== */
+    .wish-screen {
+      padding-top: var(--space-xl);
+    }
+
+    .wish-header {
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+
+    .wish-header .brush-title {
+      margin-bottom: var(--space-sm);
+    }
+
+    .wish-form {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wish-paper {
+      position: relative;
+      flex: 1;
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Paper card effect */
+    .wish-paper::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 10%;
+      right: 10%;
+      height: 20px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(231, 76, 60, 0.15) 10%,
+        rgba(231, 76, 60, 0.2) 50%,
+        rgba(231, 76, 60, 0.15) 90%,
+        transparent 100%
+      );
+      transform: rotate(-1deg);
+      border-radius: 2px;
+    }
+
+    .wish-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: var(--space-xl) var(--space-lg);
+      background: white;
+      border: 1px solid var(--paper-tan);
+      border-radius: var(--radius-md);
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      line-height: 2;
+      color: var(--ink-sepia);
+      resize: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      background-image:
+        repeating-linear-gradient(
+          transparent,
+          transparent 31px,
+          var(--paper-warm) 31px,
+          var(--paper-warm) 32px
+        );
+      background-position: 0 var(--space-xl);
+    }
+
+    .wish-textarea::placeholder {
+      color: var(--paper-brown);
+      font-style: italic;
+    }
+
+    .wish-textarea:focus {
+      outline: none;
+      border-color: var(--vermillion);
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+    }
+
+    .wish-counter {
+      position: absolute;
+      bottom: var(--space-md);
+      right: var(--space-md);
+      font-size: 0.75rem;
+      color: var(--paper-brown);
+      background: white;
+      padding: 2px 6px;
+    }
+
+    .wish-counter--warning {
+      color: var(--vermillion);
+    }
+
+    .wish-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      background: var(--wash-gold);
+      border-left: 3px solid var(--gold-seal);
+      font-size: 0.875rem;
+      color: var(--ink-rust);
+      margin-bottom: var(--space-xl);
+    }
+
+    /* ========================================
+       SCREEN 6: WISH WALL
+    ======================================== */
+    .wishwall-screen {
+      padding: 0;
+      background:
+        linear-gradient(180deg, var(--paper-ivory) 0%, var(--paper-cream) 100%);
+    }
+
+    .wishwall-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: var(--space-lg);
+      background: linear-gradient(to bottom, var(--paper-cream) 80%, transparent);
+      text-align: center;
+    }
+
+    .wishwall-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: var(--ink-sepia);
+      margin-bottom: var(--space-xs);
+    }
+
+    .wishwall-count {
+      font-size: 0.75rem;
+      color: var(--paper-brown);
+    }
+
+    .wishwall-content {
+      padding: 0 var(--space-lg) var(--space-2xl);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    /* Wish Card - Paper note style */
+    .wish-card {
+      background: white;
+      border: 1px solid var(--paper-warm);
+      padding: var(--space-lg);
+      position: relative;
+      animation: note-appear 0.5s ease-out backwards;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .wish-card:nth-child(odd) {
+      transform: rotate(-0.5deg);
+    }
+
+    .wish-card:nth-child(even) {
+      transform: rotate(0.5deg);
+    }
+
+    .wish-card:hover {
+      transform: rotate(0deg) translateY(-2px);
+      box-shadow: 0 4px 20px rgba(45, 42, 38, 0.1);
+    }
+
+    .wish-card:nth-child(1) { animation-delay: 0s; }
+    .wish-card:nth-child(2) { animation-delay: 0.1s; }
+    .wish-card:nth-child(3) { animation-delay: 0.2s; }
+    .wish-card:nth-child(4) { animation-delay: 0.3s; }
+    .wish-card:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes note-appear {
+      from {
+        opacity: 0;
+        transform: translateY(20px) rotate(0deg);
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Tape decoration on cards */
+    .wish-card::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 16px;
+      background: rgba(201, 162, 39, 0.3);
+    }
+
+    .wish-card--highlight {
+      border-color: var(--vermillion);
+      background: linear-gradient(135deg, white, rgba(231, 76, 60, 0.02));
+    }
+
+    .wish-card--highlight::before {
+      background: rgba(231, 76, 60, 0.3);
+    }
+
+    .wish-card--highlight .wish-card__label {
+      display: block;
+      font-size: 0.625rem;
+      color: var(--vermillion);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      margin-bottom: var(--space-sm);
+    }
+
+    .wish-card__label {
+      display: none;
+    }
+
+    .wish-card__text {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      line-height: 1.8;
+      color: var(--ink-sepia);
+      margin-bottom: var(--space-sm);
+    }
+
+    .wish-card__meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-size: 0.75rem;
+      color: var(--paper-brown);
+    }
+
+    /* ========================================
+       SCANNER MODAL
+    ======================================== */
+    .scanner-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--ink-black);
+    }
+
+    .scanner-modal.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scanner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-lg);
+      color: white;
+    }
+
+    .scanner-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .scanner-frame {
+      width: 260px;
+      height: 260px;
+      position: relative;
+      border: 2px solid var(--vermillion);
+      border-radius: var(--radius-md);
+    }
+
+    .scanner-corners {
+      position: absolute;
+      inset: -2px;
+    }
+
+    .scanner-corner {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 4px solid var(--gold-seal);
+    }
+
+    .scanner-corner--tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .scanner-corner--tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .scanner-corner--bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .scanner-corner--br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--vermillion);
+      box-shadow: 0 0 10px var(--vermillion);
+      animation: scan 2s ease-in-out infinite;
+    }
+
+    @keyframes scan {
+      0%, 100% { top: 5%; }
+      50% { top: 95%; }
+    }
+
+    .scanner-hint {
+      text-align: center;
+      padding: var(--space-xl);
+      color: white;
+    }
+
+    /* ========================================
+       TOAST & DIALOG
+    ======================================== */
+    .toast-container {
+      position: fixed;
+      top: var(--space-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      width: calc(100% - var(--space-xl) * 2);
+      max-width: 380px;
+    }
+
+    .toast {
+      display: none;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      background: white;
+      border: 1px solid var(--paper-warm);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 40px rgba(45, 42, 38, 0.15);
+      animation: toast-in 0.4s ease-out;
+    }
+
+    .toast.show {
+      display: flex;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+    }
+
+    .toast__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(39, 174, 96, 0.1);
+      color: var(--jade);
+    }
+
+    .toast__content {
+      flex: 1;
+    }
+
+    .toast__title {
+      font-weight: 600;
+      color: var(--ink-black);
+    }
+
+    .toast__desc {
+      font-size: 0.875rem;
+      color: var(--ink-sepia);
+    }
+
+    /* Dialog */
+    .dialog-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: rgba(45, 42, 38, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-lg);
+    }
+
+    .dialog-overlay.active {
+      display: flex;
+    }
+
+    .dialog {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      max-width: 320px;
+      width: 100%;
+      text-align: center;
+      animation: dialog-in 0.3s ease-out;
+      position: relative;
+    }
+
+    /* Decorative stamp on dialog */
+    .dialog::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 18px;
+      background: rgba(231, 76, 60, 0.2);
+    }
+
+    @keyframes dialog-in {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+    }
+
+    .dialog__icon {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto var(--space-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: var(--paper-ivory);
+      border-radius: 50%;
+    }
+
+    .dialog__title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--ink-sepia);
+      margin-bottom: var(--space-sm);
+    }
+
+    .dialog__text {
+      font-size: 0.875rem;
+      color: var(--ink-sepia);
+      margin-bottom: var(--space-xl);
+    }
+
+    .dialog__actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .dialog__actions .btn {
+      flex: 1;
+    }
+
+    /* ========================================
+       DEMO NAV
+    ======================================== */
+    .demo-nav {
+      position: fixed;
+      bottom: var(--space-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      gap: var(--space-xs);
+      padding: var(--space-xs);
+      background: white;
+      border: 1px solid var(--paper-warm);
+      border-radius: var(--radius-full);
+      box-shadow: 0 4px 20px rgba(45, 42, 38, 0.1);
+    }
+
+    .demo-nav button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      color: var(--paper-brown);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font-heading);
+      font-size: 0.875rem;
+    }
+
+    .demo-nav button:hover {
+      background: var(--paper-ivory);
+      color: var(--ink-black);
+    }
+
+    .demo-nav button.active {
+      background: var(--vermillion);
+      color: white;
+    }
+
+    /* ========================================
+       UTILITIES
+    ======================================== */
+    .mt-auto { margin-top: auto; }
+    .text-center { text-align: center; }
+  </style>
+</head>
+<body>
+  <!-- Paper texture background -->
+  <div class="paper-bg"></div>
+
+  <div class="app-container">
+    <!-- Screen 1: Welcome -->
+    <div class="screen welcome-screen active" id="screen-welcome">
+      <div class="welcome-header">
+        <div class="welcome-icon">
+          <svg class="lantern-svg" viewBox="0 0 100 100" fill="none">
+            <!-- Lantern body -->
+            <ellipse cx="50" cy="55" rx="28" ry="32" fill="#e74c3c" opacity="0.9"/>
+            <ellipse cx="50" cy="55" rx="24" ry="28" fill="#c0392b" opacity="0.3"/>
+
+            <!-- Top ring -->
+            <ellipse cx="50" cy="25" rx="12" ry="4" fill="#c9a227"/>
+            <rect x="45" y="15" width="10" height="10" fill="#c9a227" rx="2"/>
+
+            <!-- Bottom -->
+            <ellipse cx="50" cy="85" rx="8" ry="3" fill="#c9a227"/>
+
+            <!-- Decorative lines -->
+            <path d="M30 45 Q50 35 70 45" stroke="#c9a227" stroke-width="2" fill="none"/>
+            <path d="M30 65 Q50 75 70 65" stroke="#c9a227" stroke-width="2" fill="none"/>
+
+            <!-- Center character -->
+            <text x="50" y="62" text-anchor="middle" font-family="Ma Shan Zheng" font-size="20" fill="#c9a227">願</text>
+
+            <!-- Glow effect -->
+            <ellipse cx="50" cy="55" rx="35" ry="40" fill="url(#lanternGlow)"/>
+
+            <defs>
+              <radialGradient id="lanternGlow">
+                <stop offset="60%" stop-color="transparent"/>
+                <stop offset="100%" stop-color="#e74c3c" stop-opacity="0.2"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <p class="welcome-subtitle">冬至特別企劃</p>
+        <h1 class="brush-title brush-title--xl">集願</h1>
+      </div>
+
+      <div class="welcome-poetry">
+        <p>七盞燈　點亮五盞</p>
+        <p>一紙願　寄予星空</p>
+      </div>
+
+      <p class="body-text welcome-desc">
+        走訪七個關卡，收集五枚印章<br>
+        寫下你的心願，與眾人共同閃耀
+      </p>
+
+      <div class="welcome-actions">
+        <button class="btn btn--brush btn--lg btn--full" onclick="showScreen('login')">
+          開始集願
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+        <button class="btn btn--ghost" onclick="showInfo()">了解玩法</button>
+      </div>
+
+      <div class="welcome-footer">
+        <p class="welcome-footer-text">
+          <span>✦</span> 2025 冬至 <span>✦</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Screen 2: Login Selection -->
+    <div class="screen login-screen" id="screen-login">
+      <div class="login-header">
+        <p class="serif-title">選擇開始方式</p>
+        <p class="body-text body-text--sm" style="margin-top: var(--space-xs)">
+          選擇你喜歡的方式開始集願之旅
+        </p>
+      </div>
+
+      <div class="login-options">
+        <div class="login-card login-card--recommended" onclick="showScreen('progress')">
+          <div class="login-card__header">
+            <div class="login-card__icon">✨</div>
+            <div class="login-card__title">即刻開始</div>
+          </div>
+          <div class="login-card__desc">無需登入，立即參與。進度保存在此裝置上。</div>
+        </div>
+
+        <div class="login-card" onclick="showScreen('progress')">
+          <div class="login-card__header">
+            <div class="login-card__icon">
+              <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+            </div>
+            <div class="login-card__title">使用 Google 登入</div>
+          </div>
+          <div class="login-card__desc">跨裝置同步，永不遺失你的集章進度。</div>
+        </div>
+      </div>
+
+      <button class="btn btn--ghost mt-auto" onclick="showScreen('welcome')">
+        ← 返回
+      </button>
+    </div>
+
+    <!-- Screen 3: Progress (Stamp Collection) -->
+    <div class="screen progress-screen" id="screen-progress">
+      <div class="progress-header">
+        <p class="label">我的集章卡</p>
+        <h2 class="progress-title">集願進度</h2>
+        <div class="progress-counter">
+          <span class="progress-counter__current">5</span>
+          <span class="progress-counter__total">/ 7</span>
+        </div>
+        <p class="progress-status">🎉 恭喜達標！可以許願了</p>
+      </div>
+
+      <!-- Stamp Collection Card -->
+      <div class="stamp-collection">
+        <div class="stamp-grid">
+          <div class="stamp-slot stamp-slot--collected">
+            <span class="stamp-slot__icon">🍜</span>
+            <span class="stamp-slot__name">美食</span>
+          </div>
+          <div class="stamp-slot stamp-slot--collected">
+            <span class="stamp-slot__icon">✂️</span>
+            <span class="stamp-slot__name">手作</span>
+          </div>
+          <div class="stamp-slot stamp-slot--collected">
+            <span class="stamp-slot__icon">🍵</span>
+            <span class="stamp-slot__name">甜湯</span>
+          </div>
+          <div class="stamp-slot stamp-slot--collected">
+            <span class="stamp-slot__icon">📖</span>
+            <span class="stamp-slot__name">文化</span>
+          </div>
+          <div class="stamp-slot stamp-slot--collected">
+            <span class="stamp-slot__icon">🎮</span>
+            <span class="stamp-slot__name">遊戲</span>
+          </div>
+          <div class="stamp-slot">
+            <span class="stamp-slot__icon">🎭</span>
+            <span class="stamp-slot__name">表演</span>
+          </div>
+          <div class="stamp-slot">
+            <span class="stamp-slot__icon">🎨</span>
+            <span class="stamp-slot__name">藝術</span>
+          </div>
+          <div class="stamp-slot" style="border: none; background: transparent;">
+            <div class="seal">
+              <span class="seal-text">願</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar-wrapper">
+        <div class="progress-bar-label">
+          <span>達標門檻</span>
+          <span>5 / 7 關卡</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-bar__fill" style="width: 71.4%"></div>
+        </div>
+      </div>
+
+      <!-- Checkpoint list -->
+      <div class="checkpoint-list">
+        <div class="checkpoint-item">
+          <span class="checkpoint-number checkpoint-number--complete">1</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">美食探索</div>
+            <div class="checkpoint-desc">品嚐在地美食</div>
+          </div>
+          <span class="checkpoint-check">✓</span>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="checkpoint-number checkpoint-number--complete">2</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">手作體驗</div>
+            <div class="checkpoint-desc">創作專屬作品</div>
+          </div>
+          <span class="checkpoint-check">✓</span>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="checkpoint-number checkpoint-number--complete">3</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">甜湯驛站</div>
+            <div class="checkpoint-desc">冬至暖心甜品</div>
+          </div>
+          <span class="checkpoint-check">✓</span>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="checkpoint-number checkpoint-number--complete">4</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">文化走廊</div>
+            <div class="checkpoint-desc">認識在地故事</div>
+          </div>
+          <span class="checkpoint-check">✓</span>
+        </div>
+
+        <div class="checkpoint-item">
+          <span class="checkpoint-number checkpoint-number--complete">5</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">遊戲天地</div>
+            <div class="checkpoint-desc">經典復古遊戲</div>
+          </div>
+          <span class="checkpoint-check">✓</span>
+        </div>
+
+        <div class="checkpoint-item checkpoint-item--pending">
+          <span class="checkpoint-number checkpoint-number--pending">6</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">表演舞台</div>
+            <div class="checkpoint-desc">欣賞精彩演出</div>
+          </div>
+        </div>
+
+        <div class="checkpoint-item checkpoint-item--pending">
+          <span class="checkpoint-number checkpoint-number--pending">7</span>
+          <div class="checkpoint-info">
+            <div class="checkpoint-name">藝術角落</div>
+            <div class="checkpoint-desc">手工藝品展示</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fixed-action">
+        <button class="btn btn--primary btn--lg btn--full" onclick="showScreen('milestone')">
+          ✨ 寫下我的心願
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen 4: Milestone -->
+    <div class="screen milestone-screen" id="screen-milestone">
+      <div class="milestone-badge">
+        <svg viewBox="0 0 140 140" fill="none">
+          <!-- Outer decorative circle -->
+          <circle cx="70" cy="70" r="68" stroke="#c9a227" stroke-width="1" stroke-dasharray="4 4"/>
+
+          <!-- Main badge circle -->
+          <circle cx="70" cy="70" r="55" fill="#e74c3c"/>
+          <circle cx="70" cy="70" r="50" fill="#c0392b"/>
+          <circle cx="70" cy="70" r="45" fill="#e74c3c"/>
+
+          <!-- Inner decoration -->
+          <circle cx="70" cy="70" r="38" stroke="#c9a227" stroke-width="2"/>
+          <circle cx="70" cy="70" r="32" stroke="#c9a227" stroke-width="1"/>
+
+          <!-- Center text -->
+          <text x="70" y="78" text-anchor="middle" font-family="Ma Shan Zheng" font-size="28" fill="#c9a227">達成</text>
+
+          <!-- Decorative elements -->
+          <path d="M40 70 L30 70" stroke="#c9a227" stroke-width="2"/>
+          <path d="M100 70 L110 70" stroke="#c9a227" stroke-width="2"/>
+          <path d="M70 40 L70 30" stroke="#c9a227" stroke-width="2"/>
+          <path d="M70 100 L70 110" stroke="#c9a227" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <div class="milestone-content">
+        <h1 class="brush-title">願望成真的資格</h1>
+        <p class="body-text">
+          你已集滿五枚印章<br>
+          現在可以寫下心願<br>
+          與所有人的願望一起閃耀
+        </p>
+
+        <button class="btn btn--brush btn--lg" onclick="showScreen('wish')">
+          書寫心願
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+            <path d="M2 2l7.586 7.586"/>
+            <circle cx="11" cy="11" r="2"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="upgrade-card">
+        <div class="upgrade-card__header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          保存你的印章？
+        </div>
+        <p class="upgrade-card__text">
+          使用 Google 帳號登入，跨裝置保存你的集章進度。
+        </p>
+        <div class="upgrade-card__actions">
+          <button class="btn btn--secondary" style="flex: 1">連結 Google</button>
+          <button class="btn btn--ghost">稍後</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5: Wish Form -->
+    <div class="screen wish-screen" id="screen-wish">
+      <div class="wish-header">
+        <h1 class="brush-title">寫下心願</h1>
+        <p class="body-text body-text--sm">讓它與眾人的願望一同閃耀</p>
+      </div>
+
+      <form class="wish-form" onsubmit="submitWish(event)">
+        <div class="wish-paper">
+          <textarea
+            class="wish-textarea"
+            id="wishInput"
+            placeholder="我希望..."
+            maxlength="100"
+            oninput="updateCounter()"
+          ></textarea>
+          <div class="wish-counter" id="wishCounter">0/50</div>
+        </div>
+
+        <div class="wish-hint">
+          <span>💡</span>
+          <span>你的心願會匿名顯示在心願牆上，與大家的願望一起展示。</span>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--lg btn--full">
+          送出心願
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </form>
+
+      <button class="btn btn--ghost" style="margin-top: var(--space-md)" onclick="showScreen('progress')">
+        ← 返回集章卡
+      </button>
+    </div>
+
+    <!-- Screen 6: Wish Wall -->
+    <div class="screen wishwall-screen" id="screen-wishwall">
+      <div class="wishwall-header">
+        <h1 class="wishwall-title">眾人心願</h1>
+        <p class="wishwall-count">共 42 則心願在此閃耀</p>
+      </div>
+
+      <div class="wishwall-content">
+        <div class="wish-card wish-card--highlight">
+          <span class="wish-card__label">✨ 你的心願</span>
+          <p class="wish-card__text">希望家人都健康平安，每天都能開心地在一起。</p>
+          <div class="wish-card__meta">
+            <span>剛剛</span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">希望明年能順利畢業，找到喜歡的工作！</p>
+          <div class="wish-card__meta">
+            <span>2 分鐘前</span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">世界和平 🕊️</p>
+          <div class="wish-card__meta">
+            <span>5 分鐘前</span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">希望我的狗狗永遠健康快樂，陪我度過每一天。</p>
+          <div class="wish-card__meta">
+            <span>8 分鐘前</span>
+          </div>
+        </div>
+
+        <div class="wish-card">
+          <p class="wish-card__text">希望能存夠錢帶爸媽去日本玩一趟，看看櫻花和富士山。</p>
+          <div class="wish-card__meta">
+            <span>12 分鐘前</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scanner Modal -->
+  <div class="scanner-modal" id="scannerModal">
+    <div class="scanner-header">
+      <button class="btn btn--ghost" style="color: white" onclick="closeScanner()">取消</button>
+      <span style="color: white; font-size: 0.875rem;">掃描印章</span>
+      <div style="width: 60px"></div>
+    </div>
+
+    <div class="scanner-viewport">
+      <div class="scanner-frame">
+        <div class="scanner-corners">
+          <div class="scanner-corner scanner-corner--tl"></div>
+          <div class="scanner-corner scanner-corner--tr"></div>
+          <div class="scanner-corner scanner-corner--bl"></div>
+          <div class="scanner-corner scanner-corner--br"></div>
+        </div>
+        <div class="scanner-line"></div>
+      </div>
+    </div>
+
+    <div class="scanner-hint">
+      <p style="margin-bottom: var(--space-sm)">將 QR 碼對準框內</p>
+      <p style="font-size: 0.75rem; opacity: 0.7">已收集：5/7 印章</p>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container">
+    <div class="toast" id="toast">
+      <div class="toast__icon">✓</div>
+      <div class="toast__content">
+        <div class="toast__title">印章收集成功！</div>
+        <div class="toast__desc">進度：5/7 ✨</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <div class="dialog-overlay" id="confirmDialog">
+    <div class="dialog">
+      <div class="dialog__icon">🏮</div>
+      <h2 class="dialog__title">準備好了嗎？</h2>
+      <p class="dialog__text">
+        你的心願將匿名顯示在心願牆上，與大家的願望一起閃耀。
+      </p>
+      <div class="dialog__actions">
+        <button class="btn btn--secondary" onclick="closeDialog()">再想想</button>
+        <button class="btn btn--primary" onclick="confirmWish()">送出心願</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Navigation -->
+  <nav class="demo-nav">
+    <button class="active" onclick="showScreen('welcome')" title="首頁">1</button>
+    <button onclick="showScreen('login')" title="登入">2</button>
+    <button onclick="showScreen('progress')" title="進度">3</button>
+    <button onclick="showScreen('milestone')" title="達標">4</button>
+    <button onclick="showScreen('wish')" title="心願">5</button>
+    <button onclick="showScreen('wishwall')" title="心願牆">6</button>
+  </nav>
+
+  <script>
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+
+      const targetScreen = document.getElementById('screen-' + screenId);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+      }
+
+      const navButtons = document.querySelectorAll('.demo-nav button');
+      const screenOrder = ['welcome', 'login', 'progress', 'milestone', 'wish', 'wishwall'];
+      const index = screenOrder.indexOf(screenId);
+      navButtons.forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+    }
+
+    function openScanner() {
+      document.getElementById('scannerModal').classList.add('active');
+    }
+
+    function closeScanner() {
+      document.getElementById('scannerModal').classList.remove('active');
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function updateCounter() {
+      const input = document.getElementById('wishInput');
+      const counter = document.getElementById('wishCounter');
+      const length = input.value.length;
+      counter.textContent = `${length}/50`;
+      counter.classList.toggle('wish-counter--warning', length > 50);
+    }
+
+    function submitWish(event) {
+      event.preventDefault();
+      document.getElementById('confirmDialog').classList.add('active');
+    }
+
+    function closeDialog() {
+      document.getElementById('confirmDialog').classList.remove('active');
+    }
+
+    function confirmWish() {
+      closeDialog();
+      showScreen('wishwall');
+      showToast();
+    }
+
+    function showInfo() {
+      alert('集願是一個印章收集系統。走訪七個關卡，收集五枚印章，即可寫下你的心願，與眾人的願望一同閃耀！');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeScanner();
+        closeDialog();
+      }
+    });
+  </script>
+</body>
+</html>

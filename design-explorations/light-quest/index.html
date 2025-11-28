@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light Quest 設計探索 | Design Explorations</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Warm editorial palette */
+      --bg-primary: #f8f6f3;
+      --bg-secondary: #efebe6;
+      --bg-card: #ffffff;
+      --bg-dark: #1a1a1a;
+
+      --text-primary: #1a1a1a;
+      --text-secondary: #5c5c5c;
+      --text-muted: #8a8a8a;
+      --text-inverse: #f8f6f3;
+
+      --accent: #c45c3e;
+      --accent-hover: #a84832;
+
+      /* Design direction colors */
+      --celestial-primary: #0a0a12;
+      --celestial-accent: #c9a962;
+      --paper-primary: #f8f6f0;
+      --paper-accent: #e74c3c;
+
+      --border: rgba(26, 26, 26, 0.08);
+      --border-hover: rgba(26, 26, 26, 0.15);
+
+      /* Typography */
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', 'Noto Sans TC', sans-serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+
+      /* Radius */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg);
+    }
+
+    .container--narrow {
+      max-width: 800px;
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-lg) 0;
+      background: rgba(248, 246, 243, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--text-primary);
+    }
+
+    .back-link svg {
+      transition: transform 0.2s;
+    }
+
+    .back-link:hover svg {
+      transform: translateX(-4px);
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    /* ========================================
+       PROJECT HERO
+    ======================================== */
+    .project-hero {
+      padding-top: calc(80px + var(--space-3xl));
+      padding-bottom: var(--space-3xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -20%;
+      width: 60%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse at 70% 30%, rgba(201, 169, 98, 0.08), transparent 50%),
+        radial-gradient(ellipse at 30% 70%, rgba(231, 76, 60, 0.06), transparent 50%);
+      pointer-events: none;
+    }
+
+    .project-hero__content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .project-hero__label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: var(--space-md);
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .project-hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-lg);
+      animation: fadeInUp 0.6s ease-out 0.1s backwards;
+    }
+
+    .project-hero__title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .project-hero__desc {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.8;
+      margin-bottom: var(--space-xl);
+      animation: fadeInUp 0.6s ease-out 0.2s backwards;
+    }
+
+    .project-hero__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xl);
+      animation: fadeInUp 0.6s ease-out 0.3s backwards;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .meta-item__label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .meta-item__value {
+      font-size: 0.9375rem;
+      color: var(--text-primary);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ========================================
+       SECTION HEADERS
+    ======================================== */
+    .section-header {
+      margin-bottom: var(--space-2xl);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-sm);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 400;
+    }
+
+    /* ========================================
+       DESIGN DIRECTIONS
+    ======================================== */
+    .directions-section {
+      padding: var(--space-3xl) 0;
+    }
+
+    .directions-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3xl);
+    }
+
+    /* Direction Card */
+    .direction-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2xl);
+      align-items: center;
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .direction-card:nth-child(1) { animation-delay: 0.1s; }
+    .direction-card:nth-child(2) { animation-delay: 0.2s; }
+
+    .direction-card:nth-child(even) {
+      direction: rtl;
+    }
+
+    .direction-card:nth-child(even) > * {
+      direction: ltr;
+    }
+
+    .direction-card__preview {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(26, 26, 26, 0.12);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .direction-card__preview:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 30px 80px rgba(26, 26, 26, 0.18);
+    }
+
+    .direction-card__preview a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Preview backgrounds */
+    .preview--celestial {
+      background: var(--celestial-primary);
+      position: relative;
+    }
+
+    .preview--celestial::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155, 93, 229, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(241, 91, 181, 0.1), transparent),
+        radial-gradient(ellipse 50% 30% at 20% 80%, rgba(92, 225, 230, 0.08), transparent);
+    }
+
+    .preview--celestial::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,0.8), transparent),
+        radial-gradient(2px 2px at 40% 70%, rgba(255,244,230,0.7), transparent),
+        radial-gradient(1px 1px at 60% 20%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(2px 2px at 80% 50%, rgba(201,169,98,0.8), transparent),
+        radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(2px 2px at 70% 90%, rgba(255,244,230,0.6), transparent);
+      animation: twinkle 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .preview--paper {
+      background: var(--paper-primary);
+      position: relative;
+    }
+
+    .preview--paper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    .preview--paper::after {
+      content: '';
+      position: absolute;
+      top: 10%;
+      right: 10%;
+      width: 40%;
+      height: 30%;
+      background: radial-gradient(ellipse, rgba(231, 76, 60, 0.1), transparent 70%);
+      transform: rotate(-15deg);
+    }
+
+    .preview__content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+    }
+
+    .preview__icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .preview__title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    .preview--celestial .preview__title {
+      color: var(--celestial-accent);
+      text-shadow: 0 2px 20px rgba(201, 169, 98, 0.5);
+    }
+
+    .preview--paper .preview__title {
+      color: var(--paper-accent);
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 2rem;
+    }
+
+    .preview__cta {
+      position: absolute;
+      bottom: var(--space-lg);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: var(--space-sm) var(--space-lg);
+      background: rgba(255,255,255,0.95);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .direction-card__preview:hover .preview__cta {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    /* Direction Info */
+    .direction-card__info {
+      padding: var(--space-lg) 0;
+    }
+
+    .direction-card__number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--bg-secondary);
+      border-radius: 50%;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .direction-card__title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+      letter-spacing: -0.01em;
+    }
+
+    .direction-card__subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+    }
+
+    .direction-card__desc {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Features list */
+    .features-list {
+      list-style: none;
+      margin-bottom: var(--space-lg);
+    }
+
+    .features-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-sm) 0;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .features-list li::before {
+      content: '→';
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Color palette preview */
+    .palette-preview {
+      display: flex;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-lg);
+    }
+
+    .palette-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    /* Action button */
+    .direction-card__action {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      background: var(--text-primary);
+      color: var(--text-inverse);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .direction-card__action:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .direction-card__action svg {
+      transition: transform 0.3s ease;
+    }
+
+    .direction-card__action:hover svg {
+      transform: translateX(4px);
+    }
+
+    /* ========================================
+       COMPARISON TABLE
+    ======================================== */
+    .comparison-section {
+      padding: var(--space-3xl) 0;
+      background: var(--bg-secondary);
+      margin: 0 calc(-50vw + 50%);
+      padding-left: calc(50vw - 50%);
+      padding-right: calc(50vw - 50%);
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(26, 26, 26, 0.06);
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: var(--space-lg);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comparison-table th {
+      background: var(--bg-primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .comparison-table th:first-child {
+      width: 25%;
+    }
+
+    .comparison-table td {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+    }
+
+    .comparison-table td:first-child {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table tbody tr:hover {
+      background: var(--bg-primary);
+    }
+
+    /* ========================================
+       CTA SECTION
+    ======================================== */
+    .cta-section {
+      padding: var(--space-4xl) 0;
+      text-align: center;
+    }
+
+    .cta-content {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .cta-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: var(--space-md);
+    }
+
+    .cta-desc {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xl);
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      border-radius: var(--radius-md);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .cta-btn--primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .cta-btn--primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .cta-btn--secondary {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .cta-btn--secondary:hover {
+      border-color: var(--text-primary);
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .footer-nav {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .footer-nav a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-nav a:hover {
+      color: var(--accent);
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 900px) {
+      .direction-card {
+        grid-template-columns: 1fr;
+        gap: var(--space-xl);
+      }
+
+      .direction-card:nth-child(even) {
+        direction: ltr;
+      }
+
+      .direction-card__preview {
+        aspect-ratio: 16/10;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .project-hero {
+        padding-top: calc(80px + var(--space-2xl));
+      }
+
+      .project-hero__meta {
+        gap: var(--space-lg);
+      }
+
+      .comparison-table {
+        font-size: 0.875rem;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: var(--space-md);
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+    }
+  </style>
+
+  <!-- Load Ma Shan Zheng for paper preview -->
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          返回專案列表
+        </a>
+        <span class="header-title">Light Quest</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Project Hero -->
+  <section class="project-hero">
+    <div class="container">
+      <div class="project-hero__content">
+        <p class="project-hero__label">活動應用 · 設計探索</p>
+        <h1 class="project-hero__title">
+          Light Quest<br>
+          <em>集願之旅</em>
+        </h1>
+        <p class="project-hero__desc">
+          實體活動 QR 掃描闖關集點系統。透過數位科技重新詮釋傳統活動體驗，
+          創造從闖關到心願的完整情感旅程。核心設計理念為「累積感 + 儀式性」，
+          從 7 個關卡中完成任意 5 個即可解鎖心願表達。
+        </p>
+        <div class="project-hero__meta">
+          <div class="meta-item">
+            <span class="meta-item__label">專案類型</span>
+            <span class="meta-item__value">Progressive Web App</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__label">技術架構</span>
+            <span class="meta-item__value">Next.js 15 + Supabase</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__label">目標使用者</span>
+            <span class="meta-item__value">實體活動參與者</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-item__label">設計方向</span>
+            <span class="meta-item__value">2 個方案</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Design Directions -->
+  <section class="directions-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Design Directions</p>
+        <h2 class="section-title">設計方向探索</h2>
+      </div>
+
+      <div class="directions-grid">
+        <!-- Direction 1: Celestial Cartography -->
+        <div class="direction-card">
+          <div class="direction-card__preview">
+            <a href="celestial-cartography.html">
+              <div class="preview--celestial">
+                <div class="preview__content">
+                  <span class="preview__icon">✦</span>
+                  <span class="preview__title">Celestial Cartography</span>
+                </div>
+              </div>
+              <span class="preview__cta">點擊查看完整設計 →</span>
+            </a>
+          </div>
+
+          <div class="direction-card__info">
+            <span class="direction-card__number">01</span>
+            <h3 class="direction-card__title">星圖尋旅</h3>
+            <p class="direction-card__subtitle">Celestial Cartography</p>
+            <p class="direction-card__desc">
+              將闖關旅程轉化為神秘的星空探索體驗。關卡化身為星座中的星星，
+              當完成 5 個關卡時，個人星座點亮，心願如流星般升上夜空。
+              整體氛圍空靈夢幻，帶有宇宙般的神聖感。
+            </p>
+
+            <ul class="features-list">
+              <li>深邃夜空為主視覺，營造神秘氛圍</li>
+              <li>關卡以星座圖形式呈現，完成時星星發光</li>
+              <li>銅金色金屬質感點綴，增添儀式感</li>
+              <li>漂浮粒子動畫模擬宇宙塵埃</li>
+              <li>心願牆如星河般展示所有人的願望</li>
+            </ul>
+
+            <div class="palette-preview">
+              <span class="palette-swatch" style="background: #0a0a12;" title="深空黑"></span>
+              <span class="palette-swatch" style="background: #1a1a2e;" title="星雲紫"></span>
+              <span class="palette-swatch" style="background: #c9a962;" title="星光金"></span>
+              <span class="palette-swatch" style="background: #b87333;" title="銅"></span>
+              <span class="palette-swatch" style="background: #5ce1e6;" title="極光青"></span>
+              <span class="palette-swatch" style="background: #9b5de5;" title="星雲紫"></span>
+            </div>
+
+            <a href="celestial-cartography.html" class="direction-card__action">
+              查看互動原型
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Direction 2: Paper Poetry -->
+        <div class="direction-card">
+          <div class="direction-card__preview">
+            <a href="paper-poetry.html">
+              <div class="preview--paper">
+                <div class="preview__content">
+                  <span class="preview__icon">🏮</span>
+                  <span class="preview__title">集願</span>
+                </div>
+              </div>
+              <span class="preview__cta">點擊查看完整設計 →</span>
+            </a>
+          </div>
+
+          <div class="direction-card__info">
+            <span class="direction-card__number">02</span>
+            <h3 class="direction-card__title">紙上詩篇</h3>
+            <p class="direction-card__subtitle">Paper Poetry</p>
+            <p class="direction-card__desc">
+              走溫暖懷舊的類比風格路線，將數位體驗賦予手作質感。
+              關卡化身為傳統集章卡上的印章，每完成一個就蓋上一枚紅印。
+              整體氛圍溫馨親切，帶有手寫信與老相片的情感溫度。
+            </p>
+
+            <ul class="features-list">
+              <li>奶油色紙張質感背景，溫暖親切</li>
+              <li>集章卡概念，關卡以印章形式呈現</li>
+              <li>硃砂紅為主色調，搭配金色點綴</li>
+              <li>手寫風字體增添人文氣息</li>
+              <li>紙膠帶、印章等裝飾元素</li>
+            </ul>
+
+            <div class="palette-preview">
+              <span class="palette-swatch" style="background: #f8f6f0;" title="米白"></span>
+              <span class="palette-swatch" style="background: #ede4d8;" title="牛皮紙"></span>
+              <span class="palette-swatch" style="background: #e74c3c;" title="硃砂紅"></span>
+              <span class="palette-swatch" style="background: #c9a227;" title="印泥金"></span>
+              <span class="palette-swatch" style="background: #5c4a3a;" title="墨褐"></span>
+              <span class="palette-swatch" style="background: #27ae60;" title="翠玉綠"></span>
+            </div>
+
+            <a href="paper-poetry.html" class="direction-card__action">
+              查看互動原型
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="comparison-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Comparison</p>
+        <h2 class="section-title">方案對比</h2>
+      </div>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>比較項目</th>
+            <th>星圖尋旅</th>
+            <th>紙上詩篇</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>視覺風格</td>
+            <td>暗色系、空靈夢幻、科幻感</td>
+            <td>淺色系、溫馨懷舊、手作感</td>
+          </tr>
+          <tr>
+            <td>情感調性</td>
+            <td>神秘、宏大、宇宙般的敬畏</td>
+            <td>溫暖、親切、人文情懷</td>
+          </tr>
+          <tr>
+            <td>進度隱喻</td>
+            <td>點亮星座中的星星</td>
+            <td>蓋上集章卡的印章</td>
+          </tr>
+          <tr>
+            <td>主要配色</td>
+            <td>深藍黑底 + 金銅色點綴</td>
+            <td>米白紙底 + 硃砂紅點綴</td>
+          </tr>
+          <tr>
+            <td>字體風格</td>
+            <td>優雅襯線體 (Cormorant)</td>
+            <td>手寫書法風 (馬善政體)</td>
+          </tr>
+          <tr>
+            <td>動畫特點</td>
+            <td>星光閃爍、粒子漂浮</td>
+            <td>紙張翻頁、印章蓋印</td>
+          </tr>
+          <tr>
+            <td>適合場景</td>
+            <td>夜間活動、許願主題、現代科技感</td>
+            <td>傳統節慶、社區活動、親子活動</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2 class="cta-title">選擇你的方向</h2>
+        <p class="cta-desc">
+          兩種設計方向各有特色，可以依據活動性質與目標受眾選擇最適合的風格，
+          或融合兩者的優點創造獨特體驗。
+        </p>
+        <div class="cta-buttons">
+          <a href="celestial-cartography.html" class="cta-btn cta-btn--primary">
+            體驗星圖尋旅
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+          <a href="paper-poetry.html" class="cta-btn cta-btn--secondary">
+            體驗紙上詩篇
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-text">Light Quest 設計探索 · 2025</p>
+        <nav class="footer-nav">
+          <a href="../index.html">所有專案</a>
+          <a href="#">UX 規格文件</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

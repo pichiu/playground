@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設計探索 | Design Explorations</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Warm editorial palette */
+      --bg-primary: #f8f6f3;
+      --bg-secondary: #efebe6;
+      --bg-card: #ffffff;
+
+      --text-primary: #1a1a1a;
+      --text-secondary: #5c5c5c;
+      --text-muted: #8a8a8a;
+
+      --accent: #c45c3e;
+      --accent-hover: #a84832;
+
+      --border: rgba(26, 26, 26, 0.08);
+      --border-hover: rgba(26, 26, 26, 0.15);
+
+      /* Typography */
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', 'Noto Sans TC', sans-serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+
+      /* Radius */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* Selection */
+    ::selection {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg);
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-lg) 0;
+      background: rgba(248, 246, 243, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .site-logo {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg-primary);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ========================================
+       HERO SECTION
+    ======================================== */
+    .hero {
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      padding-top: var(--space-4xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 20%;
+      right: -10%;
+      width: 50%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(196, 92, 62, 0.06), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-lg);
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero-label::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--text-muted);
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-xl);
+      animation: fadeInUp 0.8s ease-out 0.1s backwards;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+      line-height: 1.8;
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ========================================
+       PROJECTS SECTION
+    ======================================== */
+    .projects-section {
+      padding: var(--space-4xl) 0;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: var(--space-2xl);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 400;
+    }
+
+    .section-count {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Project Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: var(--space-xl);
+    }
+
+    /* Project Card */
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .project-card:nth-child(1) { animation-delay: 0.1s; }
+    .project-card:nth-child(2) { animation-delay: 0.2s; }
+    .project-card:nth-child(3) { animation-delay: 0.3s; }
+
+    .project-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 20px 60px rgba(26, 26, 26, 0.08);
+      transform: translateY(-4px);
+    }
+
+    .project-card__preview {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+    }
+
+    .project-card__thumbnail {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .project-card:hover .project-card__thumbnail {
+      transform: scale(1.05);
+    }
+
+    /* Preview placeholder with gradient */
+    .project-card__preview-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview--light-quest {
+      background:
+        linear-gradient(135deg, #0a0a12 0%, #1a1a2e 50%, #12121f 100%);
+    }
+
+    .preview--light-quest::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 30% 30%, rgba(201, 169, 98, 0.2), transparent),
+        radial-gradient(ellipse 40% 30% at 70% 70%, rgba(184, 115, 51, 0.15), transparent);
+    }
+
+    .preview--light-quest::after {
+      content: 'Light Quest';
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 2px 20px rgba(201, 169, 98, 0.5);
+    }
+
+    .project-card__badge {
+      position: absolute;
+      top: var(--space-md);
+      left: var(--space-md);
+      padding: var(--space-xs) var(--space-sm);
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: var(--radius-sm);
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .project-card__content {
+      padding: var(--space-lg);
+    }
+
+    .project-card__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .project-card__category {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .project-card__date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .project-card__date::before {
+      content: '·';
+      margin-right: var(--space-sm);
+    }
+
+    .project-card__title {
+      font-family: var(--font-display);
+      font-size: 1.375rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+      letter-spacing: -0.01em;
+    }
+
+    .project-card__desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: var(--space-md);
+    }
+
+    .project-card__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .tag {
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .project-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      border-top: 1px solid var(--border);
+    }
+
+    .project-card__link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .project-card__link svg {
+      transition: transform 0.3s ease;
+    }
+
+    .project-card:hover .project-card__link svg {
+      transform: translateX(4px);
+    }
+
+    .project-card__count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .footer-links a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    /* ========================================
+       EMPTY STATE (for future)
+    ======================================== */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-4xl) var(--space-lg);
+      color: var(--text-muted);
+    }
+
+    .empty-state__icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-lg);
+      opacity: 0.5;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 768px) {
+      .hero {
+        min-height: 60vh;
+        padding-top: 120px;
+      }
+
+      .hero-title {
+        font-size: 2.5rem;
+      }
+
+      .projects-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        gap: var(--space-md);
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="index.html" class="site-logo">
+          <span class="logo-mark">D</span>
+          <span class="logo-text">Design Explorations</span>
+        </a>
+        <span class="header-meta">設計探索集</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <p class="hero-label">UI/UX 設計探索</p>
+        <h1 class="hero-title">
+          創意<em>實驗</em>，<br>
+          設計可能性
+        </h1>
+        <p class="hero-desc">
+          這裡收錄了各種專案的設計方向探索。每個專案都包含多種視覺風格與互動概念，
+          作為設計決策的參考依據。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Section -->
+  <section class="projects-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">專案列表</h2>
+        <span class="section-count">共 1 個專案</span>
+      </div>
+
+      <div class="projects-grid">
+        <!-- Light Quest Project Card -->
+        <a href="light-quest/index.html" class="project-card">
+          <div class="project-card__preview">
+            <div class="project-card__preview-placeholder preview--light-quest"></div>
+            <span class="project-card__badge">進行中</span>
+          </div>
+          <div class="project-card__content">
+            <div class="project-card__meta">
+              <span class="project-card__category">活動應用</span>
+              <span class="project-card__date">2025.11</span>
+            </div>
+            <h3 class="project-card__title">Light Quest 集願之旅</h3>
+            <p class="project-card__desc">
+              實體活動 QR 掃描闖關集點系統。透過數位科技重新詮釋傳統活動體驗，
+              創造從闖關到心願的完整情感旅程。
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">PWA</span>
+              <span class="tag">Next.js</span>
+              <span class="tag">活動互動</span>
+            </div>
+          </div>
+          <div class="project-card__footer">
+            <span class="project-card__link">
+              查看設計方向
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+            <span class="project-card__count">2 個方向</span>
+          </div>
+        </a>
+
+        <!-- Placeholder for future projects -->
+        <!--
+        <a href="#" class="project-card">
+          <div class="project-card__preview">
+            <div class="project-card__preview-placeholder" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+            <span class="project-card__badge">即將推出</span>
+          </div>
+          <div class="project-card__content">
+            <div class="project-card__meta">
+              <span class="project-card__category">電商平台</span>
+              <span class="project-card__date">2025.12</span>
+            </div>
+            <h3 class="project-card__title">新專案名稱</h3>
+            <p class="project-card__desc">
+              專案描述文字...
+            </p>
+          </div>
+        </a>
+        -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-text">Design Explorations — 設計探索集</p>
+        <div class="footer-links">
+          <a href="#">關於</a>
+          <a href="#">聯絡</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

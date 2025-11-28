@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playground | 創意實驗場</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Deep editorial dark palette */
+      --bg-primary: #0a0a0b;
+      --bg-elevated: #121214;
+      --bg-card: #18181b;
+      --bg-card-hover: #1f1f23;
+
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #52525b;
+
+      --accent: #f59e0b;
+      --accent-dim: rgba(245, 158, 11, 0.15);
+
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+
+      /* Typography */
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-mono: 'Space Mono', monospace;
+      --font-body: 'Noto Sans TC', sans-serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+      --space-5xl: 128px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--space-xl);
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-lg) 0;
+      mix-blend-mode: difference;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .site-wordmark {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .header-time {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       HERO
+    ======================================== */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-5xl) 0;
+      position: relative;
+    }
+
+    /* Ambient glow */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(245, 158, 11, 0.04), transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-2xl);
+      animation: fadeIn 1s ease-out;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      width: 40px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--text-muted));
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(4rem, 15vw, 12rem);
+      font-weight: 400;
+      line-height: 0.9;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-xl);
+    }
+
+    .hero-title .line {
+      display: block;
+      overflow: hidden;
+    }
+
+    .hero-title .line span {
+      display: block;
+      animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    .hero-title .line:nth-child(1) span { animation-delay: 0.1s; }
+    .hero-title .line:nth-child(2) span { animation-delay: 0.2s; }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+      position: relative;
+    }
+
+    .hero-title em::after {
+      content: '';
+      position: absolute;
+      bottom: 0.1em;
+      left: 0;
+      right: 0;
+      height: 0.08em;
+      background: var(--accent);
+      opacity: 0.3;
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: expandLine 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-body);
+      font-size: 1.125rem;
+      font-weight: 300;
+      color: var(--text-secondary);
+      max-width: 480px;
+      line-height: 1.8;
+      animation: fadeIn 1s ease-out 0.5s backwards;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes expandLine {
+      to {
+        transform: scaleX(1);
+      }
+    }
+
+    /* ========================================
+       PROJECTS SECTION
+    ======================================== */
+    .projects-section {
+      padding: var(--space-4xl) 0 var(--space-5xl);
+      border-top: 1px solid var(--border);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: var(--space-3xl);
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .section-count {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Project List */
+    .projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .project-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: var(--space-xl);
+      padding: var(--space-xl) var(--space-2xl);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .project-item::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, var(--accent-dim), transparent 50%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .project-item:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateX(8px);
+    }
+
+    .project-item:hover::before {
+      opacity: 1;
+    }
+
+    .project-number {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      min-width: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .project-info {
+      position: relative;
+      z-index: 1;
+    }
+
+    .project-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 400;
+      margin-bottom: var(--space-xs);
+      transition: color 0.3s ease;
+    }
+
+    .project-item:hover .project-title {
+      color: var(--accent);
+    }
+
+    .project-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .project-meta span:not(:last-child)::after {
+      content: '/';
+      margin-left: var(--space-md);
+      opacity: 0.4;
+    }
+
+    .project-arrow {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s ease;
+    }
+
+    .project-arrow svg {
+      transition: transform 0.3s ease;
+    }
+
+    .project-item:hover .project-arrow {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .project-item:hover .project-arrow svg {
+      transform: translateX(3px);
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-text {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: var(--space-xl);
+    }
+
+    .footer-links a {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    /* ========================================
+       DECORATIVE ELEMENTS
+    ======================================== */
+    .deco-grid {
+      position: fixed;
+      top: 0;
+      right: var(--space-xl);
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+      pointer-events: none;
+    }
+
+    .deco-grid::before,
+    .deco-grid::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .deco-grid::before {
+      right: 80px;
+    }
+
+    .deco-grid::after {
+      right: 160px;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 var(--space-lg);
+      }
+
+      .hero {
+        padding: var(--space-4xl) 0;
+      }
+
+      .hero-title {
+        font-size: clamp(2.5rem, 12vw, 5rem);
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+      }
+
+      .project-item {
+        grid-template-columns: 1fr auto;
+        gap: var(--space-lg);
+        padding: var(--space-lg);
+      }
+
+      .project-number {
+        display: none;
+      }
+
+      .project-title {
+        font-size: 1.25rem;
+      }
+
+      .section-header {
+        flex-direction: column;
+        gap: var(--space-sm);
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        gap: var(--space-md);
+        text-align: center;
+      }
+
+      .deco-grid {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Decorative vertical lines -->
+  <div class="deco-grid" aria-hidden="true"></div>
+
+  <div class="page-wrapper">
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container">
+        <div class="header-inner">
+          <span class="site-wordmark">Playground</span>
+          <span class="header-time" id="currentTime"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <main class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <p class="hero-eyebrow">Creative Laboratory</p>
+          <h1 class="hero-title">
+            <span class="line"><span>創意</span></span>
+            <span class="line"><span><em>實驗場</em></span></span>
+          </h1>
+          <p class="hero-subtitle">
+            探索設計與技術的交匯之處。這裡是各種創意實驗的集散地，<br>
+            記錄每一次對可能性的追尋。
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Projects Section -->
+    <section class="projects-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-label">Explorations</span>
+          <span class="section-count">01</span>
+        </div>
+
+        <div class="projects-list">
+          <a href="design-explorations/index.html" class="project-item">
+            <span class="project-number">01</span>
+            <div class="project-info">
+              <h2 class="project-title">Design Explorations</h2>
+              <div class="project-meta">
+                <span>設計探索集</span>
+                <span>UI/UX</span>
+                <span>2025</span>
+              </div>
+            </div>
+            <div class="project-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-inner">
+          <p class="footer-text">Playground — 創意實驗場</p>
+          <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Update current time in header
+    function updateTime() {
+      const now = new Date();
+      const options = {
+        timeZone: 'Asia/Taipei',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      };
+      const timeStr = now.toLocaleTimeString('en-US', options);
+      const dateStr = now.toLocaleDateString('en-US', {
+        timeZone: 'Asia/Taipei',
+        month: 'short',
+        day: 'numeric'
+      });
+      document.getElementById('currentTime').textContent = `${dateStr} ${timeStr}`;
+    }
+
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>
