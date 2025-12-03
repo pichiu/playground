@@ -733,6 +733,34 @@
       transform: none;
     }
 
+    /* Star rising animation */
+    .star-rise-animation {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 200;
+      color: var(--gold);
+      font-size: 2.5rem;
+      opacity: 0;
+      animation: rise-and-fade 1.5s cubic-bezier(0.2, 0.5, 0.8, 1);
+      pointer-events: none;
+      text-shadow: 0 0 15px var(--gold);
+    }
+
+    @keyframes rise-and-fade {
+      0% {
+        transform: translate(0, 0) scale(0.5);
+        opacity: 1;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-30vw, -60vh) scale(1.2);
+        opacity: 0;
+      }
+    }
+
     /* Fixed bottom action */
     .fixed-action {
       position: sticky;
@@ -1485,152 +1513,283 @@
       </button>
     </div>
 
-    <!-- Screen 3: Progress / Constellation Map -->
-    <div class="screen progress-screen" id="screen-progress">
-      <div class="progress-header">
-        <p class="label">你的星座進度</p>
-        <div class="progress-counter">
-          5<span>/7</span>
-        </div>
-        <p class="progress-status progress-status--milestone">
-          🎉 恭喜！你已解鎖心願
-        </p>
-      </div>
+        <!-- Screen 3: Progress / Constellation Map (Initial State: 4/7) -->
 
-      <!-- Constellation Visualization -->
-      <div class="constellation-map">
-        <svg class="constellation-svg" viewBox="0 0 280 280">
-          <!-- Connection lines -->
-          <line class="constellation-line constellation-line--active" x1="140" y1="60" x2="80" y2="100"/>
-          <line class="constellation-line constellation-line--active" x1="140" y1="60" x2="200" y2="95"/>
-          <line class="constellation-line constellation-line--active" x1="80" y1="100" x2="60" y2="170"/>
-          <line class="constellation-line constellation-line--active" x1="200" y1="95" x2="220" y2="165"/>
-          <line class="constellation-line constellation-line--active" x1="60" y1="170" x2="100" y2="230"/>
-          <line class="constellation-line" x1="220" y1="165" x2="180" y2="225"/>
-          <line class="constellation-line" x1="100" y1="230" x2="180" y2="225"/>
+        <div class="screen progress-screen" id="screen-progress">
 
-          <!-- Star 1 - Top (unlocked) -->
-          <g class="star-point star-point--unlocked" transform="translate(140, 60)">
-            <circle class="star-outer" r="16" stroke-width="2"/>
-            <circle class="star-inner" r="6"/>
-          </g>
+          <div class="progress-header">
 
-          <!-- Star 2 - Upper left (unlocked) -->
-          <g class="star-point star-point--unlocked" transform="translate(80, 100)">
-            <circle class="star-outer" r="14" stroke-width="2"/>
-            <circle class="star-inner" r="5"/>
-          </g>
+            <p class="label">你的星座進度</p>
 
-          <!-- Star 3 - Upper right (unlocked) -->
-          <g class="star-point star-point--unlocked" transform="translate(200, 95)">
-            <circle class="star-outer" r="14" stroke-width="2"/>
-            <circle class="star-inner" r="5"/>
-          </g>
+            <div class="progress-counter" id="progress-counter">
 
-          <!-- Star 4 - Mid left (unlocked) -->
-          <g class="star-point star-point--unlocked" transform="translate(60, 170)">
-            <circle class="star-outer" r="12" stroke-width="2"/>
-            <circle class="star-inner" r="4"/>
-          </g>
+              4<span>/7</span>
 
-          <!-- Star 5 - Mid right (unlocked) -->
-          <g class="star-point star-point--unlocked" transform="translate(220, 165)">
-            <circle class="star-outer" r="12" stroke-width="2"/>
-            <circle class="star-inner" r="4"/>
-          </g>
+            </div>
 
-          <!-- Star 6 - Bottom left (locked) -->
-          <g class="star-point star-point--locked" transform="translate(100, 230)">
-            <circle class="star-outer" r="10" stroke-width="1" stroke-dasharray="3 3"/>
-            <circle class="star-inner" r="3"/>
-          </g>
+            <p class="progress-status" id="progress-status-text">
 
-          <!-- Star 7 - Bottom right (locked) -->
-          <g class="star-point star-point--locked" transform="translate(180, 225)">
-            <circle class="star-outer" r="10" stroke-width="1" stroke-dasharray="3 3"/>
-            <circle class="star-inner" r="3"/>
-          </g>
-        </svg>
-      </div>
+              再 1 顆星即可解鎖心願
 
-      <!-- Wish CTA Card -->
-      <div class="wish-cta-card">
-        <h2 class="wish-cta-card__title">寫下你的心願</h2>
-        <p class="wish-cta-card__description">在星空中留下你的願望</p>
-        <button class="wish-cta-card__button" onclick="showScreen('milestone')">
-          ✨ 開始寫下我的心願 ✨
-        </button>
-      </div>
+            </p>
 
-      <!-- Checkpoint List -->
-      <div class="checkpoint-list">
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">美食探索</div>
-            <div class="checkpoint-desc">品嚐在地美食</div>
           </div>
-          <div class="checkpoint-status">已完成</div>
-        </div>
 
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">手作體驗</div>
-            <div class="checkpoint-desc">創作專屬作品</div>
+    
+
+          <!-- Constellation Visualization -->
+
+          <div class="constellation-map">
+
+            <svg class="constellation-svg" viewBox="0 0 280 280">
+
+              <!-- Connection lines -->
+
+              <line class="constellation-line constellation-line--active" x1="140" y1="60" x2="80" y2="100"/>
+
+              <line class="constellation-line constellation-line--active" x1="140" y1="60" x2="200" y2="95"/>
+
+              <line class="constellation-line constellation-line--active" x1="80" y1="100" x2="60" y2="170"/>
+
+              <line id="constellation-line-5" class="constellation-line" x1="200" y1="95" x2="220" y2="165"/>
+
+              <line class="constellation-line" x1="60" y1="170" x2="100" y2="230"/>
+
+              <line class="constellation-line" x1="220" y1="165" x2="180" y2="225"/>
+
+              <line class="constellation-line" x1="100" y1="230" x2="180" y2="225"/>
+
+    
+
+              <!-- Star 1 - Top (unlocked) -->
+
+              <g class="star-point star-point--unlocked" transform="translate(140, 60)">
+
+                <circle class="star-outer" r="16" stroke-width="2"/>
+
+                <circle class="star-inner" r="6"/>
+
+              </g>
+
+    
+
+              <!-- Star 2 - Upper left (unlocked) -->
+
+              <g class="star-point star-point--unlocked" transform="translate(80, 100)">
+
+                <circle class="star-outer" r="14" stroke-width="2"/>
+
+                <circle class="star-inner" r="5"/>
+
+              </g>
+
+    
+
+              <!-- Star 3 - Upper right (unlocked) -->
+
+              <g class="star-point star-point--unlocked" transform="translate(200, 95)">
+
+                <circle class="star-outer" r="14" stroke-width="2"/>
+
+                <circle class="star-inner" r="5"/>
+
+              </g>
+
+    
+
+              <!-- Star 4 - Mid left (unlocked) -->
+
+              <g class="star-point star-point--unlocked" transform="translate(60, 170)">
+
+                <circle class="star-outer" r="12" stroke-width="2"/>
+
+                <circle class="star-inner" r="4"/>
+
+              </g>
+
+    
+
+              <!-- Star 5 - Mid right (LOCKED) -->
+
+              <g id="constellation-star-5" class="star-point star-point--locked" transform="translate(220, 165)">
+
+                <circle class="star-outer" r="12" stroke-width="1" stroke-dasharray="3 3"/>
+
+                <circle class="star-inner" r="4"/>
+
+              </g>
+
+    
+
+              <!-- Star 6 - Bottom left (locked) -->
+
+              <g class="star-point star-point--locked" transform="translate(100, 230)">
+
+                <circle class="star-outer" r="10" stroke-width="1" stroke-dasharray="3 3"/>
+
+                <circle class="star-inner" r="3"/>
+
+              </g>
+
+    
+
+              <!-- Star 7 - Bottom right (locked) -->
+
+              <g class="star-point star-point--locked" transform="translate(180, 225)">
+
+                <circle class="star-outer" r="10" stroke-width="1" stroke-dasharray="3 3"/>
+
+                <circle class="star-inner" r="3"/>
+
+              </g>
+
+            </svg>
+
           </div>
-          <div class="checkpoint-status">已完成</div>
-        </div>
 
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">甜湯驛站</div>
-            <div class="checkpoint-desc">冬至暖心甜品</div>
+    
+
+          <!-- Wish CTA Card -->
+
+          <div class="wish-cta-card">
+
+            <h2 class="wish-cta-card__title" id="cta-title">寫下你的心願</h2>
+
+            <p class="wish-cta-card__description" id="cta-description">再完成 1 個關卡即可解鎖</p>
+
+            <button class="wish-cta-card__button" id="cta-button" onclick="showScreen('milestone')" disabled>
+
+              還需完成 1 個關卡
+
+            </button>
+
           </div>
-          <div class="checkpoint-status">已完成</div>
-        </div>
 
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">文化走廊</div>
-            <div class="checkpoint-desc">認識在地故事</div>
+    
+
+          <!-- Checkpoint List -->
+
+          <div class="checkpoint-list">
+
+            <div class="checkpoint-item">
+
+              <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">美食探索</div>
+
+                <div class="checkpoint-desc">品嚐在地美食</div>
+
+              </div>
+
+              <div class="checkpoint-status">已完成</div>
+
+            </div>
+
+            <div class="checkpoint-item">
+
+              <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">手作體驗</div>
+
+                <div class="checkpoint-desc">創作專屬作品</div>
+
+              </div>
+
+              <div class="checkpoint-status">已完成</div>
+
+            </div>
+
+            <div class="checkpoint-item">
+
+              <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">甜湯驛站</div>
+
+                <div class="checkpoint-desc">冬至暖心甜品</div>
+
+              </div>
+
+              <div class="checkpoint-status">已完成</div>
+
+            </div>
+
+            <div class="checkpoint-item">
+
+              <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">文化走廊</div>
+
+                <div class="checkpoint-desc">認識在地故事</div>
+
+              </div>
+
+              <div class="checkpoint-status">已完成</div>
+
+            </div>
+
+            <div class="checkpoint-item" id="checkpoint-item-5">
+
+              <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">遊戲天地</div>
+
+                <div class="checkpoint-desc">經典復古遊戲</div>
+
+              </div>
+
+            </div>
+
+            <div class="checkpoint-item">
+
+              <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">表演舞台</div>
+
+                <div class="checkpoint-desc">欣賞精彩演出</div>
+
+              </div>
+
+            </div>
+
+            <div class="checkpoint-item">
+
+              <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
+
+              <div class="checkpoint-info">
+
+                <div class="checkpoint-name">藝術角落</div>
+
+                <div class="checkpoint-desc">手工藝品展示</div>
+
+              </div>
+
+            </div>
+
           </div>
-          <div class="checkpoint-status">已完成</div>
-        </div>
 
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--unlocked">★</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">遊戲天地</div>
-            <div class="checkpoint-desc">經典復古遊戲</div>
-          </div>
-          <div class="checkpoint-status">已完成</div>
-        </div>
+    
 
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">表演舞台</div>
-            <div class="checkpoint-desc">欣賞精彩演出</div>
-          </div>
-        </div>
+          <!-- Scan FAB: Appears on this screen based on new UX spec -->
 
-        <div class="checkpoint-item">
-          <div class="checkpoint-icon checkpoint-icon--locked">☆</div>
-          <div class="checkpoint-info">
-            <div class="checkpoint-name">藝術角落</div>
-            <div class="checkpoint-desc">手工藝品展示</div>
-          </div>
-        </div>
-      </div>
+          <button class="scan-fab" onclick="openScanner()" aria-label="Scan QR Code">
 
-      <!-- Scan FAB: Appears on this screen based on new UX spec -->
-      <button class="scan-fab" onclick="openScanner()" aria-label="Scan QR Code">
-        <svg class="scan-fab__icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
-      </button>
-    </div>
+            <svg class="scan-fab__icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+
+          </button>
+
+        </div>
 
     <!-- Screen 4: Milestone Celebration -->
     <div class="screen milestone-screen" id="screen-milestone">
@@ -1914,6 +2073,70 @@
 
     function closeScanner() {
       document.getElementById('scannerModal').classList.remove('active');
+      
+      // For demo: treat closing the scanner as a successful scan
+      const progressCounter = document.getElementById('progress-counter');
+      if (progressCounter && progressCounter.innerHTML.includes('4<span>/7</span>')) {
+        simulateScanSuccess();
+      }
+    }
+
+    function simulateScanSuccess() {
+      const star = document.createElement('div');
+      star.className = 'star-rise-animation';
+      star.innerHTML = '✦';
+      document.body.appendChild(star);
+
+      setTimeout(() => {
+        updateProgressToFiveStars();
+        star.remove();
+      }, 1500); // Should match the animation duration in CSS
+    }
+
+    function updateProgressToFiveStars() {
+      // Update progress header
+      document.getElementById('progress-counter').innerHTML = '5<span>/7</span>';
+      const statusText = document.getElementById('progress-status-text');
+      statusText.innerHTML = '🎉 恭喜！你已解鎖心願';
+      statusText.classList.add('progress-status--milestone');
+
+      // Update Constellation SVG
+      const star5 = document.getElementById('constellation-star-5');
+      if (star5) {
+        star5.classList.remove('star-point--locked');
+        star5.classList.add('star-point--unlocked');
+        star5.innerHTML = '<circle class="star-outer" r="12" stroke-width="2"></circle><circle class="star-inner" r="4"></circle>';
+      }
+      const line5 = document.getElementById('constellation-line-5');
+      if (line5) {
+        line5.classList.add('constellation-line--active');
+      }
+
+      // Update CTA card
+      document.getElementById('cta-title').textContent = '寫下你的心願';
+      document.getElementById('cta-description').textContent = '在星空中留下你的願望';
+      const ctaButton = document.getElementById('cta-button');
+      ctaButton.innerHTML = '✨ 開始寫下我的心願 ✨';
+      ctaButton.disabled = false;
+
+      // Update Checkpoint List
+      const checkpoint5 = document.getElementById('checkpoint-item-5');
+      if (checkpoint5) {
+        const icon = checkpoint5.querySelector('.checkpoint-icon');
+        icon.classList.remove('checkpoint-icon--locked');
+        icon.classList.add('checkpoint-icon--unlocked');
+        icon.textContent = '★';
+        
+        // Add status text if it doesn't exist
+        if (!checkpoint5.querySelector('.checkpoint-status')) {
+          const statusDiv = document.createElement('div');
+          statusDiv.className = 'checkpoint-status';
+          statusDiv.textContent = '已完成';
+          checkpoint5.appendChild(statusDiv);
+        }
+      }
+        
+      showToast();
     }
 
     // Toast notification
