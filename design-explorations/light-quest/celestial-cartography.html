@@ -675,6 +675,64 @@
       color: var(--success);
     }
 
+    /* Wish CTA Card */
+    .wish-cta-card {
+      background: rgba(26, 26, 46, 0.8);
+      border: 1px solid rgba(184, 115, 51, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 16px var(--space-lg);
+      backdrop-filter: blur(8px);
+      text-align: center;
+    }
+
+    .wish-cta-card__title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .wish-cta-card__description {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.7);
+      margin-bottom: 16px;
+    }
+
+    .wish-cta-card__button {
+      background: linear-gradient(135deg, var(--copper) 0%, var(--gold) 100%);
+      color: var(--void);
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto;
+      display: block;
+      border: none;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .wish-cta-card__button:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 30px rgba(184, 115, 51, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .wish-cta-card__button:active {
+      transform: translateY(0);
+    }
+
+    .wish-cta-card__button:disabled {
+      background: var(--stardust);
+      color: rgba(250, 248, 245, 0.4);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
     /* Fixed bottom action */
     .fixed-action {
       position: sticky;
@@ -1222,6 +1280,43 @@
     }
 
     /* ========================================
+       SCAN FAB (Floating Action Button)
+    ======================================== */
+    .scan-fab {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 50;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--copper) 0%, var(--gold) 100%);
+      box-shadow: 0 4px 12px rgba(184, 115, 51, 0.4);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+    }
+
+    .scan-fab:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(201, 169, 98, 0.5);
+    }
+
+    .scan-fab:active {
+      transform: scale(0.95);
+    }
+
+    .scan-fab__icon {
+      width: 28px;
+      height: 28px;
+      color: var(--void);
+    }
+
+    /* ========================================
        NAV CONTROLS
     ======================================== */
     .demo-nav {
@@ -1458,6 +1553,15 @@
         </svg>
       </div>
 
+      <!-- Wish CTA Card -->
+      <div class="wish-cta-card">
+        <h2 class="wish-cta-card__title">寫下你的心願</h2>
+        <p class="wish-cta-card__description">在星空中留下你的願望</p>
+        <button class="wish-cta-card__button" onclick="showScreen('milestone')">
+          ✨ 開始寫下我的心願 ✨
+        </button>
+      </div>
+
       <!-- Checkpoint List -->
       <div class="checkpoint-list">
         <div class="checkpoint-item">
@@ -1522,11 +1626,10 @@
         </div>
       </div>
 
-      <div class="fixed-action">
-        <button class="btn btn--primary btn--lg btn--full" onclick="showScreen('milestone')">
-          ✨ 寫下我的心願
-        </button>
-      </div>
+      <!-- Scan FAB: Appears on this screen based on new UX spec -->
+      <button class="scan-fab" onclick="openScanner()" aria-label="Scan QR Code">
+        <svg class="scan-fab__icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+      </button>
     </div>
 
     <!-- Screen 4: Milestone Celebration -->
