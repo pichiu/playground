@@ -822,7 +822,7 @@
       position: relative;
       z-index: 1;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: var(--space-lg);
       margin-bottom: var(--space-2xl);
     }
@@ -1049,6 +1049,116 @@
       letter-spacing: 0.15em;
     }
 
+    /* === Preview Starlight Portal === */
+    .variation-preview--starlight {
+      background:
+        radial-gradient(ellipse 100% 60% at 50% 20%, rgba(155, 93, 229, 0.15), transparent),
+        radial-gradient(ellipse 80% 50% at 30% 70%, rgba(92, 225, 230, 0.1), transparent),
+        radial-gradient(ellipse 70% 40% at 80% 60%, rgba(241, 91, 181, 0.06), transparent),
+        #0a0a12;
+    }
+
+    .preview-starlight__orbits {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+    }
+
+    .preview-starlight__orbits .orbit {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+    }
+
+    .orbit--outer {
+      inset: 0;
+      border-color: rgba(155, 93, 229, 0.3);
+      transform: rotate(-15deg);
+    }
+
+    .orbit--middle {
+      inset: 18px;
+      border-color: rgba(92, 225, 230, 0.35);
+      transform: rotate(10deg);
+    }
+
+    .orbit--inner {
+      inset: 36px;
+      border-color: rgba(201, 169, 98, 0.4);
+      transform: rotate(-5deg);
+    }
+
+    .preview-starlight__glow {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(201, 169, 98, 0.5) 0%,
+        rgba(201, 169, 98, 0.15) 50%,
+        transparent 70%
+      );
+      animation: starlightPulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes starlightPulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    .preview-starlight__star {
+      font-size: 3rem;
+      z-index: 2;
+      filter: drop-shadow(0 0 20px rgba(201, 169, 98, 0.8));
+      animation: starlightFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes starlightFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .preview-starlight__dots {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+    }
+
+    .preview-starlight__dots .dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+    }
+
+    .dot--purple {
+      background: #9b5de5;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: dotOrbit 20s linear infinite;
+    }
+
+    .dot--cyan {
+      background: #5ce1e6;
+      top: 22px;
+      right: 15px;
+      animation: dotOrbit 15s linear infinite reverse;
+    }
+
+    .dot--gold {
+      background: #c9a962;
+      bottom: 40px;
+      left: 18px;
+      animation: dotOrbit 18s linear infinite;
+    }
+
+    @keyframes dotOrbit {
+      from { transform: rotate(0deg) translateX(2px); }
+      to { transform: rotate(360deg) translateX(2px); }
+    }
+
     /* Card Content */
     .variation-card__content {
       padding: var(--space-lg);
@@ -1113,6 +1223,23 @@
     .variation-card--featured .variation-card__tag {
       background: rgba(201, 169, 98, 0.2);
       color: #c9a962;
+    }
+
+    .variation-card__tag--new {
+      background: linear-gradient(135deg, rgba(92, 225, 230, 0.2), rgba(155, 93, 229, 0.2));
+      color: #5ce1e6;
+      position: relative;
+    }
+
+    .variation-card__tag--new::after {
+      content: 'NEW';
+      margin-left: 6px;
+      font-size: 0.5rem;
+      padding: 1px 4px;
+      background: linear-gradient(135deg, #5ce1e6, #9b5de5);
+      color: #0a0a12;
+      border-radius: 2px;
+      font-weight: 700;
     }
 
     /* Variations Note */
@@ -1406,11 +1533,42 @@
             </div>
           </a>
         </article>
+
+        <!-- Option D: Starlight Portal -->
+        <article class="variation-card variation-card--featured">
+          <a href="claim-landing/claim-landing-option-d-starlight-portal.html" class="variation-card__link">
+            <div class="variation-card__preview variation-preview--starlight">
+              <div class="preview-starlight__orbits">
+                <span class="orbit orbit--outer"></span>
+                <span class="orbit orbit--middle"></span>
+                <span class="orbit orbit--inner"></span>
+              </div>
+              <div class="preview-starlight__glow"></div>
+              <div class="preview-starlight__star">✨</div>
+              <div class="preview-starlight__dots">
+                <span class="dot dot--purple"></span>
+                <span class="dot dot--cyan"></span>
+                <span class="dot dot--gold"></span>
+              </div>
+            </div>
+            <div class="variation-card__content">
+              <span class="variation-card__tag variation-card__tag--new">Option D</span>
+              <h3 class="variation-card__title">Starlight Portal</h3>
+              <p class="variation-card__subtitle">星光傳送門</p>
+              <p class="variation-card__desc">融合 A 與 B 的精華。大尺寸脈動星星結合軌道線條，強化極光氛圍，創造層次豐富的神秘科幻感。</p>
+              <ul class="variation-card__features">
+                <li>星星 + 軌道混合</li>
+                <li>強化極光漸層</li>
+                <li>軌道圓點裝飾</li>
+              </ul>
+            </div>
+          </a>
+        </article>
       </div>
 
       <div class="variations-note">
         <span class="variations-note__icon">💡</span>
-        <p>這三個方案皆為「星圖尋旅」設計方向的延伸，展示同一概念下不同的視覺敘事密度。</p>
+        <p>這四個方案皆為「星圖尋旅」設計方向的延伸，展示同一概念下不同的視覺敘事密度。Option D 為 A+B 的混合方案。</p>
       </div>
     </div>
   </section>

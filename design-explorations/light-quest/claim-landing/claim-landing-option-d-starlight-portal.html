@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Claim Landing - Option D: Starlight Portal</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /*
+     * Option D: Starlight Portal
+     * 設計理念：星星為主體 + 神秘科幻氛圍
+     *
+     * 混合策略：
+     * - 視覺主體：Option A 的大尺寸脈動星星
+     * - 氛圍營造：Option B 的軌道線條 + 強化 aurora
+     * - 關卡卡片：Option A 的 aurora-cyan 邊框設計
+     * - Loading/Error：Option B 的三環 / 虛線門戶
+     */
+
+    :root {
+      /* Celestial Cartography palette */
+      --void: #0a0a12;
+      --deep-space: #12121f;
+      --nebula: #1a1a2e;
+      --twilight: #252542;
+      --stardust: #3d3d5c;
+
+      --copper: #b87333;
+      --copper-light: #d4956a;
+      --gold: #c9a962;
+      --gold-light: #e8d5a3;
+      --rose-gold: #c4a4a4;
+
+      --aurora-cyan: #5ce1e6;
+      --aurora-purple: #9b5de5;
+      --aurora-pink: #f15bb5;
+      --star-white: #faf8f5;
+      --star-warm: #fff4e6;
+
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'Quicksand', 'Noto Sans TC', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--void);
+      color: var(--star-white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ========================================
+       COSMIC BACKGROUND - Enhanced Aurora
+    ======================================== */
+    .cosmic-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .cosmic-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        /* 強化 aurora 漸層 - 從中心向外發散 */
+        radial-gradient(ellipse 100% 60% at 50% 20%, rgba(155, 93, 229, 0.18), transparent 60%),
+        radial-gradient(ellipse 80% 50% at 30% 70%, rgba(92, 225, 230, 0.12), transparent 50%),
+        radial-gradient(ellipse 70% 40% at 80% 60%, rgba(241, 91, 181, 0.08), transparent 50%),
+        linear-gradient(180deg, var(--void) 0%, var(--deep-space) 50%, var(--nebula) 100%);
+    }
+
+    .stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 40px 70px, var(--star-warm), transparent),
+        radial-gradient(1px 1px at 90px 40px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 160px 120px, var(--gold-light), transparent),
+        radial-gradient(1px 1px at 230px 80px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 300px 150px, var(--aurora-cyan), transparent),
+        radial-gradient(1px 1px at 50px 180px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 180px 220px, var(--star-warm), transparent),
+        radial-gradient(1px 1px at 280px 260px, var(--star-white), transparent),
+        radial-gradient(2px 2px at 120px 300px, var(--aurora-purple), transparent);
+      background-size: 350px 350px;
+      animation: twinkle 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .claim-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      max-width: 428px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    /* ========================================
+       HERO STAR WITH ORBITAL RINGS
+       Option A 星星 + Option B 軌道線條
+    ======================================== */
+    .hero-star-container {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      margin-bottom: 32px;
+    }
+
+    /* 軌道線條 - 簡化版門戶環 */
+    .orbit-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+      opacity: 0;
+      animation: orbit-appear 1s ease-out forwards;
+    }
+
+    .orbit-ring--outer {
+      inset: 0;
+      border-color: rgba(155, 93, 229, 0.25);
+      animation-delay: 0.3s;
+      transform: rotate(-15deg);
+    }
+
+    .orbit-ring--middle {
+      inset: 15px;
+      border-color: rgba(92, 225, 230, 0.3);
+      animation-delay: 0.2s;
+      transform: rotate(10deg);
+    }
+
+    .orbit-ring--inner {
+      inset: 30px;
+      border-color: rgba(201, 169, 98, 0.35);
+      animation-delay: 0.1s;
+      transform: rotate(-5deg);
+    }
+
+    @keyframes orbit-appear {
+      from {
+        opacity: 0;
+        transform: rotate(0deg) scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: rotate(var(--rotate, 0deg)) scale(1);
+      }
+    }
+
+    .orbit-ring--outer { --rotate: -15deg; }
+    .orbit-ring--middle { --rotate: 10deg; }
+    .orbit-ring--inner { --rotate: -5deg; }
+
+    /* 軌道上的小圓點裝飾 */
+    .orbit-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      animation: dot-orbit 20s linear infinite;
+    }
+
+    .orbit-dot--1 {
+      background: var(--aurora-purple);
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      animation-duration: 25s;
+    }
+
+    .orbit-dot--2 {
+      background: var(--aurora-cyan);
+      top: 15px;
+      right: 25px;
+      animation-duration: 18s;
+      animation-direction: reverse;
+    }
+
+    .orbit-dot--3 {
+      background: var(--gold);
+      bottom: 35px;
+      left: 30px;
+      animation-duration: 22s;
+    }
+
+    @keyframes dot-orbit {
+      from { transform: rotate(0deg) translateX(2px) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(2px) rotate(-360deg); }
+    }
+
+    /* 星星光暈 - Option A 樣式 */
+    .star-glow {
+      position: absolute;
+      inset: 25px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at center,
+        rgba(201, 169, 98, 0.4) 0%,
+        rgba(201, 169, 98, 0.15) 40%,
+        transparent 70%
+      );
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    .star-glow-inner {
+      position: absolute;
+      inset: 40px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at center,
+        rgba(232, 213, 163, 0.5) 0%,
+        rgba(201, 169, 98, 0.2) 50%,
+        transparent 80%
+      );
+      animation: pulse-glow 3s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.7;
+      }
+      50% {
+        transform: scale(1.12);
+        opacity: 1;
+      }
+    }
+
+    /* 中央星星 */
+    .star-core {
+      position: absolute;
+      inset: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+      filter: drop-shadow(0 0 25px rgba(201, 169, 98, 0.8));
+      animation: star-float 4s ease-in-out infinite;
+    }
+
+    @keyframes star-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* ========================================
+       TITLE
+    ======================================== */
+    .claim-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--star-white);
+      margin-bottom: 24px;
+      letter-spacing: 0.02em;
+      animation: fade-in-up 0.8s ease-out 0.4s both;
+    }
+
+    .claim-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    @keyframes fade-in-up {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ========================================
+       CHECKPOINT INFO CARD - Option A 樣式
+    ======================================== */
+    .checkpoint-card {
+      background: linear-gradient(
+        135deg,
+        rgba(26, 26, 46, 0.9) 0%,
+        rgba(18, 18, 31, 0.95) 100%
+      );
+      border: 1px solid rgba(92, 225, 230, 0.3);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      animation: fade-in-up 0.8s ease-out 0.6s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 頂部細線條裝飾 */
+    .checkpoint-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--aurora-cyan) 50%,
+        transparent 100%
+      );
+    }
+
+    .checkpoint-icon {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .checkpoint-name {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--aurora-cyan);
+      margin-bottom: 4px;
+    }
+
+    .checkpoint-desc {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.7);
+      line-height: 1.5;
+    }
+
+    /* ========================================
+       CTA BUTTONS
+    ======================================== */
+    .cta-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fade-in-up 0.8s ease-out 0.8s both;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 9999px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border: none;
+      min-height: 48px;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .btn:hover::before {
+      opacity: 1;
+    }
+
+    /* Primary CTA - Copper gradient */
+    .btn--primary {
+      background: linear-gradient(135deg, var(--copper) 0%, var(--gold) 100%);
+      color: var(--void);
+      box-shadow: 0 4px 20px rgba(184, 115, 51, 0.4);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(184, 115, 51, 0.5);
+    }
+
+    .btn--primary:active {
+      transform: translateY(0);
+    }
+
+    /* Secondary CTA - Outline */
+    .btn--outline {
+      background: transparent;
+      color: var(--star-white);
+      border: 1px solid rgba(250, 248, 245, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .btn--outline:hover {
+      background: rgba(250, 248, 245, 0.1);
+      border-color: rgba(250, 248, 245, 0.5);
+    }
+
+    /* Google icon */
+    .google-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ========================================
+       HELPER TEXT
+    ======================================== */
+    .helper-text {
+      margin-top: 16px;
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.5);
+      animation: fade-in-up 0.8s ease-out 1s both;
+    }
+
+    /* ========================================
+       LOADING STATE - Option B 三環設計
+    ======================================== */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .loading-portal {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 24px;
+    }
+
+    .loading-ring {
+      position: absolute;
+      inset: 0;
+      border: 2px solid transparent;
+      border-top-color: var(--aurora-cyan);
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite;
+    }
+
+    .loading-ring:nth-child(2) {
+      inset: 12px;
+      border-top-color: var(--aurora-purple);
+      animation-duration: 1.2s;
+      animation-direction: reverse;
+    }
+
+    .loading-ring:nth-child(3) {
+      inset: 24px;
+      border-top-color: var(--gold);
+      animation-duration: 0.9s;
+    }
+
+    /* 中央星星 */
+    .loading-star {
+      position: absolute;
+      inset: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      opacity: 0.6;
+      animation: loading-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes loading-pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 0.8; transform: scale(1); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1rem;
+      color: var(--star-white);
+      letter-spacing: 0.1em;
+    }
+
+    /* ========================================
+       ERROR STATE - Option B 虛線門戶
+    ======================================== */
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .error-portal {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin-bottom: 24px;
+    }
+
+    .error-ring {
+      position: absolute;
+      border: 2px dashed rgba(250, 248, 245, 0.15);
+      border-radius: 50%;
+    }
+
+    .error-ring:nth-child(1) {
+      inset: 0;
+    }
+
+    .error-ring:nth-child(2) {
+      inset: 20px;
+      border-color: rgba(250, 248, 245, 0.1);
+    }
+
+    .error-ring:nth-child(3) {
+      inset: 40px;
+      border-color: rgba(250, 248, 245, 0.08);
+    }
+
+    .error-center {
+      position: absolute;
+      inset: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      opacity: 0.4;
+    }
+
+    .error-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--star-white);
+      margin-bottom: 8px;
+    }
+
+    .error-desc {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.6);
+      margin-bottom: 24px;
+    }
+
+    /* ========================================
+       DEMO CONTROLS
+    ======================================== */
+    .demo-controls {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(26, 26, 46, 0.9);
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: 9999px;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+
+    .demo-btn {
+      padding: 8px 16px;
+      font-size: 0.75rem;
+      border: none;
+      background: transparent;
+      color: rgba(250, 248, 245, 0.6);
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .demo-btn:hover {
+      background: rgba(250, 248, 245, 0.1);
+      color: var(--star-white);
+    }
+
+    .demo-btn.active {
+      background: var(--gold);
+      color: var(--void);
+    }
+
+    .state { display: none; }
+    .state.active { display: flex; }
+  </style>
+</head>
+<body>
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg">
+    <div class="stars"></div>
+  </div>
+
+  <!-- Normal State -->
+  <main class="claim-page state active" id="state-normal">
+    <!-- Hero Star with Orbital Rings -->
+    <div class="hero-star-container">
+      <!-- 軌道線條 -->
+      <div class="orbit-ring orbit-ring--outer"></div>
+      <div class="orbit-ring orbit-ring--middle"></div>
+      <div class="orbit-ring orbit-ring--inner"></div>
+
+      <!-- 軌道圓點 -->
+      <div class="orbit-dot orbit-dot--1"></div>
+      <div class="orbit-dot orbit-dot--2"></div>
+      <div class="orbit-dot orbit-dot--3"></div>
+
+      <!-- 星星光暈 -->
+      <div class="star-glow"></div>
+      <div class="star-glow-inner"></div>
+
+      <!-- 中央星星 -->
+      <div class="star-core">✨</div>
+    </div>
+
+    <!-- Title -->
+    <h1 class="claim-title">
+      你發現了一個<em>星光關卡</em>！
+    </h1>
+
+    <!-- Checkpoint Info Card -->
+    <div class="checkpoint-card">
+      <div class="checkpoint-icon">📍</div>
+      <div class="checkpoint-name">美食探索站</div>
+      <div class="checkpoint-desc">品嚐在地特色美食，開啟味覺的星空之旅</div>
+    </div>
+
+    <!-- CTA Buttons -->
+    <div class="cta-section">
+      <button class="btn btn--primary">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        登入以點亮這顆星
+      </button>
+
+      <button class="btn btn--outline">
+        以訪客身份探索
+      </button>
+    </div>
+
+    <!-- Helper Text -->
+    <p class="helper-text">使用 Google 帳號保存進度</p>
+  </main>
+
+  <!-- Loading State -->
+  <div class="loading-state state" id="state-loading">
+    <div class="loading-portal">
+      <div class="loading-ring"></div>
+      <div class="loading-ring"></div>
+      <div class="loading-ring"></div>
+      <div class="loading-star">✦</div>
+    </div>
+    <p class="loading-text">探索中...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state state" id="state-error">
+    <div class="error-portal">
+      <div class="error-ring"></div>
+      <div class="error-ring"></div>
+      <div class="error-ring"></div>
+      <div class="error-center">🌑</div>
+    </div>
+    <h2 class="error-title">找不到這個關卡</h2>
+    <p class="error-desc">請確認 QR code 是否正確</p>
+    <button class="btn btn--outline">返回首頁</button>
+  </div>
+
+  <!-- Demo Controls -->
+  <nav class="demo-controls">
+    <button class="demo-btn active" onclick="showState('normal')">正常</button>
+    <button class="demo-btn" onclick="showState('loading')">載入中</button>
+    <button class="demo-btn" onclick="showState('error')">錯誤</button>
+  </nav>
+
+  <script>
+    function showState(state) {
+      document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+      document.getElementById('state-' + state).classList.add('active');
+
+      document.querySelectorAll('.demo-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
