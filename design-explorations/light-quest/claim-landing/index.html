@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claim Landing Variations | Light Quest 設計探索</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Base palette */
+      --void: #0a0a12;
+      --deep-space: #12121f;
+      --nebula: #1a1a2e;
+      --twilight: #252542;
+      --stardust: #3d3d5c;
+
+      --copper: #b87333;
+      --gold: #c9a962;
+      --gold-light: #e8d5a3;
+
+      --aurora-cyan: #5ce1e6;
+      --aurora-purple: #9b5de5;
+      --aurora-pink: #f15bb5;
+
+      --star-white: #faf8f5;
+      --star-warm: #fff4e6;
+
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', 'Noto Sans TC', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--void);
+      color: var(--star-white);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    ::selection {
+      background: var(--aurora-cyan);
+      color: var(--void);
+    }
+
+    /* ========================================
+       COSMIC BACKGROUND
+    ======================================== */
+    .cosmic-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .cosmic-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155, 93, 229, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(241, 91, 181, 0.08), transparent),
+        radial-gradient(ellipse 50% 30% at 20% 80%, rgba(92, 225, 230, 0.06), transparent),
+        linear-gradient(180deg, var(--void) 0%, var(--deep-space) 50%, var(--nebula) 100%);
+    }
+
+    .stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 20px 30px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 40px 70px, var(--star-warm), transparent),
+        radial-gradient(1.5px 1.5px at 90px 40px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 160px 120px, var(--gold-light), transparent),
+        radial-gradient(1.5px 1.5px at 230px 80px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 300px 150px, var(--aurora-cyan), transparent),
+        radial-gradient(1.5px 1.5px at 50px 180px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 180px 220px, var(--star-warm), transparent);
+      background-size: 350px 350px;
+      opacity: 0.7;
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg);
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: var(--space-md) 0;
+      background: rgba(10, 10, 18, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(201, 169, 98, 0.1);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: rgba(250, 248, 245, 0.6);
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--star-white);
+    }
+
+    .back-link svg {
+      transition: transform 0.2s;
+    }
+
+    .back-link:hover svg {
+      transform: translateX(-4px);
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       PAGE HERO
+    ======================================== */
+    .page-hero {
+      padding: var(--space-3xl) 0 var(--space-2xl);
+      text-align: center;
+      position: relative;
+    }
+
+    .page-hero__icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-lg);
+      filter: drop-shadow(0 0 30px rgba(201, 169, 98, 0.5));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .page-hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 400;
+      margin-bottom: var(--space-md);
+      letter-spacing: -0.02em;
+    }
+
+    .page-hero__title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .page-hero__desc {
+      font-size: 1rem;
+      color: rgba(250, 248, 245, 0.65);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    /* ========================================
+       QUICK NAV
+    ======================================== */
+    .quick-nav {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: var(--space-lg) 0;
+      flex-wrap: wrap;
+    }
+
+    .quick-nav__link {
+      padding: var(--space-sm) var(--space-md);
+      background: rgba(250, 248, 245, 0.05);
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-sm);
+      color: rgba(250, 248, 245, 0.7);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      transition: all 0.3s;
+    }
+
+    .quick-nav__link:hover {
+      background: rgba(201, 169, 98, 0.15);
+      border-color: rgba(201, 169, 98, 0.3);
+      color: var(--gold);
+    }
+
+    .quick-nav__link--recommended {
+      background: rgba(201, 169, 98, 0.1);
+      border-color: rgba(201, 169, 98, 0.25);
+      color: var(--gold);
+    }
+
+    /* ========================================
+       OPTION SECTIONS
+    ======================================== */
+    .option-section {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid rgba(250, 248, 245, 0.08);
+    }
+
+    .option-header {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .option-badge {
+      flex-shrink: 0;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(18, 18, 31, 0.9));
+      border: 1px solid rgba(201, 169, 98, 0.2);
+      border-radius: var(--radius-md);
+    }
+
+    .option-badge--a { border-color: rgba(201, 169, 98, 0.4); }
+    .option-badge--b { border-color: rgba(92, 225, 230, 0.4); }
+    .option-badge--c { border-color: rgba(250, 248, 245, 0.2); }
+    .option-badge--d { border-color: rgba(155, 93, 229, 0.4); }
+
+    .option-info {
+      flex: 1;
+    }
+
+    .option-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(250, 248, 245, 0.4);
+      margin-bottom: var(--space-xs);
+    }
+
+    .option-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: var(--space-xs);
+    }
+
+    .option-title--a { color: var(--gold); }
+    .option-title--b { color: var(--aurora-cyan); }
+    .option-title--c { color: var(--star-white); }
+    .option-title--d { color: var(--aurora-purple); }
+
+    .option-subtitle {
+      font-size: 1rem;
+      color: rgba(250, 248, 245, 0.5);
+      margin-bottom: var(--space-md);
+    }
+
+    .option-file {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: rgba(250, 248, 245, 0.4);
+      background: rgba(250, 248, 245, 0.05);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+    }
+
+    /* ========================================
+       SPEC TABLE
+    ======================================== */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: var(--space-xl);
+      background: rgba(26, 26, 46, 0.5);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .spec-table th,
+    .spec-table td {
+      padding: var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid rgba(250, 248, 245, 0.06);
+    }
+
+    .spec-table th {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(250, 248, 245, 0.4);
+      background: rgba(10, 10, 18, 0.5);
+      width: 140px;
+    }
+
+    .spec-table td {
+      font-size: 0.9375rem;
+      color: rgba(250, 248, 245, 0.8);
+    }
+
+    .spec-table tr:last-child th,
+    .spec-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ========================================
+       FEATURES LIST
+    ======================================== */
+    .features-section {
+      margin-bottom: var(--space-xl);
+    }
+
+    .features-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(250, 248, 245, 0.4);
+      margin-bottom: var(--space-md);
+    }
+
+    .features-list {
+      list-style: none;
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .features-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      font-size: 0.9375rem;
+      color: rgba(250, 248, 245, 0.7);
+      padding: var(--space-sm) var(--space-md);
+      background: rgba(250, 248, 245, 0.03);
+      border-radius: var(--radius-sm);
+      border-left: 2px solid rgba(201, 169, 98, 0.3);
+    }
+
+    .features-list li::before {
+      content: '→';
+      color: var(--gold);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* ========================================
+       CTA BUTTON
+    ======================================== */
+    .option-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      background: linear-gradient(135deg, var(--copper), var(--gold));
+      color: var(--void);
+      text-decoration: none;
+      border-radius: 9999px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .option-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(184, 115, 51, 0.4);
+    }
+
+    .option-cta svg {
+      transition: transform 0.3s;
+    }
+
+    .option-cta:hover svg {
+      transform: translateX(4px);
+    }
+
+    /* ========================================
+       OPTION D SPECIAL: HYBRID TABLE
+    ======================================== */
+    .hybrid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: var(--space-xl);
+      background: rgba(26, 26, 46, 0.5);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .hybrid-table th,
+    .hybrid-table td {
+      padding: var(--space-md);
+      text-align: left;
+      border-bottom: 1px solid rgba(250, 248, 245, 0.06);
+    }
+
+    .hybrid-table thead th {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(250, 248, 245, 0.4);
+      background: rgba(10, 10, 18, 0.5);
+    }
+
+    .hybrid-table tbody th {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: rgba(250, 248, 245, 0.6);
+      width: 100px;
+    }
+
+    .hybrid-table td {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.8);
+    }
+
+    .hybrid-table tr:last-child th,
+    .hybrid-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .source-tag {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: var(--space-xs);
+    }
+
+    .source-tag--a {
+      background: rgba(201, 169, 98, 0.2);
+      color: var(--gold);
+    }
+
+    .source-tag--b {
+      background: rgba(92, 225, 230, 0.2);
+      color: var(--aurora-cyan);
+    }
+
+    .source-tag--enhanced {
+      background: rgba(155, 93, 229, 0.2);
+      color: var(--aurora-purple);
+    }
+
+    /* ========================================
+       HIGHLIGHTS SECTION
+    ======================================== */
+    .highlights-section {
+      margin-bottom: var(--space-xl);
+    }
+
+    .highlight-card {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.7), rgba(18, 18, 31, 0.8));
+      border: 1px solid rgba(155, 93, 229, 0.2);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-md);
+    }
+
+    .highlight-card__number {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      color: var(--aurora-purple);
+      margin-bottom: var(--space-xs);
+    }
+
+    .highlight-card__title {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--star-white);
+      margin-bottom: var(--space-sm);
+    }
+
+    .highlight-card__list {
+      list-style: none;
+    }
+
+    .highlight-card__list li {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.65);
+      padding: var(--space-xs) 0;
+      padding-left: var(--space-md);
+      position: relative;
+    }
+
+    .highlight-card__list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--aurora-cyan);
+    }
+
+    /* ========================================
+       COMPARISON SECTION
+    ======================================== */
+    .comparison-section {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid rgba(250, 248, 245, 0.08);
+    }
+
+    .comparison-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-md);
+    }
+
+    .comparison-card {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.6), rgba(18, 18, 31, 0.7));
+      border: 1px solid rgba(250, 248, 245, 0.08);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .comparison-card:hover {
+      border-color: rgba(201, 169, 98, 0.3);
+      transform: translateY(-4px);
+    }
+
+    .comparison-card__icon {
+      font-size: 2rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .comparison-card__label {
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(250, 248, 245, 0.4);
+      margin-bottom: var(--space-xs);
+    }
+
+    .comparison-card__name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+    }
+
+    .comparison-card__tone {
+      font-size: 0.75rem;
+      color: rgba(250, 248, 245, 0.5);
+      margin-bottom: var(--space-md);
+    }
+
+    .comparison-card__link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: 0.75rem;
+      color: var(--gold);
+      text-decoration: none;
+      transition: gap 0.2s;
+    }
+
+    .comparison-card__link:hover {
+      gap: var(--space-sm);
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid rgba(250, 248, 245, 0.08);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.4);
+    }
+
+    .footer-link {
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 768px) {
+      .option-header {
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+
+      .comparison-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .hybrid-table {
+        font-size: 0.875rem;
+      }
+
+      .hybrid-table th,
+      .hybrid-table td {
+        padding: var(--space-sm);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-nav {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .quick-nav__link {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg">
+    <div class="stars"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Light Quest
+        </a>
+        <span class="header-title">Claim Landing Variations</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="page-hero__icon">✨</div>
+        <h1 class="page-hero__title">
+          Claim Landing <em>Variations</em>
+        </h1>
+        <p class="page-hero__desc">
+          當使用者掃描 QR Code 發現新關卡時的著陸頁體驗。四種不同的視覺敘事手法，
+          從戲劇性的發現感到極簡的優雅呈現，以及混合方案的層次展現。
+        </p>
+      </div>
+    </section>
+
+    <!-- Quick Nav -->
+    <nav class="quick-nav">
+      <a href="#option-a" class="quick-nav__link">Option A: Cosmic Discovery</a>
+      <a href="#option-b" class="quick-nav__link">Option B: Portal Reveal</a>
+      <a href="#option-c" class="quick-nav__link">Option C: Elegant Minimal</a>
+      <a href="#option-d" class="quick-nav__link quick-nav__link--recommended">Option D: Starlight Portal</a>
+    </nav>
+
+    <!-- Option A: Cosmic Discovery -->
+    <section id="option-a" class="option-section">
+      <div class="container">
+        <div class="option-header">
+          <div class="option-badge option-badge--a">✨</div>
+          <div class="option-info">
+            <p class="option-label">Option A</p>
+            <h2 class="option-title option-title--a">Cosmic Discovery</h2>
+            <p class="option-subtitle">宇宙發現 — 聚焦於「發現星星」的驚喜時刻</p>
+            <span class="option-file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              claim-landing-option-a-cosmic-discovery.html
+            </span>
+          </div>
+        </div>
+
+        <table class="spec-table">
+          <tr>
+            <th>設計理念</th>
+            <td>聚焦於「發現星星」的驚喜時刻</td>
+          </tr>
+          <tr>
+            <th>視覺焦點</th>
+            <td>巨大發光星星 (✨) + 雙層脈動光暈</td>
+          </tr>
+          <tr>
+            <th>情感調性</th>
+            <td>熱情、驚喜、遊戲感</td>
+          </tr>
+          <tr>
+            <th>動畫強度</th>
+            <td>豐富 (脈動 + 漂浮 + 入場漸變)</td>
+          </tr>
+          <tr>
+            <th>適合情境</th>
+            <td>活潑的活動氛圍、年輕族群</td>
+          </tr>
+          <tr>
+            <th>按鈕樣式</th>
+            <td>圓角膠囊 (pill)</td>
+          </tr>
+        </table>
+
+        <div class="features-section">
+          <h3 class="features-title">設計特色</h3>
+          <ul class="features-list">
+            <li>星星脈動動畫創造視覺吸引力</li>
+            <li>Aurora-cyan 邊框的關卡資訊卡片</li>
+            <li>漸進式入場動畫 (staggered fade-in)</li>
+          </ul>
+        </div>
+
+        <a href="claim-landing-option-a-cosmic-discovery.html" class="option-cta">
+          查看互動原型
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Option B: Portal Reveal -->
+    <section id="option-b" class="option-section">
+      <div class="container">
+        <div class="option-header">
+          <div class="option-badge option-badge--b">⭐</div>
+          <div class="option-info">
+            <p class="option-label">Option B</p>
+            <h2 class="option-title option-title--b">Portal Reveal</h2>
+            <p class="option-subtitle">傳送門揭示 — 創造「穿越傳送門」的空間感</p>
+            <span class="option-file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              claim-landing-option-b-portal-reveal.html
+            </span>
+          </div>
+        </div>
+
+        <table class="spec-table">
+          <tr>
+            <th>設計理念</th>
+            <td>創造「穿越傳送門」的空間感</td>
+          </tr>
+          <tr>
+            <th>視覺焦點</th>
+            <td>三層旋轉的圓形門戶框架</td>
+          </tr>
+          <tr>
+            <th>情感調性</th>
+            <td>神秘、科幻、探險</td>
+          </tr>
+          <tr>
+            <th>動畫強度</th>
+            <td>精緻但克制 (旋轉環 + 中心脈動)</td>
+          </tr>
+          <tr>
+            <th>適合情境</th>
+            <td>科幻探險主題、進階玩家</td>
+          </tr>
+          <tr>
+            <th>按鈕樣式</th>
+            <td>圓角矩形 (12px radius)</td>
+          </tr>
+        </table>
+
+        <div class="features-section">
+          <h3 class="features-title">設計特色</h3>
+          <ul class="features-list">
+            <li>三色旋轉門戶環 (紫/青/金)</li>
+            <li>每個環上有裝飾圓點標記</li>
+            <li>Loading 狀態使用同款三環設計，保持一致性</li>
+          </ul>
+        </div>
+
+        <a href="claim-landing-option-b-portal-reveal.html" class="option-cta">
+          查看互動原型
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Option C: Elegant Minimal -->
+    <section id="option-c" class="option-section">
+      <div class="container">
+        <div class="option-header">
+          <div class="option-badge option-badge--c">✦</div>
+          <div class="option-info">
+            <p class="option-label">Option C</p>
+            <h2 class="option-title option-title--c">Elegant Minimal</h2>
+            <p class="option-subtitle">極簡優雅 — 讓內容成為焦點</p>
+            <span class="option-file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              claim-landing-option-c-elegant-minimal.html
+            </span>
+          </div>
+        </div>
+
+        <table class="spec-table">
+          <tr>
+            <th>設計理念</th>
+            <td>極簡奢華，讓內容成為焦點</td>
+          </tr>
+          <tr>
+            <th>視覺焦點</th>
+            <td>精緻線條裝飾 + 金色四角框架</td>
+          </tr>
+          <tr>
+            <th>情感調性</th>
+            <td>優雅、成熟、高級感</td>
+          </tr>
+          <tr>
+            <th>動畫強度</th>
+            <td>最低 (只有入場漸變和懸停效果)</td>
+          </tr>
+          <tr>
+            <th>適合情境</th>
+            <td>品牌調性較高端、成熟用戶</td>
+          </tr>
+          <tr>
+            <th>按鈕樣式</th>
+            <td>直角矩形 (4px radius)</td>
+          </tr>
+        </table>
+
+        <div class="features-section">
+          <h3 class="features-title">設計特色</h3>
+          <ul class="features-list">
+            <li>四角金色漸層邊框裝飾</li>
+            <li>寬鬆留白創造呼吸感</li>
+            <li>Loading 使用三點脈動，簡約而不失格調</li>
+          </ul>
+        </div>
+
+        <a href="claim-landing-option-c-elegant-minimal.html" class="option-cta">
+          查看互動原型
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Option D: Starlight Portal -->
+    <section id="option-d" class="option-section">
+      <div class="container">
+        <div class="option-header">
+          <div class="option-badge option-badge--d">🌟</div>
+          <div class="option-info">
+            <p class="option-label">Option D — Recommended</p>
+            <h2 class="option-title option-title--d">Starlight Portal</h2>
+            <p class="option-subtitle">星光傳送門 — 融合 A 與 B 的精華</p>
+            <span class="option-file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              claim-landing-option-d-starlight-portal.html
+            </span>
+          </div>
+        </div>
+
+        <!-- Hybrid Elements Table -->
+        <h3 class="features-title">混合元素清單</h3>
+        <table class="hybrid-table">
+          <thead>
+            <tr>
+              <th>元素</th>
+              <th>來源</th>
+              <th>描述</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>視覺主體</th>
+              <td><span class="source-tag source-tag--a">A</span></td>
+              <td>大尺寸 ✨ 星星 + 雙層脈動光暈</td>
+            </tr>
+            <tr>
+              <th>軌道線條</th>
+              <td><span class="source-tag source-tag--b">B 簡化</span></td>
+              <td>三層傾斜軌道環 (紫/青/金)，帶圓點裝飾</td>
+            </tr>
+            <tr>
+              <th>背景氛圍</th>
+              <td><span class="source-tag source-tag--enhanced">強化</span></td>
+              <td>加大漸層範圍、提高不透明度</td>
+            </tr>
+            <tr>
+              <th>關卡卡片</th>
+              <td><span class="source-tag source-tag--a">A</span></td>
+              <td>aurora-cyan 邊框 + 頂部細線條裝飾</td>
+            </tr>
+            <tr>
+              <th>Loading</th>
+              <td><span class="source-tag source-tag--b">B</span></td>
+              <td>三色旋轉環 + 中央星星脈動</td>
+            </tr>
+            <tr>
+              <th>Error</th>
+              <td><span class="source-tag source-tag--b">B</span></td>
+              <td>虛線門戶 + 暗淡月亮</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Highlights -->
+        <div class="highlights-section">
+          <h3 class="features-title">特色亮點</h3>
+
+          <div class="highlight-card">
+            <p class="highlight-card__number">01</p>
+            <h4 class="highlight-card__title">星星與軌道的融合</h4>
+            <ul class="highlight-card__list">
+              <li>中央星星保持主視覺地位</li>
+              <li>軌道線條為靜態傾斜 (非旋轉)，增添層次但不搶戲</li>
+              <li>三個小圓點沿軌道緩慢運行，增加微妙的動態感</li>
+            </ul>
+          </div>
+
+          <div class="highlight-card">
+            <p class="highlight-card__number">02</p>
+            <h4 class="highlight-card__title">強化的 Aurora 背景</h4>
+            <ul class="highlight-card__list">
+              <li>紫/青/粉三色漸層範圍擴大</li>
+              <li>不透明度從原本的 0.15/0.1/0.08 提升至 0.18/0.12/0.08</li>
+              <li>漸層中心偏向上方，呼應「仰望星空」的意象</li>
+            </ul>
+          </div>
+
+          <div class="highlight-card">
+            <p class="highlight-card__number">03</p>
+            <h4 class="highlight-card__title">Loading 狀態的一致性</h4>
+            <ul class="highlight-card__list">
+              <li>保留 Option B 的三環旋轉設計</li>
+              <li>新增中央星星符號 (✦)，與正常狀態呼應</li>
+              <li>星星有獨立的脈動動畫</li>
+            </ul>
+          </div>
+        </div>
+
+        <a href="claim-landing-option-d-starlight-portal.html" class="option-cta">
+          查看互動原型
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="comparison-section">
+      <div class="container">
+        <h2 class="comparison-title">快速對比</h2>
+        <div class="comparison-grid">
+          <article class="comparison-card">
+            <div class="comparison-card__icon">✨</div>
+            <p class="comparison-card__label">Option A</p>
+            <h3 class="comparison-card__name">Cosmic Discovery</h3>
+            <p class="comparison-card__tone">熱情 · 驚喜 · 遊戲感</p>
+            <a href="claim-landing-option-a-cosmic-discovery.html" class="comparison-card__link">
+              查看 →
+            </a>
+          </article>
+
+          <article class="comparison-card">
+            <div class="comparison-card__icon">⭐</div>
+            <p class="comparison-card__label">Option B</p>
+            <h3 class="comparison-card__name">Portal Reveal</h3>
+            <p class="comparison-card__tone">神秘 · 科幻 · 探險</p>
+            <a href="claim-landing-option-b-portal-reveal.html" class="comparison-card__link">
+              查看 →
+            </a>
+          </article>
+
+          <article class="comparison-card">
+            <div class="comparison-card__icon">✦</div>
+            <p class="comparison-card__label">Option C</p>
+            <h3 class="comparison-card__name">Elegant Minimal</h3>
+            <p class="comparison-card__tone">優雅 · 成熟 · 高級感</p>
+            <a href="claim-landing-option-c-elegant-minimal.html" class="comparison-card__link">
+              查看 →
+            </a>
+          </article>
+
+          <article class="comparison-card">
+            <div class="comparison-card__icon">🌟</div>
+            <p class="comparison-card__label">Option D</p>
+            <h3 class="comparison-card__name">Starlight Portal</h3>
+            <p class="comparison-card__tone">層次 · 神秘 · 科幻感</p>
+            <a href="claim-landing-option-d-starlight-portal.html" class="comparison-card__link">
+              查看 →
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-text">
+        Light Quest 設計探索 · Claim Landing Variations
+        <br>
+        <a href="../index.html" class="footer-link">← 返回專案首頁</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

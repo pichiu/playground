@@ -1267,6 +1267,44 @@
       line-height: 1.7;
     }
 
+    /* Variations CTA */
+    .variations-cta {
+      position: relative;
+      z-index: 1;
+      margin-top: var(--space-xl);
+      text-align: center;
+    }
+
+    .variations-cta__link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      background: linear-gradient(135deg, rgba(155, 93, 229, 0.2), rgba(92, 225, 230, 0.15));
+      border: 1px solid rgba(155, 93, 229, 0.3);
+      border-radius: 9999px;
+      color: #faf8f5;
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .variations-cta__link:hover {
+      background: linear-gradient(135deg, rgba(155, 93, 229, 0.3), rgba(92, 225, 230, 0.25));
+      border-color: rgba(155, 93, 229, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(155, 93, 229, 0.2);
+    }
+
+    .variations-cta__link svg {
+      transition: transform 0.3s;
+    }
+
+    .variations-cta__link:hover svg {
+      transform: translateX(4px);
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .variations-gallery {
@@ -1569,6 +1607,15 @@
       <div class="variations-note">
         <span class="variations-note__icon">💡</span>
         <p>這四個方案皆為「星圖尋旅」設計方向的延伸，展示同一概念下不同的視覺敘事密度。Option D 為 A+B 的混合方案。</p>
+      </div>
+
+      <div class="variations-cta">
+        <a href="claim-landing/index.html" class="variations-cta__link">
+          <span class="variations-cta__text">查看完整設計分析與說明</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
       </div>
     </div>
   </section>
