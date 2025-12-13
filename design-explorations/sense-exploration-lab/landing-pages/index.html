@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>覺青年共學基地 Landing Page 探索 | Design Variations</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Sense Lab Core Palette */
+      --sage: #7c9a92;
+      --sage-deep: #5a7a72;
+      --sage-light: #a8c4bc;
+      --terracotta: #c46b4f;
+      --terracotta-soft: #d4856d;
+      --sand: #e5dcc3;
+      --sand-light: #f5f1eb;
+      --clay: #c9a88e;
+      --cream: #faf8f5;
+      --charcoal: #2d2a26;
+      --charcoal-light: #5a5650;
+
+      /* Typography */
+      --font-display: 'Crimson Pro', 'Noto Serif TC', Georgia, serif;
+      --font-body: 'DM Sans', 'Noto Sans TC', sans-serif;
+      --font-chinese: 'Noto Sans TC', sans-serif;
+      --font-chinese-serif: 'Noto Serif TC', serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--charcoal);
+      line-height: 1.6;
+    }
+
+    /* ========================================
+       INDEX NAVIGATION
+    ======================================== */
+    .index-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .index-header {
+      padding: 2rem 3rem;
+      border-bottom: 1px solid rgba(45, 42, 38, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .index-header__back {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--charcoal-light);
+      font-size: 0.875rem;
+      transition: color 0.3s;
+    }
+
+    .index-header__back:hover {
+      color: var(--sage-deep);
+    }
+
+    .index-header__title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      color: var(--charcoal-light);
+    }
+
+    .index-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem 2rem;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .index-hero__label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      margin-bottom: 1.5rem;
+    }
+
+    .index-hero__title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .index-hero__subtitle {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--charcoal-light);
+      letter-spacing: 0.05em;
+      margin-bottom: 2rem;
+    }
+
+    .index-hero__desc {
+      font-size: 1.0625rem;
+      color: var(--charcoal-light);
+      line-height: 1.9;
+      max-width: 600px;
+    }
+
+    /* Variation Grid */
+    .variations-section {
+      padding: 4rem 3rem 6rem;
+      background: var(--sand-light);
+    }
+
+    .variations-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .variations-header__label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      margin-bottom: 0.75rem;
+    }
+
+    .variations-header__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.75rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+
+    .variations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .variation-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(45, 42, 38, 0.06);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .variation-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(45, 42, 38, 0.12);
+    }
+
+    .variation-card__preview {
+      aspect-ratio: 16/10;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .variation-card__preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .variation-card:hover .variation-card__preview img {
+      transform: scale(1.05);
+    }
+
+    .variation-card__number {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--charcoal);
+    }
+
+    .variation-card__content {
+      padding: 1.5rem;
+    }
+
+    .variation-card__style {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      background: rgba(124, 154, 146, 0.12);
+      padding: 0.25rem 0.75rem;
+      border-radius: 100px;
+      margin-bottom: 0.75rem;
+    }
+
+    .variation-card__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.25rem;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+    }
+
+    .variation-card__subtitle {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-style: italic;
+      color: var(--charcoal-light);
+      margin-bottom: 0.75rem;
+    }
+
+    .variation-card__desc {
+      font-size: 0.875rem;
+      color: var(--charcoal-light);
+      line-height: 1.7;
+    }
+
+    .variation-card__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--sage-deep);
+      transition: gap 0.3s;
+    }
+
+    .variation-card:hover .variation-card__link {
+      gap: 0.75rem;
+    }
+
+    /* Concepts Section */
+    .concepts-section {
+      padding: 5rem 3rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .concepts-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .concepts-header__label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      margin-bottom: 0.75rem;
+    }
+
+    .concepts-header__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.75rem;
+      font-weight: 400;
+    }
+
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .concept-item {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .concept-item__icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--sand-light);
+      border-radius: 50%;
+      font-size: 1.75rem;
+    }
+
+    .concept-item__title {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .concept-item__desc {
+      font-size: 0.875rem;
+      color: var(--charcoal-light);
+      line-height: 1.7;
+    }
+
+    /* Footer */
+    .index-footer {
+      padding: 2rem 3rem;
+      border-top: 1px solid rgba(45, 42, 38, 0.08);
+      text-align: center;
+    }
+
+    .index-footer__text {
+      font-size: 0.8125rem;
+      color: var(--charcoal-light);
+    }
+
+    /* Preview placeholders */
+    .preview-zen {
+      background: linear-gradient(135deg, #faf8f5 0%, #f0ebe3 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-zen::after {
+      content: '覺';
+      font-family: var(--font-chinese-serif);
+      font-size: 4rem;
+      color: var(--sage);
+      opacity: 0.3;
+    }
+
+    .preview-organic {
+      background: linear-gradient(135deg, #e8ede9 0%, #f5f1eb 50%, #fdf6ee 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .preview-organic::before {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%;
+      background: linear-gradient(135deg, var(--sage-light), var(--sage));
+      opacity: 0.4;
+      animation: morph 8s ease-in-out infinite;
+    }
+
+    .preview-organic::after {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 40% 60% 30% 70% / 60% 40% 60% 40%;
+      background: linear-gradient(135deg, var(--terracotta-soft), var(--clay));
+      opacity: 0.3;
+      animation: morph 8s ease-in-out infinite reverse;
+      margin-left: 60px;
+      margin-top: 40px;
+    }
+
+    @keyframes morph {
+      0%, 100% { border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%; }
+      50% { border-radius: 40% 60% 30% 70% / 60% 40% 60% 40%; }
+    }
+
+    .preview-playful {
+      background: linear-gradient(135deg, #f5f1eb 0%, #e8ede9 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-playful::before,
+    .preview-playful::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .preview-playful::before {
+      width: 200px;
+      height: 200px;
+      border: 2px solid var(--sage);
+      opacity: 0.2;
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .preview-playful::after {
+      width: 140px;
+      height: 140px;
+      border: 2px solid var(--terracotta);
+      opacity: 0.2;
+      animation: pulse 4s ease-in-out infinite 1s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.2; }
+      50% { transform: scale(1.1); opacity: 0.4; }
+    }
+
+    @media (max-width: 768px) {
+      .index-header {
+        padding: 1.5rem;
+      }
+
+      .variations-section {
+        padding: 3rem 1.5rem 4rem;
+      }
+
+      .variations-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .concepts-section {
+        padding: 3rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="index-page">
+    <!-- Header -->
+    <header class="index-header">
+      <a href="../index.html" class="index-header__back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        返回總覽
+      </a>
+      <span class="index-header__title">LANDING PAGE EXPLORATION</span>
+    </header>
+
+    <!-- Hero -->
+    <section class="index-hero">
+      <p class="index-hero__label">Design Exploration</p>
+      <h1 class="index-hero__title">Landing Page 方案探索</h1>
+      <p class="index-hero__subtitle">Three distinctive approaches to welcoming awareness</p>
+      <p class="index-hero__desc">
+        基於覺青年共學基地的核心理念——「自覺→覺他」的成長路徑、五感覺察的身體智慧、
+        以及佛道傳統的禪修智慧——我們探索三種截然不同的視覺敘事方式，
+        為不同場景與受眾提供多元的品牌入口體驗。
+      </p>
+    </section>
+
+    <!-- Variations Grid -->
+    <section class="variations-section">
+      <div class="variations-header">
+        <p class="variations-header__label">3 Design Variations</p>
+        <h2 class="variations-header__title">設計方向總覽</h2>
+      </div>
+
+      <div class="variations-grid">
+        <!-- Variation 1: Zen Stillness -->
+        <a href="variation-1-zen.html" class="variation-card">
+          <div class="variation-card__preview preview-zen"></div>
+          <div class="variation-card__content">
+            <span class="variation-card__style">禪定沉靜</span>
+            <h3 class="variation-card__title">虛靜觀照</h3>
+            <p class="variation-card__subtitle">Zen Stillness</p>
+            <p class="variation-card__desc">
+              極簡留白的禪意美學，以呼吸般的動態節奏與大量負空間，
+              引導訪客進入內在覺察的寧靜狀態。
+            </p>
+            <span class="variation-card__link">
+              查看設計
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Variation 2: Organic Bloom -->
+        <a href="variation-2-organic.html" class="variation-card">
+          <div class="variation-card__preview preview-organic"></div>
+          <div class="variation-card__content">
+            <span class="variation-card__style">有機綻放</span>
+            <h3 class="variation-card__title">五覺花開</h3>
+            <p class="variation-card__subtitle">Organic Bloom</p>
+            <p class="variation-card__desc">
+              流動有機的自然形態，以五感體驗為敘事主軸，
+              透過溫暖大地色系營造療癒與成長的氛圍。
+            </p>
+            <span class="variation-card__link">
+              查看設計
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Variation 3: Playful Discovery -->
+        <a href="variation-3-playful.html" class="variation-card">
+          <div class="variation-card__preview preview-playful"></div>
+          <div class="variation-card__content">
+            <span class="variation-card__style">遊心探索</span>
+            <h3 class="variation-card__title">齊物共遊</h3>
+            <p class="variation-card__subtitle">Playful Discovery</p>
+            <p class="variation-card__desc">
+              互動性強的探索體驗，以莊子「遊心」為靈感，
+              結合滾動觸發動畫，讓訪客在玩樂中發現覺察。
+            </p>
+            <span class="variation-card__link">
+              查看設計
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Core Concepts -->
+    <section class="concepts-section">
+      <div class="concepts-header">
+        <p class="concepts-header__label">Design Foundation</p>
+        <h2 class="concepts-header__title">設計核心理念</h2>
+      </div>
+
+      <div class="concepts-grid">
+        <div class="concept-item">
+          <div class="concept-item__icon">🌱</div>
+          <h3 class="concept-item__title">自覺 → 覺他</h3>
+          <p class="concept-item__desc">
+            從自我覺察出發，逐漸擴展到幫助他人。
+            這是貫穿所有設計的核心敘事軸線。
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <div class="concept-item__icon">✋</div>
+          <h3 class="concept-item__title">身體是入口</h3>
+          <p class="concept-item__desc">
+            五感體驗作為覺察的起點，視覺設計
+            需要能喚起身體的感知與記憶。
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <div class="concept-item__icon">☯️</div>
+          <h3 class="concept-item__title">動靜平衡</h3>
+          <p class="concept-item__desc">
+            禪定的內斂與遊心的開展，
+            在介面中創造呼吸般的韻律。
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <div class="concept-item__icon">🤝</div>
+          <h3 class="concept-item__title">齊物共學</h3>
+          <p class="concept-item__desc">
+            跨世代的連結與對話，
+            在設計中體現包容與平等。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="index-footer">
+      <p class="index-footer__text">覺青年共學基地 · Landing Page 設計探索 · 2025</p>
+    </footer>
+  </div>
+</body>
+</html>
