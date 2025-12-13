@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>覺青年共學基地 | 五覺花開</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Organic Bloom Palette - Warm, earthy, healing */
+      --sage: #7c9a92;
+      --sage-deep: #5a7a72;
+      --sage-light: #a8c5bb;
+      --sage-mist: #d4e2dd;
+      --terracotta: #c46b4f;
+      --terracotta-soft: #d4856d;
+      --terracotta-glow: #e6a48d;
+      --sand: #e5dcc3;
+      --sand-light: #f5f0e6;
+      --clay: #c9a88e;
+      --clay-soft: #ddc4ad;
+      --cream: #fdfbf7;
+      --rose-dust: #c4a4a4;
+      --plum: #5e4955;
+      --honey: #d9b86c;
+      --charcoal: #2d2926;
+      --charcoal-soft: #4a4540;
+
+      /* Typography */
+      --font-display: 'Fraunces', 'Noto Serif TC', Georgia, serif;
+      --font-body: 'Outfit', 'Noto Sans TC', sans-serif;
+      --font-chinese: 'Noto Sans TC', sans-serif;
+      --font-chinese-serif: 'Noto Serif TC', serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--charcoal);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--terracotta-soft);
+      color: white;
+    }
+
+    /* ========================================
+       ORGANIC SHAPES BACKGROUND
+    ======================================== */
+    .organic-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .organic-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+    }
+
+    .organic-blob--sage {
+      width: 600px;
+      height: 600px;
+      background: var(--sage-mist);
+      top: -15%;
+      right: -10%;
+      animation: float1 20s ease-in-out infinite;
+    }
+
+    .organic-blob--clay {
+      width: 400px;
+      height: 400px;
+      background: var(--clay-soft);
+      bottom: 10%;
+      left: -5%;
+      animation: float2 18s ease-in-out infinite;
+    }
+
+    .organic-blob--rose {
+      width: 350px;
+      height: 350px;
+      background: var(--rose-dust);
+      top: 40%;
+      left: 50%;
+      opacity: 0.3;
+      animation: float3 22s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(30px, 20px) rotate(5deg); }
+      66% { transform: translate(-20px, -10px) rotate(-3deg); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(20px, -30px) scale(1.05); }
+    }
+
+    @keyframes float3 {
+      0%, 100% { transform: translate(-50%, 0) scale(1); }
+      50% { transform: translate(-50%, 20px) scale(0.95); }
+    }
+
+    /* ========================================
+       NAVIGATION
+    ======================================== */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1.5rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(253, 251, 247, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(45, 41, 38, 0.06);
+    }
+
+    .nav__brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav__logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--sage), var(--terracotta-soft));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav__logo-char {
+      font-family: var(--font-chinese-serif);
+      font-size: 1rem;
+      color: white;
+      font-weight: 400;
+    }
+
+    .nav__name {
+      font-family: var(--font-chinese);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .nav__links {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .nav__link {
+      text-decoration: none;
+      color: var(--charcoal-soft);
+      font-size: 0.8125rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      transition: color 0.3s;
+    }
+
+    .nav__link:hover {
+      color: var(--terracotta);
+    }
+
+    .nav__cta {
+      padding: 0.625rem 1.5rem;
+      background: var(--charcoal);
+      color: white;
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      border-radius: 100px;
+      transition: all 0.3s;
+    }
+
+    .nav__cta:hover {
+      background: var(--terracotta);
+      transform: translateY(-2px);
+    }
+
+    .nav__back {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--charcoal-soft);
+      font-size: 0.8125rem;
+    }
+
+    /* ========================================
+       HERO SECTION
+    ======================================== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 3rem 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero__inner {
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .hero__content {
+      animation: slideUp 1s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--sage-mist);
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero__badge-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--sage);
+      border-radius: 50%;
+    }
+
+    .hero__badge-text {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: var(--sage-deep);
+    }
+
+    .hero__title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 400;
+      line-height: 1.3;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    .hero__subtitle {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--charcoal-soft);
+      letter-spacing: 0.03em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero__desc {
+      font-size: 1.0625rem;
+      font-weight: 300;
+      color: var(--charcoal-soft);
+      line-height: 1.9;
+      max-width: 480px;
+      margin-bottom: 2rem;
+    }
+
+    .hero__desc strong {
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+
+    .hero__actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      border-radius: 100px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn--primary {
+      background: linear-gradient(135deg, var(--sage), var(--sage-deep));
+      color: white;
+      box-shadow: 0 4px 20px rgba(124, 154, 146, 0.3);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(124, 154, 146, 0.4);
+    }
+
+    .btn--secondary {
+      background: white;
+      color: var(--charcoal);
+      border: 1px solid var(--sand);
+    }
+
+    .btn--secondary:hover {
+      border-color: var(--terracotta-soft);
+      color: var(--terracotta);
+    }
+
+    /* Hero Visual */
+    .hero__visual {
+      position: relative;
+      animation: slideUp 1s ease-out 0.2s backwards;
+    }
+
+    .hero__flower {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .petal {
+      position: absolute;
+      width: 45%;
+      height: 45%;
+      border-radius: 70% 30% 70% 30% / 60% 40% 60% 40%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .petal:hover {
+      transform: scale(1.08);
+      z-index: 10;
+    }
+
+    .petal--sight {
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--sage-light), var(--sage));
+      animation: petalFloat 6s ease-in-out infinite;
+    }
+
+    .petal--sound {
+      top: 25%;
+      right: 5%;
+      background: linear-gradient(135deg, var(--clay-soft), var(--clay));
+      animation: petalFloat 6s ease-in-out infinite 1s;
+    }
+
+    .petal--smell {
+      bottom: 15%;
+      right: 15%;
+      background: linear-gradient(135deg, var(--terracotta-glow), var(--terracotta-soft));
+      animation: petalFloat 6s ease-in-out infinite 2s;
+    }
+
+    .petal--taste {
+      bottom: 15%;
+      left: 15%;
+      background: linear-gradient(135deg, var(--honey), #c9a84d);
+      animation: petalFloat 6s ease-in-out infinite 3s;
+    }
+
+    .petal--touch {
+      top: 25%;
+      left: 5%;
+      background: linear-gradient(135deg, var(--rose-dust), #b08a8a);
+      animation: petalFloat 6s ease-in-out infinite 4s;
+    }
+
+    @keyframes petalFloat {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    .petal--sight { animation-name: petalFloatCenter; }
+    @keyframes petalFloatCenter {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-10px); }
+    }
+
+    .petal--sound, .petal--smell, .petal--taste, .petal--touch {
+      animation-name: petalFloatSide;
+    }
+    @keyframes petalFloatSide {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .petal__icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .petal__name {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 500;
+      color: white;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .petal__en {
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      font-style: italic;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .hero__center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 40px rgba(45, 41, 38, 0.1);
+      z-index: 5;
+    }
+
+    .hero__center-char {
+      font-family: var(--font-chinese-serif);
+      font-size: 2.5rem;
+      font-weight: 400;
+      color: var(--charcoal);
+    }
+
+    /* ========================================
+       JOURNEY SECTION
+    ======================================== */
+    .journey {
+      padding: 8rem 3rem;
+      background: var(--sand-light);
+      position: relative;
+      z-index: 1;
+    }
+
+    .journey__inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .journey__header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-subtitle {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--charcoal-soft);
+    }
+
+    .journey__path {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .journey__path::before {
+      content: '';
+      position: absolute;
+      top: 60px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--sage-mist), var(--terracotta-glow), var(--sage-mist));
+      z-index: 0;
+    }
+
+    .journey__step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      padding: 0 1rem;
+    }
+
+    .journey__step-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 30px rgba(45, 41, 38, 0.08);
+      transition: all 0.4s;
+    }
+
+    .journey__step:hover .journey__step-icon {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(45, 41, 38, 0.12);
+    }
+
+    .journey__step-icon span {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.75rem;
+      font-weight: 400;
+    }
+
+    .journey__step-title {
+      font-family: var(--font-chinese);
+      font-size: 1.0625rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .journey__step-en {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-style: italic;
+      color: var(--charcoal-soft);
+      margin-bottom: 0.75rem;
+    }
+
+    .journey__step-desc {
+      font-size: 0.875rem;
+      font-weight: 300;
+      color: var(--charcoal-soft);
+      line-height: 1.7;
+    }
+
+    /* ========================================
+       ACTIVITIES SECTION
+    ======================================== */
+    .activities {
+      padding: 8rem 3rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .activities__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .activities__header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .activities__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .activity-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(45, 41, 38, 0.06);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .activity-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 50px rgba(45, 41, 38, 0.12);
+    }
+
+    .activity-card__visual {
+      height: 160px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .activity-card__visual--sound {
+      background: linear-gradient(135deg, var(--sage-light) 0%, var(--sage) 100%);
+    }
+
+    .activity-card__visual--story {
+      background: linear-gradient(135deg, var(--honey) 0%, #c9a84d 100%);
+    }
+
+    .activity-card__visual--dance {
+      background: linear-gradient(135deg, var(--rose-dust) 0%, #b08a8a 100%);
+    }
+
+    .activity-card__visual--aroma {
+      background: linear-gradient(135deg, var(--terracotta-glow) 0%, var(--terracotta-soft) 100%);
+    }
+
+    .activity-card__visual--nature {
+      background: linear-gradient(135deg, var(--sage-mist) 0%, var(--sage-light) 100%);
+    }
+
+    .activity-card__visual--yoga {
+      background: linear-gradient(135deg, var(--clay-soft) 0%, var(--clay) 100%);
+    }
+
+    .activity-card__visual-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      opacity: 0.8;
+    }
+
+    .activity-card__visual-shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+    }
+
+    .activity-card__visual-shape--1 {
+      width: 100px;
+      height: 100px;
+      top: -30px;
+      right: -30px;
+    }
+
+    .activity-card__visual-shape--2 {
+      width: 60px;
+      height: 60px;
+      bottom: -20px;
+      left: 20px;
+    }
+
+    .activity-card__content {
+      padding: 1.5rem;
+    }
+
+    .activity-card__tags {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .activity-card__tag {
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.625rem;
+      border-radius: 100px;
+      background: var(--sand-light);
+      color: var(--charcoal-soft);
+    }
+
+    .activity-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1.125rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .activity-card__desc {
+      font-size: 0.875rem;
+      font-weight: 300;
+      color: var(--charcoal-soft);
+      line-height: 1.7;
+    }
+
+    /* ========================================
+       FAMILY SECTION
+    ======================================== */
+    .family {
+      padding: 8rem 3rem;
+      background: linear-gradient(180deg, var(--cream) 0%, var(--sage-mist) 100%);
+      position: relative;
+      z-index: 1;
+    }
+
+    .family__inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .family__header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .family__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .family-card {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(45, 41, 38, 0.06);
+      transition: all 0.4s;
+    }
+
+    .family-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(45, 41, 38, 0.1);
+    }
+
+    .family-card__icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.25rem;
+      background: var(--sand-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .family-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1.0625rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    .family-card__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .family-card__tag {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--charcoal-soft);
+      padding: 0.25rem 0.75rem;
+      background: var(--sand-light);
+      border-radius: 100px;
+    }
+
+    /* ========================================
+       CTA SECTION
+    ======================================== */
+    .cta {
+      padding: 8rem 3rem;
+      background: var(--charcoal);
+      color: white;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .cta__bg-shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(124, 154, 146, 0.1);
+    }
+
+    .cta__bg-shape--1 {
+      width: 500px;
+      height: 500px;
+      top: -200px;
+      right: -100px;
+    }
+
+    .cta__bg-shape--2 {
+      width: 300px;
+      height: 300px;
+      bottom: -100px;
+      left: -50px;
+    }
+
+    .cta__inner {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta__title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 400;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .cta__subtitle {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-style: italic;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 2.5rem;
+    }
+
+    .cta__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2.5rem;
+      background: linear-gradient(135deg, var(--sage), var(--terracotta-soft));
+      color: white;
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      border-radius: 100px;
+      transition: all 0.4s;
+    }
+
+    .cta__btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(196, 107, 79, 0.3);
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .footer {
+      padding: 3rem;
+      background: var(--charcoal);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer__brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .footer__logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--sage), var(--terracotta-soft));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer__logo-char {
+      font-family: var(--font-chinese-serif);
+      font-size: 0.875rem;
+      color: white;
+    }
+
+    .footer__name {
+      font-family: var(--font-chinese);
+      font-size: 0.875rem;
+      color: white;
+    }
+
+    .footer__links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .footer__link {
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      transition: color 0.3s;
+    }
+
+    .footer__link:hover {
+      color: white;
+    }
+
+    /* ========================================
+       DESIGN LABEL
+    ======================================== */
+    .design-label {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 100;
+      background: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 100px;
+      box-shadow: 0 4px 20px rgba(45, 41, 38, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--charcoal);
+      transition: all 0.3s;
+    }
+
+    .design-label:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(45, 41, 38, 0.15);
+    }
+
+    .design-label__badge {
+      font-size: 0.5rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--terracotta);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .design-label__text {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 1024px) {
+      .hero__inner {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+
+      .hero__flower {
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      .activities__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav {
+        padding: 1rem 1.5rem;
+      }
+
+      .nav__links {
+        display: none;
+      }
+
+      .hero {
+        padding: 6rem 1.5rem 3rem;
+      }
+
+      .journey__path {
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .journey__path::before {
+        display: none;
+      }
+
+      .activities__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .family__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer__inner {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Organic Background -->
+  <div class="organic-bg">
+    <div class="organic-blob organic-blob--sage"></div>
+    <div class="organic-blob organic-blob--clay"></div>
+    <div class="organic-blob organic-blob--rose"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="index.html" class="nav__back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      返回總覽
+    </a>
+    <div class="nav__links">
+      <a href="#journey" class="nav__link">覺醒之路</a>
+      <a href="#activities" class="nav__link">共學活動</a>
+      <a href="#family" class="nav__link">家庭覺察</a>
+    </div>
+    <a href="#" class="nav__cta">預約體驗</a>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero__inner">
+      <div class="hero__content">
+        <div class="hero__badge">
+          <span class="hero__badge-dot"></span>
+          <span class="hero__badge-text">A Lab for Sensory Exploration</span>
+        </div>
+        <h1 class="hero__title">覺青年共學基地</h1>
+        <p class="hero__subtitle">Sense Exploration Lab</p>
+        <p class="hero__desc">
+          透過<strong>五感體驗</strong>回到當下，喚醒身體的智慧。
+          在這裡，我們以<strong>覺察</strong>為入口，陪伴親子、年輕人與家長，
+          展開從<strong>自覺到覺他</strong>的成長旅程。
+        </p>
+        <div class="hero__actions">
+          <a href="#" class="btn btn--primary">
+            開始探索
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+          <a href="#journey" class="btn btn--secondary">了解更多</a>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <div class="hero__flower">
+          <!-- Five Petals representing five senses -->
+          <div class="petal petal--sight">
+            <span class="petal__icon">👁</span>
+            <span class="petal__name">視覺</span>
+            <span class="petal__en">Sight</span>
+          </div>
+          <div class="petal petal--sound">
+            <span class="petal__icon">👂</span>
+            <span class="petal__name">聽覺</span>
+            <span class="petal__en">Sound</span>
+          </div>
+          <div class="petal petal--smell">
+            <span class="petal__icon">👃</span>
+            <span class="petal__name">嗅覺</span>
+            <span class="petal__en">Smell</span>
+          </div>
+          <div class="petal petal--taste">
+            <span class="petal__icon">👅</span>
+            <span class="petal__name">味覺</span>
+            <span class="petal__en">Taste</span>
+          </div>
+          <div class="petal petal--touch">
+            <span class="petal__icon">🤚</span>
+            <span class="petal__name">觸覺</span>
+            <span class="petal__en">Touch</span>
+          </div>
+          <div class="hero__center">
+            <span class="hero__center-char">覺</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Journey Section -->
+  <section class="journey" id="journey">
+    <div class="journey__inner">
+      <div class="journey__header">
+        <p class="section-label">Path of Awakening</p>
+        <h2 class="section-title">覺醒之路</h2>
+        <p class="section-subtitle">From self-awareness to awakening others</p>
+      </div>
+
+      <div class="journey__path">
+        <article class="journey__step">
+          <div class="journey__step-icon">
+            <span>自</span>
+          </div>
+          <h3 class="journey__step-title">自我覺察</h3>
+          <p class="journey__step-en">Self-Awareness</p>
+          <p class="journey__step-desc">回到身心，透過五感體驗重新認識自己</p>
+        </article>
+
+        <article class="journey__step">
+          <div class="journey__step-icon">
+            <span>境</span>
+          </div>
+          <h3 class="journey__step-title">環境感知</h3>
+          <p class="journey__step-en">Perception</p>
+          <p class="journey__step-desc">覺察周遭，培養同理與理解的能力</p>
+        </article>
+
+        <article class="journey__step">
+          <div class="journey__step-icon">
+            <span>群</span>
+          </div>
+          <h3 class="journey__step-title">社會參與</h3>
+          <p class="journey__step-en">Engagement</p>
+          <p class="journey__step-desc">跨世代對話，在多元中找到連結</p>
+        </article>
+
+        <article class="journey__step">
+          <div class="journey__step-icon">
+            <span>他</span>
+          </div>
+          <h3 class="journey__step-title">覺他回饋</h3>
+          <p class="journey__step-en">Giving Back</p>
+          <p class="journey__step-desc">受益者成為給予者，傳遞覺察的智慧</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Activities Section -->
+  <section class="activities" id="activities">
+    <div class="activities__inner">
+      <div class="activities__header">
+        <p class="section-label">Offerings</p>
+        <h2 class="section-title">共學活動</h2>
+        <p class="section-subtitle">Experiences for every sense and every age</p>
+      </div>
+
+      <div class="activities__grid">
+        <article class="activity-card">
+          <div class="activity-card__visual activity-card__visual--sound">
+            <span class="activity-card__visual-icon">🔔</span>
+            <div class="activity-card__visual-shape activity-card__visual-shape--1"></div>
+            <div class="activity-card__visual-shape activity-card__visual-shape--2"></div>
+          </div>
+          <div class="activity-card__content">
+            <div class="activity-card__tags">
+              <span class="activity-card__tag">年輕人</span>
+              <span class="activity-card__tag">聽覺</span>
+            </div>
+            <h3 class="activity-card__title">頌缽・聲音療癒</h3>
+            <p class="activity-card__desc">在聲波的震動中，找到內在的寧靜與和諧</p>
+          </div>
+        </article>
+
+        <article class="activity-card">
+          <div class="activity-card__visual activity-card__visual--story">
+            <span class="activity-card__visual-icon">📚</span>
+            <div class="activity-card__visual-shape activity-card__visual-shape--1"></div>
+            <div class="activity-card__visual-shape activity-card__visual-shape--2"></div>
+          </div>
+          <div class="activity-card__content">
+            <div class="activity-card__tags">
+              <span class="activity-card__tag">親子</span>
+              <span class="activity-card__tag">視覺</span>
+            </div>
+            <h3 class="activity-card__title">親子繪本・故事屋</h3>
+            <p class="activity-card__desc">透過故事培養情緒覺察與同理心</p>
+          </div>
+        </article>
+
+        <article class="activity-card">
+          <div class="activity-card__visual activity-card__visual--dance">
+            <span class="activity-card__visual-icon">💃</span>
+            <div class="activity-card__visual-shape activity-card__visual-shape--1"></div>
+            <div class="activity-card__visual-shape activity-card__visual-shape--2"></div>
+          </div>
+          <div class="activity-card__content">
+            <div class="activity-card__tags">
+              <span class="activity-card__tag">年輕人</span>
+              <span class="activity-card__tag">觸覺</span>
+            </div>
+            <h3 class="activity-card__title">舞動・身體覺察</h3>
+            <p class="activity-card__desc">自由表達，在律動中釋放情緒</p>
+          </div>
+        </article>
+
+        <article class="activity-card">
+          <div class="activity-card__visual activity-card__visual--aroma">
+            <span class="activity-card__visual-icon">🌸</span>
+            <div class="activity-card__visual-shape activity-card__visual-shape--1"></div>
+            <div class="activity-card__visual-shape activity-card__visual-shape--2"></div>
+          </div>
+          <div class="activity-card__content">
+            <div class="activity-card__tags">
+              <span class="activity-card__tag">全齡</span>
+              <span class="activity-card__tag">嗅覺</span>
+            </div>
+            <h3 class="activity-card__title">芳香精油工作坊</h3>
+            <p class="activity-card__desc">透過氣味回到當下，身心放鬆</p>
+          </div>
+        </article>
+
+        <article class="activity-card">
+          <div class="activity-card__visual activity-card__visual--nature">
+            <span class="activity-card__visual-icon">🌿</span>
+            <div class="activity-card__visual-shape activity-card__visual-shape--1"></div>
+            <div class="activity-card__visual-shape activity-card__visual-shape--2"></div>
+          </div>
+          <div class="activity-card__content">
+            <div class="activity-card__tags">
+              <span class="activity-card__tag">親子</span>
+              <span class="activity-card__tag">五感</span>
+            </div>
+            <h3 class="activity-card__title">戶外自然探索</h3>
+            <p class="activity-card__desc">五感全開，親子共同體驗大自然</p>
+          </div>
+        </article>
+
+        <article class="activity-card">
+          <div class="activity-card__visual activity-card__visual--yoga">
+            <span class="activity-card__visual-icon">🧘</span>
+            <div class="activity-card__visual-shape activity-card__visual-shape--1"></div>
+            <div class="activity-card__visual-shape activity-card__visual-shape--2"></div>
+          </div>
+          <div class="activity-card__content">
+            <div class="activity-card__tags">
+              <span class="activity-card__tag">親子</span>
+              <span class="activity-card__tag">觸覺</span>
+            </div>
+            <h3 class="activity-card__title">親子瑜伽・舞動</h3>
+            <p class="activity-card__desc">身體連結，在遊戲中律動</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Family Section -->
+  <section class="family" id="family">
+    <div class="family__inner">
+      <div class="family__header">
+        <p class="section-label">Family Awareness</p>
+        <h2 class="section-title">家庭中的覺</h2>
+        <p class="section-subtitle">先照顧好自己，才有能量照顧關係和孩子</p>
+      </div>
+
+      <div class="family__grid">
+        <article class="family-card">
+          <div class="family-card__icon">🧘‍♀️</div>
+          <h3 class="family-card__title">家長自己</h3>
+          <div class="family-card__tags">
+            <span class="family-card__tag">療癒</span>
+            <span class="family-card__tag">成長</span>
+            <span class="family-card__tag">自我照顧</span>
+          </div>
+        </article>
+
+        <article class="family-card">
+          <div class="family-card__icon">💑</div>
+          <h3 class="family-card__title">伴侶關係</h3>
+          <div class="family-card__tags">
+            <span class="family-card__tag">溝通</span>
+            <span class="family-card__tag">接納</span>
+            <span class="family-card__tag">連結</span>
+          </div>
+        </article>
+
+        <article class="family-card">
+          <div class="family-card__icon">👶</div>
+          <h3 class="family-card__title">孩子成長</h3>
+          <div class="family-card__tags">
+            <span class="family-card__tag">探索</span>
+            <span class="family-card__tag">情緒</span>
+            <span class="family-card__tag">好奇</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="cta__bg-shape cta__bg-shape--1"></div>
+    <div class="cta__bg-shape cta__bg-shape--2"></div>
+    <div class="cta__inner">
+      <h2 class="cta__title">讓覺察，成為你的日常</h2>
+      <p class="cta__subtitle">Begin your journey of awareness with us</p>
+      <a href="#" class="cta__btn">
+        預約體驗
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <div class="footer__logo">
+          <span class="footer__logo-char">覺</span>
+        </div>
+        <span class="footer__name">覺青年共學基地</span>
+      </div>
+      <div class="footer__links">
+        <a href="#" class="footer__link">關於我們</a>
+        <a href="#" class="footer__link">活動日曆</a>
+        <a href="#" class="footer__link">聯絡方式</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Design Label -->
+  <a href="index.html" class="design-label">
+    <span class="design-label__badge">Var 02</span>
+    <span class="design-label__text">有機綻放 · Organic Bloom</span>
+  </a>
+</body>
+</html>
