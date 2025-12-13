@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心願展示牆 - Option F: Dandelion 蒲公英絮語</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'LXGW WenKai TC', serif;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(180deg,
+        #e8f4f8 0%,
+        #f5f9fc 30%,
+        #fdfaf6 60%,
+        #f8f5ef 100%
+      );
+    }
+
+    /* Soft meadow atmosphere */
+    .atmosphere {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 120% 60% at 20% 100%, rgba(198, 218, 191, 0.3), transparent 50%),
+        radial-gradient(ellipse 100% 50% at 80% 90%, rgba(216, 206, 189, 0.25), transparent 40%),
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(176, 212, 227, 0.2), transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Floating particles - pollen/seeds */
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: radial-gradient(circle, rgba(180, 160, 130, 0.6), transparent);
+      border-radius: 50%;
+      animation: float-particle linear infinite;
+    }
+
+    @keyframes float-particle {
+      0% {
+        transform: translateY(100vh) translateX(0) rotate(0deg);
+        opacity: 0;
+      }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.4; }
+      100% {
+        transform: translateY(-20vh) translateX(100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Ground grass hint */
+    .ground {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(180, 200, 160, 0.08) 40%,
+        rgba(160, 185, 140, 0.15) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Title */
+    .title {
+      position: fixed;
+      top: 50px;
+      left: 60px;
+      z-index: 100;
+      color: rgba(120, 100, 80, 0.5);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 300;
+      font-style: italic;
+      letter-spacing: 0.4em;
+    }
+
+    /* Wishes container */
+    .wishes {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Single wish - dandelion seed style */
+    .wish {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      animation: rise-dandelion linear forwards;
+    }
+
+    /* Dandelion seed head */
+    .wish-seed {
+      position: relative;
+      width: 60px;
+      height: 60px;
+    }
+
+    .wish-seed::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      background: radial-gradient(circle, rgba(160, 140, 100, 0.8), rgba(140, 120, 80, 0.6));
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Seed filaments */
+    .wish-seed::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.9) 0%, transparent 25%),
+        radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.85) 0%, transparent 22%),
+        radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.85) 0%, transparent 22%),
+        radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.8) 0%, transparent 20%),
+        radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.75) 0%, transparent 18%),
+        radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.75) 0%, transparent 18%),
+        radial-gradient(circle at 35% 65%, rgba(255, 255, 255, 0.7) 0%, transparent 18%),
+        radial-gradient(circle at 65% 65%, rgba(255, 255, 255, 0.7) 0%, transparent 18%);
+      filter: blur(1px);
+      animation: seed-pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes seed-pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    }
+
+    /* Wish text */
+    .wish-text {
+      max-width: 320px;
+      font-size: 1.15rem;
+      font-weight: 300;
+      line-height: 1.9;
+      text-align: center;
+      color: rgba(100, 85, 65, 0.85);
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+
+    /* Rising animation with natural sway */
+    @keyframes rise-dandelion {
+      0% {
+        bottom: -15%;
+        opacity: 0;
+        transform: translateX(0) rotate(-5deg);
+      }
+      5% {
+        opacity: 0.3;
+      }
+      12% {
+        opacity: 1;
+        transform: translateX(15px) rotate(3deg);
+      }
+      25% {
+        transform: translateX(-10px) rotate(-2deg);
+      }
+      37% {
+        transform: translateX(20px) rotate(4deg);
+      }
+      50% {
+        transform: translateX(-15px) rotate(-3deg);
+      }
+      62% {
+        transform: translateX(12px) rotate(2deg);
+      }
+      75% {
+        transform: translateX(-8px) rotate(-1deg);
+      }
+      88% {
+        opacity: 1;
+        transform: translateX(10px) rotate(1deg);
+      }
+      95% {
+        opacity: 0.4;
+      }
+      100% {
+        bottom: 110%;
+        opacity: 0;
+        transform: translateX(-5px) rotate(0deg);
+      }
+    }
+
+    /* Duration variations */
+    .wish.speed-1 { animation-duration: 22s; }
+    .wish.speed-2 { animation-duration: 26s; }
+    .wish.speed-3 { animation-duration: 24s; }
+    .wish.speed-4 { animation-duration: 28s; }
+
+    /* QR Section */
+    .qr-section {
+      position: fixed;
+      bottom: 50px;
+      right: 50px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 16px 24px;
+      border-radius: 40px;
+      box-shadow:
+        0 4px 20px rgba(140, 120, 80, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .qr-code {
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 8px;
+      padding: 5px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .qr-text {
+      color: rgba(100, 85, 65, 0.7);
+      font-size: 0.9rem;
+      font-weight: 300;
+      line-height: 1.6;
+    }
+
+    .qr-text span {
+      display: block;
+      font-size: 0.75rem;
+      color: rgba(140, 120, 80, 0.5);
+      margin-top: 2px;
+    }
+
+    /* Stats */
+    .stats {
+      position: fixed;
+      bottom: 50px;
+      left: 60px;
+      z-index: 100;
+      color: rgba(120, 100, 80, 0.6);
+    }
+
+    .stats-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .stats-label {
+      font-size: 0.8rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="atmosphere"></div>
+  <div class="particles" id="particles"></div>
+  <div class="ground"></div>
+
+  <div class="title">wishes in the wind</div>
+
+  <div class="wishes" id="wishes"></div>
+
+  <div class="stats">
+    <div class="stats-number" id="count">1,247</div>
+    <div class="stats-label">心願飄揚</div>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-text">
+      許下心願
+      <span>scan to make a wish</span>
+    </div>
+    <div class="qr-code">
+      <svg viewBox="0 0 100 100" fill="none">
+        <rect width="100" height="100" fill="white"/>
+        <rect x="10" y="10" width="25" height="25" fill="#8a7a60"/>
+        <rect x="13" y="13" width="19" height="19" fill="white"/>
+        <rect x="16" y="16" width="13" height="13" fill="#8a7a60"/>
+        <rect x="65" y="10" width="25" height="25" fill="#8a7a60"/>
+        <rect x="68" y="13" width="19" height="19" fill="white"/>
+        <rect x="71" y="16" width="13" height="13" fill="#8a7a60"/>
+        <rect x="10" y="65" width="25" height="25" fill="#8a7a60"/>
+        <rect x="13" y="68" width="19" height="19" fill="white"/>
+        <rect x="16" y="71" width="13" height="13" fill="#8a7a60"/>
+        <rect x="40" y="10" width="5" height="5" fill="#8a7a60"/>
+        <rect x="50" y="15" width="5" height="5" fill="#8a7a60"/>
+        <rect x="45" y="25" width="5" height="5" fill="#8a7a60"/>
+        <rect x="40" y="40" width="5" height="5" fill="#8a7a60"/>
+        <rect x="50" y="45" width="5" height="5" fill="#8a7a60"/>
+        <rect x="60" y="40" width="5" height="5" fill="#8a7a60"/>
+        <rect x="70" y="50" width="5" height="5" fill="#8a7a60"/>
+        <rect x="80" y="45" width="5" height="5" fill="#8a7a60"/>
+        <rect x="45" y="70" width="5" height="5" fill="#8a7a60"/>
+        <rect x="55" y="75" width="5" height="5" fill="#8a7a60"/>
+        <rect x="65" y="65" width="10" height="10" fill="#8a7a60"/>
+        <rect x="80" y="70" width="10" height="10" fill="#8a7a60"/>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    // Create floating particles
+    const particlesEl = document.getElementById('particles');
+    for (let i = 0; i < 40; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.animationDuration = (15 + Math.random() * 20) + 's';
+      particle.style.animationDelay = Math.random() * 15 + 's';
+      particle.style.width = particle.style.height = (2 + Math.random() * 3) + 'px';
+      particlesEl.appendChild(particle);
+    }
+
+    // Sample wishes
+    const wishes = [
+      '希望能在今年完成我的第一本小說',
+      '願我的家人都能健康平安',
+      '想要去看一次極光',
+      '希望能找到生命中的那個人',
+      '願世界和平，沒有戰爭',
+      '希望我的創業計畫能順利',
+      '想要學會一種樂器',
+      '願我能有勇氣追求自己的夢想',
+      '希望明年能帶爸媽出國旅行',
+      '願所有流浪的動物都能找到溫暖的家',
+      '希望能考上理想的學校',
+      '願我能變得更加自信',
+    ];
+
+    const positions = ['5%', '20%', '35%', '50%', '65%', '80%'];
+    const speeds = ['speed-1', 'speed-2', 'speed-3', 'speed-4'];
+    let wishIndex = 0;
+    let posIndex = 0;
+
+    function addWish() {
+      const container = document.getElementById('wishes');
+      const wish = document.createElement('div');
+      wish.className = 'wish ' + speeds[Math.floor(Math.random() * speeds.length)];
+
+      wish.innerHTML = `
+        <div class="wish-seed"></div>
+        <div class="wish-text">${wishes[wishIndex % wishes.length]}</div>
+      `;
+
+      // Staggered positions with some randomness
+      const basePos = parseFloat(positions[posIndex % positions.length]);
+      const randomOffset = (Math.random() - 0.5) * 8;
+      wish.style.left = (basePos + randomOffset) + '%';
+
+      container.appendChild(wish);
+
+      // Remove after animation
+      setTimeout(() => wish.remove(), 30000);
+
+      wishIndex++;
+      posIndex++;
+    }
+
+    // Initial staggered launch
+    for (let i = 0; i < 5; i++) {
+      setTimeout(addWish, i * 2000);
+    }
+
+    // Continue adding with natural intervals
+    setInterval(addWish, 4000);
+
+    // Update count
+    setInterval(() => {
+      const countEl = document.getElementById('count');
+      const current = parseInt(countEl.textContent.replace(/,/g, ''));
+      countEl.textContent = (current + 1).toLocaleString();
+    }, 12000);
+  </script>
+</body>
+</html>

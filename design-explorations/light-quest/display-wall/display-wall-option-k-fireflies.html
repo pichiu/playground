@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心願展示牆 - Option K: Fireflies 流螢飛舞</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #0a0f0a;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Forest night gradient */
+    .forest-night {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(34, 85, 34, 0.08), transparent),
+        radial-gradient(ellipse 50% 30% at 80% 70%, rgba(34, 68, 51, 0.06), transparent),
+        radial-gradient(ellipse 100% 50% at 50% 100%, rgba(20, 40, 20, 0.2), transparent),
+        linear-gradient(180deg, #050a05 0%, #0a0f0a 50%, #0d140d 100%);
+    }
+
+    /* Canvas for particle animation */
+    #particleCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Wishes container */
+    .wishes {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Single wish with firefly aura */
+    .wish {
+      position: absolute;
+      max-width: 480px;
+      font-size: 1.35rem;
+      font-weight: 300;
+      line-height: 1.9;
+      text-align: center;
+      letter-spacing: 0.08em;
+
+      color: rgba(200, 255, 200, 0.9);
+      text-shadow:
+        0 0 10px rgba(150, 255, 150, 0.4),
+        0 0 20px rgba(100, 200, 100, 0.3),
+        0 0 40px rgba(50, 150, 50, 0.2);
+
+      opacity: 0;
+      animation: firefly-rise 17s ease-out forwards;
+    }
+
+    /* Organic glow halo */
+    .wish::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 130%;
+      height: 250%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        ellipse at center,
+        rgba(100, 200, 100, 0.06) 0%,
+        rgba(50, 150, 50, 0.03) 40%,
+        transparent 70%
+      );
+      filter: blur(10px);
+      z-index: -1;
+      animation: glow-breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes glow-breathe {
+      0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    @keyframes firefly-rise {
+      0% {
+        bottom: -8%;
+        opacity: 0;
+        filter: blur(3px);
+        transform: translateX(-50%);
+      }
+      8% {
+        opacity: 1;
+        filter: blur(0);
+      }
+      92% {
+        opacity: 1;
+        filter: blur(0);
+      }
+      100% {
+        bottom: 105%;
+        opacity: 0;
+        filter: blur(2px);
+        transform: translateX(-50%);
+      }
+    }
+
+    /* Drift variations */
+    .wish.drift-1 { animation: firefly-rise 17s ease-out forwards, wander1 8s ease-in-out infinite; }
+    .wish.drift-2 { animation: firefly-rise 16s ease-out forwards, wander2 9s ease-in-out infinite; }
+    .wish.drift-3 { animation: firefly-rise 18s ease-out forwards, wander3 7s ease-in-out infinite; }
+
+    @keyframes wander1 {
+      0%, 100% { margin-left: 0; }
+      25% { margin-left: 15px; }
+      75% { margin-left: -10px; }
+    }
+    @keyframes wander2 {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: -18px; }
+    }
+    @keyframes wander3 {
+      0%, 100% { margin-left: 0; }
+      33% { margin-left: 12px; }
+      66% { margin-left: -8px; }
+    }
+
+    /* Stats - organic style */
+    .stats {
+      position: fixed;
+      bottom: 50px;
+      left: 50px;
+      z-index: 100;
+    }
+
+    .stats-number {
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: rgba(150, 220, 150, 0.8);
+      text-shadow: 0 0 20px rgba(100, 200, 100, 0.4);
+    }
+
+    .stats-label {
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: rgba(150, 200, 150, 0.5);
+      letter-spacing: 0.3em;
+      margin-top: 8px;
+    }
+
+    /* QR - natural frame */
+    .qr-section {
+      position: fixed;
+      bottom: 50px;
+      right: 50px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .qr-text {
+      font-size: 0.85rem;
+      font-weight: 300;
+      color: rgba(150, 200, 150, 0.6);
+      letter-spacing: 0.15em;
+    }
+
+    .qr-frame {
+      width: 110px;
+      height: 110px;
+      padding: 10px;
+      background: rgba(20, 40, 20, 0.5);
+      border: 1px solid rgba(100, 180, 100, 0.2);
+      box-shadow: 0 0 30px rgba(100, 200, 100, 0.1);
+    }
+
+    .qr-code {
+      width: 100%;
+      height: 100%;
+      background: white;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="forest-night"></div>
+  <canvas id="particleCanvas"></canvas>
+  <div class="wishes" id="wishes"></div>
+
+  <div class="stats">
+    <div class="stats-number" id="count">1,247</div>
+    <div class="stats-label">螢光升空</div>
+  </div>
+
+  <div class="qr-section">
+    <span class="qr-text">掃碼許願</span>
+    <div class="qr-frame">
+      <div class="qr-code">
+        <svg viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" fill="white"/>
+          <rect x="10" y="10" width="25" height="25" fill="#0a0f0a"/>
+          <rect x="13" y="13" width="19" height="19" fill="white"/>
+          <rect x="16" y="16" width="13" height="13" fill="#0a0f0a"/>
+          <rect x="65" y="10" width="25" height="25" fill="#0a0f0a"/>
+          <rect x="68" y="13" width="19" height="19" fill="white"/>
+          <rect x="71" y="16" width="13" height="13" fill="#0a0f0a"/>
+          <rect x="10" y="65" width="25" height="25" fill="#0a0f0a"/>
+          <rect x="13" y="68" width="19" height="19" fill="white"/>
+          <rect x="16" y="71" width="13" height="13" fill="#0a0f0a"/>
+          <rect x="40" y="10" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="50" y="15" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="45" y="25" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="40" y="40" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="50" y="45" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="60" y="40" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="70" y="50" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="80" y="45" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="45" y="70" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="55" y="75" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="65" y="65" width="10" height="10" fill="#0a0f0a"/>
+          <rect x="80" y="70" width="10" height="10" fill="#0a0f0a"/>
+          <rect x="45" y="85" width="5" height="5" fill="#0a0f0a"/>
+          <rect x="60" y="85" width="5" height="5" fill="#0a0f0a"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Particle System
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let animationId;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    class Firefly {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + 20;
+        this.size = Math.random() * 3 + 1;
+        this.speedY = Math.random() * 0.8 + 0.3;
+        this.speedX = (Math.random() - 0.5) * 0.3;
+        this.opacity = 0;
+        this.maxOpacity = Math.random() * 0.6 + 0.2;
+        this.glowPhase = Math.random() * Math.PI * 2;
+        this.glowSpeed = Math.random() * 0.02 + 0.01;
+        this.hue = 80 + Math.random() * 40; // green-yellow range
+      }
+
+      update() {
+        this.y -= this.speedY;
+        this.x += this.speedX + Math.sin(this.y * 0.01) * 0.2;
+        this.glowPhase += this.glowSpeed;
+
+        // Fade in/out
+        if (this.y > canvas.height * 0.9) {
+          this.opacity = Math.min(this.opacity + 0.02, this.maxOpacity);
+        } else if (this.y < canvas.height * 0.1) {
+          this.opacity -= 0.02;
+        }
+
+        // Glow pulsation
+        this.currentOpacity = this.opacity * (0.5 + 0.5 * Math.sin(this.glowPhase));
+
+        if (this.y < -20 || this.opacity <= 0) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        if (this.currentOpacity <= 0) return;
+
+        // Outer glow
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.size * 8
+        );
+        gradient.addColorStop(0, `hsla(${this.hue}, 80%, 70%, ${this.currentOpacity})`);
+        gradient.addColorStop(0.3, `hsla(${this.hue}, 70%, 50%, ${this.currentOpacity * 0.5})`);
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 8, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${this.hue}, 80%, 80%, ${this.currentOpacity})`;
+        ctx.fill();
+      }
+    }
+
+    // Create fireflies
+    for (let i = 0; i < 80; i++) {
+      const firefly = new Firefly();
+      firefly.y = Math.random() * canvas.height;
+      firefly.opacity = firefly.maxOpacity;
+      particles.push(firefly);
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      animationId = requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Wishes
+    const wishes = [
+      '希望能在森林裡建一座小木屋',
+      '願我的家人都能健康平安',
+      '想要在夏夜裡看滿天螢火蟲',
+      '希望能找到生命中的那個人',
+      '願大自然永遠這麼美麗',
+      '希望我的創業計畫能順利',
+      '想要學會與自然共處',
+      '願我能有勇氣追求夢想',
+      '希望明年能帶爸媽去露營',
+      '願所有生命都能自由飛翔',
+      '希望能考上理想的學校',
+      '願我能變得更加平靜',
+    ];
+
+    const columns = ['10%', '28%', '50%', '72%', '90%'];
+    const drifts = ['drift-1', 'drift-2', 'drift-3'];
+    let wishIndex = 0;
+    let colIndex = 0;
+
+    function addWish() {
+      const container = document.getElementById('wishes');
+      const wish = document.createElement('div');
+      wish.className = 'wish ' + drifts[Math.floor(Math.random() * 3)];
+      wish.textContent = wishes[wishIndex % wishes.length];
+      wish.style.left = columns[colIndex % columns.length];
+
+      container.appendChild(wish);
+      setTimeout(() => wish.remove(), 18000);
+
+      wishIndex++;
+      colIndex++;
+    }
+
+    columns.forEach((_, i) => setTimeout(addWish, i * 1100));
+    setInterval(addWish, 3200);
+
+    setInterval(() => {
+      const countEl = document.getElementById('count');
+      const current = parseInt(countEl.textContent.replace(',', ''));
+      countEl.textContent = (current + 1).toLocaleString();
+    }, 10000);
+  </script>
+</body>
+</html>

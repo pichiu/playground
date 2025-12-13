@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心願展示牆 - Option E: 墨煙飄渺</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background: #f5f0e8;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Rice paper texture background */
+    .paper {
+      position: fixed;
+      inset: 0;
+      background:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+        linear-gradient(180deg,
+          #f5f0e8 0%,
+          #ebe5d9 30%,
+          #e0d9cc 70%,
+          #d5cec0 100%
+        );
+    }
+
+    /* Ink wash effect at edges */
+    .ink-wash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 30% 50% at 0% 50%, rgba(45, 40, 35, 0.06), transparent),
+        radial-gradient(ellipse 30% 50% at 100% 50%, rgba(45, 40, 35, 0.06), transparent),
+        radial-gradient(ellipse 80% 20% at 50% 0%, rgba(45, 40, 35, 0.04), transparent),
+        radial-gradient(ellipse 80% 30% at 50% 100%, rgba(45, 40, 35, 0.08), transparent);
+    }
+
+    /* Floating ink particles */
+    .ink-particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .ink-drop {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(45, 40, 35, 0.15);
+      border-radius: 50%;
+      filter: blur(2px);
+      animation: ink-float 20s ease-out infinite;
+    }
+
+    @keyframes ink-float {
+      0% {
+        transform: translateY(100vh) scale(1);
+        opacity: 0;
+      }
+      10% { opacity: 0.4; }
+      90% { opacity: 0.1; }
+      100% {
+        transform: translateY(-20vh) scale(0.5);
+        opacity: 0;
+      }
+    }
+
+    /* Seal stamp - top corner */
+    .seal {
+      position: fixed;
+      top: 40px;
+      right: 50px;
+      width: 80px;
+      height: 80px;
+      z-index: 100;
+    }
+
+    .seal-inner {
+      width: 100%;
+      height: 100%;
+      border: 3px solid #c23a2b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 2rem;
+      color: #c23a2b;
+      transform: rotate(-5deg);
+      opacity: 0.85;
+    }
+
+    /* Wishes container */
+    .wishes {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Single wish - ink smoke style */
+    .wish {
+      position: absolute;
+      max-width: 450px;
+      font-size: 1.5rem;
+      font-weight: 300;
+      line-height: 2;
+      text-align: center;
+      letter-spacing: 0.15em;
+      color: rgba(45, 40, 35, 0.85);
+
+      opacity: 0;
+      animation: smoke-rise 16s cubic-bezier(0.1, 0.4, 0.2, 1) forwards;
+    }
+
+    /* Ink diffusion effect */
+    .wish::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 150%;
+      height: 300%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        ellipse at center,
+        rgba(45, 40, 35, 0.03) 0%,
+        transparent 60%
+      );
+      filter: blur(20px);
+      z-index: -1;
+    }
+
+    /* Smoke trail */
+    .wish::after {
+      content: '';
+      position: absolute;
+      bottom: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      height: 120px;
+      background: linear-gradient(
+        180deg,
+        rgba(45, 40, 35, 0.2) 0%,
+        rgba(45, 40, 35, 0.05) 50%,
+        transparent 100%
+      );
+      filter: blur(3px);
+    }
+
+    @keyframes smoke-rise {
+      0% {
+        bottom: -5%;
+        opacity: 0;
+        filter: blur(6px);
+        transform: translateX(-50%) scale(0.95);
+      }
+      10% {
+        opacity: 0.9;
+        filter: blur(0);
+        transform: translateX(-50%) scale(1);
+      }
+      85% {
+        opacity: 0.9;
+        filter: blur(0);
+      }
+      100% {
+        bottom: 100%;
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateX(-50%) scale(1.02);
+      }
+    }
+
+    /* Drift variations */
+    .wish.drift-1 { animation: smoke-rise 16s cubic-bezier(0.1, 0.4, 0.2, 1) forwards, sway1 10s ease-in-out infinite; }
+    .wish.drift-2 { animation: smoke-rise 17s cubic-bezier(0.1, 0.4, 0.2, 1) forwards, sway2 12s ease-in-out infinite; }
+    .wish.drift-3 { animation: smoke-rise 15s cubic-bezier(0.1, 0.4, 0.2, 1) forwards, sway3 9s ease-in-out infinite; }
+
+    @keyframes sway1 {
+      0%, 100% { margin-left: 0; }
+      33% { margin-left: 15px; }
+      66% { margin-left: -10px; }
+    }
+    @keyframes sway2 {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: -20px; }
+    }
+    @keyframes sway3 {
+      0%, 100% { margin-left: 0; }
+      25% { margin-left: 10px; }
+      75% { margin-left: -15px; }
+    }
+
+    /* Stats - brush stroke style */
+    .stats {
+      position: fixed;
+      bottom: 50px;
+      left: 50px;
+      z-index: 100;
+    }
+
+    .stats-number {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 4rem;
+      color: rgba(45, 40, 35, 0.7);
+      line-height: 1;
+    }
+
+    .stats-label {
+      font-size: 0.9rem;
+      color: rgba(45, 40, 35, 0.5);
+      letter-spacing: 0.5em;
+      margin-top: 8px;
+    }
+
+    /* QR Section - ink stamp style */
+    .qr-section {
+      position: fixed;
+      bottom: 50px;
+      right: 50px;
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+    }
+
+    .qr-text {
+      writing-mode: vertical-rl;
+      font-size: 1rem;
+      color: rgba(45, 40, 35, 0.6);
+      letter-spacing: 0.3em;
+    }
+
+    .qr-frame {
+      width: 110px;
+      height: 110px;
+      padding: 10px;
+      background: rgba(45, 40, 35, 0.03);
+      border: 1px solid rgba(45, 40, 35, 0.15);
+    }
+
+    .qr-code {
+      width: 100%;
+      height: 100%;
+      background: white;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="paper"></div>
+  <div class="ink-wash"></div>
+  <div class="ink-particles" id="particles"></div>
+
+  <div class="seal">
+    <div class="seal-inner">願</div>
+  </div>
+
+  <div class="wishes" id="wishes"></div>
+
+  <div class="stats">
+    <div class="stats-number" id="count">一二四七</div>
+    <div class="stats-label">心願升騰</div>
+  </div>
+
+  <div class="qr-section">
+    <span class="qr-text">掃碼題願</span>
+    <div class="qr-frame">
+      <div class="qr-code">
+        <svg viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" fill="white"/>
+          <rect x="10" y="10" width="25" height="25" fill="#2d2823"/>
+          <rect x="13" y="13" width="19" height="19" fill="white"/>
+          <rect x="16" y="16" width="13" height="13" fill="#2d2823"/>
+          <rect x="65" y="10" width="25" height="25" fill="#2d2823"/>
+          <rect x="68" y="13" width="19" height="19" fill="white"/>
+          <rect x="71" y="16" width="13" height="13" fill="#2d2823"/>
+          <rect x="10" y="65" width="25" height="25" fill="#2d2823"/>
+          <rect x="13" y="68" width="19" height="19" fill="white"/>
+          <rect x="16" y="71" width="13" height="13" fill="#2d2823"/>
+          <rect x="40" y="10" width="5" height="5" fill="#2d2823"/>
+          <rect x="50" y="15" width="5" height="5" fill="#2d2823"/>
+          <rect x="45" y="25" width="5" height="5" fill="#2d2823"/>
+          <rect x="40" y="40" width="5" height="5" fill="#2d2823"/>
+          <rect x="50" y="45" width="5" height="5" fill="#2d2823"/>
+          <rect x="60" y="40" width="5" height="5" fill="#2d2823"/>
+          <rect x="70" y="50" width="5" height="5" fill="#2d2823"/>
+          <rect x="80" y="45" width="5" height="5" fill="#2d2823"/>
+          <rect x="45" y="70" width="5" height="5" fill="#2d2823"/>
+          <rect x="55" y="75" width="5" height="5" fill="#2d2823"/>
+          <rect x="65" y="65" width="10" height="10" fill="#2d2823"/>
+          <rect x="80" y="70" width="10" height="10" fill="#2d2823"/>
+          <rect x="45" y="85" width="5" height="5" fill="#2d2823"/>
+          <rect x="60" y="85" width="5" height="5" fill="#2d2823"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Create ink particles
+    const particles = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const drop = document.createElement('div');
+      drop.className = 'ink-drop';
+      drop.style.left = Math.random() * 100 + '%';
+      drop.style.animationDelay = Math.random() * 20 + 's';
+      drop.style.animationDuration = (15 + Math.random() * 10) + 's';
+      particles.appendChild(drop);
+    }
+
+    // Wishes
+    const wishes = [
+      '願得一心人，白首不相離',
+      '但願人長久，千里共嬋娟',
+      '願家人平安健康',
+      '願心想事成，萬事如意',
+      '願此生不負相遇',
+      '願夢想成真',
+      '願世間美好與你環環相扣',
+      '願時光不老，歲月靜好',
+      '願所有的堅持終有回報',
+      '願你眼中有星辰大海',
+      '願愛與被愛同樣幸運',
+      '願歸來仍是少年',
+    ];
+
+    const columns = ['10%', '30%', '50%', '70%', '90%'];
+    const drifts = ['drift-1', 'drift-2', 'drift-3'];
+    let wishIndex = 0;
+    let colIndex = 0;
+
+    function addWish() {
+      const container = document.getElementById('wishes');
+      const wish = document.createElement('div');
+      wish.className = 'wish ' + drifts[Math.floor(Math.random() * 3)];
+      wish.textContent = wishes[wishIndex % wishes.length];
+      wish.style.left = columns[colIndex % columns.length];
+
+      container.appendChild(wish);
+      setTimeout(() => wish.remove(), 17000);
+
+      wishIndex++;
+      colIndex++;
+    }
+
+    // Staggered start
+    columns.forEach((_, i) => setTimeout(addWish, i * 1000));
+    setInterval(addWish, 3200);
+
+    // Chinese numeral converter
+    function toChineseNum(num) {
+      const chars = ['零','一','二','三','四','五','六','七','八','九'];
+      return String(num).split('').map(d => chars[parseInt(d)]).join('');
+    }
+
+    // Update count
+    let count = 1247;
+    setInterval(() => {
+      count++;
+      document.getElementById('count').textContent = toChineseNum(count);
+    }, 12000);
+  </script>
+</body>
+</html>

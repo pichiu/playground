@@ -29,6 +29,7 @@
       /* Design direction colors */
       --celestial-primary: #0a0a12;
       --celestial-accent: #c9a962;
+      --copper: #b87333;
       --paper-primary: #f8f6f0;
       --paper-accent: #e74c3c;
 
@@ -1305,6 +1306,112 @@
       transform: translateX(4px);
     }
 
+    /* ========================================
+       COMPACT VARIATIONS SECTION
+    ======================================== */
+    .variations-section--compact {
+      padding: var(--space-2xl) 0;
+    }
+
+    .variations-compact {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: var(--space-xl);
+      padding: var(--space-xl);
+      background: linear-gradient(
+        145deg,
+        rgba(26, 26, 46, 0.7) 0%,
+        rgba(18, 18, 31, 0.8) 100%
+      );
+      border: 1px solid rgba(201, 169, 98, 0.15);
+      border-radius: var(--radius-lg);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .variations-compact:hover {
+      border-color: rgba(201, 169, 98, 0.3);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .variations-compact__icon {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: linear-gradient(135deg, rgba(201, 169, 98, 0.15), rgba(155, 93, 229, 0.1));
+      border: 1px solid rgba(201, 169, 98, 0.2);
+      border-radius: var(--radius-md);
+      filter: drop-shadow(0 0 20px rgba(201, 169, 98, 0.3));
+    }
+
+    .variations-compact__content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .variations-compact__desc {
+      font-size: 0.9375rem;
+      color: rgba(250, 248, 245, 0.7);
+      line-height: 1.7;
+      margin-bottom: var(--space-md);
+    }
+
+    .variations-compact__meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .variations-compact__count {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--celestial-accent);
+      background: rgba(201, 169, 98, 0.15);
+      padding: 4px 12px;
+      border-radius: 9999px;
+    }
+
+    .variations-compact__tags {
+      font-size: 0.75rem;
+      color: rgba(250, 248, 245, 0.45);
+      letter-spacing: 0.02em;
+    }
+
+    .variations-compact__link {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-md) var(--space-xl);
+      background: linear-gradient(135deg, var(--copper), var(--celestial-accent));
+      color: var(--celestial-primary);
+      text-decoration: none;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .variations-compact__link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(184, 115, 51, 0.4);
+    }
+
+    .variations-compact__link svg {
+      transition: transform 0.3s;
+    }
+
+    .variations-compact__link:hover svg {
+      transform: translateX(4px);
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .variations-gallery {
@@ -1314,6 +1421,20 @@
 
       .variation-card__preview {
         height: 180px;
+      }
+
+      .variations-compact {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-lg);
+      }
+
+      .variations-compact__meta {
+        justify-content: center;
+      }
+
+      .variations-compact__tags {
+        display: none;
       }
     }
   </style>
@@ -1486,132 +1607,51 @@
   </section>
 
   <!-- Claim Landing Variations -->
-  <section class="variations-section">
+  <section class="variations-section variations-section--compact">
     <div class="container">
       <div class="section-header">
         <p class="section-label">Claim Landing Variations</p>
         <h2 class="section-title">著陸頁創意發想</h2>
       </div>
 
-      <div class="variations-intro">
-        <p>當使用者掃描 QR Code 發現新關卡時的著陸頁體驗。探索三種不同的視覺敘事手法，從戲劇性的發現感到極簡的優雅呈現。</p>
+      <div class="variations-compact">
+        <div class="variations-compact__icon">✨</div>
+        <div class="variations-compact__content">
+          <p class="variations-compact__desc">當使用者掃描 QR Code 發現新關卡時的著陸頁體驗。探索四種不同的視覺敘事手法，從戲劇性的發現感到極簡的優雅呈現。</p>
+          <div class="variations-compact__meta">
+            <span class="variations-compact__count">4 個設計方案</span>
+            <span class="variations-compact__tags">Cosmic Discovery · Portal Reveal · Elegant Minimal · Starlight Portal</span>
+          </div>
+        </div>
+        <a href="claim-landing/index.html" class="variations-compact__link">
+          查看所有方案
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Display Wall Variations -->
+  <section class="variations-section variations-section--compact">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Display Wall Variations</p>
+        <h2 class="section-title">心願展示牆探索</h2>
       </div>
 
-      <div class="variations-gallery">
-        <!-- Option A: Cosmic Discovery -->
-        <article class="variation-card variation-card--featured">
-          <a href="claim-landing/claim-landing-option-a-cosmic-discovery.html" class="variation-card__link">
-            <div class="variation-card__preview variation-preview--cosmic">
-              <div class="preview-cosmic__star">✨</div>
-              <div class="preview-cosmic__glow"></div>
-              <div class="preview-cosmic__particles">
-                <span></span><span></span><span></span><span></span><span></span>
-              </div>
-            </div>
-            <div class="variation-card__content">
-              <span class="variation-card__tag">Option A</span>
-              <h3 class="variation-card__title">Cosmic Discovery</h3>
-              <p class="variation-card__subtitle">宇宙發現</p>
-              <p class="variation-card__desc">聚焦於「發現星星」的驚喜時刻。巨大的發光星星作為視覺中心，脈動動畫創造神秘的發現感。</p>
-              <ul class="variation-card__features">
-                <li>巨大星星視覺焦點</li>
-                <li>脈動光暈動畫</li>
-                <li>懸浮卡片資訊</li>
-              </ul>
-            </div>
-          </a>
-        </article>
-
-        <!-- Option B: Portal Reveal -->
-        <article class="variation-card">
-          <a href="claim-landing/claim-landing-option-b-portal-reveal.html" class="variation-card__link">
-            <div class="variation-card__preview variation-preview--portal">
-              <div class="preview-portal__rings">
-                <span class="ring ring--outer"></span>
-                <span class="ring ring--middle"></span>
-                <span class="ring ring--inner"></span>
-              </div>
-              <div class="preview-portal__center">⭐</div>
-            </div>
-            <div class="variation-card__content">
-              <span class="variation-card__tag">Option B</span>
-              <h3 class="variation-card__title">Portal Reveal</h3>
-              <p class="variation-card__subtitle">傳送門揭示</p>
-              <p class="variation-card__desc">創造「穿越傳送門」的空間感。圓形門戶框架包圍關卡資訊，極光色系強調神秘科幻感。</p>
-              <ul class="variation-card__features">
-                <li>旋轉門戶框架</li>
-                <li>極光色系光暈</li>
-                <li>垂直分層佈局</li>
-              </ul>
-            </div>
-          </a>
-        </article>
-
-        <!-- Option C: Elegant Minimal -->
-        <article class="variation-card">
-          <a href="claim-landing/claim-landing-option-c-elegant-minimal.html" class="variation-card__link">
-            <div class="variation-card__preview variation-preview--minimal">
-              <div class="preview-minimal__line">
-                <span class="line-segment"></span>
-                <span class="line-star">✦</span>
-                <span class="line-segment"></span>
-              </div>
-              <div class="preview-minimal__text">Elegant</div>
-            </div>
-            <div class="variation-card__content">
-              <span class="variation-card__tag">Option C</span>
-              <h3 class="variation-card__title">Elegant Minimal</h3>
-              <p class="variation-card__subtitle">極簡優雅</p>
-              <p class="variation-card__desc">極簡奢華，讓內容成為焦點。精緻的線條與排版，克制的動畫，寬鬆的留白創造呼吸感。</p>
-              <ul class="variation-card__features">
-                <li>精緻線條裝飾</li>
-                <li>克制的微動畫</li>
-                <li>金色角落點綴</li>
-              </ul>
-            </div>
-          </a>
-        </article>
-
-        <!-- Option D: Starlight Portal -->
-        <article class="variation-card variation-card--featured">
-          <a href="claim-landing/claim-landing-option-d-starlight-portal.html" class="variation-card__link">
-            <div class="variation-card__preview variation-preview--starlight">
-              <div class="preview-starlight__orbits">
-                <span class="orbit orbit--outer"></span>
-                <span class="orbit orbit--middle"></span>
-                <span class="orbit orbit--inner"></span>
-              </div>
-              <div class="preview-starlight__glow"></div>
-              <div class="preview-starlight__star">✨</div>
-              <div class="preview-starlight__dots">
-                <span class="dot dot--purple"></span>
-                <span class="dot dot--cyan"></span>
-                <span class="dot dot--gold"></span>
-              </div>
-            </div>
-            <div class="variation-card__content">
-              <span class="variation-card__tag variation-card__tag--new">Option D</span>
-              <h3 class="variation-card__title">Starlight Portal</h3>
-              <p class="variation-card__subtitle">星光傳送門</p>
-              <p class="variation-card__desc">融合 A 與 B 的精華。大尺寸脈動星星結合軌道線條，強化極光氛圍，創造層次豐富的神秘科幻感。</p>
-              <ul class="variation-card__features">
-                <li>星星 + 軌道混合</li>
-                <li>強化極光漸層</li>
-                <li>軌道圓點裝飾</li>
-              </ul>
-            </div>
-          </a>
-        </article>
-      </div>
-
-      <div class="variations-note">
-        <span class="variations-note__icon">💡</span>
-        <p>這四個方案皆為「星圖尋旅」設計方向的延伸，展示同一概念下不同的視覺敘事密度。Option D 為 A+B 的混合方案。</p>
-      </div>
-
-      <div class="variations-cta">
-        <a href="claim-landing/index.html" class="variations-cta__link">
-          <span class="variations-cta__text">查看完整設計分析與說明</span>
+      <div class="variations-compact">
+        <div class="variations-compact__icon">🌠</div>
+        <div class="variations-compact__content">
+          <p class="variations-compact__desc">心願展示牆的多種視覺風格探索。從深空星塵到水墨飄渺、從蒲公英絮語到天燈祈願，為心願創造獨特的視覺載體。</p>
+          <div class="variations-compact__meta">
+            <span class="variations-compact__count">9 個設計方案</span>
+            <span class="variations-compact__tags">Stardust · Ink Smoke · Dandelion · Sky Lantern · Balloon · Feather · Origami · Fireflies · Nebula</span>
+          </div>
+        </div>
+        <a href="display-wall/index.html" class="variations-compact__link">
+          查看所有方案
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7"/>
           </svg>

@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Display Wall Variations | Light Quest 設計探索</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Base palette */
+      --void: #0a0a12;
+      --deep-space: #12121f;
+      --nebula: #1a1a2e;
+      --twilight: #252542;
+      --stardust: #3d3d5c;
+
+      --copper: #b87333;
+      --gold: #c9a962;
+      --gold-light: #e8d5a3;
+
+      --aurora-cyan: #5ce1e6;
+      --aurora-purple: #9b5de5;
+      --aurora-pink: #f15bb5;
+
+      --star-white: #faf8f5;
+      --star-warm: #fff4e6;
+
+      /* Warm palette for some variations */
+      --cream: #fdfbf7;
+      --meadow: #a8c686;
+      --dandelion-white: #fffef5;
+
+      --lantern-gold: #f5a623;
+      --lantern-orange: #e67e22;
+      --sunset: #ff7e5f;
+
+      --balloon-pink: #ffb6c1;
+      --balloon-mint: #98d8c8;
+      --balloon-lavender: #c9b1ff;
+      --balloon-lemon: #fff59d;
+
+      --feather-ivory: #fffff0;
+      --feather-cream: #faf8f0;
+
+      --origami-red: #e63946;
+      --sakura: #ffb7c5;
+
+      --ink-cream: #f5f0e6;
+      --ink-red: #c73c3c;
+
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', 'Noto Sans TC', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-brush: 'Ma Shan Zheng', cursive;
+
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--void);
+      color: var(--star-white);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    ::selection {
+      background: var(--aurora-cyan);
+      color: var(--void);
+    }
+
+    /* ========================================
+       COSMIC BACKGROUND
+    ======================================== */
+    .cosmic-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .cosmic-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155, 93, 229, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(241, 91, 181, 0.08), transparent),
+        radial-gradient(ellipse 50% 30% at 20% 80%, rgba(92, 225, 230, 0.06), transparent),
+        linear-gradient(180deg, var(--void) 0%, var(--deep-space) 50%, var(--nebula) 100%);
+    }
+
+    .stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 20px 30px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 40px 70px, var(--star-warm), transparent),
+        radial-gradient(1.5px 1.5px at 90px 40px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 160px 120px, var(--gold-light), transparent),
+        radial-gradient(1.5px 1.5px at 230px 80px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 300px 150px, var(--aurora-cyan), transparent),
+        radial-gradient(1.5px 1.5px at 50px 180px, var(--star-white), transparent),
+        radial-gradient(1px 1px at 180px 220px, var(--star-warm), transparent);
+      background-size: 350px 350px;
+      opacity: 0.7;
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg);
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: var(--space-md) 0;
+      background: rgba(10, 10, 18, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(201, 169, 98, 0.1);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: rgba(250, 248, 245, 0.6);
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--star-white);
+    }
+
+    .back-link svg {
+      transition: transform 0.2s;
+    }
+
+    .back-link:hover svg {
+      transform: translateX(-4px);
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       PAGE HERO
+    ======================================== */
+    .page-hero {
+      padding: var(--space-3xl) 0 var(--space-2xl);
+      text-align: center;
+      position: relative;
+    }
+
+    .page-hero__icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-lg);
+      filter: drop-shadow(0 0 30px rgba(201, 169, 98, 0.5));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .page-hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 400;
+      margin-bottom: var(--space-md);
+      letter-spacing: -0.02em;
+    }
+
+    .page-hero__title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .page-hero__desc {
+      font-size: 1rem;
+      color: rgba(250, 248, 245, 0.65);
+      max-width: 650px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    /* ========================================
+       QUICK NAV
+    ======================================== */
+    .quick-nav {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: var(--space-lg) 0;
+      flex-wrap: wrap;
+    }
+
+    .quick-nav__link {
+      padding: var(--space-sm) var(--space-md);
+      background: rgba(250, 248, 245, 0.05);
+      border: 1px solid rgba(250, 248, 245, 0.1);
+      border-radius: var(--radius-sm);
+      color: rgba(250, 248, 245, 0.7);
+      text-decoration: none;
+      font-size: 0.75rem;
+      transition: all 0.3s;
+    }
+
+    .quick-nav__link:hover {
+      background: rgba(201, 169, 98, 0.15);
+      border-color: rgba(201, 169, 98, 0.3);
+      color: var(--gold);
+    }
+
+    /* ========================================
+       VARIATIONS GRID
+    ======================================== */
+    .variations-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-lg);
+      padding: var(--space-xl) 0;
+    }
+
+    .variation-card {
+      background: linear-gradient(
+        145deg,
+        rgba(26, 26, 46, 0.7) 0%,
+        rgba(18, 18, 31, 0.8) 100%
+      );
+      border: 1px solid rgba(250, 248, 245, 0.08);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .variation-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(201, 169, 98, 0.25);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .variation-card__link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .variation-card__preview {
+      height: 180px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Preview Styles for each variation */
+    .preview--stardust {
+      background: var(--void);
+    }
+
+    .preview--stardust::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 50%, rgba(201, 169, 98, 0.15), transparent);
+    }
+
+    .preview--stardust__text {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: var(--gold);
+      text-shadow: 0 0 30px rgba(201, 169, 98, 0.8), 0 0 60px rgba(201, 169, 98, 0.4);
+      animation: stardustGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes stardustGlow {
+      from { opacity: 0.7; filter: blur(0); }
+      to { opacity: 1; filter: blur(0.5px); }
+    }
+
+    .preview--ink {
+      background: var(--ink-cream);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    .preview--ink__text {
+      font-family: var(--font-brush);
+      font-size: 2rem;
+      color: #2c2c2c;
+      opacity: 0.7;
+      animation: inkFade 4s ease-in-out infinite;
+    }
+
+    .preview--ink__seal {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 32px;
+      height: 32px;
+      background: var(--ink-red);
+      border-radius: 4px;
+      opacity: 0.8;
+    }
+
+    @keyframes inkFade {
+      0%, 100% { opacity: 0.5; transform: translateY(0); }
+      50% { opacity: 0.8; transform: translateY(-3px); }
+    }
+
+    .preview--dandelion {
+      background: linear-gradient(180deg, #e8f4e8 0%, #f5f9f0 100%);
+    }
+
+    .preview--dandelion__seed {
+      font-size: 1.5rem;
+      animation: seedFloat 6s ease-in-out infinite;
+      opacity: 0.7;
+    }
+
+    .preview--dandelion__seed:nth-child(2) { animation-delay: 1s; margin-left: 40px; }
+    .preview--dandelion__seed:nth-child(3) { animation-delay: 2s; margin-right: 30px; }
+
+    @keyframes seedFloat {
+      0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+      25% { transform: translateY(-15px) translateX(10px) rotate(5deg); }
+      50% { transform: translateY(-5px) translateX(-5px) rotate(-3deg); }
+      75% { transform: translateY(-20px) translateX(5px) rotate(3deg); }
+    }
+
+    .preview--lantern {
+      background: linear-gradient(180deg, #1a1520 0%, #2d1f3d 50%, #ff7e5f 100%);
+    }
+
+    .preview--lantern__glow {
+      font-size: 2.5rem;
+      filter: drop-shadow(0 0 20px rgba(245, 166, 35, 0.8));
+      animation: lanternRise 4s ease-in-out infinite;
+    }
+
+    @keyframes lanternRise {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    .preview--balloon {
+      background: linear-gradient(180deg, #e8f4fc 0%, #fdf6f9 100%);
+    }
+
+    .preview--balloon__items {
+      display: flex;
+      gap: 16px;
+    }
+
+    .preview--balloon__item {
+      font-size: 1.75rem;
+      animation: balloonBounce 3s ease-in-out infinite;
+    }
+
+    .preview--balloon__item:nth-child(2) { animation-delay: 0.3s; }
+    .preview--balloon__item:nth-child(3) { animation-delay: 0.6s; }
+    .preview--balloon__item:nth-child(4) { animation-delay: 0.9s; }
+
+    @keyframes balloonBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .preview--feather {
+      background: var(--feather-cream);
+    }
+
+    .preview--feather__item {
+      font-size: 2rem;
+      opacity: 0.6;
+      animation: featherSway 5s ease-in-out infinite;
+    }
+
+    @keyframes featherSway {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(15px) rotate(5deg); }
+      75% { transform: translateX(-15px) rotate(-5deg); }
+    }
+
+    .preview--origami {
+      background: linear-gradient(180deg, #fff5f5 0%, #ffeef0 100%);
+    }
+
+    .preview--origami__crane {
+      font-size: 2.5rem;
+      animation: craneFly 4s ease-in-out infinite;
+    }
+
+    .preview--origami__petals {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .preview--origami__petals span {
+      position: absolute;
+      font-size: 0.75rem;
+      opacity: 0.5;
+      animation: petalFall 8s linear infinite;
+    }
+
+    .preview--origami__petals span:nth-child(1) { left: 20%; animation-delay: 0s; }
+    .preview--origami__petals span:nth-child(2) { left: 50%; animation-delay: 2s; }
+    .preview--origami__petals span:nth-child(3) { left: 80%; animation-delay: 4s; }
+
+    @keyframes craneFly {
+      0%, 100% { transform: translateY(0) rotate(-3deg); }
+      50% { transform: translateY(-8px) rotate(3deg); }
+    }
+
+    @keyframes petalFall {
+      0% { top: -10%; opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { top: 110%; opacity: 0; transform: translateX(20px) rotate(180deg); }
+    }
+
+    /* Fireflies Preview */
+    .preview--fireflies {
+      background: linear-gradient(180deg, #050a05 0%, #0a0f0a 50%, #0d140d 100%);
+      position: relative;
+    }
+
+    .preview--fireflies__glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 40% at 50% 60%, rgba(100, 200, 100, 0.1), transparent);
+    }
+
+    .preview--fireflies__particles span {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: radial-gradient(circle, rgba(150, 255, 150, 0.9), rgba(100, 200, 100, 0.4), transparent);
+      border-radius: 50%;
+      animation: fireflyFloat 4s ease-in-out infinite;
+      box-shadow: 0 0 10px rgba(150, 255, 150, 0.6), 0 0 20px rgba(100, 200, 100, 0.3);
+    }
+
+    .preview--fireflies__particles span:nth-child(1) { left: 20%; top: 30%; animation-delay: 0s; }
+    .preview--fireflies__particles span:nth-child(2) { left: 50%; top: 50%; animation-delay: 0.8s; }
+    .preview--fireflies__particles span:nth-child(3) { left: 75%; top: 25%; animation-delay: 1.6s; }
+    .preview--fireflies__particles span:nth-child(4) { left: 35%; top: 70%; animation-delay: 2.4s; }
+    .preview--fireflies__particles span:nth-child(5) { left: 65%; top: 65%; animation-delay: 3.2s; }
+
+    @keyframes fireflyFloat {
+      0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+      25% { transform: translate(5px, -10px); opacity: 1; }
+      50% { transform: translate(-3px, -5px); opacity: 0.6; }
+      75% { transform: translate(8px, -15px); opacity: 0.9; }
+    }
+
+    /* Nebula Preview */
+    .preview--nebula {
+      background: #050508;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview--nebula__clouds {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 40% 50% at 30% 40%, rgba(255, 100, 150, 0.2), transparent),
+        radial-gradient(ellipse 35% 45% at 70% 60%, rgba(100, 150, 255, 0.2), transparent),
+        radial-gradient(ellipse 30% 40% at 50% 30%, rgba(180, 100, 255, 0.15), transparent);
+      animation: nebulaShift 8s ease-in-out infinite alternate;
+    }
+
+    .preview--nebula__stars {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, white, transparent),
+        radial-gradient(1px 1px at 40% 70%, white, transparent),
+        radial-gradient(1px 1px at 60% 20%, white, transparent),
+        radial-gradient(1px 1px at 80% 50%, white, transparent),
+        radial-gradient(1px 1px at 30% 80%, white, transparent),
+        radial-gradient(1px 1px at 70% 40%, white, transparent);
+      animation: twinkle 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes nebulaShift {
+      0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+      100% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+    }
+
+    @keyframes twinkle {
+      0% { opacity: 0.4; }
+      100% { opacity: 0.8; }
+    }
+
+    /* Card Content */
+    .variation-card__content {
+      padding: var(--space-lg);
+    }
+
+    .variation-card__tag {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(201, 169, 98, 0.8);
+      background: rgba(201, 169, 98, 0.1);
+      padding: 4px 10px;
+      border-radius: 3px;
+      margin-bottom: var(--space-sm);
+    }
+
+    .variation-card__title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--star-white);
+      margin-bottom: 2px;
+    }
+
+    .variation-card__subtitle {
+      font-size: 0.8125rem;
+      color: rgba(250, 248, 245, 0.5);
+      margin-bottom: var(--space-md);
+    }
+
+    .variation-card__desc {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.6);
+      line-height: 1.7;
+      margin-bottom: var(--space-md);
+    }
+
+    .variation-card__features {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs) var(--space-sm);
+    }
+
+    .variation-card__features li {
+      font-size: 0.6875rem;
+      color: rgba(250, 248, 245, 0.45);
+      padding: 3px 8px;
+      background: rgba(250, 248, 245, 0.05);
+      border-radius: 3px;
+      border: 1px solid rgba(250, 248, 245, 0.08);
+    }
+
+    /* Color coded tags for different styles */
+    .variation-card__tag--cosmic {
+      background: rgba(155, 93, 229, 0.15);
+      color: var(--aurora-purple);
+    }
+
+    .variation-card__tag--ink {
+      background: rgba(199, 60, 60, 0.15);
+      color: #e07070;
+    }
+
+    .variation-card__tag--nature {
+      background: rgba(168, 198, 134, 0.2);
+      color: var(--meadow);
+    }
+
+    .variation-card__tag--warm {
+      background: rgba(245, 166, 35, 0.15);
+      color: var(--lantern-gold);
+    }
+
+    .variation-card__tag--playful {
+      background: rgba(255, 182, 193, 0.2);
+      color: var(--balloon-pink);
+    }
+
+    .variation-card__tag--minimal {
+      background: rgba(250, 248, 245, 0.08);
+      color: rgba(250, 248, 245, 0.7);
+    }
+
+    .variation-card__tag--cultural {
+      background: rgba(230, 57, 70, 0.15);
+      color: #ff8a8a;
+    }
+
+    /* ========================================
+       DESIGN PHILOSOPHY SECTION
+    ======================================== */
+    .philosophy-section {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid rgba(250, 248, 245, 0.08);
+    }
+
+    .philosophy-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: var(--space-xl);
+      text-align: center;
+    }
+
+    .philosophy-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .philosophy-card {
+      background: rgba(26, 26, 46, 0.5);
+      border: 1px solid rgba(250, 248, 245, 0.06);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      text-align: center;
+    }
+
+    .philosophy-card__icon {
+      font-size: 2rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .philosophy-card__title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+      color: var(--gold);
+    }
+
+    .philosophy-card__desc {
+      font-size: 0.8125rem;
+      color: rgba(250, 248, 245, 0.55);
+      line-height: 1.7;
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-2xl) 0;
+      border-top: 1px solid rgba(250, 248, 245, 0.08);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 0.875rem;
+      color: rgba(250, 248, 245, 0.4);
+    }
+
+    .footer-link {
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 900px) {
+      .variations-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .philosophy-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .quick-nav {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .quick-nav__link {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg">
+    <div class="stars"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="../index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Light Quest
+        </a>
+        <span class="header-title">Display Wall Variations</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Page Hero -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="page-hero__icon">🌠</div>
+        <h1 class="page-hero__title">
+          Display Wall <em>Variations</em>
+        </h1>
+        <p class="page-hero__desc">
+          心願展示牆的多種視覺風格探索。每種設計都為心願創造獨特的視覺載體，
+          從深空星塵的神秘飄渺、水墨書法的東方韻味，到蒲公英的自然療癒、
+          天燈祈願的溫暖文化，讓每個心願都以最美的姿態綻放。
+        </p>
+      </div>
+    </section>
+
+    <!-- Quick Nav -->
+    <nav class="quick-nav">
+      <a href="#option-d" class="quick-nav__link">D: Stardust</a>
+      <a href="#option-e" class="quick-nav__link">E: Ink Smoke</a>
+      <a href="#option-f" class="quick-nav__link">F: Dandelion</a>
+      <a href="#option-g" class="quick-nav__link">G: Sky Lantern</a>
+      <a href="#option-h" class="quick-nav__link">H: Balloon</a>
+      <a href="#option-i" class="quick-nav__link">I: Feather</a>
+      <a href="#option-j" class="quick-nav__link">J: Origami</a>
+      <a href="#option-k" class="quick-nav__link">K: Fireflies</a>
+      <a href="#option-l" class="quick-nav__link">L: Nebula</a>
+    </nav>
+
+    <!-- Variations Grid -->
+    <section class="variations-grid-section">
+      <div class="container">
+        <div class="variations-grid">
+          <!-- Option D: Stardust -->
+          <article class="variation-card" id="option-d">
+            <a href="display-wall-option-d-stardust.html" class="variation-card__link">
+              <div class="variation-card__preview preview--stardust">
+                <span class="preview--stardust__text">願望如星塵飄散...</span>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--cosmic">Option D</span>
+                <h3 class="variation-card__title">Stardust</h3>
+                <p class="variation-card__subtitle">星塵凝聚</p>
+                <p class="variation-card__desc">純粹發光文字，無任何容器。深空黑底，文字自帶光暈尾跡，像星光一樣漂浮，漸漸模糊消散。</p>
+                <ul class="variation-card__features">
+                  <li>純文字無容器</li>
+                  <li>光暈尾跡效果</li>
+                  <li>漸變消散動畫</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option E: Ink Smoke -->
+          <article class="variation-card" id="option-e">
+            <a href="display-wall-option-e-ink-smoke.html" class="variation-card__link">
+              <div class="variation-card__preview preview--ink">
+                <span class="preview--ink__text">心願如煙</span>
+                <span class="preview--ink__seal"></span>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--ink">Option E</span>
+                <h3 class="variation-card__title">Ink Smoke</h3>
+                <p class="variation-card__subtitle">墨煙飄渺</p>
+                <p class="variation-card__desc">水墨書法風格，宣紙米色背景。文字如煙霧飄散，中式美學，紅印章點綴，數字用中文顯示。</p>
+                <ul class="variation-card__features">
+                  <li>書法字體</li>
+                  <li>宣紙質感</li>
+                  <li>紅印章點綴</li>
+                  <li>中文數字</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option F: Dandelion -->
+          <article class="variation-card" id="option-f">
+            <a href="display-wall-option-f-dandelion.html" class="variation-card__link">
+              <div class="variation-card__preview preview--dandelion">
+                <span class="preview--dandelion__seed">🌬️</span>
+                <span class="preview--dandelion__seed">✿</span>
+                <span class="preview--dandelion__seed">🌸</span>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--nature">Option F</span>
+                <h3 class="variation-card__title">Dandelion</h3>
+                <p class="variation-card__subtitle">蒲公英絮語</p>
+                <p class="variation-card__desc">蒲公英種子隨風飄揚。溫暖的奶油色、淺綠草地調，自然搖曳的漂浮軌跡，營造春日草地的療癒感。</p>
+                <ul class="variation-card__features">
+                  <li>白色絨毛種子</li>
+                  <li>自然搖曳軌跡</li>
+                  <li>療癒草地氛圍</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option G: Sky Lantern -->
+          <article class="variation-card" id="option-g">
+            <a href="display-wall-option-g-lantern.html" class="variation-card__link">
+              <div class="variation-card__preview preview--lantern">
+                <span class="preview--lantern__glow">🏮</span>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--warm">Option G</span>
+                <h3 class="variation-card__title">Sky Lantern</h3>
+                <p class="variation-card__subtitle">天燈祈願</p>
+                <p class="variation-card__desc">傳統天燈緩緩升空。金黃暖色調如黃昏天色，溫暖發光的天燈搖曳上升，願望以直式書寫在燈面。</p>
+                <ul class="variation-card__features">
+                  <li>天燈造型</li>
+                  <li>直式書寫</li>
+                  <li>黃昏暖色調</li>
+                  <li>文化意涵</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option H: Balloon -->
+          <article class="variation-card" id="option-h">
+            <a href="display-wall-option-h-balloon.html" class="variation-card__link">
+              <div class="variation-card__preview preview--balloon">
+                <div class="preview--balloon__items">
+                  <span class="preview--balloon__item">🎈</span>
+                  <span class="preview--balloon__item">🎈</span>
+                  <span class="preview--balloon__item">🎈</span>
+                  <span class="preview--balloon__item">🎈</span>
+                </div>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--playful">Option H</span>
+                <h3 class="variation-card__title">Balloon</h3>
+                <p class="variation-card__subtitle">氣球夢想</p>
+                <p class="variation-card__desc">繽紛氣球載著心願卡。粉彩色系（粉紅、薄荷、淡紫、檸檬黃），活潑彈跳的漂浮感，最親民可愛的風格。</p>
+                <ul class="variation-card__features">
+                  <li>粉彩色系</li>
+                  <li>活潑彈跳感</li>
+                  <li>心願卡掛飾</li>
+                  <li>親民可愛</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option I: Feather -->
+          <article class="variation-card" id="option-i">
+            <a href="display-wall-option-i-feather.html" class="variation-card__link">
+              <div class="variation-card__preview preview--feather">
+                <span class="preview--feather__item">🪶</span>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--minimal">Option I</span>
+                <h3 class="variation-card__title">Feather</h3>
+                <p class="variation-card__subtitle">羽毛輕語</p>
+                <p class="variation-card__desc">輕柔羽毛在空氣中飄舞。極淺的米色、象牙白，優雅的左右搖擺如真實羽毛，最簡約優雅的設計。</p>
+                <ul class="variation-card__features">
+                  <li>羽毛物理動態</li>
+                  <li>極簡色調</li>
+                  <li>寧靜氛圍</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option J: Origami -->
+          <article class="variation-card" id="option-j">
+            <a href="display-wall-option-j-origami.html" class="variation-card__link">
+              <div class="variation-card__preview preview--origami">
+                <span class="preview--origami__crane">🕊️</span>
+                <div class="preview--origami__petals">
+                  <span>🌸</span>
+                  <span>🌸</span>
+                  <span>🌸</span>
+                </div>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--cultural">Option J</span>
+                <h3 class="variation-card__title">Origami</h3>
+                <p class="variation-card__subtitle">紙鶴千願</p>
+                <p class="variation-card__desc">日式千羽鶴祈福。和風淡雅色調，搭配櫻花花瓣。紙鶴展翅飛行，帶著願望牌飄向天際，具「千羽鶴」的祝福寓意。</p>
+                <ul class="variation-card__features">
+                  <li>紙鶴造型</li>
+                  <li>櫻花花瓣</li>
+                  <li>和風色調</li>
+                  <li>千羽鶴寓意</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option K: Fireflies -->
+          <article class="variation-card" id="option-k">
+            <a href="display-wall-option-k-fireflies.html" class="variation-card__link">
+              <div class="variation-card__preview preview--fireflies">
+                <div class="preview--fireflies__glow"></div>
+                <div class="preview--fireflies__particles">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--nature">Option K</span>
+                <h3 class="variation-card__title">Fireflies</h3>
+                <p class="variation-card__subtitle">流螢飛舞</p>
+                <p class="variation-card__desc">森林夜晚的螢火蟲群飛。Canvas 粒子系統打造 80 顆螢火蟲動態飛舞，有機呼吸感光暈，營造夏夜森林的魔幻氛圍。</p>
+                <ul class="variation-card__features">
+                  <li>Canvas 粒子系統</li>
+                  <li>80 顆螢火蟲</li>
+                  <li>有機呼吸光暈</li>
+                  <li>森林夜晚氛圍</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+
+          <!-- Option L: Nebula -->
+          <article class="variation-card" id="option-l">
+            <a href="display-wall-option-l-nebula.html" class="variation-card__link">
+              <div class="variation-card__preview preview--nebula">
+                <div class="preview--nebula__clouds"></div>
+                <div class="preview--nebula__stars"></div>
+              </div>
+              <div class="variation-card__content">
+                <span class="variation-card__tag variation-card__tag--cosmic">Option L</span>
+                <h3 class="variation-card__title">Nebula</h3>
+                <p class="variation-card__subtitle">星雲綻放</p>
+                <p class="variation-card__desc">彩色星雲團（粉紅/藍/紫/青/金）。每則心願帶有不同色系的星雲光暈，星雲粒子緩緩上升脈動，繁星閃爍背景。</p>
+                <ul class="variation-card__features">
+                  <li>彩色星雲粒子</li>
+                  <li>五種色系光暈</li>
+                  <li>繁星閃爍背景</li>
+                  <li>脈動上升動態</li>
+                </ul>
+              </div>
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Design Philosophy -->
+    <section class="philosophy-section">
+      <div class="container">
+        <h2 class="philosophy-title">設計理念</h2>
+        <div class="philosophy-grid">
+          <article class="philosophy-card">
+            <div class="philosophy-card__icon">✨</div>
+            <h3 class="philosophy-card__title">視覺載體</h3>
+            <p class="philosophy-card__desc">
+              每個心願都值得獨特的視覺呈現。從抽象的星塵到具象的天燈，
+              讓願望以最適合的形式在螢幕上綻放。
+            </p>
+          </article>
+          <article class="philosophy-card">
+            <div class="philosophy-card__icon">🎭</div>
+            <h3 class="philosophy-card__title">文化融合</h3>
+            <p class="philosophy-card__desc">
+              融合東西方美學元素。水墨書法的東方韻味、天燈的傳統文化、
+              紙鶴的日式祝福，讓心願承載更深的文化意涵。
+            </p>
+          </article>
+          <article class="philosophy-card">
+            <div class="philosophy-card__icon">🌿</div>
+            <h3 class="philosophy-card__title">自然療癒</h3>
+            <p class="philosophy-card__desc">
+              蒲公英、羽毛、氣球——來自自然與生活的元素，
+              創造溫暖、療癒的視覺體驗，讓心願輕盈飛翔。
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-text">
+        Light Quest 設計探索 · Display Wall Variations
+        <br>
+        <a href="../index.html" class="footer-link">← 返回專案首頁</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

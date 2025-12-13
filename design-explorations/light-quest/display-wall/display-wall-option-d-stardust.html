@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心願展示牆 - Option D: Stardust 星塵凝聚</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #000;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Deep space background */
+    .cosmos {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(88, 28, 135, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 30%, rgba(30, 64, 175, 0.12), transparent),
+        radial-gradient(ellipse 100% 60% at 50% 100%, rgba(6, 78, 59, 0.1), transparent),
+        linear-gradient(180deg, #000 0%, #0a0a1a 50%, #000 100%);
+    }
+
+    /* Star field */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 4s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.8; }
+    }
+
+    /* Title - minimal */
+    .title {
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 100;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      font-weight: 300;
+      letter-spacing: 1em;
+      text-transform: uppercase;
+    }
+
+    /* Wishes container */
+    .wishes {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Single wish - pure glowing text */
+    .wish {
+      position: absolute;
+      max-width: 500px;
+      font-size: 1.4rem;
+      font-weight: 300;
+      line-height: 1.8;
+      text-align: center;
+      color: transparent;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(200, 220, 255, 0.9) 50%,
+        rgba(150, 180, 255, 0.8) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      text-shadow:
+        0 0 20px rgba(255, 255, 255, 0.5),
+        0 0 40px rgba(150, 180, 255, 0.4),
+        0 0 80px rgba(100, 150, 255, 0.3);
+
+      opacity: 0;
+      animation: rise 18s linear forwards;
+    }
+
+    /* Particle halo around each wish */
+    .wish::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120%;
+      height: 200%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(
+        ellipse at center,
+        rgba(150, 180, 255, 0.08) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Trailing stardust */
+    .wish::after {
+      content: '';
+      position: absolute;
+      bottom: -50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 100px;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.3) 0%,
+        transparent 100%
+      );
+      filter: blur(2px);
+    }
+
+    @keyframes rise {
+      0% {
+        bottom: -10%;
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateX(0) scale(0.9);
+      }
+      8% {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0) scale(1);
+      }
+      92% {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0) scale(1);
+      }
+      100% {
+        bottom: 105%;
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateX(0) scale(1.05);
+      }
+    }
+
+    /* Gentle drift variations */
+    .wish.drift-1 { animation: rise 18s linear forwards, drift1 8s ease-in-out infinite; }
+    .wish.drift-2 { animation: rise 17s linear forwards, drift2 7s ease-in-out infinite; }
+    .wish.drift-3 { animation: rise 19s linear forwards, drift3 9s ease-in-out infinite; }
+
+    @keyframes drift1 {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: 20px; }
+    }
+    @keyframes drift2 {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: -15px; }
+    }
+    @keyframes drift3 {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: 25px; }
+    }
+
+    /* QR Section - floating orb style */
+    .qr-orb {
+      position: fixed;
+      bottom: 60px;
+      right: 60px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .qr-glow {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at center,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(200, 220, 255, 0.9) 40%,
+        rgba(150, 180, 255, 0.3) 70%,
+        transparent 100%
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: orb-pulse 4s ease-in-out infinite;
+      box-shadow: 0 0 60px rgba(150, 180, 255, 0.4);
+    }
+
+    @keyframes orb-pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(150, 180, 255, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 80px rgba(150, 180, 255, 0.6); }
+    }
+
+    .qr-code {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 8px;
+      padding: 6px;
+    }
+
+    .qr-text {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+      font-weight: 300;
+      writing-mode: vertical-rl;
+      letter-spacing: 0.3em;
+    }
+
+    /* Stats - minimal floating */
+    .stats {
+      position: fixed;
+      bottom: 60px;
+      left: 60px;
+      z-index: 100;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 2.5rem;
+      font-weight: 300;
+    }
+
+    .stats-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="cosmos"></div>
+  <div class="stars" id="stars"></div>
+
+  <div class="title">WISHES</div>
+
+  <div class="wishes" id="wishes"></div>
+
+  <div class="stats">
+    <div id="count">1,247</div>
+    <div class="stats-label">願望升空</div>
+  </div>
+
+  <div class="qr-orb">
+    <span class="qr-text">掃碼許願</span>
+    <div class="qr-glow">
+      <div class="qr-code">
+        <svg viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" fill="white"/>
+          <rect x="10" y="10" width="25" height="25" fill="#000"/>
+          <rect x="13" y="13" width="19" height="19" fill="white"/>
+          <rect x="16" y="16" width="13" height="13" fill="#000"/>
+          <rect x="65" y="10" width="25" height="25" fill="#000"/>
+          <rect x="68" y="13" width="19" height="19" fill="white"/>
+          <rect x="71" y="16" width="13" height="13" fill="#000"/>
+          <rect x="10" y="65" width="25" height="25" fill="#000"/>
+          <rect x="13" y="68" width="19" height="19" fill="white"/>
+          <rect x="16" y="71" width="13" height="13" fill="#000"/>
+          <rect x="40" y="10" width="5" height="5" fill="#000"/>
+          <rect x="50" y="15" width="5" height="5" fill="#000"/>
+          <rect x="45" y="25" width="5" height="5" fill="#000"/>
+          <rect x="40" y="40" width="5" height="5" fill="#000"/>
+          <rect x="50" y="45" width="5" height="5" fill="#000"/>
+          <rect x="60" y="40" width="5" height="5" fill="#000"/>
+          <rect x="70" y="50" width="5" height="5" fill="#000"/>
+          <rect x="80" y="45" width="5" height="5" fill="#000"/>
+          <rect x="45" y="70" width="5" height="5" fill="#000"/>
+          <rect x="55" y="75" width="5" height="5" fill="#000"/>
+          <rect x="65" y="65" width="10" height="10" fill="#000"/>
+          <rect x="80" y="70" width="10" height="10" fill="#000"/>
+          <rect x="45" y="85" width="5" height="5" fill="#000"/>
+          <rect x="60" y="85" width="5" height="5" fill="#000"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Create stars
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 200; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.width = star.style.height = (Math.random() * 2 + 0.5) + 'px';
+      star.style.animationDelay = Math.random() * 4 + 's';
+      star.style.animationDuration = (3 + Math.random() * 3) + 's';
+      starsEl.appendChild(star);
+    }
+
+    // Sample wishes - just text, no category, no time
+    const wishes = [
+      '希望能在今年完成我的第一本小說',
+      '願我的家人都能健康平安',
+      '想要去看一次極光',
+      '希望能找到生命中的那個人',
+      '願世界和平，沒有戰爭',
+      '希望我的創業計畫能順利',
+      '想要學會一種樂器',
+      '願我能有勇氣追求自己的夢想',
+      '希望明年能帶爸媽出國旅行',
+      '願所有流浪的動物都能找到溫暖的家',
+      '希望能考上理想的學校',
+      '願我能變得更加自信',
+    ];
+
+    const columns = ['8%', '28%', '48%', '68%', '88%'];
+    const drifts = ['drift-1', 'drift-2', 'drift-3'];
+    let wishIndex = 0;
+    let colIndex = 0;
+
+    function addWish() {
+      const container = document.getElementById('wishes');
+      const wish = document.createElement('div');
+      wish.className = 'wish ' + drifts[Math.floor(Math.random() * 3)];
+      wish.textContent = wishes[wishIndex % wishes.length];
+      wish.style.left = columns[colIndex % columns.length];
+      wish.style.transform = `translateX(-50%)`;
+
+      container.appendChild(wish);
+
+      // Remove after animation
+      setTimeout(() => wish.remove(), 19000);
+
+      wishIndex++;
+      colIndex++;
+    }
+
+    // Initial staggered launch
+    columns.forEach((_, i) => setTimeout(addWish, i * 1200));
+
+    // Continue adding
+    setInterval(addWish, 3000);
+
+    // Update count
+    setInterval(() => {
+      const countEl = document.getElementById('count');
+      const current = parseInt(countEl.textContent.replace(',', ''));
+      countEl.textContent = (current + 1).toLocaleString();
+    }, 10000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心願展示牆 - Option H: Balloon 氣球夢想</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500&family=Caveat:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --sky-top: #a8d5e5;
+      --sky-mid: #d4eaf5;
+      --sky-bottom: #f5f0e8;
+      --balloon-pink: #f8b4c4;
+      --balloon-yellow: #fde68a;
+      --balloon-mint: #a7e0d8;
+      --balloon-lavender: #d4c4e8;
+      --balloon-peach: #fdd5b1;
+      --balloon-blue: #b8d4e8;
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(180deg,
+        var(--sky-top) 0%,
+        var(--sky-mid) 40%,
+        var(--sky-bottom) 100%
+      );
+    }
+
+    /* Cheerful sky */
+    .atmosphere {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 80% 10%, rgba(255, 255, 255, 0.5), transparent 50%),
+        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(255, 255, 255, 0.3), transparent 40%);
+      pointer-events: none;
+    }
+
+    /* Fluffy clouds */
+    .clouds {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .cloud {
+      position: absolute;
+      background: white;
+      border-radius: 100px;
+      opacity: 0.7;
+      animation: cloud-float linear infinite;
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+    }
+
+    .cloud::before {
+      width: 60%;
+      height: 120%;
+      top: -50%;
+      left: 20%;
+    }
+
+    .cloud::after {
+      width: 50%;
+      height: 100%;
+      top: -30%;
+      right: 15%;
+    }
+
+    @keyframes cloud-float {
+      0% { transform: translateX(-150px); }
+      100% { transform: translateX(calc(100vw + 150px)); }
+    }
+
+    /* Title - playful */
+    .title {
+      position: fixed;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      font-family: 'Caveat', cursive;
+      font-size: 2.2rem;
+      font-weight: 500;
+      color: rgba(100, 120, 140, 0.6);
+      letter-spacing: 0.1em;
+    }
+
+    /* Wishes container */
+    .wishes {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Single wish - balloon style */
+    .wish {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      animation: rise-balloon ease-out forwards;
+    }
+
+    /* Balloon */
+    .balloon {
+      position: relative;
+      width: 100px;
+      height: 120px;
+    }
+
+    .balloon-body {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+      box-shadow:
+        inset -15px -10px 30px rgba(255, 255, 255, 0.5),
+        inset 5px 5px 20px rgba(0, 0, 0, 0.05),
+        0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Balloon shine */
+    .balloon-body::before {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 20%;
+      width: 30%;
+      height: 25%;
+      background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.8), transparent 70%);
+      border-radius: 50%;
+      transform: rotate(-30deg);
+    }
+
+    /* Balloon knot */
+    .balloon-body::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 12px;
+      background: inherit;
+      filter: brightness(0.9);
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    }
+
+    /* Balloon string */
+    .balloon-string {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      width: 2px;
+      height: 60px;
+      background: linear-gradient(180deg, rgba(180, 180, 180, 0.6), rgba(180, 180, 180, 0.3));
+      transform-origin: top center;
+      animation: string-wave 2s ease-in-out infinite;
+    }
+
+    @keyframes string-wave {
+      0%, 100% { transform: translateX(-50%) rotate(0deg); }
+      25% { transform: translateX(-50%) rotate(3deg); }
+      75% { transform: translateX(-50%) rotate(-3deg); }
+    }
+
+    /* Color variations */
+    .balloon.pink .balloon-body { background: linear-gradient(180deg, #fcc8d6, var(--balloon-pink)); }
+    .balloon.yellow .balloon-body { background: linear-gradient(180deg, #fef3c7, var(--balloon-yellow)); }
+    .balloon.mint .balloon-body { background: linear-gradient(180deg, #c7f0eb, var(--balloon-mint)); }
+    .balloon.lavender .balloon-body { background: linear-gradient(180deg, #e8ddf5, var(--balloon-lavender)); }
+    .balloon.peach .balloon-body { background: linear-gradient(180deg, #fee8d4, var(--balloon-peach)); }
+    .balloon.blue .balloon-body { background: linear-gradient(180deg, #d4e8f5, var(--balloon-blue)); }
+
+    /* Wish card attached to balloon */
+    .wish-card {
+      margin-top: 15px;
+      max-width: 200px;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.08),
+        0 1px 3px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+
+    /* Card connection line */
+    .wish-card::before {
+      content: '';
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      width: 2px;
+      height: 15px;
+      background: rgba(180, 180, 180, 0.4);
+      transform: translateX(-50%);
+    }
+
+    .wish-text {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.7;
+      text-align: center;
+      color: rgba(80, 90, 100, 0.85);
+    }
+
+    /* Rising animation - bouncy float */
+    @keyframes rise-balloon {
+      0% {
+        bottom: -25%;
+        opacity: 0;
+        transform: translateX(0) rotate(-5deg);
+      }
+      5% {
+        opacity: 0.5;
+      }
+      10% {
+        opacity: 1;
+        transform: translateX(10px) rotate(3deg);
+      }
+      20% {
+        transform: translateX(-15px) rotate(-4deg);
+      }
+      30% {
+        transform: translateX(20px) rotate(5deg);
+      }
+      40% {
+        transform: translateX(-12px) rotate(-3deg);
+      }
+      50% {
+        transform: translateX(18px) rotate(4deg);
+      }
+      60% {
+        transform: translateX(-8px) rotate(-2deg);
+      }
+      70% {
+        transform: translateX(15px) rotate(3deg);
+      }
+      80% {
+        transform: translateX(-10px) rotate(-2deg);
+      }
+      90% {
+        opacity: 1;
+        transform: translateX(5px) rotate(1deg);
+      }
+      95% {
+        opacity: 0.5;
+      }
+      100% {
+        bottom: 110%;
+        opacity: 0;
+        transform: translateX(0) rotate(0deg);
+      }
+    }
+
+    /* Duration variations */
+    .wish.speed-1 { animation-duration: 20s; }
+    .wish.speed-2 { animation-duration: 24s; }
+    .wish.speed-3 { animation-duration: 22s; }
+    .wish.speed-4 { animation-duration: 26s; }
+
+    /* Size variations */
+    .wish.size-sm .balloon { transform: scale(0.8); }
+    .wish.size-sm .wish-card { max-width: 160px; font-size: 0.9rem; }
+    .wish.size-lg .balloon { transform: scale(1.15); }
+    .wish.size-lg .wish-card { max-width: 240px; }
+
+    /* QR Section - playful card */
+    .qr-section {
+      position: fixed;
+      bottom: 40px;
+      right: 50px;
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      gap: 15px;
+    }
+
+    .qr-card {
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qr-code {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 8px;
+    }
+
+    .qr-text {
+      font-family: 'Caveat', cursive;
+      font-size: 1.2rem;
+      color: rgba(100, 120, 140, 0.8);
+    }
+
+    /* Mini decorative balloons */
+    .mini-balloons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mini-balloon {
+      width: 20px;
+      height: 24px;
+      border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+      animation: mini-bob 2s ease-in-out infinite;
+    }
+
+    .mini-balloon:nth-child(1) { background: var(--balloon-pink); animation-delay: 0s; }
+    .mini-balloon:nth-child(2) { background: var(--balloon-yellow); animation-delay: 0.3s; }
+    .mini-balloon:nth-child(3) { background: var(--balloon-mint); animation-delay: 0.6s; }
+
+    @keyframes mini-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    /* Stats */
+    .stats {
+      position: fixed;
+      bottom: 50px;
+      left: 60px;
+      z-index: 100;
+      background: white;
+      padding: 20px 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .stats-number {
+      font-size: 2.8rem;
+      font-weight: 500;
+      color: rgba(100, 120, 140, 0.7);
+      line-height: 1;
+    }
+
+    .stats-label {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: rgba(130, 150, 170, 0.7);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="atmosphere"></div>
+  <div class="clouds" id="clouds"></div>
+
+  <div class="title">make a wish ~</div>
+
+  <div class="wishes" id="wishes"></div>
+
+  <div class="stats">
+    <div class="stats-number" id="count">1,247</div>
+    <div class="stats-label">wishes floating</div>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-card">
+      <div class="mini-balloons">
+        <div class="mini-balloon"></div>
+        <div class="mini-balloon"></div>
+        <div class="mini-balloon"></div>
+      </div>
+      <div class="qr-code">
+        <svg viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" fill="white"/>
+          <rect x="10" y="10" width="25" height="25" fill="#8ba4b8"/>
+          <rect x="13" y="13" width="19" height="19" fill="white"/>
+          <rect x="16" y="16" width="13" height="13" fill="#8ba4b8"/>
+          <rect x="65" y="10" width="25" height="25" fill="#8ba4b8"/>
+          <rect x="68" y="13" width="19" height="19" fill="white"/>
+          <rect x="71" y="16" width="13" height="13" fill="#8ba4b8"/>
+          <rect x="10" y="65" width="25" height="25" fill="#8ba4b8"/>
+          <rect x="13" y="68" width="19" height="19" fill="white"/>
+          <rect x="16" y="71" width="13" height="13" fill="#8ba4b8"/>
+          <rect x="40" y="10" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="50" y="15" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="45" y="25" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="40" y="40" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="50" y="45" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="60" y="40" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="70" y="50" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="80" y="45" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="45" y="70" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="55" y="75" width="5" height="5" fill="#8ba4b8"/>
+          <rect x="65" y="65" width="10" height="10" fill="#8ba4b8"/>
+          <rect x="80" y="70" width="10" height="10" fill="#8ba4b8"/>
+        </svg>
+      </div>
+      <div class="qr-text">release your wish!</div>
+    </div>
+  </div>
+
+  <script>
+    // Create clouds
+    const cloudsEl = document.getElementById('clouds');
+    for (let i = 0; i < 5; i++) {
+      const cloud = document.createElement('div');
+      cloud.className = 'cloud';
+      cloud.style.top = (10 + Math.random() * 25) + '%';
+      cloud.style.width = (100 + Math.random() * 150) + 'px';
+      cloud.style.height = (40 + Math.random() * 40) + 'px';
+      cloud.style.animationDuration = (60 + Math.random() * 40) + 's';
+      cloud.style.animationDelay = (-Math.random() * 80) + 's';
+      cloudsEl.appendChild(cloud);
+    }
+
+    // Sample wishes
+    const wishes = [
+      '希望能在今年完成我的第一本小說',
+      '願我的家人都能健康平安',
+      '想要去看一次極光',
+      '希望能找到生命中的那個人',
+      '願世界和平，沒有戰爭',
+      '希望我的創業計畫能順利',
+      '想要學會一種樂器',
+      '願我能有勇氣追求自己的夢想',
+      '希望明年能帶爸媽出國旅行',
+      '願所有流浪的動物都能找到溫暖的家',
+      '希望能考上理想的學校',
+      '願我能變得更加自信',
+    ];
+
+    const positions = ['8%', '24%', '40%', '56%', '72%', '88%'];
+    const colors = ['pink', 'yellow', 'mint', 'lavender', 'peach', 'blue'];
+    const speeds = ['speed-1', 'speed-2', 'speed-3', 'speed-4'];
+    const sizes = ['', 'size-sm', 'size-lg'];
+    let wishIndex = 0;
+    let posIndex = 0;
+
+    function addWish() {
+      const container = document.getElementById('wishes');
+      const wish = document.createElement('div');
+      const speed = speeds[Math.floor(Math.random() * speeds.length)];
+      const size = sizes[Math.floor(Math.random() * sizes.length)];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      wish.className = 'wish ' + speed + ' ' + size;
+
+      wish.innerHTML = `
+        <div class="balloon ${color}">
+          <div class="balloon-body"></div>
+          <div class="balloon-string"></div>
+        </div>
+        <div class="wish-card">
+          <div class="wish-text">${wishes[wishIndex % wishes.length]}</div>
+        </div>
+      `;
+
+      const basePos = parseFloat(positions[posIndex % positions.length]);
+      const randomOffset = (Math.random() - 0.5) * 8;
+      wish.style.left = (basePos + randomOffset) + '%';
+
+      container.appendChild(wish);
+
+      setTimeout(() => wish.remove(), 28000);
+
+      wishIndex++;
+      posIndex++;
+    }
+
+    // Initial staggered launch
+    for (let i = 0; i < 5; i++) {
+      setTimeout(addWish, i * 1800);
+    }
+
+    // Continue adding
+    setInterval(addWish, 3500);
+
+    // Update count
+    setInterval(() => {
+      const countEl = document.getElementById('count');
+      const current = parseInt(countEl.textContent.replace(/,/g, ''));
+      countEl.textContent = (current + 1).toLocaleString();
+    }, 10000);
+  </script>
+</body>
+</html>
