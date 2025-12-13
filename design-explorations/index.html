@@ -8,7 +8,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -362,6 +362,29 @@
       text-shadow: 0 2px 20px rgba(201, 169, 98, 0.5);
     }
 
+    .preview--sense-lab {
+      background:
+        linear-gradient(135deg, #faf8f5 0%, #e8ede9 50%, #f0ebe3 100%);
+    }
+
+    .preview--sense-lab::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 40% at 30% 40%, rgba(124, 154, 146, 0.25), transparent),
+        radial-gradient(ellipse 40% 30% at 70% 60%, rgba(196, 107, 79, 0.15), transparent);
+    }
+
+    .preview--sense-lab::after {
+      content: '覺';
+      font-family: 'Noto Serif TC', Georgia, serif;
+      font-size: 3rem;
+      font-weight: 400;
+      color: rgba(90, 122, 114, 0.8);
+      text-shadow: 0 2px 20px rgba(124, 154, 146, 0.3);
+    }
+
     .project-card__badge {
       position: absolute;
       top: var(--space-md);
@@ -589,7 +612,7 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">專案列表</h2>
-        <span class="section-count">共 1 個專案</span>
+        <span class="section-count">共 2 個專案</span>
       </div>
 
       <div class="projects-grid">
@@ -623,6 +646,39 @@
               </svg>
             </span>
             <span class="project-card__count">2 個方向</span>
+          </div>
+        </a>
+
+        <!-- Sense Exploration Lab Project Card -->
+        <a href="sense-exploration-lab/index.html" class="project-card">
+          <div class="project-card__preview">
+            <div class="project-card__preview-placeholder preview--sense-lab"></div>
+            <span class="project-card__badge">進行中</span>
+          </div>
+          <div class="project-card__content">
+            <div class="project-card__meta">
+              <span class="project-card__category">品牌識別</span>
+              <span class="project-card__date">2025.12</span>
+            </div>
+            <h3 class="project-card__title">覺青年共學基地</h3>
+            <p class="project-card__desc">
+              以「覺」為核心的共學空間品牌識別探索。融合五感覺察、跨世代連結與東方哲學智慧，
+              為 Sense Exploration Lab 尋找最適切的視覺語言。
+            </p>
+            <div class="project-card__tags">
+              <span class="tag">Logo 設計</span>
+              <span class="tag">品牌識別</span>
+              <span class="tag">正念教育</span>
+            </div>
+          </div>
+          <div class="project-card__footer">
+            <span class="project-card__link">
+              查看設計方向
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+            <span class="project-card__count">6 個方向</span>
           </div>
         </a>
 
