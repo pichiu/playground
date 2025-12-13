@@ -439,6 +439,116 @@
       50% { transform: scale(1.1); opacity: 0.4; }
     }
 
+    /* V4: Ink Scroll Preview */
+    .preview-ink {
+      background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-ink::before {
+      content: '覺';
+      font-family: 'Noto Serif TC', serif;
+      font-size: 5rem;
+      color: #1a1714;
+      opacity: 0.15;
+      animation: brushStroke 3s ease-in-out infinite;
+    }
+
+    .preview-ink::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: #c23a2b;
+      border-radius: 4px;
+      bottom: 20%;
+      right: 25%;
+      opacity: 0.7;
+    }
+
+    @keyframes brushStroke {
+      0%, 100% { opacity: 0.15; transform: scale(1); }
+      50% { opacity: 0.25; transform: scale(1.02); }
+    }
+
+    /* V5: Geometric Preview */
+    .preview-geometric {
+      background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-geometric::before {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 2px solid #d4a84b;
+      transform: rotate(45deg);
+      animation: geoRotate 8s linear infinite;
+    }
+
+    .preview-geometric::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: #1a5c4a;
+      border-radius: 50%;
+      opacity: 0.6;
+      margin-left: 80px;
+      margin-top: 40px;
+    }
+
+    @keyframes geoRotate {
+      from { transform: rotate(45deg); }
+      to { transform: rotate(405deg); }
+    }
+
+    /* V6: Soft Focus Preview */
+    .preview-soft {
+      background: linear-gradient(135deg, #f0f4f8 0%, #d4dce8 50%, #e8d4d9 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-soft::before {
+      content: '';
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(184,196,217,0.6) 0%, transparent 70%);
+      filter: blur(30px);
+      animation: softFloat 6s ease-in-out infinite;
+    }
+
+    .preview-soft::after {
+      content: '';
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(232,212,217,0.6) 0%, transparent 70%);
+      filter: blur(25px);
+      margin-left: 60px;
+      margin-top: 40px;
+      animation: softFloat 6s ease-in-out infinite reverse;
+    }
+
+    @keyframes softFloat {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, -20px); }
+    }
+
     @media (max-width: 768px) {
       .index-header {
         padding: 1.5rem;
@@ -475,10 +585,10 @@
     <section class="index-hero">
       <p class="index-hero__label">Design Exploration</p>
       <h1 class="index-hero__title">Landing Page 方案探索</h1>
-      <p class="index-hero__subtitle">Three distinctive approaches to welcoming awareness</p>
+      <p class="index-hero__subtitle">Six distinctive approaches to welcoming awareness</p>
       <p class="index-hero__desc">
         基於覺青年共學基地的核心理念——「自覺→覺他」的成長路徑、五感覺察的身體智慧、
-        以及佛道傳統的禪修智慧——我們探索三種截然不同的視覺敘事方式，
+        以及佛道傳統的禪修智慧——我們探索六種截然不同的視覺敘事方式，
         為不同場景與受眾提供多元的品牌入口體驗。
       </p>
     </section>
@@ -486,7 +596,7 @@
     <!-- Variations Grid -->
     <section class="variations-section">
       <div class="variations-header">
-        <p class="variations-header__label">3 Design Variations</p>
+        <p class="variations-header__label">6 Design Variations</p>
         <h2 class="variations-header__title">設計方向總覽</h2>
       </div>
 
@@ -541,6 +651,66 @@
             <p class="variation-card__desc">
               互動性強的探索體驗，以莊子「遊心」為靈感，
               結合滾動觸發動畫，讓訪客在玩樂中發現覺察。
+            </p>
+            <span class="variation-card__link">
+              查看設計
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Variation 4: Ink Scroll -->
+        <a href="variation-4-ink-scroll.html" class="variation-card">
+          <div class="variation-card__preview preview-ink"></div>
+          <div class="variation-card__content">
+            <span class="variation-card__style">水墨卷軸</span>
+            <h3 class="variation-card__title">墨韻流觴</h3>
+            <p class="variation-card__subtitle">Ink Scroll</p>
+            <p class="variation-card__desc">
+              傳統東方書法美學，以高對比水墨配色與朱紅印章，
+              結合卷軸式滾動動畫，展現深邃的文化底蘊。
+            </p>
+            <span class="variation-card__link">
+              查看設計
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Variation 5: Geometric Awakening -->
+        <a href="variation-5-geometric.html" class="variation-card">
+          <div class="variation-card__preview preview-geometric"></div>
+          <div class="variation-card__content">
+            <span class="variation-card__style">幾何覺醒</span>
+            <h3 class="variation-card__title">形意交融</h3>
+            <p class="variation-card__subtitle">Geometric Awakening</p>
+            <p class="variation-card__desc">
+              Art Deco 幾何美學與當代設計的融合，以寶石色調
+              與變形幾何圖形，呈現五感覺察的抽象意象。
+            </p>
+            <span class="variation-card__link">
+              查看設計
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+
+        <!-- Variation 6: Soft Focus -->
+        <a href="variation-6-soft-focus.html" class="variation-card">
+          <div class="variation-card__preview preview-soft"></div>
+          <div class="variation-card__content">
+            <span class="variation-card__style">朦朧覺察</span>
+            <h3 class="variation-card__title">霧裡觀心</h3>
+            <p class="variation-card__subtitle">Soft Focus</p>
+            <p class="variation-card__desc">
+              夢幻朦朧的冥想氛圍，以柔和粉彩與玻璃擬態效果，
+              結合視差滾動，引導訪客進入沉靜的覺察空間。
             </p>
             <span class="variation-card__link">
               查看設計

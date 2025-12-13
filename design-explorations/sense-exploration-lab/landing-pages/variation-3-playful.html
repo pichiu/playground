@@ -63,6 +63,34 @@
     }
 
     /* ========================================
+       SUBTLE GRAIN OVERLAY
+    ======================================== */
+    .grain-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.025;
+      mix-blend-mode: multiply;
+    }
+
+    .grain-overlay::before {
+      content: '';
+      position: absolute;
+      inset: -200%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      animation: grainShift 0.4s steps(1) infinite;
+    }
+
+    @keyframes grainShift {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-1%, -1%); }
+      50% { transform: translate(1%, 1%); }
+      75% { transform: translate(-0.5%, 0.5%); }
+    }
+
+    /* ========================================
        ANIMATED BACKGROUND
     ======================================== */
     .playful-bg {
@@ -261,9 +289,20 @@
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    .hero__badge-emoji {
-      font-size: 1.25rem;
+    .hero__badge-icon {
+      width: 20px;
+      height: 20px;
       animation: wave 1.5s ease-in-out infinite;
+    }
+
+    .hero__badge-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: var(--teal);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     @keyframes wave {
@@ -492,10 +531,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.5rem;
       box-shadow: 0 4px 15px rgba(30, 35, 40, 0.08);
       transition: transform 0.4s;
     }
+
+    .feature-card__icon svg {
+      width: 36px;
+      height: 36px;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .feature-card:nth-child(1) .feature-card__icon svg { stroke: var(--teal); }
+    .feature-card:nth-child(2) .feature-card__icon svg { stroke: #c9a84d; }
+    .feature-card:nth-child(3) .feature-card__icon svg { stroke: var(--coral); }
+    .feature-card:nth-child(4) .feature-card__icon svg { stroke: var(--lavender); }
 
     .feature-card:hover .feature-card__icon {
       transform: scale(1.1) rotate(5deg);
@@ -592,8 +644,20 @@
     }
 
     .sense-bubble__icon {
-      font-size: 2.5rem;
+      width: 40px;
+      height: 40px;
       margin-bottom: 0.5rem;
+    }
+
+    .sense-bubble__icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: white;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
 
     .sense-bubble__name {
@@ -679,9 +743,22 @@
       color: white;
     }
 
-    .activity-row__emoji {
-      font-size: 1.5rem;
-      text-align: right;
+    .activity-row__icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .activity-row__icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: var(--teal);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     /* ========================================
@@ -724,8 +801,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
       color: white;
+    }
+
+    .philosophy__quote-mark svg {
+      width: 24px;
+      height: 24px;
+      stroke: white;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .philosophy__quote-text {
@@ -839,10 +925,26 @@
       z-index: 1;
     }
 
-    .cta__emoji {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
+    .cta__icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       animation: float 3s ease-in-out infinite;
+    }
+
+    .cta__icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: white;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     @keyframes float {
@@ -1044,6 +1146,9 @@
   </style>
 </head>
 <body>
+  <!-- Grain Texture Overlay -->
+  <div class="grain-overlay"></div>
+
   <!-- Animated Background -->
   <div class="playful-bg">
     <div class="playful-shape playful-shape--1"></div>
@@ -1073,7 +1178,9 @@
   <section class="hero">
     <div class="hero__inner">
       <div class="hero__badge">
-        <span class="hero__badge-emoji">👋</span>
+        <span class="hero__badge-icon">
+          <svg viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-5.9-2.4L3 16.5"/></svg>
+        </span>
         <span class="hero__badge-text">歡迎來到覺察的遊樂場</span>
       </div>
 
@@ -1120,25 +1227,33 @@
 
       <div class="features__grid">
         <article class="feature-card">
-          <div class="feature-card__icon">🎨</div>
+          <div class="feature-card__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
           <h3 class="feature-card__title">玩出覺察</h3>
           <p class="feature-card__desc">不是枯燥的冥想，而是有趣的體驗活動</p>
         </article>
 
         <article class="feature-card">
-          <div class="feature-card__icon">👨‍👩‍👧</div>
+          <div class="feature-card__icon">
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M12 11v10"/></svg>
+          </div>
           <h3 class="feature-card__title">全齡共學</h3>
           <p class="feature-card__desc">親子、年輕人、家長都能找到適合的課程</p>
         </article>
 
         <article class="feature-card">
-          <div class="feature-card__icon">🌿</div>
+          <div class="feature-card__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22c-4 0-7-2-7-5 0-2 1-3 2-4s2-3 2-5c0-3 1.5-6 3-6s3 3 3 6c0 2 1 4 2 5s2 2 2 4c0 3-3 5-7 5z"/><path d="M8 8c-2 0-4 2-4 5 0 2 1 3 2 4"/><path d="M16 8c2 0 4 2 4 5 0 2-1 3-2 4"/></svg>
+          </div>
           <h3 class="feature-card__title">東西融合</h3>
           <p class="feature-card__desc">結合佛道智慧與現代正念，找到你的平衡</p>
         </article>
 
         <article class="feature-card">
-          <div class="feature-card__icon">💫</div>
+          <div class="feature-card__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5.5 8.5l2 2"/><path d="M16.5 8.5l-2 2"/><circle cx="12" cy="12" r="3"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="M5.5 15.5l2-2"/><path d="M16.5 15.5l-2-2"/></svg>
+          </div>
           <h3 class="feature-card__title">成長陪伴</h3>
           <p class="feature-card__desc">從自覺走向覺他，一起成為更好的自己</p>
         </article>
@@ -1157,31 +1272,41 @@
 
       <div class="senses__wheel">
         <div class="sense-bubble sense-bubble--sight">
-          <span class="sense-bubble__icon">👁</span>
+          <span class="sense-bubble__icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg>
+          </span>
           <span class="sense-bubble__name">視覺</span>
           <span class="sense-bubble__activity">繪本・藝術療癒</span>
         </div>
 
         <div class="sense-bubble sense-bubble--sound">
-          <span class="sense-bubble__icon">🔔</span>
+          <span class="sense-bubble__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </span>
           <span class="sense-bubble__name">聽覺</span>
           <span class="sense-bubble__activity">頌缽・聲音療癒</span>
         </div>
 
         <div class="sense-bubble sense-bubble--smell">
-          <span class="sense-bubble__icon">🌸</span>
+          <span class="sense-bubble__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22c-4 0-7-2-7-5 0-2 1-3 2-4s2-3 2-5c0-3 1.5-6 3-6s3 3 3 6c0 2 1 4 2 5s2 2 2 4c0 3-3 5-7 5z"/><path d="M10 12c0-1 .5-2 2-2s2 1 2 2"/></svg>
+          </span>
           <span class="sense-bubble__name">嗅覺</span>
           <span class="sense-bubble__activity">芳香精油・呼吸</span>
         </div>
 
         <div class="sense-bubble sense-bubble--taste">
-          <span class="sense-bubble__icon">🍵</span>
+          <span class="sense-bubble__icon">
+            <svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+          </span>
           <span class="sense-bubble__name">味覺</span>
           <span class="sense-bubble__activity">茶道・正念飲食</span>
         </div>
 
         <div class="sense-bubble sense-bubble--touch">
-          <span class="sense-bubble__icon">🤚</span>
+          <span class="sense-bubble__icon">
+            <svg viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-5.9-2.4L3 16.5"/></svg>
+          </span>
           <span class="sense-bubble__name">觸覺</span>
           <span class="sense-bubble__activity">瑜伽・舞動</span>
         </div>
@@ -1203,35 +1328,45 @@
           <h3 class="activity-row__name">頌缽・聲音療癒</h3>
           <span class="activity-row__tag activity-row__tag--audience">年輕人</span>
           <span class="activity-row__tag activity-row__tag--sense">聽覺</span>
-          <span class="activity-row__emoji">🔔</span>
+          <span class="activity-row__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </span>
         </article>
 
         <article class="activity-row">
           <h3 class="activity-row__name">親子繪本・故事屋</h3>
           <span class="activity-row__tag activity-row__tag--audience">親子</span>
           <span class="activity-row__tag activity-row__tag--sense">視覺</span>
-          <span class="activity-row__emoji">📚</span>
+          <span class="activity-row__icon">
+            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
         </article>
 
         <article class="activity-row">
           <h3 class="activity-row__name">舞動・身體覺察</h3>
           <span class="activity-row__tag activity-row__tag--audience">年輕人</span>
           <span class="activity-row__tag activity-row__tag--sense">觸覺</span>
-          <span class="activity-row__emoji">💃</span>
+          <span class="activity-row__icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M12 6v4"/><path d="M8 22l2-6"/><path d="M16 22l-2-6"/><path d="M8 10l4 2 4-2"/></svg>
+          </span>
         </article>
 
         <article class="activity-row">
           <h3 class="activity-row__name">芳香精油工作坊</h3>
           <span class="activity-row__tag activity-row__tag--audience">全齡</span>
           <span class="activity-row__tag activity-row__tag--sense">嗅覺</span>
-          <span class="activity-row__emoji">🌸</span>
+          <span class="activity-row__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22c-4 0-7-2-7-5 0-2 1-3 2-4s2-3 2-5c0-3 1.5-6 3-6s3 3 3 6c0 2 1 4 2 5s2 2 2 4c0 3-3 5-7 5z"/></svg>
+          </span>
         </article>
 
         <article class="activity-row">
           <h3 class="activity-row__name">戶外自然探索</h3>
           <span class="activity-row__tag activity-row__tag--audience">親子</span>
           <span class="activity-row__tag activity-row__tag--sense">五感</span>
-          <span class="activity-row__emoji">🌿</span>
+          <span class="activity-row__icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22V8"/><path d="M5 12c0-5 3-9 7-10 4 1 7 5 7 10"/><path d="M5 12c0 3 2 6 4 7"/><path d="M19 12c0 3-2 6-4 7"/></svg>
+          </span>
         </article>
       </div>
     </div>
@@ -1246,7 +1381,9 @@
       </div>
 
       <div class="philosophy__quote">
-        <div class="philosophy__quote-mark">💭</div>
+        <div class="philosophy__quote-mark">
+          <svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v4z"/></svg>
+        </div>
         <p class="philosophy__quote-text">
           「先覺察自己，才能陪伴他人」
         </p>
@@ -1309,7 +1446,9 @@
       <div class="cta__shape cta__shape--3"></div>
     </div>
     <div class="cta__inner">
-      <div class="cta__emoji">🚀</div>
+      <div class="cta__icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><path d="M8 12h8"/><path d="M12 8l4 4-4 4-4-4 4-4z"/></svg>
+      </div>
       <h2 class="cta__title">準備好開始探索了嗎？</h2>
       <p class="cta__subtitle">加入我們，一起玩出覺察力</p>
       <a href="#" class="cta__btn">
