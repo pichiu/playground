@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>覺青年共學基地 Logo 探索 | Sense Exploration Lab</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Nunito+Sans:ital,opsz,wght@0,6..12,300;0,6..12,400;0,6..12,500;0,6..12,600;1,6..12,400&family=Noto+Sans+TC:wght@300;400;500;600&family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Grounded earth palette */
+      --bg-primary: #faf8f5;
+      --bg-warm: #f5f1eb;
+      --bg-card: #ffffff;
+      --bg-sage: #e8ede9;
+      --bg-sand: #f0ebe3;
+
+      --text-primary: #2d2a26;
+      --text-secondary: #5a5650;
+      --text-muted: #8a857d;
+      --text-light: #b5afa5;
+
+      /* Logo-inspired accents */
+      --sage: #7c9a92;
+      --sage-deep: #5a7a72;
+      --terracotta: #c46b4f;
+      --terracotta-soft: #d4856d;
+      --sand: #e5dcc3;
+      --clay: #c9a88e;
+      --plum: #5e4955;
+      --honey: #d9b86c;
+      --rose: #c4a4a4;
+      --teal: #72a9a0;
+      --lime: #7cb342;
+      --blue: #5a9bd4;
+
+      --border: rgba(45, 42, 38, 0.08);
+      --border-hover: rgba(45, 42, 38, 0.15);
+
+      /* Typography */
+      --font-display: 'Cormorant Garamond', 'Noto Serif TC', Georgia, serif;
+      --font-body: 'Nunito Sans', 'Noto Sans TC', sans-serif;
+      --font-chinese: 'Noto Sans TC', sans-serif;
+      --font-chinese-serif: 'Noto Serif TC', serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+      --space-5xl: 128px;
+
+      /* Radius */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--sage);
+      color: white;
+    }
+
+    /* ========================================
+       AMBIENT BACKGROUND
+    ======================================== */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.4;
+      animation: ambientFloat 20s ease-in-out infinite;
+    }
+
+    .ambient-orb--sage {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--sage), transparent 70%);
+      top: -10%;
+      right: -5%;
+      animation-delay: 0s;
+    }
+
+    .ambient-orb--sand {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--sand), transparent 70%);
+      bottom: 20%;
+      left: -10%;
+      animation-delay: -7s;
+    }
+
+    .ambient-orb--rose {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--rose), transparent 70%);
+      top: 50%;
+      right: 20%;
+      animation-delay: -14s;
+    }
+
+    @keyframes ambientFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-20px, 30px) scale(0.95); }
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--space-xl);
+    }
+
+    .container--narrow {
+      max-width: 900px;
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-lg) 0;
+      background: rgba(250, 248, 245, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: var(--sage-deep);
+    }
+
+    .back-link svg {
+      transition: transform 0.3s ease;
+    }
+
+    .back-link:hover svg {
+      transform: translateX(-4px);
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       HERO SECTION
+    ======================================== */
+    .hero {
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+      padding-top: 100px;
+      position: relative;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4xl);
+      align-items: center;
+    }
+
+    .hero-text {
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      margin-bottom: var(--space-lg);
+    }
+
+    .hero-label::before {
+      content: '';
+      width: 32px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--sage), var(--teal));
+      border-radius: 1px;
+    }
+
+    .hero-title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+      margin-bottom: var(--space-md);
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--sage-deep) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-sm);
+    }
+
+    .hero-tagline {
+      font-family: var(--font-display);
+      font-size: 1.0625rem;
+      font-style: italic;
+      color: var(--sage-deep);
+      letter-spacing: 0.03em;
+      margin-bottom: var(--space-xl);
+      opacity: 0.85;
+    }
+
+    .hero-desc {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      line-height: 1.9;
+      max-width: 480px;
+    }
+
+    .hero-desc strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .hero-visual {
+      position: relative;
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+
+    .hero-visual__frame {
+      position: relative;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-visual__circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+
+    .hero-visual__circle--outer {
+      width: 100%;
+      height: 100%;
+      animation: breathe 8s ease-in-out infinite;
+    }
+
+    .hero-visual__circle--middle {
+      width: 75%;
+      height: 75%;
+      animation: breathe 8s ease-in-out infinite 1s;
+    }
+
+    .hero-visual__circle--inner {
+      width: 50%;
+      height: 50%;
+      background: var(--bg-sage);
+      animation: breathe 8s ease-in-out infinite 2s;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.02); opacity: 1; }
+    }
+
+    .hero-visual__text {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-chinese-serif);
+      font-size: 5rem;
+      font-weight: 400;
+      color: var(--sage-deep);
+      text-shadow: 0 4px 30px rgba(124, 154, 146, 0.3);
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: var(--space-2xl);
+      margin-top: var(--space-2xl);
+      padding-top: var(--space-xl);
+      border-top: 1px solid var(--border);
+      animation: fadeInUp 0.8s ease-out 0.3s backwards;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .meta-item__label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+
+    .meta-item__value {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ========================================
+       CONCEPT SECTION
+    ======================================== */
+    .concept-section {
+      padding: var(--space-4xl) 0;
+      background: var(--bg-warm);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .concept-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-xl);
+    }
+
+    .concept-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .concept-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(45, 42, 38, 0.08);
+      border-color: var(--sage);
+    }
+
+    .concept-card__icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-sage);
+      border-radius: var(--radius-md);
+      font-size: 1.25rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .concept-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+      color: var(--text-primary);
+    }
+
+    .concept-card__desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* ========================================
+       SECTION HEADERS
+    ======================================== */
+    .section-header {
+      margin-bottom: var(--space-3xl);
+      text-align: center;
+    }
+
+    .section-header--left {
+      text-align: left;
+    }
+
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--sage);
+    }
+
+    .section-header--left .section-label::before {
+      display: none;
+    }
+
+    .section-title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      margin-bottom: var(--space-md);
+    }
+
+    .section-subtitle {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       LOGO GALLERY
+    ======================================== */
+    .gallery-section {
+      padding: var(--space-5xl) 0;
+    }
+
+    .logo-gallery {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5xl);
+    }
+
+    /* Logo Card */
+    .logo-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3xl);
+      align-items: start;
+      padding: var(--space-3xl);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--sage), var(--teal), var(--terracotta));
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .logo-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 30px 80px rgba(45, 42, 38, 0.1);
+    }
+
+    .logo-card:hover::before {
+      opacity: 1;
+    }
+
+    .logo-card:nth-child(even) {
+      direction: rtl;
+    }
+
+    .logo-card:nth-child(even) > * {
+      direction: ltr;
+    }
+
+    /* Logo Preview */
+    .logo-preview {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: #fffcf8;
+    }
+
+    .logo-preview__image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: var(--space-xl);
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .logo-card:hover .logo-preview__image {
+      transform: scale(1.03);
+    }
+
+    .logo-preview__number {
+      position: absolute;
+      top: var(--space-md);
+      left: var(--space-md);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    /* Logo Info */
+    .logo-info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .logo-info__header {
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-info__style {
+      display: inline-block;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      background: var(--bg-sage);
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--radius-full);
+      margin-bottom: var(--space-sm);
+    }
+
+    .logo-info__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.5rem;
+      font-weight: 500;
+      margin-bottom: var(--space-xs);
+      color: var(--text-primary);
+    }
+
+    .logo-info__subtitle {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+    }
+
+    /* Color Palette */
+    .logo-palette {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .logo-palette__swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .logo-palette__swatch:hover {
+      transform: scale(1.15);
+    }
+
+    .logo-palette__swatch::after {
+      content: attr(data-color);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      padding: 2px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .logo-palette__swatch:hover::after {
+      opacity: 1;
+    }
+
+    /* Description */
+    .logo-description {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.9;
+    }
+
+    .logo-description strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Features */
+    .logo-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .logo-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .logo-features li::before {
+      content: '—';
+      color: var(--sage);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Prompt Section */
+    .logo-prompt {
+      background: var(--bg-warm);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .logo-prompt__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-sand);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logo-prompt__header:hover {
+      background: var(--sand);
+    }
+
+    .logo-prompt__label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .logo-prompt__label svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .logo-prompt__toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .logo-prompt__toggle svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.3s;
+    }
+
+    .logo-prompt[data-expanded="true"] .logo-prompt__toggle svg {
+      transform: rotate(180deg);
+    }
+
+    .logo-prompt__content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .logo-prompt[data-expanded="true"] .logo-prompt__content {
+      max-height: 400px;
+    }
+
+    .logo-prompt__text {
+      padding: var(--space-lg);
+      font-size: 0.8125rem;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .logo-prompt__copy {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 var(--space-lg) var(--space-md);
+    }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--sage);
+      color: var(--sage-deep);
+    }
+
+    .copy-btn.copied {
+      background: var(--sage);
+      border-color: var(--sage);
+      color: white;
+    }
+
+    .copy-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ========================================
+       COMPARISON SECTION
+    ======================================== */
+    .comparison-section {
+      padding: var(--space-5xl) 0;
+      background: var(--bg-warm);
+    }
+
+    .comparison-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: var(--space-lg) var(--space-xl);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .comparison-table th {
+      background: var(--bg-sage);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      position: sticky;
+      top: 0;
+    }
+
+    .comparison-table th:first-child {
+      width: 15%;
+    }
+
+    .comparison-table td:first-child {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+
+    .comparison-table td {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .comparison-table tbody tr:hover {
+      background: var(--bg-warm);
+    }
+
+    .comparison-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-logo-name {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .table-logo-name__cn {
+      font-family: var(--font-chinese);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .table-logo-name__en {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ========================================
+       RECOMMENDATION SECTION
+    ======================================== */
+    .recommendation-section {
+      padding: var(--space-5xl) 0;
+    }
+
+    .recommendation-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-xl);
+    }
+
+    .recommendation-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-2xl);
+      transition: all 0.4s;
+    }
+
+    .recommendation-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 15px 40px rgba(45, 42, 38, 0.08);
+    }
+
+    .recommendation-card__badge {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-md);
+    }
+
+    .recommendation-card__badge--primary {
+      background: linear-gradient(135deg, var(--sage), var(--teal));
+      color: white;
+    }
+
+    .recommendation-card__badge--secondary {
+      background: var(--bg-sand);
+      color: var(--terracotta);
+    }
+
+    .recommendation-card__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: var(--space-sm);
+    }
+
+    .recommendation-card__logos {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+
+    .recommendation-card__desc {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* ========================================
+       FOOTER
+    ======================================== */
+    .site-footer {
+      padding: var(--space-3xl) 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .footer-nav {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-xl);
+      margin-top: var(--space-md);
+    }
+
+    .footer-nav a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-nav a:hover {
+      color: var(--sage-deep);
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 1024px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-2xl);
+      }
+
+      .hero-visual {
+        order: -1;
+        max-width: 300px;
+        margin: 0 auto;
+      }
+
+      .logo-card {
+        grid-template-columns: 1fr;
+        gap: var(--space-2xl);
+      }
+
+      .logo-card:nth-child(even) {
+        direction: ltr;
+      }
+
+      .concept-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        min-height: auto;
+        padding-top: 120px;
+        padding-bottom: var(--space-3xl);
+      }
+
+      .hero-meta {
+        flex-direction: column;
+        gap: var(--space-lg);
+      }
+
+      .comparison-table {
+        font-size: 0.8125rem;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: var(--space-md);
+      }
+
+      .recommendation-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Background -->
+  <div class="ambient-bg">
+    <div class="ambient-orb ambient-orb--sage"></div>
+    <div class="ambient-orb ambient-orb--sand"></div>
+    <div class="ambient-orb ambient-orb--rose"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          返回總覽
+        </a>
+        <span class="header-title">Sense Exploration Lab</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <p class="hero-label">Logo Design Exploration</p>
+          <h1 class="hero-title">覺青年共學基地</h1>
+          <p class="hero-subtitle">Sense Exploration Lab</p>
+          <p class="hero-tagline">A lab for sensory exploration and shared learning.</p>
+          <p class="hero-desc">
+            以<strong>「覺」</strong>為核心的共學空間，融合佛家、道家智慧與現代正念實踐。
+            透過<strong>五感體驗</strong>喚醒內在覺察，從<strong>自覺</strong>走向<strong>覺他</strong>，
+            連結親子、年輕人與家長，創造跨世代的成長旅程。
+          </p>
+
+          <div class="hero-meta">
+            <div class="meta-item">
+              <span class="meta-item__label">專案類型</span>
+              <span class="meta-item__value">品牌識別設計</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-item__label">設計方向</span>
+              <span class="meta-item__value">6 個方案</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-item__label">生成工具</span>
+              <span class="meta-item__value">nano banana pro</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-visual__frame">
+            <div class="hero-visual__circle hero-visual__circle--outer"></div>
+            <div class="hero-visual__circle hero-visual__circle--middle"></div>
+            <div class="hero-visual__circle hero-visual__circle--inner"></div>
+            <span class="hero-visual__text">覺</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Concept Section -->
+  <section class="concept-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Core Concepts</p>
+        <h2 class="section-title">設計理念核心</h2>
+        <p class="section-subtitle">The philosophical foundation guiding our visual identity</p>
+      </div>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="concept-card__icon">🌱</div>
+          <h3 class="concept-card__title">自覺 → 覺他</h3>
+          <p class="concept-card__desc">
+            從自我覺察出發，逐漸擴展到幫助他人。這是覺青年的核心成長路徑，
+            也是 Logo 設計需要傳達的精神旅程。
+          </p>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-card__icon">✋</div>
+          <h3 class="concept-card__title">五感覺察</h3>
+          <p class="concept-card__desc">
+            視覺、聽覺、嗅覺、味覺、觸覺——身體是覺察的入口。
+            透過感官體驗回到當下，培養內在的觀照能力。
+          </p>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-card__icon">🤝</div>
+          <h3 class="concept-card__title">齊物共學</h3>
+          <p class="concept-card__desc">
+            來自莊子的智慧：萬物平等、消解對立。
+            跨世代的對話與理解，在多元中找到連結。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Logo Gallery -->
+  <section class="gallery-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Logo Exploration</p>
+        <h2 class="section-title">設計方向探索</h2>
+        <p class="section-subtitle">Six distinctive approaches to visualizing awareness</p>
+      </div>
+
+      <div class="logo-gallery">
+        <!-- Logo 1: Community Connection -->
+        <article class="logo-card">
+          <div class="logo-preview">
+            <span class="logo-preview__number">01</span>
+            <img
+              src="logo/Gemini_Generated_Image_trq474trq474trq4.png"
+              alt="社群連結風格 Logo"
+              class="logo-preview__image"
+            />
+          </div>
+
+          <div class="logo-info">
+            <div class="logo-info__header">
+              <span class="logo-info__style">社群連結</span>
+              <h3 class="logo-info__title">齊物共融</h3>
+              <p class="logo-info__subtitle">Intergenerational Connection</p>
+            </div>
+
+            <div class="logo-palette">
+              <span class="logo-palette__swatch" style="background: #E8945A;" data-color="#E8945A"></span>
+              <span class="logo-palette__swatch" style="background: #72A9A0;" data-color="#72A9A0"></span>
+              <span class="logo-palette__swatch" style="background: #E5D4B3;" data-color="#E5D4B3"></span>
+              <span class="logo-palette__swatch" style="background: #4A4A4A;" data-color="#4A4A4A"></span>
+            </div>
+
+            <p class="logo-description">
+              以<strong>三至四個抽象人形</strong>溫柔交織，象徵親子、年輕人、家長的<strong>跨世代連結</strong>。
+              每個形體保持獨立身份的同時，又彼此相依形成整體——呼應莊子<strong>「齊物」</strong>的平等思想。
+              圓潤親切的造型帶有人文溫度，北歐與東方美學的融合創造獨特的視覺語言。
+            </p>
+
+            <ul class="logo-features">
+              <li>抽象人形輕柔交織，傳達社群歸屬感</li>
+              <li>日落橙 + 青綠色的溫暖配色，親和力強</li>
+              <li>北歐簡約遇見東方留白，平衡而不失層次</li>
+              <li>適合：強調「社群」與「共學」概念的應用場景</li>
+            </ul>
+
+            <div class="logo-prompt" data-expanded="false">
+              <div class="logo-prompt__header" onclick="togglePrompt(this)">
+                <span class="logo-prompt__label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Image Prompt
+                </span>
+                <span class="logo-prompt__toggle">
+                  展開
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="logo-prompt__content">
+                <div class="logo-prompt__text">A warm, community-focused logo for "覺青年共學基地" (Jue Youth Co-learning Base). The design shows three to four abstract figures or forms gently interlocking, representing intergenerational connection (親子、年輕人、家長). The figures create a unified whole while maintaining individual identity, suggesting the concept of "齊物" (equality of all beings). Rounded, approachable shapes with subtle human warmth. Color palette: sunset orange (#E8945A), gentle teal (#72A9A0), warm sand (#E5D4B3), and soft charcoal (#4A4A4A). Scandinavian-meets-Eastern simplicity, isolated on cream background, balanced grouping, scalable, high definition.</div>
+                <div class="logo-prompt__copy">
+                  <button class="copy-btn" onclick="copyPrompt(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    複製 Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Logo 2: Sensory Bloom -->
+        <article class="logo-card">
+          <div class="logo-preview">
+            <span class="logo-preview__number">02</span>
+            <img
+              src="logo/Gemini_Generated_Image_b1xlkab1xlkab1xl.png"
+              alt="感官綻放風格 Logo"
+              class="logo-preview__image"
+            />
+          </div>
+
+          <div class="logo-info">
+            <div class="logo-info__header">
+              <span class="logo-info__style">感官綻放</span>
+              <h3 class="logo-info__title">五覺花開</h3>
+              <p class="logo-info__subtitle">Sensory Bloom</p>
+            </div>
+
+            <div class="logo-palette">
+              <span class="logo-palette__swatch" style="background: #C4A4A4;" data-color="#C4A4A4"></span>
+              <span class="logo-palette__swatch" style="background: #8FA68A;" data-color="#8FA68A"></span>
+              <span class="logo-palette__swatch" style="background: #D9B86C;" data-color="#D9B86C"></span>
+              <span class="logo-palette__swatch" style="background: #C9A88E;" data-color="#C9A88E"></span>
+              <span class="logo-palette__swatch" style="background: #5E4955;" data-color="#5E4955"></span>
+            </div>
+
+            <p class="logo-description">
+              <strong>五片花瓣</strong>從中心向外綻放，各自隱約暗示一種感官：視覺、聽覺、嗅覺、味覺、觸覺。
+              花瓣匯聚處形成<strong>覺醒的意識</strong>，負空間則隱約浮現<strong>敞開的手掌或擁抱姿態</strong>。
+              當代有機風格融合植物美學，營造出溫柔而充滿生命力的視覺意象。
+            </p>
+
+            <ul class="logo-features">
+              <li>五片花瓣各代表一種感官，視覺隱喻豐富</li>
+              <li>負空間巧思：手掌/擁抱的暗示，增添情感層次</li>
+              <li>塵玫瑰 + 鼠尾草綠的療癒配色，令人放鬆</li>
+              <li>適合：強調「感官體驗」與「療癒」的工作坊推廣</li>
+            </ul>
+
+            <div class="logo-prompt" data-expanded="false">
+              <div class="logo-prompt__header" onclick="togglePrompt(this)">
+                <span class="logo-prompt__label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Image Prompt
+                </span>
+                <span class="logo-prompt__toggle">
+                  展開
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="logo-prompt__content">
+                <div class="logo-prompt__text">A sensory-rich, organic logo for "覺青年共學基地" (Jue Youth Co-learning Base). The design features five abstract petal-like forms radiating from a center, each subtly suggesting a different sense (sight, sound, smell, taste, touch). The petals converge to form a blooming awareness, with the negative space hinting at an open palm or embracing gesture. Soft geometric curves with botanical influence. Color palette: dusty rose (#C4A4A4), sage green (#8FA68A), golden honey (#D9B86C), soft clay (#C9A88E), and deep plum (#5E4955). Contemporary organic style, isolated on warm white background, radial balance, scalable, high definition.</div>
+                <div class="logo-prompt__copy">
+                  <button class="copy-btn" onclick="copyPrompt(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    複製 Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Logo 3: Dialogue Path -->
+        <article class="logo-card">
+          <div class="logo-preview">
+            <span class="logo-preview__number">03</span>
+            <img
+              src="logo/Gemini_Generated_Image_49q7mr49q7mr49q7.png"
+              alt="對話匯聚風格 Logo"
+              class="logo-preview__image"
+            />
+          </div>
+
+          <div class="logo-info">
+            <div class="logo-info__header">
+              <span class="logo-info__style">對話匯聚</span>
+              <h3 class="logo-info__title">心徑交會</h3>
+              <p class="logo-info__subtitle">Converging Paths</p>
+            </div>
+
+            <div class="logo-palette">
+              <span class="logo-palette__swatch" style="background: #7C9A92;" data-color="#7C9A92"></span>
+              <span class="logo-palette__swatch" style="background: #E5DCC3;" data-color="#E5DCC3"></span>
+              <span class="logo-palette__swatch" style="background: #C46B4F;" data-color="#C46B4F"></span>
+            </div>
+
+            <p class="logo-description">
+              以<strong>交織的曲線</strong>構成，多條路徑在寧靜的中心相遇——象徵<strong>共學、對話與共享覺察</strong>。
+              整體輪廓隱約呈現<strong>眼睛或種子</strong>的形態，不刻意具象卻富含意涵。
+              極簡的有機幾何風格，體現<strong>以人為本</strong>的低調雅緻。
+            </p>
+
+            <ul class="logo-features">
+              <li>多條曲線匯聚中心，象徵對話與共學精神</li>
+              <li>眼睛/種子的隱約暗示：覺察與成長的雙重意涵</li>
+              <li>鼠尾草綠 + 暖沙色 + 陶土橙，大地系配色穩重</li>
+              <li>適合：正式場合與品牌核心識別使用</li>
+            </ul>
+
+            <div class="logo-prompt" data-expanded="false">
+              <div class="logo-prompt__header" onclick="togglePrompt(this)">
+                <span class="logo-prompt__label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Image Prompt
+                </span>
+                <span class="logo-prompt__toggle">
+                  展開
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="logo-prompt__content">
+                <div class="logo-prompt__text">Design a minimalist, organic geometric logo for "覺青年共學基地" (Jue Youth Co-learning Base).
+The logo is formed by interlocking curved lines, suggesting multiple paths meeting at a calm center — symbolizing co-learning, dialogue, and shared awareness.
+The overall shape subtly resembles an eye or seed, without explicit representation.
+Color palette: sage green, warm sand beige, and grounding terracotta orange.
+Clean vector style, balanced composition, off-white background, scalable, high definition, understated and human-centered.</div>
+                <div class="logo-prompt__copy">
+                  <button class="copy-btn" onclick="copyPrompt(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    複製 Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Logo 4: Sprouting Seed -->
+        <article class="logo-card">
+          <div class="logo-preview">
+            <span class="logo-preview__number">04</span>
+            <img
+              src="logo/Gemini_Generated_Image_3upcid3upcid3upc.png"
+              alt="萌芽覺醒風格 Logo"
+              class="logo-preview__image"
+            />
+          </div>
+
+          <div class="logo-info">
+            <div class="logo-info__header">
+              <span class="logo-info__style">萌芽覺醒</span>
+              <h3 class="logo-info__title">覺種發芽</h3>
+              <p class="logo-info__subtitle">Sprouting Awakening</p>
+            </div>
+
+            <div class="logo-palette">
+              <span class="logo-palette__swatch" style="background: #7C9A92;" data-color="#7C9A92"></span>
+              <span class="logo-palette__swatch" style="background: #E5DCC3;" data-color="#E5DCC3"></span>
+              <span class="logo-palette__swatch" style="background: #C46B4F;" data-color="#C46B4F"></span>
+            </div>
+
+            <p class="logo-description">
+              風格化的<strong>萌芽種子</strong>圖案，巧妙融合<strong>抽象眼睛或光圈</strong>的形態，
+              象徵<strong>覺醒</strong>與<strong>成長</strong>的雙重意涵。流暢交織的線條傳達出生命的動態能量。
+              這是 Logo 3 的進化版本，在相同配色下強化了「成長」的視覺敘事。
+            </p>
+
+            <ul class="logo-features">
+              <li>種子萌芽 + 眼睛/光圈的雙重象徵，層次豐富</li>
+              <li>流暢線條傳達生命力與動態感</li>
+              <li>與 Logo 3 同系配色，可作為系列使用</li>
+              <li>適合：強調「成長」與「轉化」的教育推廣</li>
+            </ul>
+
+            <div class="logo-prompt" data-expanded="false">
+              <div class="logo-prompt__header" onclick="togglePrompt(this)">
+                <span class="logo-prompt__label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Image Prompt
+                </span>
+                <span class="logo-prompt__toggle">
+                  展開
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="logo-prompt__content">
+                <div class="logo-prompt__text">A minimalist, organic geometric logo for "覺青年共學基地" (Jue Youth Co-learning Base). The design features a stylized sprouting seed motif that subtly forms an abstract eye or aperture shape, symbolizing awakening and growth. Use fluid, interlocking lines. Color palette: muted sage green (#7C9A92), warm sand beige (#E5DCC3), and a deep, grounding terracotta orange (#C46B4F). Clean vector style, isolated on a plain off-white background, balanced composition, scalable, high definition, no text distortion.</div>
+                <div class="logo-prompt__copy">
+                  <button class="copy-btn" onclick="copyPrompt(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    複製 Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Logo 5: Transparent Fusion -->
+        <article class="logo-card">
+          <div class="logo-preview">
+            <span class="logo-preview__number">05</span>
+            <img
+              src="logo/Gemini_Generated_Image_ptx8ohptx8ohptx8.png"
+              alt="透明融合風格 Logo"
+              class="logo-preview__image"
+            />
+          </div>
+
+          <div class="logo-info">
+            <div class="logo-info__header">
+              <span class="logo-info__style">透明融合</span>
+              <h3 class="logo-info__title">共學交融</h3>
+              <p class="logo-info__subtitle">Transparent Fusion</p>
+            </div>
+
+            <div class="logo-palette">
+              <span class="logo-palette__swatch" style="background: #4caf50;" data-color="#4caf50"></span>
+              <span class="logo-palette__swatch" style="background: #2196f3;" data-color="#2196f3"></span>
+              <span class="logo-palette__swatch" style="background: #39a87c;" data-color="#39a87c"></span>
+            </div>
+
+            <p class="logo-description">
+              三個<strong>半透明有機形狀</strong>（如細胞或卵石）相互交疊，交會處產生<strong>新的混合色彩</strong>。
+              這巧妙表達了<strong>共學</strong>的本質：不同個體相遇，碰撞出新的可能。
+              現代扁平設計搭配透明度效果，清新而富有科技教育感。
+            </p>
+
+            <ul class="logo-features">
+              <li>透明交疊產生新色彩，視覺化「共學」概念</li>
+              <li>細胞/卵石造型，有機而現代</li>
+              <li>清新綠藍配色，年輕活力感強</li>
+              <li>適合：數位平台、科技教育場景</li>
+            </ul>
+
+            <div class="logo-prompt" data-expanded="false">
+              <div class="logo-prompt__header" onclick="togglePrompt(this)">
+                <span class="logo-prompt__label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Image Prompt
+                </span>
+                <span class="logo-prompt__toggle">
+                  展開
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="logo-prompt__content">
+                <div class="logo-prompt__text">A minimalist logo symbol for "Sense Exploration Lab". Three translucent, organic shapes (resembling cells or pebbles) are overlapping and merging, creating new colors in the intersection areas. This represents shared learning and connection. Color palette: Fresh Greens (#4caf50) and Blues (#2196f3) with transparency effects. Style: Modern, flat design with transparency opacity overlap, clean, fresh, educational.</div>
+                <div class="logo-prompt__copy">
+                  <button class="copy-btn" onclick="copyPrompt(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    複製 Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Logo 6: Fingerprint Eye -->
+        <article class="logo-card">
+          <div class="logo-preview">
+            <span class="logo-preview__number">06</span>
+            <img
+              src="logo/Gemini_Generated_Image_dqo91udqo91udqo9.png"
+              alt="感官探索風格 Logo"
+              class="logo-preview__image"
+            />
+          </div>
+
+          <div class="logo-info">
+            <div class="logo-info__header">
+              <span class="logo-info__style">感官探索</span>
+              <h3 class="logo-info__title">觸覺之眼</h3>
+              <p class="logo-info__subtitle">Sensory Discovery</p>
+            </div>
+
+            <div class="logo-palette">
+              <span class="logo-palette__swatch" style="background: #32CD32;" data-color="#32CD32"></span>
+              <span class="logo-palette__swatch" style="background: #007FFF;" data-color="#007FFF"></span>
+            </div>
+
+            <p class="logo-description">
+              創意融合<strong>指紋</strong>（觸覺）與<strong>眼睛</strong>（視覺），以連續流暢的線條構成。
+              這個設計直接呈現<strong>感官探索</strong>與<strong>自我發現</strong>的主題，
+              現代活潑的科技教育風格，適合面向年輕族群的品牌應用。
+            </p>
+
+            <ul class="logo-features">
+              <li>指紋 + 眼睛的創意融合，概念直觀有力</li>
+              <li>連續線條設計，動感十足</li>
+              <li>萊姆綠 + 電光藍，年輕科技感</li>
+              <li>適合：青年工作坊、數位學習平台</li>
+            </ul>
+
+            <div class="logo-prompt" data-expanded="false">
+              <div class="logo-prompt__header" onclick="togglePrompt(this)">
+                <span class="logo-prompt__label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                  </svg>
+                  Image Prompt
+                </span>
+                <span class="logo-prompt__toggle">
+                  展開
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="logo-prompt__content">
+                <div class="logo-prompt__text">A modern, playful yet sophisticated logo for "Sense Youth Lab". The symbol creates an abstract fusion of a fingerprint (touch) and an eye (sight) using continuous, fluid lines, representing sensory exploration and self-discovery. Color palette: Fresh Lime Green (#32CD32) mixed with Electric Blue (#007FFF) on a white background. Vector style, clean lines, rounded corners, friendly and accessible tech-education vibe.</div>
+                <div class="logo-prompt__copy">
+                  <button class="copy-btn" onclick="copyPrompt(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    複製 Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Section -->
+  <section class="comparison-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Comparison</p>
+        <h2 class="section-title">設計方案對比</h2>
+        <p class="section-subtitle">A detailed comparison across key dimensions</p>
+      </div>
+
+      <div class="comparison-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>比較面向</th>
+              <th>
+                <div class="table-logo-name">
+                  <span class="table-logo-name__cn">01 齊物共融</span>
+                  <span class="table-logo-name__en">Community</span>
+                </div>
+              </th>
+              <th>
+                <div class="table-logo-name">
+                  <span class="table-logo-name__cn">02 五覺花開</span>
+                  <span class="table-logo-name__en">Sensory Bloom</span>
+                </div>
+              </th>
+              <th>
+                <div class="table-logo-name">
+                  <span class="table-logo-name__cn">03 心徑交會</span>
+                  <span class="table-logo-name__en">Converging</span>
+                </div>
+              </th>
+              <th>
+                <div class="table-logo-name">
+                  <span class="table-logo-name__cn">04 覺種發芽</span>
+                  <span class="table-logo-name__en">Sprouting</span>
+                </div>
+              </th>
+              <th>
+                <div class="table-logo-name">
+                  <span class="table-logo-name__cn">05 共學交融</span>
+                  <span class="table-logo-name__en">Fusion</span>
+                </div>
+              </th>
+              <th>
+                <div class="table-logo-name">
+                  <span class="table-logo-name__cn">06 觸覺之眼</span>
+                  <span class="table-logo-name__en">Discovery</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>核心隱喻</td>
+              <td>人與人的連結</td>
+              <td>五感覺察綻放</td>
+              <td>對話路徑匯聚</td>
+              <td>覺醒與成長</td>
+              <td>共學產生新知</td>
+              <td>感官探索發現</td>
+            </tr>
+            <tr>
+              <td>視覺風格</td>
+              <td>北歐 × 東方</td>
+              <td>有機植物感</td>
+              <td>極簡幾何</td>
+              <td>流動有機</td>
+              <td>現代扁平</td>
+              <td>科技活潑</td>
+            </tr>
+            <tr>
+              <td>色彩調性</td>
+              <td>暖橙 + 青綠</td>
+              <td>療癒大地色</td>
+              <td>穩重大地色</td>
+              <td>穩重大地色</td>
+              <td>清新綠藍</td>
+              <td>活力綠藍</td>
+            </tr>
+            <tr>
+              <td>情感氛圍</td>
+              <td>溫暖親切</td>
+              <td>療癒放鬆</td>
+              <td>沉穩內斂</td>
+              <td>生機蓬勃</td>
+              <td>清新現代</td>
+              <td>年輕動感</td>
+            </tr>
+            <tr>
+              <td>目標受眾</td>
+              <td>親子家庭</td>
+              <td>療癒工作坊</td>
+              <td>全年齡通用</td>
+              <td>成長導向</td>
+              <td>數位學習</td>
+              <td>青年族群</td>
+            </tr>
+            <tr>
+              <td>哲學連結</td>
+              <td>齊物（莊子）</td>
+              <td>五感覺察</td>
+              <td>共學對話</td>
+              <td>自覺覺他</td>
+              <td>共學共創</td>
+              <td>感官正念</td>
+            </tr>
+            <tr>
+              <td>辨識度</td>
+              <td>中等</td>
+              <td>高</td>
+              <td>中等</td>
+              <td>高</td>
+              <td>中等</td>
+              <td>高</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommendation Section -->
+  <section class="recommendation-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Recommendations</p>
+        <h2 class="section-title">使用情境建議</h2>
+        <p class="section-subtitle">Strategic guidance for different applications</p>
+      </div>
+
+      <div class="recommendation-grid">
+        <div class="recommendation-card">
+          <span class="recommendation-card__badge recommendation-card__badge--primary">核心識別推薦</span>
+          <h3 class="recommendation-card__title">品牌主視覺</h3>
+          <p class="recommendation-card__logos">Logo 03 心徑交會 或 Logo 04 覺種發芽</p>
+          <p class="recommendation-card__desc">
+            作為品牌核心識別，建議選擇意涵豐富且風格穩重的設計。
+            Logo 03 以「對話」為核心，呼應共學精神；Logo 04 強調「成長」，
+            契合從自覺到覺他的旅程。兩者配色一致，可靈活搭配使用。
+          </p>
+        </div>
+
+        <div class="recommendation-card">
+          <span class="recommendation-card__badge recommendation-card__badge--secondary">親子活動</span>
+          <h3 class="recommendation-card__title">親子工作坊推廣</h3>
+          <p class="recommendation-card__logos">Logo 01 齊物共融 或 Logo 02 五覺花開</p>
+          <p class="recommendation-card__desc">
+            針對親子活動，溫暖親切的視覺語言更能引起共鳴。
+            Logo 01 直接傳達跨世代連結；Logo 02 的感官花朵主題
+            非常適合繪本故事屋、親子瑜伽等五感體驗活動。
+          </p>
+        </div>
+
+        <div class="recommendation-card">
+          <span class="recommendation-card__badge recommendation-card__badge--secondary">青年工作坊</span>
+          <h3 class="recommendation-card__title">年輕人社群推廣</h3>
+          <p class="recommendation-card__logos">Logo 05 共學交融 或 Logo 06 觸覺之眼</p>
+          <p class="recommendation-card__desc">
+            面向年輕族群時，現代感與活力感更為重要。
+            Logo 05 的透明交融概念新穎有趣；Logo 06 的指紋眼睛融合
+            直觀傳達感官探索主題，適合數位平台與社群媒體。
+          </p>
+        </div>
+
+        <div class="recommendation-card">
+          <span class="recommendation-card__badge recommendation-card__badge--secondary">療癒課程</span>
+          <h3 class="recommendation-card__title">正念療癒推廣</h3>
+          <p class="recommendation-card__logos">Logo 02 五覺花開</p>
+          <p class="recommendation-card__desc">
+            頌缽、芳香精油、舞動等療癒工作坊，需要傳達放鬆與內在探索的氛圍。
+            Logo 02 的療癒配色與花朵綻放意象，最能呼應這類活動的精神本質。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-text">覺青年共學基地 · Logo 設計探索 · 2025</p>
+      <nav class="footer-nav">
+        <a href="../index.html">所有專案</a>
+        <a href="#">品牌指南</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Toggle prompt expansion
+    function togglePrompt(header) {
+      const prompt = header.closest('.logo-prompt');
+      const isExpanded = prompt.dataset.expanded === 'true';
+      prompt.dataset.expanded = !isExpanded;
+
+      const toggleText = header.querySelector('.logo-prompt__toggle');
+      toggleText.childNodes[0].textContent = isExpanded ? '展開' : '收合';
+    }
+
+    // Copy prompt to clipboard
+    async function copyPrompt(btn) {
+      const promptText = btn.closest('.logo-prompt').querySelector('.logo-prompt__text').textContent.trim();
+
+      try {
+        await navigator.clipboard.writeText(promptText);
+        btn.classList.add('copied');
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          已複製！
+        `;
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            複製 Prompt
+          `;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.logo-card').forEach(card => {
+      card.style.animationPlayState = 'paused';
+      observer.observe(card);
+    });
+  </script>
+</body>
+</html>
