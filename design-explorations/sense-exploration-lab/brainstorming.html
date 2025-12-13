@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>「覺」概念探索 Brainstorming | Sense Exploration Lab</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Nunito+Sans:ital,opsz,wght@0,6..12,300;0,6..12,400;0,6..12,500;0,6..12,600;1,6..12,400&family=Noto+Sans+TC:wght@300;400;500;600&family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Grounded earth palette */
+      --bg-primary: #faf8f5;
+      --bg-warm: #f5f1eb;
+      --bg-card: #ffffff;
+      --bg-sage: #e8ede9;
+      --bg-sand: #f0ebe3;
+
+      --text-primary: #2d2a26;
+      --text-secondary: #5a5650;
+      --text-muted: #8a857d;
+      --text-light: #b5afa5;
+
+      /* Logo-inspired accents */
+      --sage: #7c9a92;
+      --sage-deep: #5a7a72;
+      --terracotta: #c46b4f;
+      --terracotta-soft: #d4856d;
+      --sand: #e5dcc3;
+      --clay: #c9a88e;
+      --plum: #5e4955;
+      --honey: #d9b86c;
+      --rose: #c4a4a4;
+      --teal: #72a9a0;
+
+      --border: rgba(45, 42, 38, 0.08);
+      --border-hover: rgba(45, 42, 38, 0.15);
+
+      /* Typography */
+      --font-display: 'Cormorant Garamond', 'Noto Serif TC', Georgia, serif;
+      --font-body: 'Nunito Sans', 'Noto Sans TC', sans-serif;
+      --font-chinese: 'Noto Sans TC', sans-serif;
+      --font-chinese-serif: 'Noto Serif TC', serif;
+
+      /* Spacing */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+      --space-4xl: 96px;
+      --space-5xl: 128px;
+
+      /* Radius */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--sage);
+      color: white;
+    }
+
+    /* ========================================
+       AMBIENT BACKGROUND
+    ======================================== */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.35;
+      animation: ambientFloat 20s ease-in-out infinite;
+    }
+
+    .ambient-orb--sage {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--sage), transparent 70%);
+      top: -10%;
+      right: -5%;
+      animation-delay: 0s;
+    }
+
+    .ambient-orb--sand {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--sand), transparent 70%);
+      bottom: 30%;
+      left: -10%;
+      animation-delay: -7s;
+    }
+
+    .ambient-orb--rose {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, var(--rose), transparent 70%);
+      top: 40%;
+      right: 15%;
+      animation-delay: -14s;
+    }
+
+    .ambient-orb--honey {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--honey), transparent 70%);
+      bottom: 10%;
+      right: -5%;
+      animation-delay: -10s;
+    }
+
+    @keyframes ambientFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-20px, 30px) scale(0.95); }
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-xl);
+    }
+
+    .container--narrow {
+      max-width: 900px;
+    }
+
+    .container--wide {
+      max-width: 1400px;
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: var(--space-lg) 0;
+      background: rgba(250, 248, 245, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: var(--sage-deep);
+    }
+
+    .back-link svg {
+      transition: transform 0.3s ease;
+    }
+
+    .back-link:hover svg {
+      transform: translateX(-4px);
+    }
+
+    .header-nav {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .header-nav a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .header-nav a:hover {
+      color: var(--sage-deep);
+    }
+
+    /* ========================================
+       HERO SECTION
+    ======================================== */
+    .hero {
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      padding-top: 100px;
+      position: relative;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4xl);
+      align-items: center;
+    }
+
+    .hero-text {
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      margin-bottom: var(--space-lg);
+    }
+
+    .hero-label::before {
+      content: '';
+      width: 32px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--sage), var(--teal));
+      border-radius: 1px;
+    }
+
+    .hero-title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+      margin-bottom: var(--space-md);
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--sage-deep) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-xl);
+    }
+
+    .hero-desc {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      line-height: 1.9;
+      max-width: 520px;
+    }
+
+    .hero-desc strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: var(--space-2xl);
+      margin-top: var(--space-2xl);
+      padding-top: var(--space-xl);
+      border-top: 1px solid var(--border);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .meta-item__label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+
+    .meta-item__value {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .hero-visual {
+      position: relative;
+      animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+
+    .hero-visual__frame {
+      position: relative;
+      aspect-ratio: 1;
+      max-width: 400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-visual__circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+
+    .hero-visual__circle--outer {
+      width: 100%;
+      height: 100%;
+      animation: breathe 8s ease-in-out infinite;
+    }
+
+    .hero-visual__circle--middle {
+      width: 75%;
+      height: 75%;
+      animation: breathe 8s ease-in-out infinite 1s;
+    }
+
+    .hero-visual__circle--inner {
+      width: 50%;
+      height: 50%;
+      background: linear-gradient(135deg, var(--bg-sage) 0%, rgba(124, 154, 146, 0.3) 100%);
+      animation: breathe 8s ease-in-out infinite 2s;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.02); opacity: 1; }
+    }
+
+    .hero-visual__text {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-chinese-serif);
+      font-size: 6rem;
+      font-weight: 400;
+      color: var(--sage-deep);
+      text-shadow: 0 4px 30px rgba(124, 154, 146, 0.3);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ========================================
+       TABLE OF CONTENTS
+    ======================================== */
+    .toc-section {
+      padding: var(--space-3xl) 0;
+      background: var(--bg-warm);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    .toc-item:hover {
+      border-color: var(--sage);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(45, 42, 38, 0.06);
+    }
+
+    .toc-item__number {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-sage);
+      border-radius: 50%;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--sage-deep);
+      flex-shrink: 0;
+    }
+
+    .toc-item__text {
+      font-size: 0.9375rem;
+      font-weight: 500;
+    }
+
+    /* ========================================
+       SECTION HEADERS
+    ======================================== */
+    .section-header {
+      margin-bottom: var(--space-2xl);
+      text-align: center;
+    }
+
+    .section-header--left {
+      text-align: left;
+    }
+
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--sage);
+    }
+
+    .section-header--left .section-label::before {
+      display: none;
+    }
+
+    .section-title {
+      font-family: var(--font-chinese-serif);
+      font-size: clamp(1.75rem, 3vw, 2.25rem);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      margin-bottom: var(--space-md);
+    }
+
+    .section-subtitle {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ========================================
+       CONTENT SECTIONS
+    ======================================== */
+    .content-section {
+      padding: var(--space-4xl) 0;
+    }
+
+    .content-section:nth-child(even) {
+      background: var(--bg-warm);
+    }
+
+    .content-section--alt {
+      background: var(--bg-warm);
+    }
+
+    /* Overview Card */
+    .overview-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-2xl);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2xl);
+    }
+
+    .overview-card__left {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .overview-card__right {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+      padding-left: var(--space-2xl);
+      border-left: 1px solid var(--border);
+    }
+
+    .overview-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .overview-item__label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+    }
+
+    .overview-item__value {
+      font-size: 1rem;
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+
+    .overview-item__value ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .overview-item__value li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+    }
+
+    .overview-item__value li::before {
+      content: '·';
+      color: var(--sage);
+      font-weight: bold;
+    }
+
+    /* Method Cards */
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-xl);
+    }
+
+    .method-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .method-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--sage), var(--teal));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .method-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(45, 42, 38, 0.08);
+    }
+
+    .method-card:hover::before {
+      opacity: 1;
+    }
+
+    .method-card__icon {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-sage);
+      border-radius: var(--radius-lg);
+      font-size: 1.5rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .method-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: var(--space-xs);
+    }
+
+    .method-card__subtitle {
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+
+    .method-card__desc {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* Concept Tags */
+    .concept-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+    }
+
+    .concept-tag {
+      display: inline-flex;
+      padding: var(--space-xs) var(--space-md);
+      background: var(--bg-sage);
+      border-radius: var(--radius-full);
+      font-size: 0.875rem;
+      color: var(--sage-deep);
+      font-weight: 500;
+    }
+
+    .concept-tag--highlight {
+      background: linear-gradient(135deg, var(--sage), var(--teal));
+      color: white;
+    }
+
+    /* Mind Map Section */
+    .mindmap-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-xl);
+    }
+
+    .mindmap-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+    }
+
+    .mindmap-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .mindmap-card__title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: var(--sage);
+      border-radius: 2px;
+    }
+
+    .mindmap-card__content {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .mindmap-card__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .mindmap-card__list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+    }
+
+    .mindmap-card__list li::before {
+      content: '—';
+      color: var(--sage);
+      flex-shrink: 0;
+    }
+
+    /* Framework Diagram */
+    .framework-diagram {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-2xl);
+      margin-bottom: var(--space-xl);
+    }
+
+    .framework-diagram__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: var(--space-xl);
+      text-align: center;
+    }
+
+    .pathway-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .pathway-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-lg);
+      background: var(--bg-sage);
+      border-radius: var(--radius-lg);
+      min-width: 140px;
+    }
+
+    .pathway-step__main {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--sage-deep);
+    }
+
+    .pathway-step__sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .pathway-arrow {
+      color: var(--sage);
+      font-size: 1.5rem;
+    }
+
+    /* Quote Block */
+    .quote-block {
+      background: linear-gradient(135deg, var(--bg-sage) 0%, rgba(114, 169, 160, 0.15) 100%);
+      border-left: 4px solid var(--sage);
+      border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+      padding: var(--space-xl);
+      margin: var(--space-xl) 0;
+    }
+
+    .quote-block__text {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--sage-deep);
+      line-height: 1.8;
+    }
+
+    /* Tables */
+    .data-table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: var(--space-md) var(--space-lg);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+      background: var(--bg-sage);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage-deep);
+    }
+
+    .data-table td {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    .data-table td:first-child {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .data-table tbody tr:hover {
+      background: var(--bg-warm);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Wisdom Cards */
+    .wisdom-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-xl);
+    }
+
+    .wisdom-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .wisdom-card__header {
+      background: var(--bg-sage);
+      padding: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .wisdom-card__icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-card);
+      border-radius: 50%;
+      font-size: 1.25rem;
+    }
+
+    .wisdom-card__title {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.125rem;
+      font-weight: 500;
+    }
+
+    .wisdom-card__body {
+      padding: var(--space-lg);
+    }
+
+    .wisdom-item {
+      display: flex;
+      gap: var(--space-md);
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wisdom-item:last-child {
+      border-bottom: none;
+    }
+
+    .wisdom-item__term {
+      font-family: var(--font-chinese-serif);
+      font-weight: 600;
+      color: var(--sage-deep);
+      min-width: 60px;
+    }
+
+    .wisdom-item__def {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+    }
+
+    /* Sensory Grid */
+    .sensory-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .sensory-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .sensory-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 40px rgba(45, 42, 38, 0.08);
+      border-color: var(--sage);
+    }
+
+    .sensory-card__icon {
+      font-size: 2rem;
+      margin-bottom: var(--space-sm);
+    }
+
+    .sensory-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+    }
+
+    .sensory-card__activities {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .sensory-card__connection {
+      margin-top: var(--space-sm);
+      padding-top: var(--space-sm);
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--sage-deep);
+      font-weight: 500;
+    }
+
+    /* Insights Grid */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-xl);
+    }
+
+    .insight-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      position: relative;
+    }
+
+    .insight-card__number {
+      position: absolute;
+      top: var(--space-lg);
+      right: var(--space-lg);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-sage);
+      border-radius: 50%;
+      font-family: var(--font-display);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--sage-deep);
+    }
+
+    .insight-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1.0625rem;
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+      padding-right: 48px;
+    }
+
+    .insight-card__desc {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* Summary Section */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-xl);
+    }
+
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+    }
+
+    .summary-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .summary-card__title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--sage);
+      border-radius: 50%;
+    }
+
+    .summary-card__list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .summary-card__list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+    }
+
+    .summary-card__list li::before {
+      content: '·';
+      color: var(--sage);
+      font-weight: bold;
+      font-size: 1.25rem;
+      line-height: 1.4;
+    }
+
+    /* Vocab Section */
+    .vocab-section {
+      margin-bottom: var(--space-xl);
+    }
+
+    .vocab-section__title {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-md);
+      color: var(--sage-deep);
+    }
+
+    /* Family Framework */
+    .family-framework {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .family-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      text-align: center;
+    }
+
+    .family-card__title {
+      font-family: var(--font-chinese);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: var(--space-md);
+      color: var(--sage-deep);
+    }
+
+    .family-card__keywords {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--space-xs);
+    }
+
+    .family-card__keyword {
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--bg-sage);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .family-principle {
+      background: linear-gradient(135deg, var(--bg-sage) 0%, rgba(196, 70, 79, 0.08) 100%);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      text-align: center;
+    }
+
+    .family-principle__text {
+      font-family: var(--font-chinese-serif);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--sage-deep);
+    }
+
+    /* Footer */
+    .site-footer {
+      padding: var(--space-3xl) 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .footer-nav {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-xl);
+      margin-top: var(--space-md);
+    }
+
+    .footer-nav a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-nav a:hover {
+      color: var(--sage-deep);
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 1024px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-2xl);
+      }
+
+      .hero-visual {
+        order: -1;
+      }
+
+      .hero-visual__frame {
+        max-width: 280px;
+      }
+
+      .overview-card {
+        grid-template-columns: 1fr;
+      }
+
+      .overview-card__right {
+        padding-left: 0;
+        border-left: none;
+        padding-top: var(--space-lg);
+        border-top: 1px solid var(--border);
+      }
+
+      .method-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mindmap-grid,
+      .wisdom-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sensory-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .family-framework {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        min-height: auto;
+        padding-top: 120px;
+        padding-bottom: var(--space-3xl);
+      }
+
+      .hero-meta {
+        flex-direction: column;
+        gap: var(--space-lg);
+      }
+
+      .header-nav {
+        display: none;
+      }
+
+      .toc-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sensory-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pathway-flow {
+        flex-direction: column;
+      }
+
+      .pathway-arrow {
+        transform: rotate(90deg);
+      }
+
+      .data-table-wrapper {
+        overflow-x: auto;
+      }
+
+      .data-table {
+        min-width: 600px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Background -->
+  <div class="ambient-bg">
+    <div class="ambient-orb ambient-orb--sage"></div>
+    <div class="ambient-orb ambient-orb--sand"></div>
+    <div class="ambient-orb ambient-orb--rose"></div>
+    <div class="ambient-orb ambient-orb--honey"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container container--wide">
+      <div class="header-inner">
+        <a href="index.html" class="back-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          返回 Logo 探索
+        </a>
+        <nav class="header-nav">
+          <a href="#methods">探索方法</a>
+          <a href="#wisdom">傳統智慧</a>
+          <a href="#vocabulary">詞彙庫</a>
+          <a href="#insights">關鍵洞見</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <p class="hero-label">Brainstorming Session</p>
+          <h1 class="hero-title">「覺」概念探索</h1>
+          <p class="hero-subtitle">Exploring the Essence of Awareness</p>
+          <p class="hero-desc">
+            深入探索<strong>「覺」</strong>在不同哲學與心靈傳統中的意涵——從佛家正念到莊子智慧，
+            從五感覺察到社會覺醒。為<strong>「覺青年 共學基地」</strong>建立豐富的概念詞彙庫與核心框架。
+          </p>
+
+          <div class="hero-meta">
+            <div class="meta-item">
+              <span class="meta-item__label">探索主題</span>
+              <span class="meta-item__value">覺的核心意涵</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-item__label">Facilitator</span>
+              <span class="meta-item__value">Pi</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-item__label">日期</span>
+              <span class="meta-item__value">2025-12-12</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-visual__frame">
+            <div class="hero-visual__circle hero-visual__circle--outer"></div>
+            <div class="hero-visual__circle hero-visual__circle--middle"></div>
+            <div class="hero-visual__circle hero-visual__circle--inner"></div>
+            <span class="hero-visual__text">覺</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Table of Contents -->
+  <section class="toc-section">
+    <div class="container">
+      <div class="toc-grid">
+        <a href="#overview" class="toc-item">
+          <span class="toc-item__number">1</span>
+          <span class="toc-item__text">探索概述</span>
+        </a>
+        <a href="#methods" class="toc-item">
+          <span class="toc-item__number">2</span>
+          <span class="toc-item__text">探索方法</span>
+        </a>
+        <a href="#mindmap" class="toc-item">
+          <span class="toc-item__number">3</span>
+          <span class="toc-item__text">心智圖法成果</span>
+        </a>
+        <a href="#wisdom" class="toc-item">
+          <span class="toc-item__number">4</span>
+          <span class="toc-item__text">傳統智慧探索</span>
+        </a>
+        <a href="#sensory" class="toc-item">
+          <span class="toc-item__number">5</span>
+          <span class="toc-item__text">感官探索</span>
+        </a>
+        <a href="#vocabulary" class="toc-item">
+          <span class="toc-item__number">6</span>
+          <span class="toc-item__text">「覺」概念詞彙庫</span>
+        </a>
+        <a href="#frameworks" class="toc-item">
+          <span class="toc-item__number">7</span>
+          <span class="toc-item__text">核心框架</span>
+        </a>
+        <a href="#activities" class="toc-item">
+          <span class="toc-item__number">8</span>
+          <span class="toc-item__text">活動對應總表</span>
+        </a>
+        <a href="#insights" class="toc-item">
+          <span class="toc-item__number">9</span>
+          <span class="toc-item__text">關鍵洞見</span>
+        </a>
+        <a href="#summary" class="toc-item">
+          <span class="toc-item__number">10</span>
+          <span class="toc-item__text">總結與下一步</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Overview Section -->
+  <section id="overview" class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Overview</p>
+        <h2 class="section-title">探索概述</h2>
+        <p class="section-subtitle">Understanding the scope and goals of this exploration</p>
+      </div>
+
+      <div class="overview-card">
+        <div class="overview-card__left">
+          <div class="overview-item">
+            <span class="overview-item__label">探索主題</span>
+            <span class="overview-item__value">探索「覺」的核心意涵與延伸概念</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-item__label">探索目標</span>
+            <div class="overview-item__value">
+              <ul>
+                <li>挖掘「覺」在不同哲學與心靈傳統中的意涵</li>
+                <li>發現與「覺」相關的概念、名詞、實踐方法</li>
+                <li>為「覺青年 共學基地」的核心理念建立更豐富的詞彙庫</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="overview-card__right">
+          <div class="overview-item">
+            <span class="overview-item__label">已知概念</span>
+            <div class="concept-tags">
+              <span class="concept-tag concept-tag--highlight">覺察</span>
+              <span class="concept-tag concept-tag--highlight">覺知</span>
+              <span class="concept-tag concept-tag--highlight">覺醒</span>
+            </div>
+          </div>
+          <div class="overview-item">
+            <span class="overview-item__label">探索方向</span>
+            <div class="concept-tags">
+              <span class="concept-tag">佛家</span>
+              <span class="concept-tag">莊子</span>
+              <span class="concept-tag">正念</span>
+              <span class="concept-tag">心靈</span>
+              <span class="concept-tag">五感/感覺</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Methods Section -->
+  <section id="methods" class="content-section content-section--alt">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Methods</p>
+        <h2 class="section-title">探索方法</h2>
+        <p class="section-subtitle">Three complementary techniques for comprehensive exploration</p>
+      </div>
+
+      <div class="method-grid">
+        <div class="method-card">
+          <div class="method-card__icon">🧠</div>
+          <h3 class="method-card__title">心智圖法</h3>
+          <p class="method-card__subtitle">Mind Mapping</p>
+          <p class="method-card__desc">
+            以「覺」為核心向外發散，系統性整理各傳統相關概念，建立概念之間的連結與層次。
+          </p>
+        </div>
+
+        <div class="method-card">
+          <div class="method-card__icon">📜</div>
+          <h3 class="method-card__title">傳統智慧探索</h3>
+          <p class="method-card__subtitle">Indigenous Wisdom</p>
+          <p class="method-card__desc">
+            深入佛家、道家/莊子等東方哲學傳統的智慧，挖掘歷經千年驗證的覺察實踐。
+          </p>
+        </div>
+
+        <div class="method-card">
+          <div class="method-card__icon">✋</div>
+          <h3 class="method-card__title">感官探索</h3>
+          <p class="method-card__subtitle">Sensory Exploration</p>
+          <p class="method-card__desc">
+            從五感角度探索「覺」與身體智慧的連結，建立感官體驗與活動設計的對應。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mind Map Section -->
+  <section id="mindmap" class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Mind Mapping Results</p>
+        <h2 class="section-title">心智圖法成果</h2>
+        <p class="section-subtitle">Systematic exploration of awareness-related concepts</p>
+      </div>
+
+      <div class="mindmap-grid">
+        <div class="mindmap-card">
+          <h3 class="mindmap-card__title">「覺」核心詞彙</h3>
+          <div class="concept-tags">
+            <span class="concept-tag">覺察</span>
+            <span class="concept-tag">覺知</span>
+            <span class="concept-tag">覺醒</span>
+            <span class="concept-tag">覺悟</span>
+            <span class="concept-tag">覺性</span>
+            <span class="concept-tag">自覺</span>
+            <span class="concept-tag">覺他</span>
+            <span class="concept-tag">察覺</span>
+          </div>
+        </div>
+
+        <div class="mindmap-card">
+          <h3 class="mindmap-card__title">感官層次</h3>
+          <div class="concept-tags">
+            <span class="concept-tag">視覺</span>
+            <span class="concept-tag">聽覺</span>
+            <span class="concept-tag">嗅覺</span>
+            <span class="concept-tag">味覺</span>
+            <span class="concept-tag">觸覺</span>
+            <span class="concept-tag">感覺</span>
+            <span class="concept-tag">知覺</span>
+          </div>
+        </div>
+
+        <div class="mindmap-card">
+          <h3 class="mindmap-card__title">心理探索層次</h3>
+          <ul class="mindmap-card__list">
+            <li>直覺（內在智慧）</li>
+            <li>幻覺（創意表達）</li>
+            <li>錯覺（認知重構）</li>
+            <li>心理諮詢的可能性</li>
+          </ul>
+        </div>
+
+        <div class="mindmap-card">
+          <h3 class="mindmap-card__title">正念傳統</h3>
+          <ul class="mindmap-card__list">
+            <li>Mindfulness 正念、專注、當下、臨在</li>
+            <li>念（今+心）、不評判、初心</li>
+            <li>接納、放下</li>
+          </ul>
+        </div>
+
+        <div class="mindmap-card">
+          <h3 class="mindmap-card__title">社會/集體層次</h3>
+          <ul class="mindmap-card__list">
+            <li>社會覺醒、世代覺醒</li>
+            <li>環保意識、相互理解</li>
+            <li>不同世代、立場的對話與包容</li>
+          </ul>
+        </div>
+
+        <div class="mindmap-card">
+          <h3 class="mindmap-card__title">核心發現</h3>
+          <p class="mindmap-card__content">
+            由內而外的覺醒路徑：自我覺察 → 環境感知 → 社會參與 → 覺他（回饋）
+          </p>
+        </div>
+      </div>
+
+      <!-- Pathway Framework -->
+      <div class="framework-diagram">
+        <h4 class="framework-diagram__title">由內而外的覺醒路徑</h4>
+        <div class="pathway-flow">
+          <div class="pathway-step">
+            <span class="pathway-step__main">自我覺察</span>
+            <span class="pathway-step__sub">身心安頓<br>五感體驗</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">環境感知</span>
+            <span class="pathway-step__sub">人際連結<br>同理理解</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">社會參與</span>
+            <span class="pathway-step__sub">議題關懷<br>立場對話</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">覺他（回饋）</span>
+            <span class="pathway-step__sub">志工服務<br>傳承實踐</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quote-block">
+        <p class="quote-block__text">
+          「自覺 → 覺他」的路徑完美呼應覺青年的長期願景
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wisdom Section -->
+  <section id="wisdom" class="content-section content-section--alt">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Traditional Wisdom</p>
+        <h2 class="section-title">傳統智慧探索</h2>
+        <p class="section-subtitle">Insights from Buddhist and Taoist traditions</p>
+      </div>
+
+      <div class="wisdom-grid">
+        <div class="wisdom-card">
+          <div class="wisdom-card__header">
+            <div class="wisdom-card__icon">☸️</div>
+            <h3 class="wisdom-card__title">佛家傳統精選概念</h3>
+          </div>
+          <div class="wisdom-card__body">
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">正覺</span>
+              <span class="wisdom-item__def">正確的覺悟方向</span>
+            </div>
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">觀照</span>
+              <span class="wisdom-item__def">向內觀察、照見自己</span>
+            </div>
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">禪定</span>
+              <span class="wisdom-item__def">專注、心的安定</span>
+            </div>
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">慈悲</span>
+              <span class="wisdom-item__def">對自己與他人的溫柔</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wisdom-card">
+          <div class="wisdom-card__header">
+            <div class="wisdom-card__icon">☯️</div>
+            <h3 class="wisdom-card__title">道家/莊子精選概念</h3>
+          </div>
+          <div class="wisdom-card__body">
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">坐忘</span>
+              <span class="wisdom-item__def">放下身心執著</span>
+            </div>
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">遊心</span>
+              <span class="wisdom-item__def">心靈自由遊走</span>
+            </div>
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">虛靜</span>
+              <span class="wisdom-item__def">保持空靈安靜</span>
+            </div>
+            <div class="wisdom-item">
+              <span class="wisdom-item__term">齊物</span>
+              <span class="wisdom-item__def">萬物平等、消解對立</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance Framework -->
+      <div class="framework-diagram" style="margin-top: var(--space-xl);">
+        <h4 class="framework-diagram__title">動靜平衡的框架</h4>
+        <div class="pathway-flow" style="flex-wrap: wrap; gap: var(--space-xl);">
+          <div class="pathway-step" style="background: var(--bg-sand);">
+            <span class="pathway-step__main">靜・內斂</span>
+            <span class="pathway-step__sub">禪定、虛靜、坐忘</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-md);">
+            <span style="font-size: 0.875rem; color: var(--text-muted);">【自我】</span>
+            <span class="pathway-arrow">↔</span>
+            <span style="font-size: 0.875rem; color: var(--text-muted);">【他者】</span>
+          </div>
+          <div class="pathway-step" style="background: rgba(114, 169, 160, 0.2);">
+            <span class="pathway-step__main">動・開展</span>
+            <span class="pathway-step__sub">遊心、慈悲、齊物</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family Section -->
+      <div style="margin-top: var(--space-3xl);">
+        <div class="section-header section-header--left">
+          <h3 class="section-title" style="font-size: 1.5rem;">家庭層面的「覺」</h3>
+        </div>
+
+        <div class="family-framework">
+          <div class="family-card">
+            <h4 class="family-card__title">家長自己</h4>
+            <div class="family-card__keywords">
+              <span class="family-card__keyword">療癒</span>
+              <span class="family-card__keyword">成長</span>
+              <span class="family-card__keyword">自我照顧</span>
+              <span class="family-card__keyword">原生家庭覺察</span>
+            </div>
+          </div>
+          <div class="family-card">
+            <h4 class="family-card__title">伴侶關係</h4>
+            <div class="family-card__keywords">
+              <span class="family-card__keyword">溝通</span>
+              <span class="family-card__keyword">接納</span>
+              <span class="family-card__keyword">連結</span>
+              <span class="family-card__keyword">共同願景</span>
+            </div>
+          </div>
+          <div class="family-card">
+            <h4 class="family-card__title">孩子成長</h4>
+            <div class="family-card__keywords">
+              <span class="family-card__keyword">探索</span>
+              <span class="family-card__keyword">情緒覺察</span>
+              <span class="family-card__keyword">好奇</span>
+              <span class="family-card__keyword">感官體驗</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="family-principle">
+          <p class="family-principle__text">「先照顧好自己，才有能量照顧關係和孩子」</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sensory Section -->
+  <section id="sensory" class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Sensory Exploration</p>
+        <h2 class="section-title">感官探索</h2>
+        <p class="section-subtitle">The body as a gateway to awareness</p>
+      </div>
+
+      <div class="quote-block" style="margin-bottom: var(--space-2xl);">
+        <p class="quote-block__text">
+          身體是共通的覺察入口 — 無論親子或年輕人，都可以透過身體來覺察。
+        </p>
+      </div>
+
+      <div class="sensory-grid">
+        <div class="sensory-card">
+          <div class="sensory-card__icon">👁️</div>
+          <h4 class="sensory-card__title">視覺</h4>
+          <p class="sensory-card__activities">
+            親子：繪本、自然觀察<br>
+            年輕人：藝術療癒、靜觀
+          </p>
+          <p class="sensory-card__connection">觀照、看見</p>
+        </div>
+
+        <div class="sensory-card">
+          <div class="sensory-card__icon">👂</div>
+          <h4 class="sensory-card__title">聽覺</h4>
+          <p class="sensory-card__activities">
+            親子：故事屋、自然聲音<br>
+            年輕人：頌缽、聲音療癒
+          </p>
+          <p class="sensory-card__connection">傾聽、虛靜</p>
+        </div>
+
+        <div class="sensory-card">
+          <div class="sensory-card__icon">👃</div>
+          <h4 class="sensory-card__title">嗅覺</h4>
+          <p class="sensory-card__activities">
+            親子：芳香精油、自然香氣<br>
+            年輕人：芳療、呼吸練習
+          </p>
+          <p class="sensory-card__connection">當下、放鬆</p>
+        </div>
+
+        <div class="sensory-card">
+          <div class="sensory-card__icon">👅</div>
+          <h4 class="sensory-card__title">味覺</h4>
+          <p class="sensory-card__activities">
+            親子：點心時間、親子烘焙<br>
+            年輕人：茶道、正念飲食
+          </p>
+          <p class="sensory-card__connection">品味、專注</p>
+        </div>
+
+        <div class="sensory-card">
+          <div class="sensory-card__icon">🤲</div>
+          <h4 class="sensory-card__title">觸覺/身體</h4>
+          <p class="sensory-card__activities">
+            親子：親子瑜伽、舞動<br>
+            年輕人：舞動、身體覺察
+          </p>
+          <p class="sensory-card__connection">遊心、坐忘</p>
+        </div>
+
+        <div class="sensory-card">
+          <div class="sensory-card__icon">💭</div>
+          <h4 class="sensory-card__title">想像力</h4>
+          <p class="sensory-card__activities">
+            親子：繪本故事、角色扮演<br>
+            年輕人：冥想、視覺化
+          </p>
+          <p class="sensory-card__connection">遊心、創造</p>
+        </div>
+      </div>
+
+      <!-- Picture Book Value -->
+      <div class="framework-diagram" style="margin-top: var(--space-2xl);">
+        <h4 class="framework-diagram__title">繪本/故事的獨特價值</h4>
+        <div class="pathway-flow">
+          <div class="pathway-step">
+            <span class="pathway-step__main">繪本/故事</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">情緒命名</span>
+            <span class="pathway-step__sub">「他在難過」</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">覺察情緒</span>
+            <span class="pathway-step__sub">「我也會」</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">同理他人</span>
+            <span class="pathway-step__sub">「別人可能也...」</span>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: var(--space-lg); color: var(--sage-deep); font-style: italic;">
+          這是孩子版的「覺察 → 覺他」路徑！
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vocabulary Section -->
+  <section id="vocabulary" class="content-section content-section--alt">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Vocabulary Library</p>
+        <h2 class="section-title">「覺」概念詞彙庫</h2>
+        <p class="section-subtitle">A comprehensive collection of awareness-related terms</p>
+      </div>
+
+      <!-- Core Concepts -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">一、核心概念群</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>類別</th>
+                <th>詞彙</th>
+                <th>說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>基礎覺察</td>
+                <td>覺察、察覺、覺知</td>
+                <td>注意到、意識到、理解</td>
+              </tr>
+              <tr>
+                <td>深度覺醒</td>
+                <td>覺醒、覺悟、覺性</td>
+                <td>轉化、領悟、本具能力</td>
+              </tr>
+              <tr>
+                <td>關係覺察</td>
+                <td>自覺、覺他</td>
+                <td>自我覺察 → 幫助他人</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sensory Level -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">二、感官層次</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>詞彙</th>
+                <th>對應</th>
+                <th>活動連結</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>視覺</td>
+                <td>看、觀照</td>
+                <td>繪本、自然觀察、藝術療癒</td>
+              </tr>
+              <tr>
+                <td>聽覺</td>
+                <td>聽、傾聽</td>
+                <td>故事屋、頌缽、聲音療癒</td>
+              </tr>
+              <tr>
+                <td>嗅覺</td>
+                <td>聞、氣息</td>
+                <td>芳香精油、自然香氣</td>
+              </tr>
+              <tr>
+                <td>味覺</td>
+                <td>嚐、品味</td>
+                <td>正念飲食、茶道</td>
+              </tr>
+              <tr>
+                <td>觸覺</td>
+                <td>觸、感受</td>
+                <td>瑜伽、舞動、身體覺察</td>
+              </tr>
+              <tr>
+                <td>感覺</td>
+                <td>整體身心</td>
+                <td>身心連結</td>
+              </tr>
+              <tr>
+                <td>知覺</td>
+                <td>感官+認知</td>
+                <td>完整體驗</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mindfulness Tradition -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">三、正念傳統</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>中文</th>
+                <th>英文</th>
+                <th>核心意涵</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>正念</td>
+                <td>Mindfulness</td>
+                <td>有意識的覺察</td>
+              </tr>
+              <tr>
+                <td>專注</td>
+                <td>Concentration</td>
+                <td>聚焦、定心</td>
+              </tr>
+              <tr>
+                <td>當下</td>
+                <td>Present Moment</td>
+                <td>此時此刻</td>
+              </tr>
+              <tr>
+                <td>臨在</td>
+                <td>Presence</td>
+                <td>全然在場</td>
+              </tr>
+              <tr>
+                <td>念</td>
+                <td>Sati（今+心）</td>
+                <td>當下的心</td>
+              </tr>
+              <tr>
+                <td>不評判</td>
+                <td>Non-judging</td>
+                <td>覺察而不批判</td>
+              </tr>
+              <tr>
+                <td>初心</td>
+                <td>Beginner's Mind</td>
+                <td>保持好奇</td>
+              </tr>
+              <tr>
+                <td>接納</td>
+                <td>Acceptance</td>
+                <td>覺察後的擁抱</td>
+              </tr>
+              <tr>
+                <td>放下</td>
+                <td>Letting Go</td>
+                <td>覺悟後的釋然</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Buddhist Tradition -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">四、佛家傳統</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>詞彙</th>
+                <th>意涵</th>
+                <th>覺青年連結</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>正覺</td>
+                <td>正確的覺悟方向</td>
+                <td>引導與方向</td>
+              </tr>
+              <tr>
+                <td>觀照</td>
+                <td>向內觀察、照見</td>
+                <td>自我觀察練習</td>
+              </tr>
+              <tr>
+                <td>禪定</td>
+                <td>專注、心的安定</td>
+                <td>靜坐冥想</td>
+              </tr>
+              <tr>
+                <td>慈悲</td>
+                <td>對自己與他人的溫柔</td>
+                <td>利他服務精神</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Taoist Tradition -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">五、道家/莊子傳統</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>詞彙</th>
+                <th>意涵</th>
+                <th>覺青年連結</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>坐忘</td>
+                <td>放下身心執著</td>
+                <td>深度放鬆</td>
+              </tr>
+              <tr>
+                <td>遊心</td>
+                <td>心靈自由遊走</td>
+                <td>自由創作、舞動</td>
+              </tr>
+              <tr>
+                <td>虛靜</td>
+                <td>保持空靈安靜</td>
+                <td>靜心空間</td>
+              </tr>
+              <tr>
+                <td>齊物</td>
+                <td>萬物平等、消解對立</td>
+                <td>多元包容、跨世代對話</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Social Level -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">六、社會/集體層次</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>詞彙</th>
+                <th>意涵</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>社會覺醒</td>
+                <td>對社會議題的意識</td>
+              </tr>
+              <tr>
+                <td>世代覺醒</td>
+                <td>跨世代的理解與對話</td>
+              </tr>
+              <tr>
+                <td>環保意識</td>
+                <td>對環境的覺察</td>
+              </tr>
+              <tr>
+                <td>相互理解</td>
+                <td>不同立場的對話與包容</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Psychological Level -->
+      <div class="vocab-section">
+        <h3 class="vocab-section__title">七、心理探索層次</h3>
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>詞彙</th>
+                <th>意涵</th>
+                <th>療癒方向</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>直覺</td>
+                <td>內在智慧</td>
+                <td>信任內在、正念</td>
+              </tr>
+              <tr>
+                <td>幻覺</td>
+                <td>想像力</td>
+                <td>創意表達、藝術療癒</td>
+              </tr>
+              <tr>
+                <td>錯覺</td>
+                <td>認知偏誤</td>
+                <td>認知重構、心理諮詢</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Frameworks Section -->
+  <section id="frameworks" class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Core Frameworks</p>
+        <h2 class="section-title">核心框架</h2>
+        <p class="section-subtitle">Three key frameworks for understanding awareness</p>
+      </div>
+
+      <!-- Framework 1 -->
+      <div class="framework-diagram">
+        <h4 class="framework-diagram__title">框架一：由內而外的覺醒路徑</h4>
+        <div class="pathway-flow">
+          <div class="pathway-step">
+            <span class="pathway-step__main">【內】自我覺察</span>
+            <span class="pathway-step__sub">身心安頓・五感體驗</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">環境感知</span>
+            <span class="pathway-step__sub">人際連結・同理理解</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">社會參與</span>
+            <span class="pathway-step__sub">議題關懷・立場對話</span>
+          </div>
+          <span class="pathway-arrow">→</span>
+          <div class="pathway-step">
+            <span class="pathway-step__main">【外】覺他</span>
+            <span class="pathway-step__sub">志工服務・傳承實踐</span>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: var(--space-xl); padding: var(--space-md); background: var(--bg-sage); border-radius: var(--radius-md); display: inline-block; margin-left: 50%; transform: translateX(-50%);">
+          <span style="font-family: var(--font-chinese); font-weight: 600; color: var(--sage-deep);">自覺（自我成長）→ 覺他（回饋他人）</span>
+        </div>
+      </div>
+
+      <!-- Framework 2 -->
+      <div class="framework-diagram">
+        <h4 class="framework-diagram__title">框架二：家庭中的覺</h4>
+        <div class="family-framework" style="margin-bottom: 0;">
+          <div class="family-card">
+            <h4 class="family-card__title">家長自己</h4>
+            <div class="family-card__keywords">
+              <span class="family-card__keyword">療癒</span>
+              <span class="family-card__keyword">成長</span>
+              <span class="family-card__keyword">自我照顧</span>
+              <span class="family-card__keyword">原生家庭</span>
+            </div>
+          </div>
+          <div class="family-card">
+            <h4 class="family-card__title">伴侶關係</h4>
+            <div class="family-card__keywords">
+              <span class="family-card__keyword">溝通</span>
+              <span class="family-card__keyword">接納</span>
+              <span class="family-card__keyword">連結</span>
+              <span class="family-card__keyword">共同願景</span>
+            </div>
+          </div>
+          <div class="family-card">
+            <h4 class="family-card__title">孩子成長</h4>
+            <div class="family-card__keywords">
+              <span class="family-card__keyword">探索</span>
+              <span class="family-card__keyword">情緒</span>
+              <span class="family-card__keyword">好奇</span>
+              <span class="family-card__keyword">感官</span>
+            </div>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: var(--space-lg); font-family: var(--font-chinese-serif); color: var(--sage-deep);">
+          「先照顧好自己，才有能量照顧關係和孩子」
+        </p>
+      </div>
+
+      <!-- Framework 3 -->
+      <div class="framework-diagram">
+        <h4 class="framework-diagram__title">框架三：動靜平衡</h4>
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-xl); align-items: center; max-width: 600px; margin: 0 auto;">
+          <div style="text-align: center;">
+            <div style="background: var(--bg-sand); padding: var(--space-lg); border-radius: var(--radius-lg); margin-bottom: var(--space-md);">
+              <p style="font-weight: 600; margin-bottom: var(--space-xs);">【靜・內斂】</p>
+              <p style="font-size: 0.875rem; color: var(--text-secondary);">禪定、虛靜、坐忘</p>
+            </div>
+            <div style="background: var(--bg-sage); padding: var(--space-md); border-radius: var(--radius-md);">
+              <p style="font-size: 0.875rem; color: var(--sage-deep);">【自我】觀照、正覺</p>
+            </div>
+          </div>
+          <div style="font-size: 2rem; color: var(--sage);">↔</div>
+          <div style="text-align: center;">
+            <div style="background: rgba(114, 169, 160, 0.2); padding: var(--space-lg); border-radius: var(--radius-lg); margin-bottom: var(--space-md);">
+              <p style="font-weight: 600; margin-bottom: var(--space-xs);">【動・開展】</p>
+              <p style="font-size: 0.875rem; color: var(--text-secondary);">遊心</p>
+            </div>
+            <div style="background: var(--bg-sage); padding: var(--space-md); border-radius: var(--radius-md);">
+              <p style="font-size: 0.875rem; color: var(--sage-deep);">【他者】慈悲、齊物</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Activities Section -->
+  <section id="activities" class="content-section content-section--alt">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Activity Mapping</p>
+        <h2 class="section-title">活動對應總表</h2>
+        <p class="section-subtitle">Connecting target groups with activities and concepts</p>
+      </div>
+
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>族群</th>
+              <th>活動形式</th>
+              <th>感官</th>
+              <th>覺的概念</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>親子</td>
+              <td>繪本・故事屋</td>
+              <td>視＋聽＋想像</td>
+              <td>情緒覺察、同理</td>
+            </tr>
+            <tr>
+              <td>親子</td>
+              <td>戶外自然探索</td>
+              <td>五感全開</td>
+              <td>觀照、當下</td>
+            </tr>
+            <tr>
+              <td>親子</td>
+              <td>親子瑜伽/舞動</td>
+              <td>觸＋身體</td>
+              <td>遊心、連結</td>
+            </tr>
+            <tr>
+              <td>親子</td>
+              <td>芳香精油</td>
+              <td>嗅覺</td>
+              <td>當下、放鬆</td>
+            </tr>
+            <tr>
+              <td>年輕人</td>
+              <td>頌缽・聲音療癒</td>
+              <td>聽覺</td>
+              <td>虛靜、坐忘</td>
+            </tr>
+            <tr>
+              <td>年輕人</td>
+              <td>舞動・身體覺察</td>
+              <td>觸＋身體</td>
+              <td>遊心、觀照</td>
+            </tr>
+            <tr>
+              <td>年輕人</td>
+              <td>芳香精油</td>
+              <td>嗅覺</td>
+              <td>當下、放鬆</td>
+            </tr>
+            <tr>
+              <td>家長</td>
+              <td>療癒工作坊</td>
+              <td>全身心</td>
+              <td>自覺、慈悲</td>
+            </tr>
+            <tr>
+              <td>家長</td>
+              <td>伴侶溝通</td>
+              <td>聽＋心</td>
+              <td>接納、齊物</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Insights Section -->
+  <section id="insights" class="content-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Key Insights</p>
+        <h2 class="section-title">關鍵洞見</h2>
+        <p class="section-subtitle">Five essential discoveries from this exploration</p>
+      </div>
+
+      <div class="insights-grid">
+        <div class="insight-card">
+          <span class="insight-card__number">1</span>
+          <h4 class="insight-card__title">「自覺 → 覺他」是覺青年的核心路徑</h4>
+          <p class="insight-card__desc">
+            與長期願景「受益者轉化為志工」完美呼應，從個人覺察擴展到服務他人的成長旅程。
+          </p>
+        </div>
+
+        <div class="insight-card">
+          <span class="insight-card__number">2</span>
+          <h4 class="insight-card__title">身體是共通的覺察入口</h4>
+          <p class="insight-card__desc">
+            無論親子或年輕人，都可以透過身體來覺察。五感體驗是最直接、最普遍的覺察方式。
+          </p>
+        </div>
+
+        <div class="insight-card">
+          <span class="insight-card__number">3</span>
+          <h4 class="insight-card__title">繪本/故事是孩子版的「覺察 → 覺他」</h4>
+          <p class="insight-card__desc">
+            透過角色同理，培養覺他的萌芽。從情緒命名到覺察情緒，再到同理他人的完整路徑。
+          </p>
+        </div>
+
+        <div class="insight-card">
+          <span class="insight-card__number">4</span>
+          <h4 class="insight-card__title">家庭覺察要從家長自己開始</h4>
+          <p class="insight-card__desc">
+            「先照顧好自己，才有能量照顧關係和孩子」——這是家庭層面覺察的核心理念。
+          </p>
+        </div>
+
+        <div class="insight-card">
+          <span class="insight-card__number">5</span>
+          <h4 class="insight-card__title">不需要發明新詞，用自然的表達方式</h4>
+          <p class="insight-card__desc">
+            「帶著覺察的陪伴」比「覺伴」更有溫度。自然的表達方式更能傳達覺察的精神。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Summary Section -->
+  <section id="summary" class="content-section content-section--alt">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Summary & Next Steps</p>
+        <h2 class="section-title">總結與下一步</h2>
+        <p class="section-subtitle">Key outputs and recommended actions</p>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h4 class="summary-card__title">核心產出</h4>
+          <ul class="summary-card__list">
+            <li>完整「覺」概念詞彙庫（7大類別、50+詞彙）</li>
+            <li>3個核心框架（由內而外路徑、家庭層次、動靜平衡）</li>
+            <li>活動對應表（親子/年輕人/家長）</li>
+            <li>5個關鍵洞見</li>
+          </ul>
+        </div>
+
+        <div class="summary-card">
+          <h4 class="summary-card__title">使用技術</h4>
+          <ul class="summary-card__list">
+            <li><strong>Mind Mapping 心智圖法</strong> — 系統性發散「覺」的各種面向</li>
+            <li><strong>Indigenous Wisdom 傳統智慧探索</strong> — 深入佛家、道家傳統概念</li>
+            <li><strong>Sensory Exploration 感官探索</strong> — 連結五感與活動形式</li>
+          </ul>
+        </div>
+
+        <div class="summary-card">
+          <h4 class="summary-card__title">下一步建議</h4>
+          <ul class="summary-card__list">
+            <li>將此詞彙庫作為覺青年品牌溝通的基礎</li>
+            <li>根據活動對應表規劃具體課程/工作坊</li>
+            <li>以「自覺 → 覺他」路徑設計成員成長旅程</li>
+          </ul>
+        </div>
+
+        <div class="summary-card">
+          <h4 class="summary-card__title">自然的表達方式</h4>
+          <ul class="summary-card__list">
+            <li>「先覺察自己，才能陪伴孩子」</li>
+            <li>「在關係中練習覺察與接納」</li>
+            <li>「帶著覺察的陪伴」</li>
+            <li>「一個有覺察的家」</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p class="footer-text">覺青年共學基地 · 概念探索 Brainstorming · 2025</p>
+      <nav class="footer-nav">
+        <a href="index.html">Logo 探索</a>
+        <a href="../index.html">所有專案</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          const headerOffset = 100;
+          const elementPosition = target.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const fadeInElements = document.querySelectorAll('.method-card, .mindmap-card, .wisdom-card, .sensory-card, .insight-card, .summary-card');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    fadeInElements.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

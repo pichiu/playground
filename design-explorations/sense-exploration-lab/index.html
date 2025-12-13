@@ -203,6 +203,22 @@
       letter-spacing: 0.05em;
     }
 
+    .header-nav {
+      display: flex;
+      gap: var(--space-lg);
+    }
+
+    .header-nav a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .header-nav a:hover {
+      color: var(--sage-deep);
+    }
+
     /* ========================================
        HERO SECTION
     ======================================== */
@@ -756,7 +772,9 @@
           </svg>
           返回專案列表
         </a>
-        <span class="header-title">Sense Exploration Lab</span>
+        <nav class="header-nav">
+          <a href="brainstorming.html">概念探索</a>
+        </nav>
       </div>
     </div>
   </header>
