@@ -306,6 +306,7 @@
     .project-card:nth-child(1) { animation-delay: 0.1s; }
     .project-card:nth-child(2) { animation-delay: 0.2s; }
     .project-card:nth-child(3) { animation-delay: 0.3s; }
+    .project-card:nth-child(4) { animation-delay: 0.4s; }
 
     .project-card:hover {
       border-color: var(--border-hover);
@@ -383,6 +384,29 @@
       font-weight: 400;
       color: rgba(90, 122, 114, 0.8);
       text-shadow: 0 2px 20px rgba(124, 154, 146, 0.3);
+    }
+
+    .preview--taipei-dome {
+      background:
+        linear-gradient(145deg, #1a1f2e 0%, #243049 55%, #1a2438 100%);
+    }
+
+    .preview--taipei-dome::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 40% at 30% 35%, rgba(91, 159, 212, 0.22), transparent),
+        radial-gradient(ellipse 40% 35% at 75% 70%, rgba(91, 159, 212, 0.12), transparent);
+    }
+
+    .preview--taipei-dome::after {
+      content: 'Dome';
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.92);
+      text-shadow: 0 2px 20px rgba(91, 159, 212, 0.45);
     }
 
     .project-card__badge {
@@ -612,7 +636,7 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">專案列表</h2>
-        <span class="section-count">共 2 個專案</span>
+        <span class="section-count">共 3 個專案</span>
       </div>
 
       <div class="projects-grid">
@@ -682,25 +706,38 @@
           </div>
         </a>
 
-        <!-- Placeholder for future projects -->
-        <!--
-        <a href="#" class="project-card">
+        <!-- Taipei Dome Project Card -->
+        <a href="taipei-dome/index.html" class="project-card">
           <div class="project-card__preview">
-            <div class="project-card__preview-placeholder" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-            <span class="project-card__badge">即將推出</span>
+            <div class="project-card__preview-placeholder preview--taipei-dome"></div>
+            <span class="project-card__badge">進行中</span>
           </div>
           <div class="project-card__content">
             <div class="project-card__meta">
-              <span class="project-card__category">電商平台</span>
-              <span class="project-card__date">2025.12</span>
+              <span class="project-card__category">活動營運</span>
+              <span class="project-card__date">2026.07</span>
             </div>
-            <h3 class="project-card__title">新專案名稱</h3>
+            <h3 class="project-card__title">Taipei Dome 大巨蛋</h3>
             <p class="project-card__desc">
-              專案描述文字...
+              2026 大巨蛋演繹活動的營運工具 UX。以交通五階段 storyboard 為起點，
+              依真實角色與時間序重構值勤台流程。
             </p>
+            <div class="project-card__tags">
+              <span class="tag">Storyboard</span>
+              <span class="tag">產品 UX</span>
+              <span class="tag">交通調度</span>
+            </div>
+          </div>
+          <div class="project-card__footer">
+            <span class="project-card__link">
+              查看模組探索
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+            <span class="project-card__count">1 個模組</span>
           </div>
         </a>
-        -->
       </div>
     </div>
   </section>

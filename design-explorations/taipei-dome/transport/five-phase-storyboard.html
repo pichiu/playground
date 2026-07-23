@@ -1,0 +1,1362 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>交通頁重新設計:五階段 storyboard(登記 → 調車 → 配額 → 排人 → 點名)</title>
+<style>
+/* ============================================================================
+   活動交通:五階段 storyboard mockup
+   Tokens 原樣搬自 src/app/globals.css(慈濟藍深色值勤台),預設深色主題。
+   本檔為靜態 HTML mockup,非產品程式碼:僅示意版面/互動,不接真實資料/API。
+
+   五階段:① 登記需求(和氣)→ ② 調車/路線(合心交通‧合心活動)→
+          ③ 配人數/配額(聯區活動)→ ④ 排人上車(和氣)→ ⑤ 點名收費(現場)
+   ========================================================================== */
+
+/* ---------------- Tokens(照抄 globals.css :root,深色為預設值) ---------------- */
+:root {
+  --bg:         oklch(0.17 0.014 255);
+  --surface:    oklch(0.213 0.016 255);
+  --surface-2:  oklch(0.255 0.018 255);
+  --surface-3:  oklch(0.30 0.02 255);
+  --line:       oklch(0.34 0.018 255);
+  --line-soft:  oklch(1 0 0 / 0.08);
+
+  --ink:   oklch(0.97 0.004 255);
+  --ink-2: oklch(0.82 0.010 255);
+  --ink-3: oklch(0.70 0.012 255);
+
+  --brand:      oklch(0.68 0.115 245);
+  --brand-2:    oklch(0.60 0.12 248);
+  --brand-ink:  oklch(0.16 0.02 255);
+  --brand-soft: oklch(0.68 0.115 245 / 0.14);
+  --focus:      oklch(0.78 0.11 240);
+
+  --ok:    oklch(0.74 0.15 155);
+  --ok-soft: oklch(0.74 0.15 155 / 0.15);
+  --warn:  oklch(0.82 0.13 82);
+  --warn-soft: oklch(0.82 0.13 82 / 0.15);
+  --danger:oklch(0.68 0.19 25);
+  --danger-soft: oklch(0.68 0.19 25 / 0.15);
+  --ok-ink: oklch(0.16 0.02 155);
+  --danger-ink: oklch(0.16 0.02 25);
+
+  --fs-xs: 0.78rem;
+  --fs-sm: 0.86rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.25rem;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px;
+  --sp-6: 24px; --sp-7: 32px;
+
+  --radius-sm: 8px; --radius: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-pill: 999px;
+
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .35);
+  --shadow-2: 0 8px 24px oklch(0 0 0 / .32);
+
+  --dur-fast: 150ms; --dur: 200ms; --dur-slow: 250ms;
+  --ease: cubic-bezier(.16,1,.3,1);
+
+  --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", monospace;
+
+  --topbar-h: 52px;
+}
+
+/* 淺色主題覆蓋(承接使用者裝置/切換器主題;數值同 globals.css light block) */
+:root[data-theme="light"] {
+  --bg:         oklch(0.968 0.004 255);
+  --surface:    oklch(1 0 0);
+  --surface-2:  oklch(0.978 0.004 255);
+  --surface-3:  oklch(0.945 0.006 255);
+  --line:       oklch(0.90 0.006 255);
+  --line-soft:  oklch(0.28 0.02 255 / 0.10);
+  --ink:   oklch(0.24 0.020 255);
+  --ink-2: oklch(0.44 0.018 255);
+  --ink-3: oklch(0.54 0.016 255);
+  --brand:      oklch(0.52 0.145 245);
+  --brand-2:    oklch(0.48 0.15 248);
+  --brand-ink:  oklch(0.99 0.005 255);
+  --brand-soft: oklch(0.52 0.145 245 / 0.12);
+  --focus:      oklch(0.52 0.145 245);
+  --ok:    oklch(0.50 0.15 155);
+  --ok-soft: oklch(0.50 0.15 155 / 0.13);
+  --warn:  oklch(0.52 0.14 70);
+  --warn-soft: oklch(0.52 0.14 70 / 0.15);
+  --danger:oklch(0.54 0.20 25);
+  --danger-soft: oklch(0.54 0.20 25 / 0.12);
+  --shadow-1: 0 1px 2px oklch(0.45 0.03 255 / .10);
+  --shadow-2: 0 10px 28px oklch(0.45 0.04 255 / .12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: oklch(0.90 0.006 255);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+@media (prefers-color-scheme: dark) {
+  body { background: oklch(0.10 0.01 255); }
+}
+button { font-family: inherit; color: inherit; }
+input, select { font-family: inherit; font-size: inherit; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+:focus { outline: none; }
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+input[type="checkbox"] { accent-color: var(--brand); cursor: pointer; }
+
+/* ---------------- Page layout ---------------- */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-6) var(--sp-4) var(--sp-7);
+}
+.page-heading { max-width: 640px; text-align: center; color: oklch(0.30 0.02 255); }
+@media (prefers-color-scheme: dark) { .page-heading { color: oklch(0.80 0.01 255); } }
+.page-heading h1 { font-size: var(--fs-lg); margin: 0 0 4px; }
+.page-heading p { font-size: var(--fs-sm); margin: 0; opacity: .85; }
+
+/* ---------------- Phase navigator ---------------- */
+.phase-nav {
+  position: sticky; top: var(--sp-3); z-index: 50;
+  display: flex; gap: 6px; overflow-x: auto;
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg); padding: 8px;
+  box-shadow: var(--shadow-2);
+  max-width: 100%;
+}
+.phase-nav::-webkit-scrollbar { display: none; }
+.phase-nav button {
+  flex-shrink: 0; min-height: 44px; padding: 0 14px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2);
+  font-size: var(--fs-sm); font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.phase-nav button:hover { background: var(--surface-3); color: var(--ink); }
+.phase-nav button .num { color: var(--brand); margin-right: 4px; }
+
+/* ---------------- Storyboard row ---------------- */
+.storyboard {
+  display: flex; flex-direction: row; align-items: flex-start;
+  gap: var(--sp-4); overflow-x: auto; width: 100%; max-width: 100%;
+  padding: var(--sp-2) var(--sp-2) var(--sp-6);
+  scroll-snap-type: x proximity;
+}
+.phase-col {
+  flex-shrink: 0; scroll-snap-align: center;
+  display: flex; flex-direction: column; align-items: flex-start;
+  width: 375px; max-width: 100%;
+}
+.connector {
+  flex-shrink: 0; width: 108px; align-self: stretch;
+  display: flex; align-items: center; justify-content: center;
+}
+.connector .inner {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--ink-3); font-size: var(--fs-xs); font-weight: 600; text-align: center; line-height: 1.4;
+}
+.connector .arrow { font-size: var(--fs-xl); color: var(--ink-3); }
+
+@media (max-width: 860px) {
+  .storyboard { flex-direction: column; align-items: center; }
+  .phase-col { width: 100%; max-width: 375px; }
+  .connector { width: 100%; padding: var(--sp-3) 0; }
+  .connector .inner { flex-direction: row; }
+}
+
+/* ---------------- Phase label (above phone frame) ---------------- */
+.phase-label { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 375px; }
+.phase-label .title-row { display: flex; align-items: baseline; gap: 8px; }
+.phase-label .phase-num { font-size: var(--fs-xl); font-weight: 800; color: var(--brand); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.phase-label h2 { font-size: var(--fs-md); margin: 0; color: var(--ink); }
+.phase-label .badges-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* ---------------- Role badges (色碼依層級,取自既有 token 色相) ---------------- */
+.role-badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); font-weight: 700;
+  padding: 3px 10px; border-radius: var(--radius-pill); border: 1px solid; white-space: nowrap;
+}
+.role-badge.role-hehe    { color: var(--brand);  background: var(--brand-soft);  border-color: color-mix(in oklch, var(--brand) 45%, var(--line)); }
+.role-badge.role-hexin   { color: var(--ok);     background: var(--ok-soft);     border-color: color-mix(in oklch, var(--ok) 45%, var(--line)); }
+.role-badge.role-lianqu  { color: var(--warn);   background: var(--warn-soft);   border-color: color-mix(in oklch, var(--warn) 45%, var(--line)); }
+.role-badge.role-onsite  { color: var(--danger); background: var(--danger-soft); border-color: color-mix(in oklch, var(--danger) 45%, var(--line)); }
+
+.page-badge {
+  font-size: var(--fs-xs); font-weight: 600; color: var(--ink-3); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 2px 8px; white-space: nowrap;
+}
+
+/* ---------------- Phone frame ---------------- */
+.phone-frame {
+  width: 375px; max-width: 100%;
+  background: #0b0d12; border-radius: 46px; padding: 14px;
+  box-shadow: var(--shadow-2), 0 30px 60px oklch(0 0 0 / .35);
+}
+.phone-notch { height: 22px; display: flex; align-items: center; justify-content: center; }
+.phone-notch::before { content: ""; width: 110px; height: 6px; border-radius: 999px; background: #2a2e38; }
+.phone-screen {
+  background: var(--bg); color: var(--ink); border-radius: 30px;
+  overflow-y: auto; overflow-x: hidden; height: 760px;
+  scroll-behavior: smooth; position: relative;
+  display: flex; flex-direction: column; -webkit-overflow-scrolling: touch;
+}
+
+/* ---------------- App top bar ---------------- */
+.app-topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in oklch, var(--bg) 96%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line-soft);
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  flex-shrink: 0;
+}
+.app-topbar .page-title-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2);
+  padding: 0 2px;
+}
+.app-topbar .page-title-row h1 { font-size: var(--fs-md); font-weight: 700; margin: 0; }
+.app-topbar .page-title-row .day-chip {
+  font-size: var(--fs-xs); color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 3px 10px;
+  white-space: nowrap;
+}
+.app-topbar .sub-line { font-size: var(--fs-xs); color: var(--ink-3); padding: 0 2px; }
+
+/* ---------------- Sticky panel bars / search / filter chips ---------------- */
+.panel-bar {
+  position: sticky; top: var(--topbar-h); z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line-soft);
+  padding: var(--sp-3);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  flex-shrink: 0;
+}
+.search-input {
+  width: 100%; min-height: 44px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  padding: 0 var(--sp-3); font-size: var(--fs-base);
+}
+.search-input.big { min-height: 52px; font-size: var(--fs-md); font-weight: 600; }
+.search-input::placeholder { color: var(--ink-3); }
+
+.chip-row { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 2px; }
+.chip-row::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0; padding: 7px 14px; border-radius: var(--radius-pill); border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: var(--fs-xs); font-weight: 600;
+  cursor: pointer; min-height: 36px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.filter-chip[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand); border-color: color-mix(in oklch, var(--brand) 45%, var(--line)); }
+
+.panel-body { padding: var(--sp-4) var(--sp-3) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-5); }
+
+.section-title { font-size: var(--fs-base); font-weight: 700; }
+.section-sub { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 2px; }
+.section-head-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+.section-head-row .count { font-size: var(--fs-xs); color: var(--ink-3); }
+
+/* ---------------- 提示 banner(空狀態 / 說明) ---------------- */
+.note-banner {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--radius-lg);
+  padding: var(--sp-3) var(--sp-4); font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.6;
+}
+.note-banner .mark { flex-shrink: 0; font-weight: 800; color: var(--ink-3); }
+
+/* ---------------- 和氣分組(collapsible) ---------------- */
+.hq-groups { display: flex; flex-direction: column; gap: var(--sp-2); }
+.hq-group {
+  background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.hq-group-head {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 10px var(--sp-3);
+  background: none; border: none; cursor: pointer; text-align: left; color: inherit;
+}
+.hq-group-head .chev { width: 18px; height: 18px; color: var(--ink-3); flex-shrink: 0; transition: transform var(--dur) var(--ease); }
+.hq-group[data-open="true"] .chev { transform: rotate(90deg); }
+.hq-group-head .hq-title { font-weight: 700; font-size: var(--fs-base); flex-shrink: 0; }
+.hq-group-head .hq-summary { font-size: var(--fs-sm); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hq-rows { display: none; flex-direction: column; border-top: 1px solid var(--line-soft); }
+.hq-group[data-open="true"] .hq-rows { display: flex; }
+
+.survey-row-v2 {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border-top: 1px solid var(--line-soft); flex-wrap: wrap;
+}
+.survey-row-v2:first-child { border-top: none; }
+.survey-row-v2 .who { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.survey-row-v2 .who .name { font-size: var(--fs-base); font-weight: 700; }
+.survey-row-v2 .who .name .hq-tag { font-weight: 500; color: var(--ink-3); font-size: var(--fs-xs); margin-left: 6px; }
+.survey-row-v2 .who .sub { font-size: var(--fs-xs); color: var(--ink-3); }
+.survey-row-v2 .row-actions { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+.pickup-input {
+  min-height: 40px; width: 118px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+  padding: 0 10px; font-size: var(--fs-xs); flex-shrink: 0;
+}
+.hq-more-note { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); color: var(--ink-3); border-top: 1px solid var(--line-soft); font-style: italic; }
+
+.switch { position: relative; width: 46px; height: 27px; border-radius: 999px; background: var(--surface-3); border: 1px solid var(--line); cursor: pointer; flex-shrink: 0; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.switch i { position: absolute; top: 2px; left: 2px; width: 21px; height: 21px; border-radius: 50%; background: var(--ink-2); transition: transform var(--dur) var(--ease), background var(--dur) var(--ease); }
+.switch.on { background: var(--brand-soft); border-color: color-mix(in oklch, var(--brand) 45%, var(--line)); }
+.switch.on i { transform: translateX(19px); background: var(--brand); }
+
+/* ---------------- 需求彙總(依上車點;彙總無人名) ---------------- */
+.demand-agg { display: flex; flex-direction: column; gap: 6px; }
+.demand-agg-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius);
+}
+.demand-agg-row .pt { font-weight: 700; font-size: var(--fs-sm); }
+.demand-agg-row .n { font-variant-numeric: tabular-nums; font-weight: 800; font-size: var(--fs-md); color: var(--ink); }
+.demand-agg-row.total { background: var(--surface-2); border-color: var(--line); }
+.demand-agg-row.total .pt { color: var(--ink-2); font-weight: 600; }
+.demand-agg-row.total .n { color: var(--brand); }
+
+/* ---------------- 調車:點對點車清單(簡列) ---------------- */
+.bus-mini-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); overflow: hidden; }
+.bus-mini-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); padding: 10px 14px; border-top: 1px solid var(--line-soft); font-size: var(--fs-sm); }
+.bus-mini-row:first-child { border-top: none; }
+.bus-mini-row b { font-weight: 700; color: var(--ink); flex-shrink: 0; }
+.bus-mini-row .route { color: var(--ink-2); flex: 1; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------------- 路線車:多停靠 route-stops ---------------- */
+.route-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); padding: var(--sp-4); box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: var(--sp-3); }
+.route-card .head h3 { font-size: var(--fs-md); font-weight: 700; margin: 0; }
+.route-card .head .sub { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 2px; }
+.route-stops { display: flex; flex-direction: column; }
+.route-stop { display: flex; align-items: center; gap: 10px; padding: 7px 0; position: relative; }
+.route-stop:not(:last-child)::after {
+  content: ""; position: absolute; left: 12px; top: 32px; bottom: -7px; width: 2px; background: var(--line);
+}
+.route-stop .seq {
+  position: relative; z-index: 1; flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-xs); font-weight: 800;
+}
+.route-stop.dest .seq { background: var(--surface-3); color: var(--ink-3); }
+.route-stop .stop-name { font-weight: 700; flex: 1; font-size: var(--fs-sm); }
+.route-stop.dest .stop-name { color: var(--ink-2); font-weight: 600; }
+.route-stop .stop-time { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: var(--fs-sm); font-weight: 600; }
+.route-stop .stop-tag { font-size: var(--fs-xs); color: var(--ink-3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 1px 6px; }
+
+/* ---------------- 資料模型 callout ---------------- */
+.callout { background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--radius-lg); padding: var(--sp-4); font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.7; }
+.callout .callout-title { display: block; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.callout .mono { color: var(--ink); }
+
+/* ---------------- 車次卡 / 配額 ---------------- */
+.bus-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.bus-card {
+  background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+  padding: var(--sp-4); box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.bus-card .head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.bus-card .head h3 { font-size: var(--fs-md); font-weight: 700; margin: 0; }
+.bus-card .head .depart { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 2px; }
+.bar { height: 10px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 100%; border-radius: 999px; background: var(--ok); transform: scaleX(var(--w, 1)); transform-origin: left; transition: transform var(--dur-slow) var(--ease); }
+.bar.warn > i { background: var(--warn); }
+.cap-wrap { display: flex; align-items: center; gap: var(--sp-3); }
+.cap-wrap .bar { flex: 1; }
+.cap-wrap .n { font-size: var(--fs-sm); font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.quota-rows { display: flex; flex-direction: column; gap: 4px; }
+.quota-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-sm); }
+.quota-row .hq { color: var(--ink-2); font-weight: 600; flex-shrink: 0; }
+.quota-row .nums { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.quota-row .nums .lbl { color: var(--ink-3); font-weight: 400; margin: 0 2px; }
+.quota-total-line {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: var(--fs-sm); font-weight: 800; padding-top: 8px; border-top: 1px solid var(--line-soft);
+  font-variant-numeric: tabular-nums;
+}
+.quota-total-line.ok { color: var(--ok); }
+.quota-total-line.warn { color: var(--warn); }
+.bus-card .foot-note { font-size: var(--fs-xs); color: var(--ink-3); }
+
+/* ---------------- Phase 4:排人上車(以車為主) ---------------- */
+.assign-target {
+  display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 700;
+  color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 8px 12px;
+}
+.assign-target .arrow { color: var(--brand); }
+.assign-target b { color: var(--ink); }
+
+.bus-tabs { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 2px; }
+.bus-tabs::-webkit-scrollbar { display: none; }
+.bus-tab {
+  flex-shrink: 0; min-height: 44px; padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: var(--fs-xs); font-weight: 700; cursor: pointer;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left;
+}
+.bus-tab .tt { font-size: var(--fs-sm); }
+.bus-tab .sub { font-weight: 500; color: var(--ink-3); font-size: var(--fs-xs); }
+.bus-tab[aria-selected="true"] { background: var(--brand-soft); color: var(--brand); border-color: color-mix(in oklch, var(--brand) 45%, var(--line)); }
+.bus-tab[aria-selected="true"] .sub { color: var(--brand); opacity: .8; }
+
+.bus-assign-panel { display: none; flex-direction: column; gap: var(--sp-4); }
+.bus-assign-panel.is-active { display: flex; }
+
+.assign-quota-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); padding: var(--sp-4); box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: var(--sp-3); }
+.assign-quota-card h3 { font-size: var(--fs-md); margin: 0; }
+.assign-quota-card .quota-line { font-size: var(--fs-sm); color: var(--ink-2); }
+.assign-quota-card .quota-line b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.assign-quota-card .quota-line .remain { color: var(--brand); font-weight: 700; }
+
+.assigned-chips { font-size: var(--fs-xs); color: var(--ink-2); line-height: 1.7; background: var(--surface-2); border-radius: var(--radius); padding: 8px 10px; }
+.assigned-chips b { color: var(--ink); }
+
+.add-toggle {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px;
+  padding: 0 14px; border-radius: var(--radius-pill); background: var(--brand-soft); color: var(--brand);
+  border: 1px solid color-mix(in oklch, var(--brand) 40%, var(--line)); font-size: var(--fs-sm); font-weight: 700; cursor: pointer;
+  align-self: flex-start;
+}
+.add-toggle:hover { background: color-mix(in oklch, var(--brand) 24%, var(--surface)); }
+
+.add-search-panel { display: none; flex-direction: column; gap: var(--sp-2); }
+.add-search-panel.is-open { display: flex; }
+.add-search-panel input.search-input { min-height: 44px; }
+.add-candidates { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); overflow: hidden; }
+.add-candidate {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: var(--sp-3); border-top: 1px solid var(--line-soft); cursor: pointer; min-height: 52px;
+}
+.add-candidate:first-child { border-top: none; }
+.add-candidate:hover { background: var(--surface-2); }
+.add-candidate .who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.add-candidate .who .name { font-size: var(--fs-base); font-weight: 700; }
+.add-candidate .who .sub { font-size: var(--fs-xs); color: var(--ink-3); }
+.add-candidate .add-mark { flex-shrink: 0; font-size: var(--fs-xs); font-weight: 700; color: var(--brand); white-space: nowrap; }
+.add-candidate.added { background: color-mix(in oklch, var(--ok) 8%, transparent); cursor: default; }
+.add-candidate.added .add-mark { color: var(--ok); }
+.add-candidate.added:hover { background: color-mix(in oklch, var(--ok) 8%, transparent); }
+
+/* ---------------- 點名模式:車次摘要卡(collapsible) ---------------- */
+.checkin-bus {
+  background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow-1);
+}
+.checkin-bus-head {
+  width: 100%; display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 60px; padding: var(--sp-3) var(--sp-4);
+  background: none; border: none; cursor: pointer; text-align: left; color: inherit;
+}
+.checkin-bus-head .chev { width: 20px; height: 20px; color: var(--ink-3); flex-shrink: 0; transition: transform var(--dur) var(--ease); }
+.checkin-bus[data-open="true"] .chev { transform: rotate(90deg); }
+.checkin-bus-head .main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.checkin-bus-head .name { font-size: var(--fs-md); font-weight: 700; }
+.checkin-bus-head .stats { font-size: var(--fs-sm); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.checkin-bus-head .stats .lbl { color: var(--ink-3); font-weight: 400; }
+.checkin-bus-head .badge {
+  flex-shrink: 0; font-size: var(--fs-xs); font-weight: 700; padding: 3px 10px; border-radius: var(--radius-pill);
+}
+.checkin-bus-head .badge.ok { background: var(--ok-soft); color: var(--ok); }
+.checkin-bus-head .badge.progress { background: var(--warn-soft); color: var(--warn); }
+
+.rider-list { display: none; flex-direction: column; border-top: 1px solid var(--line-soft); }
+.checkin-bus[data-open="true"] .rider-list { display: flex; }
+
+.rider-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4); border-top: 1px solid var(--line-soft);
+  min-height: 60px;
+}
+.rider-row:first-child { border-top: none; }
+.rider-row.is-boarded { background: color-mix(in oklch, var(--ok) 8%, transparent); }
+
+.board-toggle {
+  flex-shrink: 0; width: 44px; height: 44px; border-radius: var(--radius);
+  border: 2px solid var(--line); background: var(--surface-2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: transparent; font-size: 22px; font-weight: 900;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.board-toggle.on { background: var(--ok); border-color: var(--ok); color: var(--ok-ink); }
+
+.rider-row .who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rider-row .who .name-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rider-row .who .name { font-size: var(--fs-md); font-weight: 700; }
+.rider-row .who .leader-lbl {
+  font-size: var(--fs-xs); font-weight: 700; color: var(--warn);
+  border: 1px solid color-mix(in oklch, var(--warn) 45%, var(--line)); background: var(--warn-soft);
+  border-radius: var(--radius-sm); padding: 1px 7px; display: inline-flex; align-items: center; gap: 3px;
+}
+.rider-row .who .status-line { font-size: var(--fs-xs); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rider-row .who .status-line .boarded-lbl { color: var(--ok); font-weight: 700; }
+.rider-row .who .status-line .sync-note { color: var(--ink-3); font-style: normal; }
+.rider-row .who .status-line .sync-note::before { content: "· "; }
+.rider-row .who .status-line .stop-lbl { color: var(--ink-3); }
+
+.fee-btn {
+  flex-shrink: 0; min-height: 44px; padding: 0 12px; border-radius: var(--radius-pill);
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2);
+  font-size: var(--fs-xs); font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.fee-btn.paid { background: var(--ok-soft); color: var(--ok); border-color: color-mix(in oklch, var(--ok) 45%, var(--line)); }
+
+/* ---------------- Thumb-zone 底部固定動作列(點名模式) ---------------- */
+.thumb-bar {
+  position: sticky; bottom: 0; z-index: 25;
+  display: flex; gap: var(--sp-3);
+  padding: var(--sp-3); padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in oklch, var(--bg) 94%, transparent);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--line-soft);
+  box-shadow: 0 -8px 20px oklch(0 0 0 / .25);
+  margin-top: auto;
+}
+.thumb-bar .btn {
+  flex: 1; min-height: 52px; border-radius: var(--radius-lg); font-size: var(--fs-base); font-weight: 700;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.thumb-bar .btn.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); flex: 1.4; }
+.thumb-bar .btn svg { width: 20px; height: 20px; }
+
+.text-3 { color: var(--ink-3); }
+.text-2 { color: var(--ink-2); }
+.mono { font-family: var(--font-mono); }
+
+/* ---------------- Legend(頁尾說明,框外) ---------------- */
+.legend {
+  width: 100%; max-width: 800px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-1);
+  padding: var(--sp-6);
+}
+.legend h2 { font-size: var(--fs-lg); margin: 0 0 var(--sp-4); }
+.legend dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-2) var(--sp-4); margin: 0; }
+.legend dt {
+  font-size: var(--fs-xs); font-weight: 700; color: var(--brand); background: var(--brand-soft);
+  border: 1px solid color-mix(in oklch, var(--brand) 45%, var(--line)); border-radius: var(--radius-sm);
+  padding: 2px 8px; white-space: nowrap; height: max-content; align-self: start; margin-top: 3px;
+}
+.legend dd { margin: 0; padding-top: 2px; font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.7; }
+.legend dd b { color: var(--ink); }
+.legend .legend-open dt { color: var(--warn); background: var(--warn-soft); border-color: color-mix(in oklch, var(--warn) 45%, var(--line)); }
+@media (max-width: 600px) {
+  .legend dl { grid-template-columns: 1fr; }
+  .legend dt { justify-self: start; }
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-heading">
+    <p style="margin:0 0 12px;font-size:var(--fs-sm);">
+      <a href="../index.html" style="color:inherit;opacity:.75;text-decoration:none;border-bottom:1px solid currentColor;">← Taipei Dome</a>
+    </p>
+    <h1>交通頁重新設計:五階段 storyboard</h1>
+    <p>375px 手機視角 mockup。五個畫面依真實流程排開:① 和氣登記需求 → ② 合心調車/排路線 →
+      ③ 聯區配人數(配額)→ ④ 和氣把自己人排上車 → ⑤ 現場點名收費。點上方導覽可跳到對應畫面。</p>
+  </div>
+
+  <nav class="phase-nav" aria-label="五階段導覽">
+    <button type="button" data-target="phase-1"><span class="num">①</span>登記需求</button>
+    <button type="button" data-target="phase-2"><span class="num">②</span>調車</button>
+    <button type="button" data-target="phase-3"><span class="num">③</span>配額</button>
+    <button type="button" data-target="phase-4"><span class="num">④</span>排人</button>
+    <button type="button" data-target="phase-5"><span class="num">⑤</span>點名</button>
+  </nav>
+
+  <div class="storyboard" id="storyboard">
+
+    <!-- ===================== ① 登記需求 ===================== -->
+    <div class="phase-col" id="phase-1">
+      <div class="phase-label">
+        <div class="title-row"><span class="phase-num">①</span><h2>登記需求</h2></div>
+        <div class="badges-row">
+          <span class="role-badge role-hehe">和氣</span>
+          <span class="page-badge">交通頁</span>
+        </div>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="app-topbar">
+            <div class="page-title-row">
+              <h1>交通頁</h1>
+              <span class="day-chip">07/26 · 大巨蛋演繹 · 去程</span>
+            </div>
+            <div class="sub-line">安平和氣 · 需求登記</div>
+          </div>
+
+          <div class="panel-bar">
+            <input class="search-input" type="search" placeholder="搜尋姓名 / 和氣" aria-label="搜尋姓名或和氣">
+            <div class="chip-row" role="tablist" aria-label="和氣篩選">
+              <button type="button" class="filter-chip" aria-pressed="true">全部</button>
+              <button type="button" class="filter-chip" aria-pressed="false">安平</button>
+              <button type="button" class="filter-chip" aria-pressed="false">市南</button>
+              <button type="button" class="filter-chip" aria-pressed="false">市中</button>
+              <button type="button" class="filter-chip" aria-pressed="false">社子</button>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <div class="note-banner">
+              <span class="mark">ⓘ</span>
+              <span>此時尚無車次(車由合心調度後產生)。這裡先登記「誰要坐車、從哪裡上車」。</span>
+            </div>
+
+            <section aria-label="需求登記">
+              <div class="section-head-row">
+                <h2 class="section-title">需求登記(07/26)</h2>
+                <span class="count">共 110 人 · 需車 110</span>
+              </div>
+
+              <ul class="hq-groups">
+                <!-- 安平和氣:展開示範,60 人 -->
+                <li class="hq-group" data-open="true">
+                  <button type="button" class="hq-group-head" aria-expanded="true">
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="hq-title">安平和氣</span>
+                    <span class="hq-summary">60人 · 需車 60 · 上車點:安平聯絡處</span>
+                  </button>
+                  <ul class="hq-rows">
+                    <li class="survey-row-v2">
+                      <div class="who">
+                        <span class="name">陳玉蘭<span class="hq-tag">安平</span></span>
+                        <span class="sub">去 08:00 場 → 回 15:00 場</span>
+                      </div>
+                      <div class="row-actions">
+                        <label class="sr-only" for="pk-1">上車點</label>
+                        <input class="pickup-input" id="pk-1" list="pickupPoints" value="安平聯絡處" aria-label="上車點">
+                        <span class="switch-wrap"><button type="button" class="switch on" aria-pressed="true" aria-label="需車開關"><i></i></button></span>
+                      </div>
+                    </li>
+                    <li class="survey-row-v2">
+                      <div class="who">
+                        <span class="name">林重光<span class="hq-tag">安平</span></span>
+                        <span class="sub">去 08:00 場 → 回 15:00 場</span>
+                      </div>
+                      <div class="row-actions">
+                        <label class="sr-only" for="pk-2">上車點</label>
+                        <input class="pickup-input" id="pk-2" list="pickupPoints" value="安平聯絡處" aria-label="上車點">
+                        <span class="switch-wrap"><button type="button" class="switch on" aria-pressed="true" aria-label="需車開關"><i></i></button></span>
+                      </div>
+                    </li>
+                    <li class="survey-row-v2">
+                      <div class="who">
+                        <span class="name">王雪芳<span class="hq-tag">安平</span></span>
+                        <span class="sub">去 08:00 場 → 回 15:00 場</span>
+                      </div>
+                      <div class="row-actions">
+                        <label class="sr-only" for="pk-3">上車點</label>
+                        <input class="pickup-input" id="pk-3" list="pickupPoints" value="安平聯絡處" aria-label="上車點">
+                        <span class="switch-wrap"><button type="button" class="switch on" aria-pressed="true" aria-label="需車開關"><i></i></button></span>
+                      </div>
+                    </li>
+                    <li class="hq-more-note">⋯ 其餘 57 人(略,列表可捲動 / 搜尋)</li>
+                  </ul>
+                </li>
+
+                <!-- 市南和氣:收合,30 人 -->
+                <li class="hq-group" data-open="false">
+                  <button type="button" class="hq-group-head" aria-expanded="false">
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="hq-title">市南和氣</span>
+                    <span class="hq-summary">30人 · 需車 30 · 上車點:安平聯絡處</span>
+                  </button>
+                  <ul class="hq-rows">
+                    <li class="survey-row-v2">
+                      <div class="who"><span class="name">李文彬<span class="hq-tag">市南</span></span><span class="sub">去 08:00 場 → 回 15:00 場</span></div>
+                      <div class="row-actions">
+                        <input class="pickup-input" list="pickupPoints" value="安平聯絡處" aria-label="上車點">
+                        <span class="switch-wrap"><button type="button" class="switch on" aria-pressed="true" aria-label="需車開關"><i></i></button></span>
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+
+                <!-- 市中和氣:收合,20 人 -->
+                <li class="hq-group" data-open="false">
+                  <button type="button" class="hq-group-head" aria-expanded="false">
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="hq-title">市中和氣</span>
+                    <span class="hq-summary">20人 · 需車 20 · 上車點:安平聯絡處</span>
+                  </button>
+                  <ul class="hq-rows">
+                    <li class="survey-row-v2">
+                      <div class="who"><span class="name">周志成<span class="hq-tag">市中</span></span><span class="sub">去 08:00 場 → 回 15:00 場</span></div>
+                      <div class="row-actions">
+                        <input class="pickup-input" list="pickupPoints" value="安平聯絡處" aria-label="上車點">
+                        <span class="switch-wrap"><button type="button" class="switch on" aria-pressed="true" aria-label="需車開關"><i></i></button></span>
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+              <datalist id="pickupPoints">
+                <option value="安平聯絡處">
+                <option value="崇明路口">
+                <option value="十期重劃區">
+                <option value="大巨蛋">
+              </datalist>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="inner"><span class="arrow">↓</span><span>① 登記需求彙整後</span></div>
+    </div>
+
+    <!-- ===================== ② 調車 / 路線 ===================== -->
+    <div class="phase-col" id="phase-2">
+      <div class="phase-label">
+        <div class="title-row"><span class="phase-num">②</span><h2>調車 / 路線</h2></div>
+        <div class="badges-row">
+          <span class="role-badge role-hexin">合心交通 · 合心活動</span>
+          <span class="page-badge">調度頁</span>
+        </div>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="app-topbar">
+            <div class="page-title-row">
+              <h1>交通調度</h1>
+              <span class="day-chip">07/26 · 大巨蛋演繹</span>
+            </div>
+            <div class="sub-line">合心交通 · 依需求建車 / 排路線</div>
+          </div>
+
+          <div class="panel-body">
+            <section aria-label="需求彙總">
+              <div class="section-head-row">
+                <h2 class="section-title">需求彙總(依上車點)</h2>
+                <span class="count">彙總無人名</span>
+              </div>
+              <div class="demand-agg">
+                <div class="demand-agg-row"><span class="pt">安平聯絡處</span><span class="n">110 人</span></div>
+                <div class="demand-agg-row"><span class="pt">崇明路口</span><span class="n">18 人</span></div>
+                <div class="demand-agg-row"><span class="pt">十期重劃區</span><span class="n">12 人</span></div>
+                <div class="demand-agg-row total"><span class="pt">共計待調度</span><span class="n">140 人</span></div>
+              </div>
+            </section>
+
+            <section aria-label="調車:點對點車">
+              <div class="section-head-row">
+                <h2 class="section-title">調車 · 點對點車</h2>
+                <span class="count">安平聯絡處 → 大巨蛋 ×3</span>
+              </div>
+              <div class="bus-mini-list">
+                <div class="bus-mini-row"><b>第一車</b><span class="route">安平聯絡處 → 大巨蛋 · 44座 · 09:00 發車</span></div>
+                <div class="bus-mini-row"><b>第二車</b><span class="route">安平聯絡處 → 大巨蛋 · 44座 · 09:00 發車</span></div>
+                <div class="bus-mini-row"><b>第三車</b><span class="route">安平聯絡處 → 大巨蛋 · 44座 · 09:15 發車</span></div>
+              </div>
+              <p class="section-sub" style="margin-top:6px;">合心決定:安平聯絡處需求 110 人,建 3 車滿足(3 × 44 座,含留席)。</p>
+            </section>
+
+            <section aria-label="調車:路線車">
+              <div class="section-head-row">
+                <h2 class="section-title">調車 · 路線車(沿路載)</h2>
+                <span class="count">同車不同上車點</span>
+              </div>
+              <div class="route-card">
+                <div class="head">
+                  <h3>第四車</h3>
+                  <div class="sub">路線車 · 36 座 · 沿路載,一車服務多個上車點</div>
+                </div>
+                <ol class="route-stops">
+                  <li class="route-stop">
+                    <span class="seq">1</span>
+                    <span class="stop-name">崇明路口</span>
+                    <span class="stop-time">08:00</span>
+                  </li>
+                  <li class="route-stop">
+                    <span class="seq">2</span>
+                    <span class="stop-name">安平聯絡處</span>
+                    <span class="stop-time">08:20</span>
+                  </li>
+                  <li class="route-stop">
+                    <span class="seq">3</span>
+                    <span class="stop-name">十期重劃區</span>
+                    <span class="stop-time">08:40</span>
+                  </li>
+                  <li class="route-stop dest">
+                    <span class="seq">4</span>
+                    <span class="stop-name">大巨蛋</span>
+                    <span class="stop-tag">終點 · 不上車</span>
+                  </li>
+                </ol>
+              </div>
+            </section>
+
+            <div class="callout">
+              <span class="callout-title">資料模型(新能力)</span>
+              新增 <span class="mono">bus_stops</span>(<span class="mono">busId · 上車點 · 順序 seq · 各站時間</span>)。
+              一站 = 點對點車,多站 = 路線車。<b>ADR-8 延伸 / spec 開放問題</b>,詳見頁尾圖例。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="inner"><span class="arrow">↓</span><span>② 合心建車後</span></div>
+    </div>
+
+    <!-- ===================== ③ 配人數 / 配額 ===================== -->
+    <div class="phase-col" id="phase-3">
+      <div class="phase-label">
+        <div class="title-row"><span class="phase-num">③</span><h2>配人數(配額)</h2></div>
+        <div class="badges-row">
+          <span class="role-badge role-lianqu">聯區活動</span>
+          <span class="page-badge">調度頁</span>
+        </div>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="app-topbar">
+            <div class="page-title-row">
+              <h1>交通調度</h1>
+              <span class="day-chip">07/26 · 大巨蛋演繹</span>
+            </div>
+            <div class="sub-line">聯區活動 · 依和氣配額(彙總無人名)</div>
+          </div>
+
+          <div class="panel-body">
+            <section aria-label="配額">
+              <div class="section-head-row">
+                <h2 class="section-title">配額(依和氣)</h2>
+                <span class="count">共 4 車</span>
+              </div>
+              <ul class="bus-list">
+                <li class="bus-card">
+                  <div class="head">
+                    <div>
+                      <h3>第一車</h3>
+                      <div class="depart">安平聯絡處 → 大巨蛋 · 44 座</div>
+                    </div>
+                  </div>
+                  <div class="quota-rows">
+                    <div class="quota-row"><span class="hq">安平和氣</span><span class="nums">20</span></div>
+                    <div class="quota-row"><span class="hq">市南和氣</span><span class="nums">10</span></div>
+                    <div class="quota-row"><span class="hq">市中和氣</span><span class="nums">10</span></div>
+                  </div>
+                  <div class="quota-total-line ok"><span>配額合計 40 · 留席 4</span><span>40 / 44 座 ✓</span></div>
+                </li>
+
+                <li class="bus-card">
+                  <div class="head">
+                    <div>
+                      <h3>第二車</h3>
+                      <div class="depart">安平聯絡處 → 大巨蛋 · 44 座</div>
+                    </div>
+                  </div>
+                  <div class="quota-rows">
+                    <div class="quota-row over"><span class="hq">安平和氣</span><span class="nums">22</span></div>
+                    <div class="quota-row over"><span class="hq">市南和氣</span><span class="nums">14</span></div>
+                    <div class="quota-row over"><span class="hq">市中和氣</span><span class="nums">10</span></div>
+                  </div>
+                  <div class="quota-total-line warn"><span>配額合計 46</span><span>46 / 44 座 ⚠ 超出</span></div>
+                </li>
+
+                <li class="bus-card" style="padding: var(--sp-3) var(--sp-4);">
+                  <div class="foot-note">第三車(44 座)配額模式同上,合計 34 / 44 座 ✓(3 車共同滿足安平聯絡處 110 人需求,略,不重複展開)。</div>
+                </li>
+
+                <li class="bus-card">
+                  <div class="head">
+                    <div>
+                      <h3>第四車 <span class="page-badge" style="margin-left:4px;">路線車</span></h3>
+                      <div class="depart">崇明路口 → 安平聯絡處 → 十期重劃區 → 大巨蛋 · 36 座</div>
+                    </div>
+                  </div>
+                  <div class="quota-rows">
+                    <div class="quota-row"><span class="hq">安平和氣(安平聯絡處站)</span><span class="nums">8</span></div>
+                  </div>
+                  <div class="quota-total-line ok"><span>本和氣配額 8</span><span>8 / 36 座 ✓</span></div>
+                  <div class="foot-note">其餘座位開放崇明路口 / 十期重劃區沿線居民,依各自和氣分別配額(不同和氣,略)。</div>
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="inner"><span class="arrow">↓</span><span>③ 聯區配額後</span></div>
+    </div>
+
+    <!-- ===================== ④ 排人上車 ===================== -->
+    <div class="phase-col" id="phase-4">
+      <div class="phase-label">
+        <div class="title-row"><span class="phase-num">④</span><h2>排人上車</h2></div>
+        <div class="badges-row">
+          <span class="role-badge role-hehe">和氣</span>
+          <span class="page-badge">交通頁</span>
+        </div>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="app-topbar">
+            <div class="page-title-row">
+              <h1>交通頁</h1>
+              <span class="day-chip">07/26 · 大巨蛋演繹</span>
+            </div>
+            <div class="sub-line">安平和氣 · 把人加進車上</div>
+          </div>
+
+          <div class="panel-body">
+            <section aria-label="有配額的車次">
+              <div class="section-head-row">
+                <h2 class="section-title">你的和氣有配額的車次</h2>
+              </div>
+              <div class="bus-tabs" role="tablist" aria-label="車次">
+                <button type="button" class="bus-tab" role="tab" aria-selected="true" data-bus-panel="assignBus1">
+                  <span class="tt">第一車</span><span class="sub">配額20 · 已排12</span>
+                </button>
+                <button type="button" class="bus-tab" role="tab" aria-selected="false" data-bus-panel="assignBus4">
+                  <span class="tt">第四車(路線)</span><span class="sub">配額8 · 已排3</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- 第一車:排人面板 -->
+            <div class="bus-assign-panel is-active" id="assignBus1" data-quota="20">
+              <div class="assign-target"><span>目前操作</span><span class="arrow">→</span><b>安平和氣 → 第一車</b></div>
+
+              <div class="assign-quota-card">
+                <h3>第一車</h3>
+                <div class="cap-wrap">
+                  <span class="bar"><i style="--w:0.6"></i></span>
+                  <span class="n"><span class="assigned-count">12</span> / 20</span>
+                </div>
+                <div class="quota-line">你的和氣(安平)配額 <b>20</b> · 已排 <b class="assigned-count-txt">12</b> · 還可排 <span class="remain remain-count">8</span></div>
+              </div>
+
+              <div class="assigned-chips"><b>已排:</b>陳玉蘭、林重光、王雪芳、張耀輝 ⋯(共 12 人)</div>
+
+              <button type="button" class="add-toggle" aria-expanded="false">＋ 加人</button>
+              <div class="add-search-panel">
+                <input class="search-input" type="search" placeholder="搜尋安平和氣尚未上車的人" aria-label="搜尋要加入本車的人">
+                <div class="add-candidates">
+                  <div class="add-candidate">
+                    <div class="who"><span class="name">黃麗珠</span><span class="sub">需車 · 尚未排車</span></div>
+                    <span class="add-mark">把人加進這台車</span>
+                  </div>
+                  <div class="add-candidate">
+                    <div class="who"><span class="name">蔡文雄</span><span class="sub">需車 · 尚未排車</span></div>
+                    <span class="add-mark">把人加進這台車</span>
+                  </div>
+                  <div class="add-candidate">
+                    <div class="who"><span class="name">許雅芳</span><span class="sub">需車 · 尚未排車</span></div>
+                    <span class="add-mark">把人加進這台車</span>
+                  </div>
+                  <div class="add-candidate">
+                    <div class="who"><span class="name">賴淑貞</span><span class="sub">需車 · 尚未排車</span></div>
+                    <span class="add-mark">把人加進這台車</span>
+                  </div>
+                </div>
+              </div>
+              <p class="section-sub">超過配額仍可加(⚠ 提示,不會擋),常見於同和氣家庭想同車。</p>
+            </div>
+
+            <!-- 第四車(路線):排人面板 -->
+            <div class="bus-assign-panel" id="assignBus4" data-quota="8">
+              <div class="assign-target"><span>目前操作</span><span class="arrow">→</span><b>安平和氣 → 第四車(路線)</b></div>
+
+              <div class="assign-quota-card">
+                <h3>第四車 · 路線車</h3>
+                <div class="cap-wrap">
+                  <span class="bar"><i style="--w:0.38"></i></span>
+                  <span class="n"><span class="assigned-count">3</span> / 8</span>
+                </div>
+                <div class="quota-line">你的和氣(安平)配額 <b>8</b> · 已排 <b class="assigned-count-txt">3</b> · 還可排 <span class="remain remain-count">5</span></div>
+              </div>
+
+              <div class="assigned-chips">
+                <b>已排(同車不同上車點):</b><br>
+                李文彬 · 上車:安平聯絡處 08:20<br>
+                陳淑貞 · 上車:安平聯絡處 08:20<br>
+                郭進財 · 上車:十期重劃區 08:40
+              </div>
+
+              <button type="button" class="add-toggle" aria-expanded="false">＋ 加人</button>
+              <div class="add-search-panel">
+                <input class="search-input" type="search" placeholder="搜尋安平和氣尚未上車的人" aria-label="搜尋要加入本車的人">
+                <div class="add-candidates">
+                  <div class="add-candidate">
+                    <div class="who"><span class="name">周志成</span><span class="sub">需車 · 上車:安平聯絡處 08:20</span></div>
+                    <span class="add-mark">把人加進這台車</span>
+                  </div>
+                  <div class="add-candidate">
+                    <div class="who"><span class="name">張耀輝</span><span class="sub">需車 · 上車:十期重劃區 08:40</span></div>
+                    <span class="add-mark">把人加進這台車</span>
+                  </div>
+                </div>
+              </div>
+              <p class="section-sub">路線車同一台車,乘客可能在不同站上車;加入時沿用登記的上車點。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector">
+      <div class="inner"><span class="arrow">↓</span><span>④ 排人上車後</span></div>
+    </div>
+
+    <!-- ===================== ⑤ 點名收費 ===================== -->
+    <div class="phase-col" id="phase-5">
+      <div class="phase-label">
+        <div class="title-row"><span class="phase-num">⑤</span><h2>點名收費</h2></div>
+        <div class="badges-row">
+          <span class="role-badge role-onsite">現場</span>
+          <span class="page-badge">交通頁</span>
+        </div>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="app-topbar">
+            <div class="page-title-row">
+              <h1>交通頁</h1>
+              <span class="day-chip">07/26 · 去程</span>
+            </div>
+            <div class="sub-line">現場 · 上車點名</div>
+          </div>
+
+          <div class="panel-bar">
+            <input class="search-input big" type="search" placeholder="搜尋要點名的人" aria-label="搜尋要點名的人">
+          </div>
+
+          <div class="panel-body" style="padding-bottom: var(--sp-4);">
+            <section aria-label="車次點名">
+              <div class="section-head-row">
+                <h2 class="section-title">車次點名(07/26 · 去程)</h2>
+                <span class="count">4 車</span>
+              </div>
+
+              <ul class="bus-list" style="gap: var(--sp-3);">
+                <!-- 第一車:展開示範(點對點車) -->
+                <li class="checkin-bus" data-open="true">
+                  <button type="button" class="checkin-bus-head" aria-expanded="true">
+                    <div class="main">
+                      <span class="name">第一車 · 去程</span>
+                      <span class="stats">上車 <span style="color:var(--ink)">12/40</span><span class="lbl"> · 收費 8/40</span></span>
+                    </div>
+                    <span class="badge progress">點名中</span>
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </button>
+                  <ul class="rider-list">
+                    <li class="rider-row is-boarded">
+                      <button type="button" class="board-toggle on" aria-pressed="true" aria-label="陳玉蘭 已上車,點擊取消">✓</button>
+                      <div class="who">
+                        <span class="name-line"><span class="name">陳玉蘭</span></span>
+                        <span class="status-line"><span class="boarded-lbl">已上車</span></span>
+                      </div>
+                      <button type="button" class="fee-btn paid">已收 100</button>
+                    </li>
+                    <li class="rider-row is-boarded">
+                      <button type="button" class="board-toggle on" aria-pressed="true" aria-label="林重光 已上車,點擊取消">✓</button>
+                      <div class="who">
+                        <span class="name-line"><span class="name">林重光</span></span>
+                        <span class="status-line"><span class="boarded-lbl">已上車</span><span class="sync-note">同步中…</span></span>
+                      </div>
+                      <button type="button" class="fee-btn">收 100</button>
+                    </li>
+                    <li class="rider-row">
+                      <button type="button" class="board-toggle" aria-pressed="false" aria-label="王雪芳 尚未上車,點擊標記">✓</button>
+                      <div class="who">
+                        <span class="name-line"><span class="name">王雪芳</span><span class="leader-lbl">★ 車長</span></span>
+                        <span class="status-line text-3">尚未上車</span>
+                      </div>
+                      <button type="button" class="fee-btn">收 100</button>
+                    </li>
+                  </ul>
+                </li>
+
+                <!-- 第四車:路線車展開,展示同車不同上車點 -->
+                <li class="checkin-bus" data-open="true">
+                  <button type="button" class="checkin-bus-head" aria-expanded="true">
+                    <div class="main">
+                      <span class="name">第四車 · 去程 <span class="page-badge" style="margin-left:2px;">路線車</span></span>
+                      <span class="stats">上車 <span style="color:var(--ink)">5/8</span><span class="lbl"> · 收費 3/8</span></span>
+                    </div>
+                    <span class="badge progress">點名中</span>
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </button>
+                  <ul class="rider-list">
+                    <li class="rider-row is-boarded">
+                      <button type="button" class="board-toggle on" aria-pressed="true" aria-label="李文彬 已上車,點擊取消">✓</button>
+                      <div class="who">
+                        <span class="name-line"><span class="name">李文彬</span></span>
+                        <span class="status-line"><span class="boarded-lbl">已上車</span><span class="stop-lbl">上車站:安平聯絡處 08:20</span></span>
+                      </div>
+                      <button type="button" class="fee-btn paid">已收 100</button>
+                    </li>
+                    <li class="rider-row">
+                      <button type="button" class="board-toggle" aria-pressed="false" aria-label="郭進財 尚未上車,點擊標記">✓</button>
+                      <div class="who">
+                        <span class="name-line"><span class="name">郭進財</span></span>
+                        <span class="status-line text-3">尚未上車 <span class="stop-lbl">· 上車站:十期重劃區 08:40</span></span>
+                      </div>
+                      <button type="button" class="fee-btn">收 100</button>
+                    </li>
+                    <li class="rider-row">
+                      <button type="button" class="board-toggle" aria-pressed="false" aria-label="周志成 尚未上車,點擊標記">✓</button>
+                      <div class="who">
+                        <span class="name-line"><span class="name">周志成</span></span>
+                        <span class="status-line text-3">尚未上車 <span class="stop-lbl">· 上車站:安平聯絡處 08:20</span></span>
+                      </div>
+                      <button type="button" class="fee-btn">收 100</button>
+                    </li>
+                  </ul>
+                </li>
+
+                <!-- 第二車:收合摘要,超額提示延續到現場 -->
+                <li class="checkin-bus" data-open="false">
+                  <button type="button" class="checkin-bus-head" aria-expanded="false">
+                    <div class="main">
+                      <span class="name">第二車 · 去程</span>
+                      <span class="stats">上車 <span style="color:var(--ink)">0/46</span><span class="lbl"> · 收費 0/46</span></span>
+                    </div>
+                    <span class="badge progress">未開始</span>
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </button>
+                  <ul class="rider-list"></ul>
+                </li>
+
+                <!-- 第三車:收合摘要,已完成 -->
+                <li class="checkin-bus" data-open="false">
+                  <button type="button" class="checkin-bus-head" aria-expanded="false">
+                    <div class="main">
+                      <span class="name">第三車 · 去程</span>
+                      <span class="stats">上車 <span style="color:var(--ink)">34/34</span><span class="lbl"> · 收費 34/34</span></span>
+                    </div>
+                    <span class="badge ok">已完成</span>
+                    <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </button>
+                  <ul class="rider-list"></ul>
+                </li>
+              </ul>
+            </section>
+          </div>
+
+          <!-- Thumb-zone 固定底部動作列 -->
+          <div class="thumb-bar">
+            <button type="button" class="btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              加人
+            </button>
+            <button type="button" class="btn primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              本車點名完成
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================== Legend(框外說明) ===================== -->
+  <div class="legend">
+    <h2>重新設計對應說明</h2>
+    <dl>
+      <dt>P0 五階段流程</dt>
+      <dd>舊版把「登記」「排車」「點名」揉在單一頁面的兩種模式;新版依<b>真實時間順序</b>拆成五個畫面(①登記 → ②調車 → ③配額 → ④排人 → ⑤點名),
+        每個畫面只服務一種角色、一個當下能做的動作,順序即是流程本身。</dd>
+
+      <dt>P0 兩層調度(合心/聯區)</dt>
+      <dd><b>合心交通‧合心活動</b>決定「有幾台車、怎麼跑」(②調車/路線);<b>聯區活動</b>決定「每台車給哪些和氣多少名額」(③配額)。
+        兩層職責分開,避免舊版把「建車」與「配人」揉在一起,誤讓和氣自建車次或看不到全局座位分配。</dd>
+
+      <dt>P1 路線車多停靠(bus_stops)</dt>
+      <dd>新增<b>路線車</b>能力:一台車可以「沿路載」多個上車點(如第四車:崇明路口 → 安平聯絡處 → 十期重劃區)。
+        資料模型新增 <span class="mono">bus_stops</span>(busId · 上車點 · 順序 seq · 各站時間);一站 = 點對點車,多站 = 路線車。</dd>
+
+      <dt>P1 以車為主排人(非批次)</dt>
+      <dd>④排人上車拿掉「批次/多選/指派」語彙,改成 <b>BUS-FIRST</b>:先選車,畫面固定顯示「安平和氣 → 第一車」這個目標,
+        再從「加人」清單逐一把人加進這台車:具體語言取代抽象的批次操作,目標全程可見不怕選錯車。</dd>
+
+      <dt>P0 樂觀點名</dt>
+      <dd>⑤點名的上車 toggle 點下<b>立即翻成「已上車」</b>,不等伺服器回應;個別列可顯示「同步中…」小字,但<b>不鎖住整張車卡</b>,
+        點名節奏不被網路延遲打斷(延續前版決策)。</dd>
+
+      <dt>P1 thumb-zone</dt>
+      <dd>⑤點名的主要動作(加人 / 本車點名完成)收斂到<b>畫面底部固定列</b>,對齊單手持機時姆指自然可及的範圍(延續前版決策)。</dd>
+
+      <dt>P0 彙總無人名</dt>
+      <dd>②調車、③配額兩個「調度頁」畫面只顯示<b>依上車點或依和氣的計數</b>,不顯示任何人名;個人姓名只出現在①登記、④排人、⑤點名這三個
+        「和氣/現場」畫面,對應 PII 分層鐵律(調度角色不需要、也看不到具體是誰)。</dd>
+
+      <dt>配額驗證</dt>
+      <dd>每台車的配額合計即時與座位數比對:符合顯示 <b>✓</b>(ok 綠色),超出顯示 <b>⚠ 超出</b>(warn 琥珀色);
+        數字統一提升到 <span class="mono">--ink</span> 權重,確保操作時第一眼就能讀到判斷依據。</dd>
+
+      <dt class="legend-open">開放問題</dt>
+      <dd>留給 spec 續寫:<b>bus_stops</b> 的順序/時間是否允許聯區事後微調?路線車的配額要不要拆到「站」層級(而非整車一個配額),
+        還是維持「和氣配額 + 個人登記時的上車點」兩欄位即可推導?回程是否重用同一組 <span class="mono">bus_stops</span>
+        (順序反轉、時間另填),或需要另建一筆反向路線?見 <span class="mono">docs/superpowers/specs/</span>。</dd>
+    </dl>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- 階段導覽:跳到對應 phase-col ----
+  document.querySelectorAll(".phase-nav button[data-target]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var el = document.getElementById(btn.getAttribute("data-target"));
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    });
+  });
+
+  // ---- 和氣篩選 chip(單選視覺,①) ----
+  document.querySelectorAll(".chip-row .filter-chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var row = chip.closest(".chip-row");
+      row.querySelectorAll(".filter-chip").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
+      chip.setAttribute("aria-pressed", "true");
+    });
+  });
+
+  // ---- 和氣分組 collapsible(①) ----
+  document.querySelectorAll(".hq-group-head").forEach(function (head) {
+    head.addEventListener("click", function () {
+      var group = head.closest(".hq-group");
+      var open = group.getAttribute("data-open") === "true";
+      group.setAttribute("data-open", String(!open));
+      head.setAttribute("aria-expanded", String(!open));
+    });
+  });
+
+  // ---- 需車開關(①,視覺切換) ----
+  document.querySelectorAll(".survey-row-v2 .switch").forEach(function (sw) {
+    sw.addEventListener("click", function () {
+      var on = sw.classList.toggle("on");
+      sw.setAttribute("aria-pressed", String(on));
+    });
+  });
+
+  // ---- 車次分頁(④,BUS-FIRST 切換) ----
+  document.querySelectorAll(".bus-tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      var group = tab.closest(".bus-tabs");
+      group.querySelectorAll(".bus-tab").forEach(function (t) { t.setAttribute("aria-selected", "false"); });
+      tab.setAttribute("aria-selected", "true");
+      var targetId = tab.getAttribute("data-bus-panel");
+      document.querySelectorAll(".bus-assign-panel").forEach(function (p) {
+        p.classList.toggle("is-active", p.id === targetId);
+      });
+    });
+  });
+
+  // ---- 加人:展開/收合搜尋清單(④) ----
+  document.querySelectorAll(".add-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var panel = btn.nextElementSibling;
+      if (!panel || !panel.classList.contains("add-search-panel")) return;
+      var open = panel.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", String(open));
+    });
+  });
+
+  // ---- 加人:點名字立即加入(樂觀,④) ----
+  document.querySelectorAll(".add-candidate").forEach(function (row) {
+    row.addEventListener("click", function () {
+      if (row.classList.contains("added")) return;
+      row.classList.add("added");
+      var mark = row.querySelector(".add-mark");
+      if (mark) mark.textContent = "已加入 ✓";
+
+      var panel = row.closest(".bus-assign-panel");
+      if (!panel) return;
+      var countEl = panel.querySelector(".assigned-count");
+      var countTxtEl = panel.querySelector(".assigned-count-txt");
+      var remainEl = panel.querySelector(".remain-count");
+      var quota = Number(panel.getAttribute("data-quota") || 0);
+      var newCount = countEl ? Number(countEl.textContent) + 1 : 0;
+
+      if (countEl) countEl.textContent = String(newCount);
+      if (countTxtEl) countTxtEl.textContent = String(newCount);
+      if (remainEl) remainEl.textContent = String(Math.max(0, quota - newCount));
+
+      var barI = panel.querySelector(".assign-quota-card .bar > i");
+      var barWrap = panel.querySelector(".assign-quota-card .bar");
+      if (barI && quota > 0) {
+        var ratio = Math.min(1, newCount / quota);
+        barI.style.setProperty("--w", String(ratio));
+        if (barWrap) barWrap.classList.toggle("warn", newCount > quota);
+      }
+    });
+  });
+
+  // ---- 點名車次卡 collapsible(⑤) ----
+  document.querySelectorAll(".checkin-bus-head").forEach(function (head) {
+    head.addEventListener("click", function () {
+      var card = head.closest(".checkin-bus");
+      var open = card.getAttribute("data-open") === "true";
+      card.setAttribute("data-open", String(!open));
+      head.setAttribute("aria-expanded", String(!open));
+    });
+  });
+
+  // ---- 點名:上車 toggle,樂觀立即翻狀態(⑤) ----
+  document.querySelectorAll(".board-toggle").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var row = btn.closest(".rider-row");
+      var on = btn.classList.toggle("on");
+      btn.setAttribute("aria-pressed", String(on));
+      row.classList.toggle("is-boarded", on);
+      var statusLine = row.querySelector(".status-line");
+      if (!statusLine) return;
+      var stopLbl = statusLine.querySelector(".stop-lbl");
+      var stopText = stopLbl ? stopLbl.outerHTML : "";
+      statusLine.innerHTML = (on
+        ? '<span class="boarded-lbl">已上車</span>'
+        : '<span class="text-3">尚未上車</span>') + (stopText ? " " + stopText : "");
+    });
+  });
+
+  // ---- 收費按鈕(視覺切換,⑤) ----
+  document.querySelectorAll(".fee-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var paid = btn.classList.toggle("paid");
+      btn.textContent = paid ? "已收 100" : "收 100";
+    });
+  });
+})();
+</script>
+</body>
+</html>
