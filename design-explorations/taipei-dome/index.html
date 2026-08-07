@@ -229,6 +229,12 @@
       font-weight: 400;
     }
 
+    .modules-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+    }
+
     .module-card {
       display: grid;
       grid-template-columns: 1.1fr 1fr;
@@ -242,6 +248,10 @@
       color: inherit;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       animation: fadeInUp 0.6s ease-out 0.15s backwards;
+    }
+
+    .module-card:nth-child(2) {
+      animation-delay: 0.25s;
     }
 
     .module-card:hover {
@@ -443,7 +453,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-item__label">模組</span>
-            <span class="meta-item__value">1 個（交通）</span>
+            <span class="meta-item__value">2 個（交通、演繹內容）</span>
           </div>
         </div>
       </div>
@@ -457,39 +467,74 @@
         <h2 class="section-title">模組探索</h2>
       </div>
 
-      <a href="transport/five-phase-storyboard.html" class="module-card">
-        <div class="module-card__preview" aria-hidden="true">
-          <div class="preview-phases">
-            <span>① 登記</span>
-            <span>② 調車</span>
-            <span>③ 配額</span>
-            <span>④ 排人</span>
-            <span>⑤ 點名</span>
+      <div class="modules-list">
+        <a href="transport/five-phase-storyboard.html" class="module-card">
+          <div class="module-card__preview" aria-hidden="true">
+            <div class="preview-phases">
+              <span>① 登記</span>
+              <span>② 調車</span>
+              <span>③ 配額</span>
+              <span>④ 排人</span>
+              <span>⑤ 點名</span>
+            </div>
           </div>
-        </div>
-        <div class="module-card__body">
-          <span class="module-card__badge">Transport</span>
-          <h3 class="module-card__title">交通 · 五階段 Storyboard</h3>
-          <p class="module-card__subtitle">375px 手機視角 · 互動 mockup</p>
-          <p class="module-card__desc">
-            把舊版「登記／排車／點名」揉在一起的交通頁，依真實流程拆成五個畫面：
-            和氣登記需求 → 合心調車／路線 → 聯區配額 → 和氣排人上車 → 現場點名收費。
-            每個畫面只服務一種角色、一個當下動作。
-          </p>
-          <div class="module-card__tags">
-            <span class="tag">Storyboard</span>
-            <span class="tag">Mobile</span>
-            <span class="tag">流程重構</span>
-            <span class="tag">交通調度</span>
+          <div class="module-card__body">
+            <span class="module-card__badge">Transport</span>
+            <h3 class="module-card__title">交通 · 五階段 Storyboard</h3>
+            <p class="module-card__subtitle">375px 手機視角 · 互動 mockup</p>
+            <p class="module-card__desc">
+              把舊版「登記／排車／點名」揉在一起的交通頁，依真實流程拆成五個畫面：
+              和氣登記需求 → 合心調車／路線 → 聯區配額 → 和氣排人上車 → 現場點名收費。
+              每個畫面只服務一種角色、一個當下動作。
+            </p>
+            <div class="module-card__tags">
+              <span class="tag">Storyboard</span>
+              <span class="tag">Mobile</span>
+              <span class="tag">流程重構</span>
+              <span class="tag">交通調度</span>
+            </div>
+            <span class="module-card__action">
+              開啟 mockup
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
           </div>
-          <span class="module-card__action">
-            開啟 mockup
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </span>
-        </div>
-      </a>
+        </a>
+
+        <a href="flow/flow-content-authoring.html" class="module-card">
+          <div class="module-card__preview" aria-hidden="true">
+            <div class="preview-phases">
+              <span>四日編排</span>
+              <span>Cue 與座位</span>
+              <span>預覽與發布</span>
+              <span>個人練習</span>
+            </div>
+          </div>
+          <div class="module-card__body">
+            <span class="module-card__badge">Flow</span>
+            <h3 class="module-card__title">演繹內容 · 座位規則工作台</h3>
+            <p class="module-card__subtitle">桌面／手機 · 內容編輯與發布</p>
+            <p class="module-card__desc">
+              企劃端的演繹內容編排原型：四日段落 runsheet、段內 Cue、
+              座位版本規則與發布核對。規則綁座位而非名單，共用段落與
+              本場覆寫分流，重疊座位會阻擋發布。
+            </p>
+            <div class="module-card__tags">
+              <span class="tag">Workbench</span>
+              <span class="tag">Content</span>
+              <span class="tag">座位規則</span>
+              <span class="tag">發布核對</span>
+            </div>
+            <span class="module-card__action">
+              開啟 mockup
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+      </div>
     </div>
   </section>
 
