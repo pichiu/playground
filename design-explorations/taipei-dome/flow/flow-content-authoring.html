@@ -1,839 +1,853 @@
 <!doctype html>
 <html lang="zh-Hant" data-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>演繹內容座位規則工作台｜設計原型</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: oklch(0.17 0.014 255);
-      --surface: oklch(0.213 0.016 255);
-      --surface-2: oklch(0.255 0.018 255);
-      --surface-3: oklch(0.30 0.02 255);
-      --line: oklch(0.34 0.018 255);
-      --line-soft: oklch(1 0 0 / .08);
-      --ink: oklch(0.97 0.004 255);
-      --ink-2: oklch(0.82 0.010 255);
-      --ink-3: oklch(0.70 0.012 255);
-      --brand: oklch(0.68 0.115 245);
-      --brand-2: oklch(0.60 0.12 248);
-      --brand-ink: oklch(0.16 0.018 245);
-      --brand-soft: oklch(0.68 0.115 245 / .14);
-      --ok: oklch(0.74 0.15 155);
-      --ok-soft: oklch(0.74 0.15 155 / .15);
-      --warn: oklch(0.82 0.13 82);
-      --warn-soft: oklch(0.82 0.13 82 / .15);
-      --danger: oklch(0.68 0.19 25);
-      --danger-soft: oklch(0.68 0.19 25 / .15);
-      --sidebar-w: 272px;
-      --appbar-h: 60px;
-      --bottomnav-h: 76px;
-      --radius-sm: 8px;
-      --radius: 12px;
-      --radius-lg: 18px;
-      --pill: 999px;
-      --shadow: 0 18px 52px oklch(0 0 0 / .28);
-      --focus: oklch(0.78 0.11 240);
-      --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
-    }
-    :root[data-theme="light"] {
-      color-scheme: light;
-      --bg: oklch(0.968 0.004 255);
-      --surface: oklch(1 0 0);
-      --surface-2: oklch(0.978 0.004 255);
-      --surface-3: oklch(0.945 0.006 255);
-      --line: oklch(0.90 0.006 255);
-      --line-soft: oklch(0.28 0.02 255 / .10);
-      --ink: oklch(0.24 0.020 255);
-      --ink-2: oklch(0.44 0.018 255);
-      --ink-3: oklch(0.54 0.016 255);
-      --brand: oklch(0.52 0.145 245);
-      --brand-2: oklch(0.48 0.15 248);
-      --brand-ink: oklch(0.98 0.003 245);
-      --brand-soft: oklch(0.52 0.145 245 / .12);
-      --ok: oklch(0.50 0.15 155);
-      --ok-soft: oklch(0.50 0.15 155 / .13);
-      --warn: oklch(0.52 0.14 70);
-      --warn-soft: oklch(0.52 0.14 70 / .15);
-      --danger: oklch(0.54 0.20 25);
-      --danger-soft: oklch(0.54 0.20 25 / .12);
-      --focus: oklch(0.52 0.145 245);
-    }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
-    body { background: var(--bg); color: var(--ink); font: 18px/1.5 var(--font); }
-    button, input, select, textarea { color: inherit; font: inherit; }
-    button { cursor: pointer; }
-    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
-      outline: 3px solid var(--focus); outline-offset: 2px; border-color: var(--brand) !important;
-    }
-    a { color: var(--brand); text-underline-offset: 3px; }
-    .app { min-height: 100vh; display: flex; }
-    .sidebar {
-      width: var(--sidebar-w); min-height: 100vh; position: sticky; top: 0; align-self: flex-start;
-      padding: 24px 18px; background: var(--surface); border-right: 1px solid var(--line-soft);
-      display: flex; flex-direction: column; gap: 24px;
-    }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand-mark { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); font-weight: 900; }
-    .brand b, .brand span { display: block; }
-    .brand span { color: var(--ink-3); font-size: 13px; }
-    .side-nav { display: grid; gap: 4px; }
-    .side-label { color: var(--ink-3); font-size: 12px; font-weight: 800; letter-spacing: .08em; padding: 8px 12px; }
-    .side-nav button {
-      min-height: 48px; width: 100%; border: 0; border-radius: var(--radius); background: transparent;
-      color: var(--ink-2); padding: 0 12px; text-align: left; font-weight: 750;
-    }
-    .side-nav button:hover { background: var(--surface-2); color: var(--ink); }
-    .side-nav button.active { color: var(--brand); background: var(--brand-soft); }
-    .sidebar-foot { margin-top: auto; }
-    .account { position: relative; }
-    .account-btn {
-      min-height: 48px; width: 100%; display: grid; grid-template-columns: 36px 1fr auto;
-      align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--line);
-      border-radius: var(--radius); background: var(--surface-2); text-align: left;
-    }
-    .avatar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--brand); color: var(--brand-ink); font-weight: 900; }
-    .account-copy b, .account-copy small { display: block; }
-    .account-copy small { color: var(--ink-3); font-size: 11px; }
-    .account-panel {
-      position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 30;
-      display: none; gap: 10px; padding: 12px; border: 1px solid var(--line);
-      border-radius: var(--radius-lg); background: var(--surface-2); box-shadow: var(--shadow);
-    }
-    .account.open .account-panel { display: grid; }
-    .main { width: calc(100% - var(--sidebar-w)); min-width: 0; }
-    .content { max-width: 1480px; margin: 0 auto; padding: 28px 30px 56px; }
-    .appbar, .bottomnav { display: none; }
-    .topline { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 20px; }
-    .eyebrow { color: var(--brand); font-size: 13px; font-weight: 850; letter-spacing: .08em; }
-    h1 { margin: 3px 0 4px; font-size: clamp(28px, 3vw, 40px); line-height: 1.15; }
-    h2, h3, h4, p { margin-top: 0; }
-    .sub { margin: 0; color: var(--ink-3); font-size: 14px; }
-    .actions, .inline, .chips, .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .btn {
-      min-height: 48px; padding: 0 16px; border: 1px solid var(--line); border-radius: var(--radius);
-      background: var(--surface-2); color: var(--ink); font-weight: 750;
-    }
-    .btn:hover { background: var(--surface-3); }
-    .btn.primary { min-height: 56px; background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
-    .btn.primary:hover { background: var(--brand-2); }
-    .btn.ghost { background: transparent; }
-    .btn.icon { width: 48px; padding: 0; display: grid; place-items: center; }
-    .btn:disabled { cursor: not-allowed; opacity: .48; }
-    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line-soft); margin-bottom: 20px; overflow-x: auto; }
-    .tab { min-height: 48px; white-space: nowrap; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--ink-3); padding: 0 14px; font-weight: 800; }
-    .tab[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
-    .view { display: none; }
-    .view.active { display: block; }
-    .card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); padding: 20px; box-shadow: 0 8px 28px oklch(0 0 0 / .08); }
-    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-    .card-head h2, .card-head h3 { margin: 0; }
-    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-    .stack { display: grid; gap: 16px; }
-    .stack-sm { display: grid; gap: 10px; }
-    .metric { padding: 16px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); }
-    .metric b { display: block; font-size: 28px; }
-    .metric span { color: var(--ink-3); font-size: 13px; }
-    .chip { display: inline-flex; align-items: center; min-height: 32px; border: 1px solid var(--line); border-radius: var(--pill); padding: 3px 10px; color: var(--ink-2); font-size: 12px; font-weight: 800; }
-    .chip.ok { background: var(--ok-soft); color: var(--ok); }
-    .chip.warn { background: var(--warn-soft); color: var(--warn); }
-    .chip.danger { background: var(--danger-soft); color: var(--danger); }
-    button.chip { min-height: 44px; background: var(--surface-2); }
-    .segmented { display: inline-flex; align-items: stretch; gap: 4px; border: 1px solid var(--line); border-radius: var(--pill); padding: 3px; background: var(--surface-2); }
-    .segmented button { min-height: 44px; border: 0; border-radius: var(--pill); padding: 0 13px; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 850; }
-    .segmented button[aria-pressed="true"] { background: var(--surface-3); color: var(--ink); box-shadow: inset 0 0 0 1px var(--brand); }
-    .theme-switch { width: 100%; }
-    .theme-switch button { flex: 1; }
-    .notice { border-left: 4px solid var(--brand); padding: 13px 15px; background: var(--brand-soft); border-radius: 0 var(--radius) var(--radius) 0; color: var(--ink-2); font-size: 14px; }
-    .notice.warn { border-left-color: var(--warn); background: var(--warn-soft); }
-    .notice.danger { border-left-color: var(--danger); background: var(--danger-soft); }
-    .release-list { display: grid; gap: 1px; background: var(--line-soft); border-radius: var(--radius-lg); overflow: hidden; }
-    .release-row { background: var(--surface); min-height: 68px; padding: 10px 14px; display: grid; grid-template-columns: 1.4fr .7fr .8fr auto; align-items: center; gap: 12px; }
-    .release-row small { display: block; color: var(--ink-3); }
-    .workbench { display: grid; grid-template-columns: 238px minmax(480px, 1fr) 330px; min-height: 790px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
-    .outline, .preview { background: color-mix(in oklch, var(--surface) 62%, var(--bg)); padding: 16px; }
-    .outline { border-right: 1px solid var(--line-soft); }
-    .preview { border-left: 1px solid var(--line-soft); }
-    .panel-title { font-size: 13px; color: var(--ink-3); font-weight: 850; letter-spacing: .06em; margin-bottom: 12px; }
-    .section-row, .cue-row { width: 100%; min-height: 48px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--ink-2); padding: 8px 10px; text-align: left; }
-    .section-row { font-weight: 850; color: var(--ink); }
-    .cue-row { display: grid; grid-template-columns: 42px 1fr auto; gap: 7px; align-items: center; font-size: 14px; }
-    .cue-row.active { background: var(--surface-3); border-color: var(--brand); color: var(--brand); }
-    .cue-row small { color: var(--ink-3); }
-    .editor { min-width: 0; padding: 18px 20px 28px; }
-    .editor-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 15px; }
-    .editor-head h2 { margin: 0 0 2px; font-size: 23px; }
-    .media { background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); padding: 14px; display: grid; grid-template-columns: 48px 1fr auto; gap: 12px; align-items: center; margin-bottom: 16px; }
-    .seek { width: 100%; accent-color: var(--brand); }
-    .time { font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; font-size: 13px; color: var(--ink-2); }
-    .cue-strip { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 6px; overflow-x: auto; margin-bottom: 16px; }
-    .cue-seg { min-height: 56px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); text-align: left; padding: 7px 10px; color: var(--ink-2); }
-    .cue-seg.active { color: var(--brand); border-color: var(--brand); background: var(--surface-3); }
-    .field-grid { display: grid; grid-template-columns: 1.2fr .8fr .8fr; gap: 10px; margin-bottom: 14px; }
-    .field { display: grid; gap: 5px; min-width: 0; }
-    .field label { color: var(--ink-3); font-size: 13px; font-weight: 750; }
-    .input { min-height: 48px; width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); padding: 9px 12px; }
-    .field.anchor { grid-column: 1 / -1; }
-    .lane-list, .rule-list { border: 1px solid var(--line-soft); border-radius: var(--radius-lg); overflow: hidden; }
-    .lane { display: grid; grid-template-columns: 105px 1fr; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); }
-    .lane:last-child, .rule-row:last-child { border-bottom: 0; }
-    .lane-name { font-size: 13px; color: var(--ink-3); font-weight: 850; }
-    .lane p { margin: 0; color: var(--ink-2); }
-    .rule-row { min-height: 60px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); }
-    .rule-row small { display: block; color: var(--ink-3); }
-    .preview-card { border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--surface); padding: 14px; }
-    .seat-summary { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 14px; }
-    .seat-summary span:nth-child(odd) { color: var(--ink-3); }
-    .formation { margin: 12px 0 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); overflow: hidden; }
-    .formation svg { width: 100%; height: 205px; display: block; }
-    .formation figcaption { padding: 8px 10px; color: var(--ink-3); font-size: 11px; border-top: 1px solid var(--line-soft); }
-    .dot-default { fill: var(--surface-3); stroke: var(--line); }
-    .dot-body { fill: var(--brand); }
-    .dot-head { fill: var(--warn); stroke: var(--surface); stroke-width: 3; }
-    .dot-conflict { fill: var(--danger); stroke: var(--surface); stroke-width: 3; }
-    [data-overlap="resolved"] .dot-conflict { fill: var(--warn); }
-    .drawer-scrim { position: fixed; inset: 0; z-index: 80; display: none; background: oklch(0 0 0 / .64); }
-    .drawer-scrim.open { display: block; }
-    .drawer { position: absolute; top: 0; right: 0; height: 100%; width: min(560px, 100%); overflow-y: auto; background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow); padding: 20px; }
-    .drawer-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
-    .drawer-head h2 { margin: 0; }
-    .seat-grid { display: grid; grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 8px; }
-    .seat-cell { min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); font-size: 12px; font-weight: 800; }
-    .seat-cell[aria-pressed="true"] { background: var(--surface-3); border-color: var(--brand); color: var(--brand); }
-    .seat-cell.conflict { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
-    [data-overlap="resolved"] .seat-cell.conflict { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
-    .check-list { display: grid; gap: 1px; background: var(--line-soft); border-radius: var(--radius-lg); overflow: hidden; }
-    .check-row { min-height: 62px; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--surface); }
-    .check-icon { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; background: var(--ok-soft); color: var(--ok); }
-    .check-icon.warn { background: var(--warn-soft); color: var(--warn); }
-    .check-icon.danger { background: var(--danger-soft); color: var(--danger); }
-    .publish-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr); gap: 16px; }
-    .history { display: grid; gap: 12px; }
-    .history-row { padding-bottom: 12px; border-bottom: 1px solid var(--line-soft); }
-    .history-row:last-child { border: 0; padding: 0; }
-    .personal-grid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; }
-    .state-list { display: grid; gap: 6px; }
-    .state-btn { min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--ink-2); text-align: left; padding: 8px 12px; }
-    .state-btn.active { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
-    .phone-preview { max-width: 650px; margin: 0 auto; }
-    .flow-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
-    .flow-card { border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden; }
-    .flow-card-head { padding: 14px 16px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 12px; }
-    .landmark { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; background: var(--brand-soft); color: var(--brand); font-weight: 900; }
-    .flow-body { padding: 16px; display: grid; gap: 13px; }
-    .now-cue { padding: 12px; border-left: 4px solid var(--brand); background: var(--brand-soft); border-radius: 0 var(--radius) var(--radius) 0; }
-    .now-cue b, .now-cue span { display: block; }
-    .fallback { padding: 16px; border: 1px dashed var(--line); border-radius: var(--radius-lg); color: var(--ink-2); }
-    .run-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
-    .run-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
-    .run-table { width: 100%; min-width: 1040px; border-collapse: collapse; table-layout: fixed; }
-    .run-table th, .run-table td { padding: 10px; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); vertical-align: top; }
-    .run-table th:last-child, .run-table td:last-child { border-right: 0; }
-    .run-table tr:last-child td { border-bottom: 0; }
-    .run-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); color: var(--ink-2); text-align: left; font-size: 13px; }
-    .run-table .order-col { width: 64px; color: var(--ink-3); text-align: center; }
-    .segment-card { width: 100%; min-height: 92px; display: grid; align-content: start; gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); color: var(--ink); text-align: left; }
-    .segment-card:hover { background: var(--surface-3); }
-    .segment-card b { line-height: 1.25; }
-    .segment-card small { color: var(--ink-3); }
-    .segment-card.override { border-color: var(--warn); background: var(--warn-soft); }
-    .segment-card.local { border-style: dashed; border-color: var(--brand); }
-    .segment-card.skip { align-content: center; color: var(--ink-3); border-style: dashed; background: transparent; }
-    .insert-row td { padding: 6px 10px; background: color-mix(in oklch, var(--surface) 80%, var(--bg)); }
-    .insert-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-    .insert-action { min-height: 44px; border: 1px dashed var(--line); border-radius: var(--radius); background: transparent; color: var(--ink-3); font-size: 12px; font-weight: 800; }
-    .insert-action:hover { border-color: var(--brand); color: var(--brand); background: var(--surface-2); }
-    .edit-choice { display: none; margin-top: 16px; }
-    .edit-choice.open { display: block; }
-    .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .choice { min-height: 96px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); text-align: left; }
-    .choice:hover { border-color: var(--brand); }
-    .choice b, .choice small { display: block; }
-    .choice small { margin-top: 4px; color: var(--ink-3); }
-    .mobile-run-sheet { display: none; }
-    .date-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-    .date-tab { min-height: 44px; padding: 0 14px; white-space: nowrap; border: 1px solid var(--line); border-radius: var(--pill); background: var(--surface-2); color: var(--ink-2); font-weight: 800; }
-    .date-tab[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
-    .day-flow { display: grid; gap: 0; margin-top: 14px; }
-    .day-item { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
-    .day-item::before { content: ""; position: absolute; left: 16px; top: 38px; bottom: 0; width: 2px; background: var(--line); }
-    .day-item:last-child::before { display: none; }
-    .day-index { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--ink-2); font-size: 12px; font-weight: 900; }
-    .day-item .segment-card { min-height: 78px; margin-bottom: 12px; }
-    .mobile-insert { min-height: 44px; margin: 0 0 12px 44px; border: 1px dashed var(--line); border-radius: var(--radius); background: transparent; color: var(--ink-3); text-align: left; padding: 0 12px; font-weight: 800; }
-    .flow-legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--ink-3); font-size: 12px; }
-    .legend-key { display: inline-flex; gap: 6px; align-items: center; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-3); border: 2px solid var(--line); }
-    .legend-dot.branch { background: var(--warn); border-color: var(--warn); }
-    .flow-board { overflow-x: auto; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
-    .flow-canvas { min-width: 940px; display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); grid-template-rows: repeat(4, auto); gap: 18px 14px; align-items: center; }
-    .flow-node { position: relative; z-index: 1; min-height: 64px; display: grid; place-items: center; padding: 9px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); text-align: center; font-size: 13px; font-weight: 800; }
-    .flow-node::after { content: ""; position: absolute; left: 100%; top: 50%; width: 15px; height: 2px; background: var(--line); }
-    .flow-node.last::after { display: none; }
-    .flow-node.branch { border-color: var(--warn); background: var(--warn-soft); }
-    .flow-node.merge { border-color: var(--brand); }
-    .flow-day { color: var(--ink-3); font-size: 12px; font-weight: 900; }
-    .flow-diagram { display: block; width: 100%; min-width: 940px; height: auto; }
-    .flow-diagram .edge { fill: none; stroke: var(--line); stroke-width: 3; marker-end: url(#flowArrow); }
-    .flow-diagram .edge.branch { stroke: var(--warn); }
-    .flow-diagram .node rect { fill: var(--surface-2); stroke: var(--line); stroke-width: 2; rx: 12; }
-    .flow-diagram .node.branch rect { fill: var(--warn-soft); stroke: var(--warn); }
-    .flow-diagram .node.merge rect { stroke: var(--brand); }
-    .flow-diagram text { fill: var(--ink); font-size: 15px; font-weight: 800; text-anchor: middle; }
-    .flow-diagram .day-label { fill: var(--ink-3); font-size: 13px; text-anchor: start; }
-    .practice-player { display: grid; gap: 14px; }
-    .practice-media { min-height: 210px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-2); text-align: center; }
-    .practice-controls { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; }
-    .practice-controls .btn:last-child { text-align: right; }
-    .toggle-row { min-height: 56px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
-    .toggle { width: 52px; height: 30px; position: relative; flex: 0 0 auto; border: 1px solid var(--line); border-radius: var(--pill); background: var(--surface-3); }
-    .toggle::after { content: ""; position: absolute; width: 22px; height: 22px; top: 3px; left: 4px; border-radius: 50%; background: var(--ink-2); transition: left .18s ease; }
-    .toggle[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); }
-    .toggle[aria-pressed="true"]::after { left: 25px; background: var(--brand-ink); }
-    .hidden, .mobile-only, .drawer-trigger { display: none !important; }
-    @media (max-width: 1279px) {
-      .content { padding-left: 22px; padding-right: 22px; }
-      .workbench { grid-template-columns: 230px minmax(0, 1fr); }
-      .workbench > .preview { display: none; }
-      .drawer-trigger { display: inline-flex !important; }
-    }
-    @media (max-width: 1023px) {
-      body { font-size: 18px; }
-      .app { display: block; }
-      .sidebar { display: none; }
-      .appbar { height: var(--appbar-h); display: flex; position: sticky; top: 0; z-index: 50; align-items: center; justify-content: space-between; padding: 0 14px; background: var(--surface); border-bottom: 1px solid var(--line-soft); }
-      .main { width: 100%; }
-      .content { padding: 18px 14px calc(var(--bottomnav-h) + 34px); }
-      .topline .top-actions { display: none; }
-      .bottomnav { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; z-index: 45; bottom: 0; left: 0; right: 0; height: var(--bottomnav-h); background: var(--surface); border-top: 1px solid var(--line-soft); }
-      .bottomnav button { border: 0; background: transparent; color: var(--ink-3); font-size: 11px; font-weight: 750; }
-      .bottomnav button.active { color: var(--brand); }
-      .workbench { display: block; min-height: 0; overflow: visible; background: transparent; border: 0; }
-      .workbench > .outline { display: none; }
-      .editor { padding: 0; }
-      .editor-head { padding: 14px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); }
-      .media { grid-template-columns: 48px 1fr; }
-      .media > .time { grid-column: 2; }
-      .publish-grid, .personal-grid { grid-template-columns: 1fr; }
-      .state-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .mobile-only { display: inline-flex !important; }
-      .release-row { grid-template-columns: 1fr auto; }
-      .release-row > :nth-child(2), .release-row > :nth-child(3) { display: none; }
-      .run-table-wrap { display: none; }
-      .mobile-run-sheet { display: block; }
-      .run-toolbar { display: grid; }
-    }
-    @media (max-width: 599px) {
-      .content { padding-left: 10px; padding-right: 10px; }
-      .topline { align-items: center; }
-      .topline h1 { font-size: 27px; }
-      .grid-4, .grid-2 { grid-template-columns: 1fr; }
-      .field-grid { grid-template-columns: 1fr; }
-      .field.anchor { grid-column: auto; }
-      .cue-strip { grid-template-columns: repeat(4, 148px); }
-      .lane { grid-template-columns: 1fr; gap: 3px; }
-      .editor-head { display: grid; }
-      .drawer { width: 100%; padding: 16px 12px calc(24px + env(safe-area-inset-bottom)); }
-      .seat-grid { grid-template-columns: repeat(4, minmax(48px, 1fr)); }
-      .state-list { grid-template-columns: 1fr; }
-      .flow-header { display: grid; }
-      .choice-grid { grid-template-columns: 1fr; }
-      .practice-controls { grid-template-columns: 1fr 1fr; }
-      .practice-controls .segmented { grid-column: 1 / -1; order: -1; }
-      .practice-media { min-height: 160px; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>演繹流程編排 · 給企劃／行政／演繹者看的原型</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: oklch(0.17 0.014 255);
+  --surface: oklch(0.213 0.016 255);
+  --s2: oklch(0.255 0.018 255);
+  --s3: oklch(0.30 0.02 255);
+  --line: oklch(0.34 0.018 255);
+  --soft: oklch(1 0 0 / .08);
+  --ink: oklch(0.97 0.004 255);
+  --ink2: oklch(0.82 0.01 255);
+  --ink3: oklch(0.70 0.012 255);
+  --brand: oklch(0.68 0.115 245);
+  --brand-ink: oklch(0.16 0.02 255);
+  --brand-soft: oklch(0.68 0.115 245 / .14);
+  --ok: oklch(0.74 0.15 155);
+  --ok-soft: oklch(0.74 0.15 155 / .15);
+  --warn: oklch(0.82 0.13 82);
+  --warn-soft: oklch(0.82 0.13 82 / .15);
+  --danger: oklch(0.68 0.19 25);
+  --white: oklch(0.90 0.01 255);
+  --blue: oklch(0.66 0.12 245);
+  --font: "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --r: 12px; --rl: 16px; --pill: 999px;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: oklch(0.968 0.004 255); --surface: #fff; --s2: oklch(0.978 0.004 255); --s3: oklch(0.945 0.006 255);
+  --line: oklch(0.90 0.006 255); --soft: oklch(0.28 0.02 255 / .1);
+  --ink: oklch(0.24 0.02 255); --ink2: oklch(0.44 0.018 255); --ink3: oklch(0.54 0.016 255);
+  --brand: oklch(0.52 0.145 245); --brand-ink: oklch(0.98 0.003 245); --brand-soft: oklch(0.52 0.145 245 / .12);
+  --white: oklch(0.93 0.008 255); --blue: oklch(0.62 0.13 245);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.5 var(--font); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+a { color: var(--brand); }
+.shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+.top {
+  position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--soft);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 900; }
+.brand i {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--brand); color: var(--brand-ink); font-style: normal;
+}
+.who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.who label { font-size: 13px; color: var(--ink3); font-weight: 750; }
+.who select {
+  min-height: 44px; min-width: 220px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--s2); padding: 0 12px; font-weight: 750;
+}
+.tabs {
+  display: flex; gap: 4px; overflow-x: auto; padding: 0 16px;
+  background: var(--surface); border-bottom: 1px solid var(--soft);
+}
+.tabs button {
+  min-height: 48px; border: 0; border-bottom: 3px solid transparent; background: transparent;
+  color: var(--ink3); font-weight: 800; padding: 0 14px; white-space: nowrap;
+}
+.tabs button.on { color: var(--brand); border-bottom-color: var(--brand); }
+body.r-member .tab-admin, body.r-none .tab-admin { display: none; }
+body.r-planner .tab-member-only, body.r-admin .tab-member-only { display: none; }
+main { max-width: 1280px; width: 100%; margin: 0 auto; padding: 18px 16px 40px; }
+.view { display: none; }
+.view.on { display: block; }
+h1 { margin: 0 0 6px; font-size: clamp(24px, 3vw, 34px); line-height: 1.15; }
+.sub { margin: 0 0 14px; color: var(--ink3); font-size: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.btn {
+  min-height: 48px; padding: 0 16px; border-radius: var(--r); border: 1px solid var(--line);
+  background: var(--s2); font-weight: 800;
+}
+.btn.pri { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 30px; padding: 2px 10px;
+  border-radius: var(--pill); background: var(--s2); border: 1px solid var(--line);
+  font-size: 12px; font-weight: 800; color: var(--ink2);
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.card {
+  background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 16px;
+}
+.note {
+  border-left: 4px solid var(--brand); background: var(--brand-soft); padding: 12px 14px;
+  border-radius: 0 12px 12px 0; color: var(--ink2); font-size: 14px; margin-bottom: 14px;
+}
+.note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+.metric { background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px; }
+.metric b { display: block; font-size: 26px; }
+.metric span { color: var(--ink3); font-size: 13px; }
+
+/* days table */
+.table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: var(--rl); background: var(--surface); }
+table { width: 100%; min-width: 980px; border-collapse: collapse; }
+th, td { border-right: 1px solid var(--soft); border-bottom: 1px solid var(--soft); padding: 8px; vertical-align: top; text-align: left; }
+th:last-child, td:last-child { border-right: 0; }
+thead th { background: var(--s2); font-size: 13px; color: var(--ink2); position: sticky; top: 0; }
+.ord { width: 40px; text-align: center; color: var(--ink3); }
+.scell {
+  width: 100%; min-height: 88px; display: grid; gap: 4px; align-content: start; text-align: left;
+  padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--s2);
+}
+.scell b { font-size: 15px; }
+.scell small { color: var(--ink3); font-size: 12px; }
+.scell.branch { border-color: var(--warn); background: var(--warn-soft); }
+.scell.pick { box-shadow: inset 0 0 0 2px var(--brand); }
+.scell:hover { filter: brightness(1.06); }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 8px; margin-top: 12px; }
+.thumbs figure { margin: 0; }
+.thumbs img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--s3); }
+.thumbs figcaption { font-size: 12px; color: var(--ink3); margin-top: 4px; text-align: center; }
+
+/* ========== PLANNER EDITOR (hero) ========== */
+.editor-hero {
+  display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; margin-bottom: 16px;
+}
+.player {
+  background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px;
+  display: grid; gap: 10px;
+}
+.player video {
+  width: 100%; max-height: 260px; border-radius: 12px; background: #000; object-fit: contain;
+}
+.player audio { width: 100%; }
+.player .meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink3); }
+.steps {
+  background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px;
+}
+.steps h2 { margin: 0 0 10px; font-size: 16px; }
+.step {
+  width: 100%; min-height: 56px; display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center;
+  text-align: left; border: 1px solid transparent; border-radius: 12px; background: transparent; padding: 8px; margin-bottom: 6px;
+}
+.step .n {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--s3); font-weight: 900; color: var(--ink2);
+}
+.step.on { border-color: var(--brand); background: var(--brand-soft); }
+.step.on .n { background: var(--brand); color: var(--brand-ink); }
+.step b { display: block; }
+.step small { color: var(--ink3); }
+
+.edit-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.edit-tabs button {
+  min-height: 48px; padding: 0 16px; border-radius: var(--pill); border: 1px solid var(--line);
+  background: var(--s2); font-weight: 800; color: var(--ink2);
+}
+.edit-tabs button.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.panel { display: none; }
+.panel.on { display: block; }
+
+.form-grid { display: grid; grid-template-columns: 1.4fr .8fr .8fr; gap: 10px; margin-bottom: 12px; }
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13px; font-weight: 800; color: var(--ink3); }
+.input, .select, .ta {
+  min-height: 48px; width: 100%; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--s2); padding: 10px 12px;
+}
+.ta { min-height: 96px; resize: vertical; }
+.content-blocks { display: grid; gap: 10px; }
+.block {
+  border: 1px solid var(--soft); border-radius: 14px; background: var(--surface); padding: 14px;
+}
+.block h3 { margin: 0 0 8px; font-size: 14px; color: var(--ink3); }
+.block p { margin: 0; color: var(--ink2); white-space: pre-wrap; }
+
+/* who does what - big cards */
+.who-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.who-card {
+  border: 2px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden;
+  text-align: left; padding: 0; display: grid; grid-template-columns: 140px 1fr;
+}
+.who-card.on { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.who-card img { width: 140px; height: 100%; min-height: 140px; object-fit: cover; background: var(--s3); }
+.who-card .body { padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.who-card b { font-size: 18px; }
+.who-card .count { font-size: 22px; font-weight: 900; color: var(--brand); }
+.who-card small { color: var(--ink3); display: block; }
+
+.preview-layout { display: grid; grid-template-columns: 1fr 320px; gap: 14px; }
+.map-box { background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 12px; }
+.map-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 8px; }
+.seat-grid {
+  display: grid;
+  grid-template-columns: 32px repeat(54, 10px);
+  grid-auto-rows: 14px;
+  gap: 1px;
+  width: max-content;
+}
+.ax { font-size: 10px; color: var(--ink3); display: grid; place-items: center; }
+.dot { width: 10px; height: 14px; border-radius: 2px; background: var(--s3); }
+.dot.w { background: var(--white); }
+.dot.b { background: var(--blue); }
+.dot.hit { outline: 2px solid var(--brand); outline-offset: -1px; }
+.dot.dim { opacity: .18; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--ink3); margin-top: 10px; }
+.legend i { width: 12px; height: 12px; display: inline-block; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.side-sum { background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px; display: grid; gap: 10px; }
+.side-sum img { width: 100%; border-radius: 12px; border: 1px solid var(--line); background: var(--s3); }
+.side-sum .big { font-size: 28px; font-weight: 900; color: var(--brand); }
+.form-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 8px; }
+#formCanvas { width: 100%; max-width: 720px; height: auto; display: block; cursor: crosshair; touch-action: none; }
+
+
+/* publish */
+.check { display: grid; gap: 1px; background: var(--soft); border-radius: 14px; overflow: hidden; }
+.crow { min-height: 58px; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 10px 14px; background: var(--surface); }
+.okdot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); font-weight: 900; }
+.grid2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+
+/* me */
+.phone {
+  max-width: 420px; margin: 0 auto; border: 1px solid var(--line); border-radius: 28px;
+  overflow: hidden; background: var(--surface); box-shadow: 0 18px 48px oklch(0 0 0 / .28);
+}
+.phd { padding: 16px; border-bottom: 1px solid var(--soft); }
+.pbd { padding: 14px 16px 18px; display: grid; gap: 12px; }
+.now { border-left: 4px solid var(--brand); background: var(--brand-soft); padding: 12px; border-radius: 0 12px 12px 0; }
+.ctrl { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; }
+.daytabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; }
+.daytab {
+  min-height: 42px; padding: 0 14px; border-radius: var(--pill); border: 1px solid var(--line);
+  background: var(--s2); font-weight: 800; color: var(--ink2); white-space: nowrap;
+}
+.daytab.on { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.toggle-row {
+  min-height: 52px; display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--s2);
+}
+.toggle {
+  width: 50px; height: 30px; border-radius: var(--pill); border: 1px solid var(--line);
+  background: var(--s3); position: relative;
+}
+.toggle::after {
+  content: ""; width: 22px; height: 22px; border-radius: 50%; background: var(--ink2);
+  position: absolute; top: 3px; left: 4px;
+}
+.toggle[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); }
+.toggle[aria-pressed="true"]::after { left: 22px; background: var(--brand-ink); }
+.empty {
+  max-width: 440px; margin: 24px auto; padding: 24px; text-align: center;
+  background: var(--surface); border: 1px solid var(--soft); border-radius: 18px;
+}
+.hidden { display: none !important; }
+body.r-admin .edit-only { display: none !important; }
+body.r-admin input, body.r-admin select, body.r-admin textarea { pointer-events: none; opacity: .85; }
+
+@media (max-width: 960px) {
+  .editor-hero, .preview-layout, .who-grid, .grid2, .metrics, .form-grid { grid-template-columns: 1fr; }
+  .who-card { grid-template-columns: 100px 1fr; }
+}
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+}
+</style>
 </head>
-<body data-overlap="open">
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">慈</div><div><b>大巨蛋演繹</b><span>臺南協作工作台</span></div></div>
-      <nav class="side-nav" aria-label="主要導覽">
-        <div class="side-label">工作台</div>
-        <button type="button">活動與點名</button><button type="button">座位</button><button class="active" type="button">演繹內容</button><button type="button">交通</button>
-      </nav>
-      <div class="sidebar-foot">
-        <div class="account" id="account">
-          <div class="account-panel" id="accountPanel"><b>顯示設定</b><div class="segmented theme-switch" role="group" aria-label="主題"><button type="button" data-theme="dark" aria-pressed="true">深色</button><button type="button" data-theme="light" aria-pressed="false">淺色</button></div></div>
-          <button class="account-btn" id="accountBtn" type="button" aria-expanded="false" aria-controls="accountPanel"><span class="avatar">企</span><span class="account-copy"><b>企劃工作區</b><small>內容編輯與發布</small></span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-        </div>
-      </div>
-    </aside>
-
-    <header class="appbar"><b>演繹內容</b><button class="btn icon" type="button" data-theme-mobile aria-label="切換深淺主題"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3a9 9 0 100 18 7 7 0 010-18z" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></header>
-
-    <main class="main">
-      <div class="content">
-        <div class="topline"><div><div class="eyebrow">FLOW CONTENT</div><h1>無量義法髓頌</h1><p class="sub">四日段落編排、段內 Cue 與座位版本</p></div><div class="top-actions"><span class="chip warn">草稿 <span data-draft-revision>r29</span></span><button class="btn primary" type="button" data-view-target="publish">預覽與發布</button></div></div>
-        <div class="tabs" role="tablist" aria-label="內容頁籤">
-          <button class="tab" type="button" role="tab" aria-selected="false" data-view-target="overview">總覽</button>
-          <button class="tab" type="button" role="tab" aria-selected="true" data-view-target="runsheet">四日編排</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" data-view-target="flow">流程總覽</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" data-view-target="editor">Cue 與座位</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" data-view-target="publish">預覽與發布</button>
-          <button class="tab" type="button" role="tab" aria-selected="false" data-view-target="personal">個人練習</button>
-        </div>
-
-        <section class="view" data-view="overview" aria-label="專案總覽">
-          <div class="stack">
-            <div class="grid-4"><div class="metric"><b data-draft-revision>r29</b><span>草稿 revision</span></div><div class="metric"><b>v6</b><span>目前 active</span></div><div class="metric"><b>4</b><span>正式演出場次</span></div><div class="metric"><b>3</b><span>預覽核對項目</span></div></div>
-            <div class="notice warn">Cue 或座位規則異動後需要重新核對；姓名、名單與座位上的目前人員不影響發布。</div>
-            <section class="card"><div class="card-head"><h2>正式場次發布</h2><span class="chip ok">共用母版</span></div><div class="release-list">
-              <div class="release-row"><div><b>11/12(四) 全區共同場</b><small>最後發布 08/06 21:40</small></div><span>v6</span><span>座位快照</span><span class="chip ok">active</span></div>
-              <div class="release-row"><div><b>11/13(五) 安平聯區+大橋</b><small>草稿已有座位規則異動</small></div><span>v6</span><span>待重新核對</span><span class="chip warn">stale</span></div>
-              <div class="release-row"><div><b>11/14(六) 佳里聯區</b><small>最後發布 08/06 21:43</small></div><span>v6</span><span>座位快照</span><span class="chip ok">active</span></div>
-              <div class="release-row"><div><b>11/15(日) 仁德聯區</b><small>最後發布 08/06 21:45</small></div><span>v6</span><span>座位快照</span><span class="chip ok">active</span></div>
-            </div></section>
-          </div>
-        </section>
-
-        <section class="view active" data-view="runsheet" aria-label="四日段落編排">
-          <div class="run-toolbar">
-            <div><h2 style="margin-bottom:4px">四日段落編排</h2><p class="sub">段落各自使用獨立媒體與從 00:00 起算的 Cue；重排不會平移其他段落的 Cue。</p></div>
-            <div class="chips"><span class="chip">7 個共用段落</span><span class="chip warn">5 個本場差異</span></div>
-          </div>
-          <div class="notice" style="margin-bottom:16px">點選共用段落時，必須先選擇「修改共用內容」或「只改本場」；不會默默改動其他日期。</div>
-          <div class="run-table-wrap" aria-label="四日 run sheet 對照表">
-            <table class="run-table">
-              <thead><tr><th class="order-col">順序</th><th>11/12 四<br><small>全區共同場</small></th><th>11/13 五<br><small>安平聯區＋大橋</small></th><th>11/14 六<br><small>佳里聯區</small></th><th>11/15 日<br><small>仁德聯區</small></th></tr></thead>
-              <tbody>
-                <tr><td class="order-col">01</td><td><button class="segment-card" type="button" data-edit-segment="序曲・鐘鼓齊鳴"><b>序曲・鐘鼓齊鳴</b><small>共用 · 02:10 · 4 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="序曲・鐘鼓齊鳴"><b>序曲・鐘鼓齊鳴</b><small>共用 · 02:10 · 4 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="序曲・鐘鼓齊鳴"><b>序曲・鐘鼓齊鳴</b><small>共用 · 02:10 · 4 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="序曲・鐘鼓齊鳴"><b>序曲・鐘鼓齊鳴</b><small>共用 · 02:10 · 4 Cue</small></button></td></tr>
-                <tr class="insert-row"><td class="order-col">＋</td><td colspan="4"><div class="insert-actions"><button class="insert-action" type="button" data-insert="11/12">只插入 11/12</button><button class="insert-action" type="button" data-insert="11/13">只插入 11/13</button><button class="insert-action" type="button" data-insert="11/14">只插入 11/14</button><button class="insert-action" type="button" data-insert="11/15">只插入 11/15</button></div></td></tr>
-                <tr><td class="order-col">02</td><td><button class="segment-card" type="button" data-edit-segment="靜寂清澄"><b>靜寂清澄</b><small>共用 · 03:48 · 6 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="靜寂清澄"><b>靜寂清澄</b><small>共用 · 03:48 · 6 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="靜寂清澄"><b>靜寂清澄</b><small>共用 · 03:48 · 6 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="靜寂清澄"><b>靜寂清澄</b><small>共用 · 03:48 · 6 Cue</small></button></td></tr>
-                <tr class="insert-row"><td class="order-col">＋</td><td colspan="4"><div class="actions" style="justify-content:center"><button class="insert-action" style="width:min(440px,100%)" type="button" data-insert="all">在四日一起插入共用段落</button></div></td></tr>
-                <tr><td class="order-col">03</td><td><button class="segment-card skip" type="button" data-edit-segment="11/12 略過貴賓進場">本場略過</button></td><td><button class="segment-card local" type="button" data-edit-segment="貴賓進場橋段"><b>貴賓進場橋段</b><small>11/13 本場專屬 · 01:25</small></button></td><td><button class="segment-card skip" type="button" data-edit-segment="11/14 略過貴賓進場">本場略過</button></td><td><button class="segment-card skip" type="button" data-edit-segment="11/15 略過貴賓進場">本場略過</button></td></tr>
-                <tr><td class="order-col">04</td><td><button class="segment-card" type="button" data-edit-segment="法船"><b>法船</b><small>共用 · 04:32 · 8 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="法船"><b>法船</b><small>共用 · 04:32 · 8 Cue</small></button></td><td><button class="segment-card override" type="button" data-edit-segment="法船"><b>法船</b><small>本場動作覆寫 · 由第 5 項上移</small></button></td><td><button class="segment-card" type="button" data-edit-segment="法船"><b>法船</b><small>共用 · 04:32 · 8 Cue</small></button></td></tr>
-                <tr><td class="order-col">05</td><td><button class="segment-card" type="button" data-edit-segment="願力匯流"><b>願力匯流</b><small>共用 · 02:55 · 5 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="願力匯流"><b>願力匯流</b><small>共用 · 02:55 · 5 Cue</small></button></td><td><button class="segment-card" type="button" data-edit-segment="願力匯流"><b>願力匯流</b><small>共用 · 02:55 · 5 Cue</small></button></td><td><button class="segment-card override" type="button" data-edit-segment="祈願橋段"><b>祈願橋段</b><small>本場取代「願力匯流」· 01:40</small></button></td></tr>
-                <tr><td class="order-col">06</td><td><button class="segment-card skip" type="button" data-edit-segment="11/12 略過靜寂清澄第 2 次">本場略過</button></td><td><button class="segment-card skip" type="button" data-edit-segment="11/13 略過靜寂清澄第 2 次">本場略過</button></td><td><button class="segment-card skip" type="button" data-edit-segment="11/14 略過靜寂清澄第 2 次">本場略過</button></td><td><button class="segment-card local" type="button" data-edit-segment="靜寂清澄・第 2 次"><b>靜寂清澄・第 2 次</b><small>同一段落的另一個 occurrence</small></button></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="mobile-run-sheet">
-            <div class="date-tabs" role="tablist" aria-label="選擇演出日期"><button class="date-tab" type="button" role="tab" aria-selected="false" data-day="12">11/12 四</button><button class="date-tab" type="button" role="tab" aria-selected="true" data-day="13">11/13 五</button><button class="date-tab" type="button" role="tab" aria-selected="false" data-day="14">11/14 六</button><button class="date-tab" type="button" role="tab" aria-selected="false" data-day="15">11/15 日</button></div>
-            <div class="day-flow" id="mobileDayFlow" aria-live="polite"></div>
-          </div>
-          <section class="card edit-choice" id="editChoice" aria-live="polite"><div class="card-head"><div><div class="eyebrow">段落操作</div><h3 id="editChoiceTitle">法船</h3></div><button class="btn icon" type="button" id="closeChoice" aria-label="關閉段落操作"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div><div class="choice-grid"><button class="choice" type="button" data-shared-edit><b>修改共用內容</b><small>修改媒體、段內 Cue 或共用座位規則；影響所有引用此段落的日期。</small></button><button class="choice" type="button" data-local-edit><b>只改本場</b><small>為目前日期建立 occurrence 覆寫；其他日期保持共用內容。</small></button></div><div class="actions" style="margin-top:12px"><button class="btn" type="button" data-run-action="skip">本場略過</button><button class="btn" type="button" data-run-action="replace">本場取代</button><button class="btn" type="button" data-run-action="up">上移</button><button class="btn" type="button" data-run-action="down">下移</button><button class="btn" type="button" data-view-target="editor">進入 Cue 與座位編輯器</button></div><p class="sub" id="editActionStatus" style="margin:10px 0 0">選擇操作後只會變更目前日期的 occurrence。</p></section>
-          <section class="card edit-choice" id="insertChoice" aria-live="polite"><div class="card-head"><div><div class="eyebrow">插入段落</div><h3 id="insertChoiceTitle">新增本場段落</h3></div><button class="btn icon" type="button" id="closeInsert" aria-label="關閉插入操作"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"/></svg></button></div><div class="field"><label for="insertSegment">選擇獨立段落</label><select class="input" id="insertSegment"><option>祈願橋段 · 01:40</option><option>貴賓進場橋段 · 01:25</option><option>返場曲 · 02:15</option></select></div><p class="sub" id="insertScopeCopy" style="margin:10px 0 0">只插入 11/13，不改變其他日期。</p><div class="actions" style="margin-top:12px"><button class="btn primary" type="button" id="confirmInsert">確認插入</button></div></section>
-        </section>
-
-        <section class="view" data-view="flow" aria-label="四日流程總覽">
-          <div class="run-toolbar"><div><h2 style="margin-bottom:4px">四日流程總覽</h2><p class="sub">唯讀檢查共用主幹、單日分支與重新匯流；編輯請回到四日編排表。</p></div><span class="chip">唯讀 · 不可拖曳</span></div>
-          <div class="flow-legend" style="margin-bottom:12px"><span class="legend-key"><span class="legend-dot"></span>共用段落</span><span class="legend-key"><span class="legend-dot branch"></span>本場專屬或覆寫</span></div>
-          <div class="flow-board">
-            <svg class="flow-diagram" viewBox="0 0 1100 450" role="img" aria-labelledby="flowDiagramTitle flowDiagramDesc">
-              <title id="flowDiagramTitle">四日共用主幹與本場分支</title>
-              <desc id="flowDiagramDesc">11月13日插入貴賓進場後在法船匯流；11月14日覆寫並上移法船後在願力匯流；11月15日以祈願橋段取代願力匯流，再次練習靜寂清澄。</desc>
-              <defs><marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="var(--line)"/></marker></defs>
-              <text class="day-label" x="20" y="28">共用主幹 · 11/12</text>
-              <path class="edge" d="M170 86H220"/><path class="edge" d="M370 86H610"/><path class="edge" d="M760 86H820"/>
-              <g class="node"><rect x="20" y="55" width="150" height="62"/><text x="95" y="91">序曲</text></g>
-              <g class="node"><rect x="220" y="55" width="150" height="62"/><text x="295" y="91">靜寂清澄</text></g>
-              <g class="node merge"><rect x="610" y="55" width="150" height="62"/><text x="685" y="91">法船</text></g>
-              <g class="node merge"><rect x="820" y="55" width="150" height="62"/><text x="895" y="91">願力匯流</text></g>
-
-              <text class="day-label" x="20" y="165">11/13 · 插入後匯流</text>
-              <path class="edge branch" d="M370 86C420 86 395 196 450 196"/><path class="edge branch" d="M600 196C650 196 570 86 610 86"/>
-              <g class="node branch"><rect x="450" y="165" width="150" height="62"/><text x="525" y="192"><tspan x="525">貴賓進場</tspan><tspan x="525" dy="20">本場專屬</tspan></text></g>
-
-              <text class="day-label" x="20" y="275">11/14 · 覆寫後匯流</text>
-              <path class="edge branch" d="M370 86C470 86 500 306 610 306"/><path class="edge branch" d="M760 306C840 306 780 86 820 86"/>
-              <g class="node branch"><rect x="610" y="275" width="150" height="62"/><text x="685" y="302"><tspan x="685">法船</tspan><tspan x="685" dy="20">動作覆寫・上移</tspan></text></g>
-
-              <text class="day-label" x="20" y="385">11/15 · 取代與第 2 次</text>
-              <path class="edge branch" d="M760 86C805 86 755 416 820 416"/><path class="edge branch" d="M970 416H990"/>
-              <g class="node branch"><rect x="820" y="385" width="150" height="62"/><text x="895" y="412"><tspan x="895">祈願橋段</tspan><tspan x="895" dy="20">取代願力匯流</tspan></text></g>
-              <g class="node branch"><rect x="990" y="385" width="105" height="62"/><text x="1042" y="412"><tspan x="1042">靜寂清澄</tspan><tspan x="1042" dy="20">第 2 次</tspan></text></g>
-            </svg>
-          </div>
-          <div class="notice" style="margin-top:14px">共用節點只畫一次；日期分支透過連線回到主幹。11/15 的尾段不同，因此分支延伸到本場結束。</div>
-        </section>
-
-        <section class="view" data-view="editor" aria-label="Cue 與座位編輯器">
-          <div class="workbench">
-            <aside class="outline"><div class="panel-title">大段與 Cue</div><button class="section-row" type="button">第一大段</button><button class="cue-row" type="button"><span>00:00</span><span>前奏就位</span><small>預設</small></button><button class="cue-row" type="button"><span>00:18</span><span>靜寂清澄</span><small>2 版</small></button><button class="cue-row active" type="button"><span>00:42</span><span>轉向法船</span><small>警</small></button><button class="cue-row" type="button"><span>01:06</span><span>法船前進</span><small data-end-status>缺 end</small></button></aside>
-            <section class="editor">
-              <div class="editor-head"><div><div class="eyebrow">11/14 法船 · CUE 00:42–01:06</div><h2>轉向法船</h2><p class="sub">本場動作覆寫；座位差異跟著座位，不跟著目前坐的人。</p></div><div class="actions"><button class="btn" type="button" data-view-target="runsheet">回四日編排</button><button class="btn mobile-only" type="button" data-drawer="outline" aria-expanded="false">Cue 目錄</button><button class="btn" type="button" data-drawer="seat" aria-expanded="false">座位規則</button><button class="btn drawer-trigger" type="button" data-drawer="preview" aria-expanded="false">座位預覽</button></div></div>
-              <div class="media"><button class="btn icon" id="playBtn" type="button" data-playing="false" aria-label="播放"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path class="play-path" d="M8 5l11 7-11 7z" fill="currentColor"/><path class="pause-path" d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3"/></svg></button><input class="seek" id="seek" type="range" min="0" max="90" value="42" aria-label="媒體播放位置"><span class="time" id="seekTime">00:42.000</span></div>
-              <div class="cue-strip"><button class="cue-seg" type="button" data-cue="0">00:00<br>前奏就位</button><button class="cue-seg" type="button" data-cue="18">00:18<br>靜寂清澄</button><button class="cue-seg active" type="button" data-cue="42">00:42<br>轉向法船</button><button class="cue-seg" type="button" data-cue="66">01:06<br>法船前進</button></div>
-              <div class="field-grid"><div class="field"><label for="cueTitle">Cue 名稱</label><input class="input" id="cueTitle" value="轉向法船"></div><div class="field"><label for="startTime">開始</label><input class="input" id="startTime" value="00:42.000"></div><div class="field"><label for="endTime">結束</label><input class="input" id="endTime" value="01:06.000"></div><div class="field anchor"><label for="flowAnchor">對應既有走位</label><select class="input" id="flowAnchor"><option value="6">第 6 段・法船（隊形場景碼 05-1）</option><option value="8">第 8 段・法船（隊形場景碼 05-1）</option><option value="none">不連結既有走位</option></select></div></div>
-              <div class="lane-list"><div class="lane"><div class="lane-name">歌詞／OS</div><p>靜寂清澄，志玄虛漠。</p></div><div class="lane"><div class="lane-name">動作／口令</div><p>依地標轉向法船，船身保持隊形；船頭座位先行示意。</p></div><div class="lane"><div class="lane-name">面向</div><p>面向主舞台後轉向法船行進方向。</p></div><div class="lane"><div class="lane-name">隊形</div><p>基本隊形轉法船。</p></div><div class="lane"><div class="lane-name">素材</div><p>法船示範帶 · revision 3</p></div></div>
-              <div class="notice warn" id="endOffsetNotice" style="margin-top:14px">下一個 Cue「法船前進」目前以後一 Cue 暫算結束；尚未固化段內 <code>endOffsetMs</code>，因此不能發布。</div>
-              <div class="card-head" style="margin-top:18px"><div><h3>座位版本</h3><p class="sub">同一座位最多套用一個版本。</p></div><button class="btn" type="button" data-drawer="seat" aria-expanded="false">編輯座位規則</button></div>
-              <div class="rule-list"><div class="rule-row"><div><b>母版預設</b><small>A／B 中未命中座位版本時使用</small></div><span class="chip">356 席</span></div><div class="rule-row"><div><b>船身動作</b><small>矩形範圍；包含 A 8-20</small></div><span class="chip warn"><span data-body-count>12</span> 席</span></div><div class="rule-row"><div><b>船頭動作</b><small>企劃命名；指定單席 A 8-20</small></div><span class="chip danger">1 席</span></div></div>
-              <div class="notice danger" data-overlap-notice style="margin-top:14px">A 8-20 同時在「船身動作」與「船頭動作」；重疊 1 席，發布會被阻擋。<div class="actions" style="margin-top:10px"><button class="btn" type="button" data-resolve-overlap>從「船身」移出，加入「船頭」</button></div></div><div class="notice warn" style="margin-top:10px">C 本場 208 席沒有 authoritative block-aware FlowMap，不出現在此 anchor 圖；仍可使用母版文字。</div>
-            </section>
-            <aside class="preview"><div class="panel-title">匿名座位預覽</div><div class="field"><label for="previewSession">正式演出場次</label><select class="input" id="previewSession"><option>11/13(五) 安平聯區+大橋</option><option>11/12(四) 全區共同場</option><option>11/14(六) 佳里聯區</option><option>11/15(日) 仁德聯區</option></select></div><div class="preview-card" style="margin-top:12px"><div class="chips"><span class="chip">第 6 段</span><span class="chip">法船 05-1</span></div><figure class="formation"><svg viewBox="0 0 300 205" role="img" aria-label="法船位置選取示意"><path d="M35 102 Q118 30 258 84 Q176 178 35 102Z" fill="none" stroke="var(--line)" stroke-width="2"/><g class="dot-default"><circle cx="70" cy="96" r="6"/><circle cx="87" cy="78" r="6"/><circle cx="87" cy="113" r="6"/><circle cx="108" cy="62" r="6"/><circle cx="109" cy="130" r="6"/><circle cx="132" cy="52" r="6"/><circle cx="133" cy="143" r="6"/><circle cx="159" cy="50" r="6"/><circle cx="160" cy="147" r="6"/><circle cx="187" cy="58" r="6"/><circle cx="187" cy="136" r="6"/><circle cx="211" cy="72" r="6"/></g><g class="dot-body"><circle cx="70" cy="96" r="7"/><circle cx="87" cy="78" r="7"/><circle cx="87" cy="113" r="7"/><circle cx="108" cy="62" r="7"/><circle cx="109" cy="130" r="7"/><circle cx="132" cy="52" r="7"/><circle cx="133" cy="143" r="7"/><circle cx="159" cy="50" r="7"/><circle cx="160" cy="147" r="7"/><circle cx="187" cy="58" r="7"/><circle cx="187" cy="136" r="7"/></g><circle class="dot-conflict" cx="236" cy="91" r="9"/><text x="150" y="191" text-anchor="middle" fill="var(--ink-3)" font-size="11">企劃在現行 FlowMap 點選位置</text></svg><figcaption>互動原型位置示意；正式系統載入目前 FlowMap。系統不會自動判定船頭。</figcaption></figure><div class="seat-summary"><span>船身動作</span><b><span data-body-count>12</span> 席</b><span>船頭動作</span><b>1 席</b><span>A／B 母版預設</span><b>356 席</b><span>重疊</span><b data-overlap-count style="color:var(--danger)">1 席</b></div><div class="notice warn" style="margin-top:12px">C 本場 208 席沒有 authoritative block-aware FlowMap，不出現在此 anchor 圖。</div></div></aside>
-          </div>
-        </section>
-
-        <section class="view" data-view="publish" aria-label="預覽與發布">
-          <div class="publish-grid"><div class="stack"><section class="card"><div class="card-head"><div><h2>發布前核對</h2><p class="sub">11/13(五) 安平聯區+大橋 · 草稿 <span id="reviewDraftLabel" data-draft-revision>r29</span></p></div><span class="chip warn" id="reviewState">待修正</span></div><div class="check-list"><div class="check-row" id="contentCheck"><span class="check-icon"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10l4 4 8-8" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><div><b>內容來源</b><small class="sub" id="contentCheckCopy">段落 revision、occurrence override 與素材已核對</small></div><span class="chip ok" id="contentCheckBadge">current</span></div><div class="check-row" id="seatCheck"><span class="check-icon danger"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><div><b>座位目標</b><small class="sub" id="seatCheckCopy">船身與船頭重疊 1 席</small></div><span class="chip danger" id="seatCheckBadge">blocker</span></div><div class="check-row"><span class="check-icon"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10l4 4 8-8" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><div><b>Flow bundle</b><small class="sub">第 6 段仍對應法船（05-1）</small></div><span class="chip ok">current</span></div><div class="check-row" id="endCheck"><span class="check-icon danger">!</span><div><b>Cue 段內結束</b><small class="sub" id="endCheckCopy">法船前進尚未固化 end offset</small></div><span class="chip danger" id="endCheckBadge">blocker</span></div></div><div class="actions" style="margin-top:16px"><button class="btn" type="button" id="repreview">重新核對</button><button class="btn" type="button" id="finalizeEnd">固化 Cue 段內結束</button><button class="btn primary" type="button" id="publishBtn" disabled>發布 v7</button></div><div class="notice warn" id="publishStatus" style="margin-top:14px">先處理座位版本重疊，再重新核對；另須固化 Cue 段內結束。</div></section><section class="card"><h3>發布交易</h3><p class="sub">先取得發布鎖，再建立一致 snapshot；任一步失敗都保留現行 active v6。</p></section></div><aside class="card"><div class="card-head"><h3>發布記錄</h3><span class="chip ok">唯讀</span></div><div class="history"><div class="history-row"><b>目前版本 v6</b><p class="sub">active · 08/06 21:42</p></div><div class="history-row"><b>版本 v5</b><p class="sub">superseded · 08/05 18:20</p></div><div class="history-row"><b>上次嘗試失敗</b><p class="sub">現行 v6 未改變；沒有 failed release。</p></div></div></aside></div>
-        </section>
-
-        <section class="view" data-view="personal" aria-label="個人結果">
-          <div class="personal-grid"><aside class="card"><div class="card-head"><div><h3>個人頁狀態</h3><p class="sub">只顯示座位，不顯示名單。</p></div></div><div class="state-list"><button class="state-btn active" type="button" data-person-state="ab">A／B · 有 FlowMap</button><button class="state-btn" type="button" data-person-state="c">C · 無 authoritative map</button><button class="state-btn" type="button" data-person-state="unseated">未排位</button><button class="state-btn" type="button" data-person-state="asset">素材讀取失敗</button></div></aside><section class="phone-preview" id="personalResult" aria-live="polite"></section></div>
-        </section>
-      </div>
-    </main>
-  </div>
-
-  <nav class="bottomnav" aria-label="手機導覽"><button type="button" class="active" data-view-target="runsheet">四日編排</button><button type="button" data-view-target="flow">流程</button><button type="button" data-view-target="publish">發布</button><button type="button" data-view-target="personal">個人練習</button></nav>
-
-  <div class="drawer-scrim" id="drawerScrim"><aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" tabindex="-1"><div class="drawer-head"><div><div class="eyebrow" id="drawerEyebrow">轉向法船</div><h2 id="drawerTitle">座位規則</h2></div><button class="btn icon" type="button" id="drawerClose" aria-label="關閉"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><div id="drawerBody"></div></aside></div>
-
-  <template id="seatTemplate">
-    <div class="stack">
-      <div class="notice">規則選的是座位，不是目前坐在座位上的人。「船頭」是企劃命名，系統不會自動判定。</div>
-      <div class="field"><label for="ruleName">座位版本名稱</label><input class="input" id="ruleName" value="船頭動作"></div>
-      <div><div class="panel-title">選取方式</div><div class="segmented" role="group" aria-label="座位選取方式"><button type="button" data-seat-mode="pai" aria-pressed="false">整排</button><button type="button" data-seat-mode="rect" aria-pressed="false">矩形</button><button type="button" data-seat-mode="multi" aria-pressed="false">任意多席</button><button type="button" data-seat-mode="single" aria-pressed="true">指定單席</button></div></div>
-      <div class="grid-2"><div class="field"><label for="ruleBlock">區域</label><select class="input" id="ruleBlock"><option>A</option><option>B</option><option>C</option></select></div><div class="field"><label for="ruleSession">正式場次</label><select class="input" id="ruleSession"><option>11/13(五) 安平聯區+大橋</option></select></div></div>
-      <div class="notice" id="modeHelp">指定單席：第二次點選會取代前一席。</div>
-      <div id="seatSelectionArea"></div>
-      <div class="notice danger hidden" id="anchorBlocker">C 本場 208 席沒有 authoritative block-aware FlowMap；目前 Cue 連結 05-1，因此此區域 fail closed。改為「不連結既有走位」後，才能編輯純文字母版。</div>
-      <div class="notice danger" data-overlap-notice>A 8-20 也在「船身動作」。同一座位不可套用兩個版本。<div class="actions" style="margin-top:10px"><button class="btn" type="button" data-resolve-overlap>從「船身」移出，加入「船頭」</button></div></div>
-      <div class="actions" style="justify-content:flex-end"><button class="btn ghost" type="button">清除選取</button><button class="btn primary" id="applySeatRule" type="button">套用座位規則</button></div>
+<body class="r-planner">
+<div class="shell">
+  <header class="top">
+    <div class="brand"><i>流</i><span>演繹流程編排</span></div>
+    <div class="who">
+      <label for="role">我是…</label>
+      <select id="role">
+        <option value="planner">企劃（編內容、排座位、發布）</option>
+        <option value="admin">合心行政（只能預覽與發布）</option>
+        <option value="member">演繹者（已有座位）</option>
+        <option value="none">演繹者（還沒座位）</option>
+      </select>
+      <button type="button" class="btn ghost" id="theme">淺色／深色</button>
     </div>
-  </template>
-  <template id="previewTemplate"><div class="stack"><div class="notice">只核對座位集合與 Flow mark；不查姓名、目前人員或 occupancy。</div><div class="preview-card"><div class="chips"><span class="chip">第 6 段</span><span class="chip">法船 05-1</span></div><div class="seat-summary" style="margin-top:12px"><span>船身動作</span><b><span data-body-count>12</span> 席</b><span>船頭動作</span><b>1 席</b><span>母版預設</span><b>356 席</b><span>重疊</span><b data-overlap-count style="color:var(--danger)">1 席</b></div></div><div class="notice danger" data-overlap-notice>座位版本重疊會阻擋發布。<div class="actions" style="margin-top:10px"><button class="btn" type="button" data-resolve-overlap>從「船身」移出，加入「船頭」</button></div></div></div></template>
-  <template id="outlineTemplate"><div class="stack-sm"><button class="section-row" type="button">第一大段</button><button class="cue-row" type="button"><span>00:00</span><span>前奏就位</span><small>預設</small></button><button class="cue-row" type="button"><span>00:18</span><span>靜寂清澄</span><small>2 版</small></button><button class="cue-row active" type="button"><span>00:42</span><span>轉向法船</span><small>警</small></button></div></template>
+  </header>
 
-  <script>
-    const root = document.documentElement;
-    const body = document.body;
-    const views = [...document.querySelectorAll('[data-view]')];
-    const tabs = [...document.querySelectorAll('.tab')];
-    const bottomButtons = [...document.querySelectorAll('.bottomnav [data-view-target]')];
-    function setView(name) {
-      views.forEach(view => view.classList.toggle('active', view.dataset.view === name));
-      tabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.viewTarget === name)));
-      bottomButtons.forEach(button => button.classList.toggle('active', button.dataset.viewTarget === name));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    document.querySelectorAll('[data-view-target]').forEach(button => button.addEventListener('click', () => setView(button.dataset.viewTarget)));
-    const dayFlows = {
-      12: [
-        ['序曲・鐘鼓齊鳴', '共用 · 02:10 · 4 Cue', ''],
-        ['靜寂清澄', '共用 · 03:48 · 6 Cue', ''],
-        ['本場略過', '沒有貴賓進場橋段', 'skip'],
-        ['法船', '共用 · 04:32 · 8 Cue', ''],
-        ['願力匯流', '共用 · 02:55 · 5 Cue', '']
-      ],
-      13: [
-        ['序曲・鐘鼓齊鳴', '共用 · 02:10 · 4 Cue', ''],
-        ['靜寂清澄', '共用 · 03:48 · 6 Cue', ''],
-        ['貴賓進場橋段', '11/13 本場專屬 · 01:25', 'local'],
-        ['法船', '共用 · 04:32 · 8 Cue', ''],
-        ['願力匯流', '共用 · 02:55 · 5 Cue', '']
-      ],
-      14: [
-        ['序曲・鐘鼓齊鳴', '共用 · 02:10 · 4 Cue', ''],
-        ['靜寂清澄', '共用 · 03:48 · 6 Cue', ''],
-        ['本場略過', '沒有貴賓進場橋段', 'skip'],
-        ['法船', '本場動作覆寫 · 由第 5 項上移', 'override'],
-        ['願力匯流', '共用 · 02:55 · 5 Cue', '']
-      ],
-      15: [
-        ['序曲・鐘鼓齊鳴', '共用 · 02:10 · 4 Cue', ''],
-        ['靜寂清澄', '共用 · 03:48 · 6 Cue', ''],
-        ['本場略過', '沒有貴賓進場橋段', 'skip'],
-        ['法船', '共用 · 04:32 · 8 Cue', ''],
-        ['祈願橋段', '本場取代「願力匯流」· 01:40', 'override'],
-        ['靜寂清澄・第 2 次', '同一段落的另一個 occurrence', 'local']
-      ]
-    };
-    const mobileDayFlow = document.getElementById('mobileDayFlow');
-    let selectedDay = '13';
-    function renderMobileDay(day) {
-      selectedDay = String(day);
-      document.querySelectorAll('[data-day]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.day === selectedDay)));
-      mobileDayFlow.innerHTML = dayFlows[selectedDay].map((item, index) => `<div class="day-item"><span class="day-index">${String(index + 1).padStart(2, '0')}</span><button class="segment-card ${item[2]}" type="button" data-edit-segment="${item[0]}"><b>${item[0]}</b><small>${item[1]}</small></button></div>${index === 1 ? `<button class="mobile-insert" type="button" data-insert="11/${selectedDay}">＋ 在這裡只插入 11/${selectedDay} 段落</button>` : ''}`).join('');
-    }
-    document.querySelectorAll('[data-day]').forEach(button => button.addEventListener('click', () => renderMobileDay(button.dataset.day)));
-    renderMobileDay(selectedDay);
-    const editChoice = document.getElementById('editChoice');
-    const insertChoice = document.getElementById('insertChoice');
-    document.addEventListener('click', event => {
-      const segment = event.target.closest('[data-edit-segment]');
-      if (segment) {
-        const tableCell = segment.closest('.run-table td');
-        if (tableCell) {
-          const cellIndex = [...tableCell.parentElement.children].indexOf(tableCell);
-          selectedDay = ['12', '13', '14', '15'][cellIndex - 1];
-        }
-        document.getElementById('editChoiceTitle').textContent = segment.dataset.editSegment;
-        document.getElementById('editActionStatus').textContent = `選擇操作後只會變更 11/${selectedDay} 的 occurrence。`;
-        editChoice.classList.add('open'); insertChoice.classList.remove('open');
-        editChoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-      const insert = event.target.closest('[data-insert]');
-      if (insert) {
-        const allDays = insert.dataset.insert === 'all';
-        document.getElementById('insertChoiceTitle').textContent = allDays ? '四日一起插入共用段落' : `只插入 ${insert.dataset.insert}`;
-        document.getElementById('insertScopeCopy').textContent = allDays ? '建立一個共用段落，四個日期各新增一個引用 occurrence。' : `只新增 ${insert.dataset.insert} 的 occurrence，不改變其他日期。`;
-        insertChoice.dataset.scope = insert.dataset.insert;
-        insertChoice.classList.add('open'); editChoice.classList.remove('open');
-        insertChoice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    });
-    document.getElementById('closeChoice').addEventListener('click', () => editChoice.classList.remove('open'));
-    document.getElementById('closeInsert').addEventListener('click', () => insertChoice.classList.remove('open'));
-    document.querySelector('[data-shared-edit]').addEventListener('click', () => {
-      document.getElementById('editChoiceTitle').textContent += ' · 將修改四日共用內容';
-    });
-    document.querySelector('[data-local-edit]').addEventListener('click', () => {
-      document.getElementById('editChoiceTitle').textContent += ` · 只改 11/${selectedDay}`;
-    });
-    document.querySelectorAll('[data-run-action]').forEach(button => button.addEventListener('click', () => {
-      const labels = { skip: '將在本場略過，occurrence id 保留。', replace: '將只在本場選擇另一個獨立段落。', up: '將只調整本場順序：上移一項。', down: '將只調整本場順序：下移一項。' };
-      document.getElementById('editActionStatus').textContent = labels[button.dataset.runAction];
-    }));
-    document.getElementById('confirmInsert').addEventListener('click', () => {
-      const scope = insertChoice.dataset.scope === 'all' ? '四日共用' : insertChoice.dataset.scope;
-      document.getElementById('insertScopeCopy').textContent = `互動示意：已準備把「${document.getElementById('insertSegment').value}」插入 ${scope}；尚未寫入資料。`;
-    });
-    function setTheme(theme) {
-      root.dataset.theme = theme;
-      document.querySelectorAll('[data-theme]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.theme === theme)));
-    }
-    document.querySelectorAll('[data-theme]').forEach(button => button.addEventListener('click', () => setTheme(button.dataset.theme)));
-    document.querySelector('[data-theme-mobile]').addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
-    const account = document.getElementById('account');
-    const accountBtn = document.getElementById('accountBtn');
-    function closeAccount() { account.classList.remove('open'); accountBtn.setAttribute('aria-expanded', 'false'); }
-    accountBtn.addEventListener('click', () => { const open = !account.classList.contains('open'); account.classList.toggle('open', open); accountBtn.setAttribute('aria-expanded', String(open)); });
-    document.addEventListener('pointerdown', event => { if (!account.contains(event.target)) closeAccount(); });
-    account.addEventListener('focusout', () => { setTimeout(() => { if (!account.contains(document.activeElement)) closeAccount(); }, 0); });
+  <nav class="tabs" id="tabs">
+    <button type="button" class="tab-admin" data-v="days">① 四天怎麼排</button>
+    <button type="button" class="tab-admin on" data-v="edit">② 編輯這首歌（行願）</button>
+    <button type="button" class="tab-admin" data-v="pub">③ 檢查並發布</button>
+    <button type="button" class="tab-member-only" data-v="me">我的練習</button>
+  </nav>
 
-    const seek = document.getElementById('seek');
-    const cueTimes = [0, 18, 42, 66];
-    function updateSeek() {
-      const value = Number(seek.value);
-      document.getElementById('seekTime').textContent = `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}.000`;
-      const active = cueTimes.reduce((best, time) => value >= time ? time : best, 0);
-      document.querySelectorAll('[data-cue]').forEach(button => button.classList.toggle('active', Number(button.dataset.cue) === active));
-    }
-    seek.addEventListener('input', updateSeek);
-    document.querySelectorAll('[data-cue]').forEach(button => button.addEventListener('click', () => { seek.value = button.dataset.cue; updateSeek(); }));
-    const playBtn = document.getElementById('playBtn');
-    playBtn.addEventListener('click', () => { const playing = playBtn.dataset.playing !== 'true'; playBtn.dataset.playing = String(playing); playBtn.setAttribute('aria-label', playing ? '暫停' : '播放'); playBtn.querySelector('.play-path').style.display = playing ? 'none' : ''; playBtn.querySelector('.pause-path').style.display = playing ? '' : 'none'; });
-    playBtn.querySelector('.pause-path').style.display = 'none';
+  <main>
+    <!-- DAYS -->
+    <section class="view" id="v-days">
+      <h1>四天怎麼排</h1>
+      <p class="sub">第一階段曲目。大多數天相同；只有「五毛錢／圍爐」在四六與五日不同。</p>
+      <div class="note">點「行願」那一格，就會打開編輯畫面（企劃主要工作在那裡）。</div>
+      <div class="metrics">
+        <div class="metric"><b id="mTot">—</b><span>A／B 總座位</span></div>
+        <div class="metric"><b id="mW">—</b><span>白衣座位</span></div>
+        <div class="metric"><b id="mB">—</b><span>藍衣座位</span></div>
+        <div class="metric"><b>13</b><span>第一階段曲目</span></div>
+      </div>
+      <div class="table-wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <div class="card" style="margin-top:14px">
+        <b>正式教材縮圖</b>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+    </section>
 
-    const scrim = document.getElementById('drawerScrim');
-    const drawer = document.getElementById('drawer');
-    const drawerBody = document.getElementById('drawerBody');
-    let lastFocus = null;
-    const drawerBackground = [...document.querySelectorAll('.appbar, .sidebar, .main, .bottomnav')];
-    function bindDrawerContent() {
-      const help = { pai: '整排：依「排」選取該區域所有有效列。', rect: '矩形：輸入列與排的起訖範圍。', multi: '任意多席：可跨排累加不連續座位。', single: '指定單席：第二次點選會取代前一席。' };
-      const area = drawerBody.querySelector('#seatSelectionArea');
-      const blockSelect = drawerBody.querySelector('#ruleBlock');
-      const blocker = drawerBody.querySelector('#anchorBlocker');
-      const overlapNotice = drawerBody.querySelector('[data-overlap-notice]');
-      const apply = drawerBody.querySelector('#applySeatRule');
-      let mode = 'single';
-      function bindSeatCells() {
-        area.querySelectorAll('.seat-cell').forEach(button => button.addEventListener('click', () => {
-          if (mode === 'single' || mode === 'pai') area.querySelectorAll('.seat-cell').forEach(cell => cell.setAttribute('aria-pressed', 'false'));
-          button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
-        }));
-      }
-      function renderSelection() {
-        const block = blockSelect.value;
-        const hasAnchor = document.getElementById('flowAnchor').value !== 'none';
-        const isC = block === 'C';
-        drawerBody.querySelector('#modeHelp').textContent = help[mode];
-        if (isC && hasAnchor) {
-          blocker.classList.remove('hidden');
-          overlapNotice.classList.add('hidden');
-          apply.disabled = true;
-          area.innerHTML = '<div class="fallback"><b>C · 35排1號等 208 席</b><p class="sub">座位 inventory 可讀，但 05-1 沒有可信的 C 區位置對應，故不允許套用此 anchor 規則。</p></div>';
-          return;
-        }
-        blocker.classList.add('hidden');
-        overlapNotice.classList.toggle('hidden', block !== 'A');
-        apply.disabled = false;
-        const firstRow = block === 'B' ? 31 : 6;
-        const lastRow = firstRow + 4;
-        const seatsPerPai = block === 'B' ? 24 : 30;
-        if (mode === 'pai') {
-          const paiLabels = isC ? ['C 29排（26席）', 'C 30排（26席）', 'C 31排（26席）'] : [`${block} 排 20（${seatsPerPai}席）`, `${block} 排 21（${seatsPerPai}席）`, `${block} 排 22（${seatsPerPai}席）`];
-          area.innerHTML = `<div class="seat-grid" aria-label="整排選取">${paiLabels.map(label => `<button class="seat-cell" type="button" aria-pressed="false">${label}</button>`).join('')}</div>`;
-        } else if (mode === 'rect') {
-          const range = isC ? { aLabel: '排', aStart: 29, aEnd: 30, aMin: 29, aMax: 36, bLabel: '號', bStart: 1, bEnd: 5, bMin: 1, bMax: 26 } : { aLabel: '列', aStart: firstRow, aEnd: lastRow, aMin: block === 'B' ? 31 : 1, aMax: block === 'B' ? 54 : 30, bLabel: '排', bStart: 20, bEnd: 21, bMin: 16, bMax: 22 };
-          area.innerHTML = `<div class="grid-2"><div class="field"><label for="rangeAStart">${range.aLabel}起</label><input class="input" id="rangeAStart" type="number" min="${range.aMin}" max="${range.aMax}" value="${range.aStart}"></div><div class="field"><label for="rangeAEnd">${range.aLabel}迄</label><input class="input" id="rangeAEnd" type="number" min="${range.aMin}" max="${range.aMax}" value="${range.aEnd}"></div><div class="field"><label for="rangeBStart">${range.bLabel}起</label><input class="input" id="rangeBStart" type="number" min="${range.bMin}" max="${range.bMax}" value="${range.bStart}"></div><div class="field"><label for="rangeBEnd">${range.bLabel}迄</label><input class="input" id="rangeBEnd" type="number" min="${range.bMin}" max="${range.bMax}" value="${range.bEnd}"></div></div><div class="notice" id="rectSummary" style="margin-top:10px"></div>`;
-          const inputs = [...area.querySelectorAll('input')];
-          const updateRect = () => {
-            const [aStart, aEnd, bStart, bEnd] = inputs.map(input => Number(input.value));
-            const valid = inputs.every(input => input.value !== '' && input.checkValidity()) && aStart <= aEnd && bStart <= bEnd;
-            const summary = area.querySelector('#rectSummary');
-            apply.disabled = !valid;
-            summary.className = `notice${valid ? '' : ' danger'}`;
-            summary.textContent = valid ? `矩形預覽：${block} ${aStart}–${aEnd}${range.aLabel} × ${bStart}–${bEnd}${range.bLabel}，共 ${(aEnd - aStart + 1) * (bEnd - bStart + 1)} 席。` : '起始值不得大於結束值，且必須位於本區座位範圍內。';
-          };
-          inputs.forEach(input => input.addEventListener('input', updateRect));
-          updateRect();
-        } else {
-          const labels = isC ? Array.from({ length: 5 }, (_, index) => `C 29排${index + 1}號`).concat(Array.from({ length: 5 }, (_, index) => `C 30排${index + 1}號`)) : Array.from({ length: 5 }, (_, index) => `${block} ${firstRow + index}-20`).concat(Array.from({ length: 5 }, (_, index) => `${block} ${firstRow + index}-21`));
-          area.innerHTML = `<div class="seat-grid" aria-label="匿名座位選取示意">${labels.map((label, index) => `<button class="seat-cell${block === 'A' && index === 2 ? ' conflict' : ''}" type="button" aria-pressed="${block === 'A' && index === 2 ? 'true' : 'false'}">${label}</button>`).join('')}</div>`;
-        }
-        bindSeatCells();
-      }
-      drawerBody.querySelectorAll('[data-seat-mode]').forEach(button => button.addEventListener('click', () => {
-        mode = button.dataset.seatMode;
-        drawerBody.querySelectorAll('[data-seat-mode]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-        renderSelection();
-      }));
-      blockSelect.addEventListener('change', renderSelection);
-      renderSelection();
-    }
-    function openDrawer(type) {
-      lastFocus = document.activeElement;
-      drawerBody.innerHTML = '';
-      const labels = { seat: ['轉向法船', '座位規則'], preview: [`草稿 r${draftRevision}`, '匿名座位預覽'], outline: ['第一大段', 'Cue 目錄'] };
-      document.getElementById('drawerEyebrow').textContent = labels[type][0];
-      document.getElementById('drawerTitle').textContent = labels[type][1];
-      drawerBody.appendChild(document.getElementById(`${type}Template`).content.cloneNode(true));
-      if (type === 'seat') bindDrawerContent();
-      syncOverlapUi();
-      document.querySelectorAll('[data-drawer]').forEach(button => button.setAttribute('aria-expanded', String(button === lastFocus)));
-      scrim.classList.add('open'); body.style.overflow = 'hidden';
-      drawerBackground.forEach(element => { element.inert = true; });
-      requestAnimationFrame(() => document.getElementById('drawerClose').focus());
-    }
-    function closeDrawer() { scrim.classList.remove('open'); body.style.overflow = ''; drawerBackground.forEach(element => { element.inert = false; }); document.querySelectorAll('[data-drawer]').forEach(button => button.setAttribute('aria-expanded', 'false')); if (lastFocus) lastFocus.focus(); }
-    document.querySelectorAll('[data-drawer]').forEach(button => button.addEventListener('click', () => openDrawer(button.dataset.drawer)));
-    document.getElementById('drawerClose').addEventListener('click', closeDrawer);
-    scrim.addEventListener('click', event => { if (event.target === scrim) closeDrawer(); });
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && account.classList.contains('open')) { closeAccount(); accountBtn.focus(); return; }
-      if (!scrim.classList.contains('open')) return;
-      if (event.key === 'Escape') { closeDrawer(); return; }
-      if (event.key !== 'Tab') return;
-      const focusables = [...drawer.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')];
-      const first = focusables[0]; const last = focusables[focusables.length - 1];
-      if (event.shiftKey && (document.activeElement === first || document.activeElement === drawer)) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    });
+    <!-- EDIT: planner hero -->
+    <section class="view on" id="v-edit">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="chip">正在編輯</div>
+          <h1 style="margin-top:8px">行願</h1>
+          <p class="sub" style="margin:0">同一首歌；四種動作版本（白站／白跪／藍站／藍跪）— 座位在隊形圖上點，不是用排號自動算</p>
+        </div>
+        <div class="row" style="margin:0">
+          <button type="button" class="btn" data-v="days">看四天表</button>
+          <button type="button" class="btn pri edit-only" id="saveBtn">儲存</button>
+        </div>
+      </div>
+      <div class="note" id="adminNote" style="display:none">你是合心行政：可以看、可以發布，但不能改內容。</div>
 
-    function syncOverlapUi() {
-      const resolved = body.dataset.overlap === 'resolved';
-      document.querySelectorAll('[data-body-count]').forEach(node => { node.textContent = resolved ? '11' : '12'; });
-      document.querySelectorAll('[data-overlap-count]').forEach(node => { node.textContent = resolved ? '0 席' : '1 席'; node.style.color = resolved ? 'var(--ok)' : 'var(--danger)'; });
-      document.querySelectorAll('[data-overlap-notice]').forEach(node => {
-        if (resolved) { node.className = 'notice'; node.innerHTML = '座位版本已互斥：A 8-20 已從「船身動作」移出，並保留在「船頭動作」。'; }
-      });
-      const seatCheck = document.getElementById('seatCheck');
-      if (resolved) {
-        reviewCurrent = false;
-        seatCheck.querySelector('.check-icon').className = 'check-icon warn';
-        seatCheck.querySelector('.check-icon').textContent = '!';
-        document.getElementById('seatCheckCopy').textContent = '規則已修正；船身 11 席、船頭 1 席，請重新核對';
-        const badge = document.getElementById('seatCheckBadge'); badge.textContent = '待核對'; badge.className = 'chip warn';
-        const state = document.getElementById('reviewState'); state.textContent = '待重新核對'; state.className = 'chip warn';
-        const status = document.getElementById('publishStatus'); status.textContent = '座位規則已修正，請重新核對；另須固化 Cue 結束時間。'; status.className = 'notice warn';
-        document.getElementById('publishBtn').disabled = true;
-      }
-    }
-    document.addEventListener('click', event => { if (event.target.closest('[data-resolve-overlap]')) { body.dataset.overlap = 'resolved'; syncOverlapUi(); } });
+      <div class="editor-hero">
+        <div class="player">
+          <div class="meta"><span id="playerLabel">正在聽：行願 · 看教材</span><span id="clock">讀取長度…</span></div>
+          <img id="heroTeach" alt="這首歌的教材" style="width:100%;max-height:280px;object-fit:contain;border-radius:12px;background:var(--bg);border:1px solid var(--line)">
+          <audio id="aud" controls preload="metadata" style="width:100%"></audio>
+          <div class="meta">
+            <a id="demoA" href="#" target="_blank" rel="noreferrer">看示範影片</a>
+            <a id="demoVidFile" href="#" target="_blank" rel="noreferrer">開啟正式影音檔</a>
+          </div>
+        </div>
+        <div class="steps">
+          <h2>這首歌裡的小節</h2>
+          <p class="sub" style="margin-bottom:10px">像彩排時一段一段教。點小節可改內容。</p>
+          <button type="button" class="step" data-step="0"><span class="n">1</span><span><b>前奏 · 收腳</b><small>開始 ～ 約 18 秒</small></span></button>
+          <button type="button" class="step on" data-step="1"><span class="n">2</span><span><b>海浪 · 誰站誰跪</b><small>約 18 秒 ～ 1 分 40 秒 ← 現在編這裡 · 對應行願隊形</small></span></button>
+          <button type="button" class="step" data-step="2"><span class="n">3</span><span><b>船 · 內側外側</b><small>約 1 分 40 秒 ～ 2 分 50 秒</small></span></button>
+          <button type="button" class="step" data-step="3"><span class="n">4</span><span><b>守之不動口令</b><small>約 2 分 50 秒 ～ 結束</small></span></button>
+        </div>
+      </div>
 
-    let reviewCurrent = false;
-    let endFinalized = false;
-    let draftRevision = 29;
-    function markSourceStale(copy) {
-      reviewCurrent = false;
-      draftRevision += 1;
-      document.querySelectorAll('[data-draft-revision]').forEach(node => { node.textContent = `r${draftRevision}`; });
-      const state = document.getElementById('reviewState'); state.textContent = `待重新核對 r${draftRevision}`; state.className = 'chip warn';
-      const contentCheck = document.getElementById('contentCheck'); contentCheck.querySelector('.check-icon').className = 'check-icon warn'; contentCheck.querySelector('.check-icon').textContent = '!';
-      document.getElementById('contentCheckCopy').textContent = `${copy}，source 已異動，請重新核對`;
-      const contentBadge = document.getElementById('contentCheckBadge'); contentBadge.textContent = 'stale'; contentBadge.className = 'chip warn';
-      const status = document.getElementById('publishStatus'); status.textContent = `草稿已更新為 r${draftRevision}；原 preview receipt 已失效，請重新核對。`; status.className = 'notice warn';
-      document.getElementById('publishBtn').disabled = true;
-    }
-    ['cueTitle', 'startTime', 'endTime', 'flowAnchor'].forEach(id => document.getElementById(id).addEventListener('change', () => markSourceStale('Cue 內容')));
-    function updatePublishEligibility() {
-      const status = document.getElementById('publishStatus');
-      const ready = reviewCurrent && endFinalized;
-      document.getElementById('publishBtn').disabled = !ready;
-      if (ready) { status.textContent = '內容、座位、Flow bundle 與 Cue 結束時間均已核對，可發布 v7。'; status.className = 'notice'; }
-      else if (reviewCurrent) { status.textContent = '三項 preview 已在同一 snapshot 核對；仍須固化「法船前進」的段內 end offset。'; status.className = 'notice warn'; }
-    }
-    document.getElementById('repreview').addEventListener('click', () => {
-      const resolved = body.dataset.overlap === 'resolved';
-      const state = document.getElementById('reviewState');
-      const status = document.getElementById('publishStatus');
-      if (!resolved) { status.textContent = '仍有座位版本重疊，無法完成核對。'; return; }
-      reviewCurrent = true;
-      state.textContent = `已核對 r${draftRevision}`; state.className = 'chip ok';
-      const contentIcon = document.getElementById('contentCheck').querySelector('.check-icon'); contentIcon.className = 'check-icon'; contentIcon.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10l4 4 8-8" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-      document.getElementById('contentCheckCopy').textContent = '段落 revision、occurrence override 與素材已核對';
-      const contentBadge = document.getElementById('contentCheckBadge'); contentBadge.textContent = 'current'; contentBadge.className = 'chip ok';
-      const icon = document.getElementById('seatCheck').querySelector('.check-icon'); icon.className = 'check-icon'; icon.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10l4 4 8-8" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-      document.getElementById('seatCheckCopy').textContent = '船身 11 席、船頭 1 席，沒有重疊';
-      const badge = document.getElementById('seatCheckBadge'); badge.textContent = 'current'; badge.className = 'chip ok';
-      updatePublishEligibility();
-    });
-    document.getElementById('finalizeEnd').addEventListener('click', () => {
-      if (endFinalized) return;
-      endFinalized = true;
-      markSourceStale('段內 end offset 已固化');
-      document.querySelectorAll('[data-end-status]').forEach(node => { node.textContent = '1 版'; });
-      document.getElementById('endOffsetNotice').className = 'notice';
-      document.getElementById('endOffsetNotice').innerHTML = '「法船前進」已固化段內 <code>endOffsetMs</code>；需與其他項目一起完成核對後才能發布。';
-      const check = document.getElementById('endCheck'); check.querySelector('.check-icon').className = 'check-icon'; check.querySelector('.check-icon').innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4 10l4 4 8-8" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-      document.getElementById('endCheckCopy').textContent = '法船前進已使用明確段內 end offset';
-      const badge = document.getElementById('endCheckBadge'); badge.textContent = 'current'; badge.className = 'chip ok';
-      document.getElementById('finalizeEnd').disabled = true;
-      updatePublishEligibility();
-    });
-    document.getElementById('publishBtn').addEventListener('click', () => { const status = document.getElementById('publishStatus'); status.textContent = '互動原型不寫入資料；正式系統會先取得發布鎖，再建立 v7。'; status.className = 'notice warn'; });
+      <div class="edit-tabs" role="tablist">
+        <button type="button" class="on" data-panel="content">寫口令與動作</button>
+        <button type="button" data-panel="who">設定「誰做哪一種」</button>
+        <button type="button" data-panel="look">看座位上會怎樣</button>
+      </div>
 
-    const personalResult = document.getElementById('personalResult');
-    const practiceSegments = {
-      calm: { title: '靜寂清澄', index: 2, duration: '03:48', revision: 2, cueTime: '00:18', cueEnd: '00:42', cueTitle: '靜寂清澄', flowSeq: 2, flowTitle: '圓形（01）', action: '依圓形定位完成本段動作。', prev: null, next: 'boat' },
-      boat: { title: '法船', index: 4, duration: '04:32', revision: 3, cueTime: '00:42', cueEnd: '01:06', cueTitle: '轉向法船', flowSeq: 6, flowTitle: '法船（05-1）', action: '站定企劃指定位置，先行示意並引導船身。', prev: 'calm', next: 'wish' },
-      wish: { title: '願力匯流', index: 5, duration: '02:55', revision: 4, cueTime: '00:12', cueEnd: '00:36', cueTitle: '願力匯流', flowSeq: 9, flowTitle: '四弘誓願（06）', action: '依座位版本完成匯流與定點。', prev: 'boat', next: null }
-    };
-    let currentPracticeSegment = 'boat';
-    let currentPersonalState = 'ab';
-    let autoContinueEnabled = false;
-    try { autoContinueEnabled = localStorage.getItem('flow-auto-continue') === 'true'; } catch {}
-    function renderPersonal(state) {
-      currentPersonalState = state;
-      if (state === 'unseated') {
-        personalResult.innerHTML = '<div class="card"><div class="flow-header"><div><div class="eyebrow">我的逐段練習</div><h2>尚無座位資料</h2></div><span class="chip warn">未排位</span></div><div class="fallback">待配位完成後，這裡才會顯示逐段走位與 Cue。現在可以先查看公開教學資源。</div><p style="margin:16px 0 0"><a href="/p/resources">查看公開教學資源</a></p></div>';
-        return;
-      }
-      const segment = practiceSegments[currentPracticeSegment];
-      const isC = state === 'c'; const asset = state === 'asset';
-      const previous = segment.prev ? practiceSegments[segment.prev] : null;
-      const next = segment.next ? practiceSegments[segment.next] : null;
-      const media = asset ? `<div><b>${segment.title}的本段媒體暫時無法讀取</b><p class="sub">文字 Cue 仍可繼續練習</p></div>` : `<div><div class="landmark" style="margin:0 auto 10px">第${segment.index}</div><b>${segment.title} · media revision ${segment.revision}</b><p class="sub">${segment.cueTime}／${segment.duration} · 現在 Cue：${segment.cueTitle}</p></div>`;
-      personalResult.innerHTML = `<div class="flow-header"><div><div class="eyebrow">11/14 · 我的逐段練習</div><h2 id="practiceTitle">${segment.title}</h2><p class="sub">第 ${segment.index}／5 段 · 本段媒體 ${segment.duration} · Cue 從 00:00 起算</p></div><span class="chip ok">${isC ? 'C · 35排1號' : 'A · 8-20'}</span></div><div class="practice-player"><div class="practice-media">${media}</div><div class="practice-controls"><button class="btn" type="button" data-practice-nav="prev" ${previous ? '' : 'disabled'}>← 上一段<br><small>${previous ? previous.title : '已是第一段'}</small></button><div class="segmented" aria-label="本段播放"><button type="button" aria-pressed="false">倒退 10 秒</button><button type="button" aria-pressed="true">播放</button></div><button class="btn" type="button" data-practice-nav="next" ${next ? '' : 'disabled'}>下一段 →<br><small>${next ? next.title : '本日完成'}</small></button></div><div class="toggle-row"><div><b>自動接續下一段</b><div class="sub" id="autoContinueCopy">${autoContinueEnabled ? '開啟' : '關閉（預設）'} · 此裝置偏好，不影響編排與發布</div></div><button class="toggle" type="button" role="switch" aria-checked="${autoContinueEnabled}" aria-pressed="${autoContinueEnabled}" id="autoContinue" aria-label="自動接續下一段"></button></div><article class="flow-card"><header class="flow-card-head"><div class="landmark" style="font-size:11px">第${segment.flowSeq}</div><div><b>第 ${segment.flowSeq} 段・${segment.flowTitle}</b><div class="sub">段內 Cue ${segment.cueTime}–${segment.cueEnd} · active release v6</div></div></header><div class="flow-body"><div class="now-cue"><b>動作／口令</b><span>${isC ? '依本段已發布文字口令完成動作。' : segment.action}</span></div>${isC ? '<div class="fallback">C 目前沒有 authoritative block-aware FlowMap；不顯示虛構位置。</div>' : '<figure class="formation"><svg viewBox="0 0 300 126" role="img" aria-label="FlowMap 位置示意"><path d="M35 92 Q140 25 260 70" fill="none" stroke="var(--line)" stroke-width="2"/><circle cx="235" cy="65" r="10" fill="var(--brand)"/></svg><figcaption>互動原型位置示意；正式頁沿用現行 FlowMap。</figcaption></figure>'}</div></article></div><div class="notice" style="margin-top:14px"><code>/p/flow</code> 是獨立公開座位查詢，不呈現 Cue 或受保護素材。</div>`;
+      <!-- panel content -->
+      <div class="panel on" id="p-content">
+        <div class="card">
+          <div class="form-grid">
+            <div class="field"><label>小節名稱</label><input class="input" id="fName" value="海浪 · 誰站誰跪"></div>
+            <div class="field"><label>從這秒開始</label><input class="input" id="fStart" value="0:18"></div>
+            <div class="field"><label>到這秒結束</label><input class="input" id="fEnd" value="1:40"></div>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>對應哪張走位圖？（可選）</label>
+            <select class="select" id="fAnchor">
+              <option selected>第 3 段 · 行願千手（隊形場景 02）</option>
+              <option>不用走位圖，只看文字</option>
+            </select>
+          </div>
+          <div class="content-blocks">
+            <div class="block"><h3>大家一起唱／喊的內容</h3>
+              <textarea class="ta" id="fText">海濤澎湃，駭浪洶湧，心志已付，身隨之赴～</textarea>
+            </div>
+            <div class="block"><h3>預設動作（沒被分到特別版本的人）</h3>
+              <textarea class="ta" id="fActDefault">依下面四種版本：白衣站／白衣跪／藍衣站／藍衣跪</textarea>
+            </div>
+            <div class="block"><h3>面向</h3>
+              <input class="input" id="fFace" value="面向圖騰方向">
+            </div>
+            <div class="block"><h3>隊形</h3>
+              <input class="input" id="fForm" value="行願隊形 · 海浪">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- panel who -->
+      <div class="panel" id="p-who">
+        <div class="note">
+          白衣／藍衣是座位決定的（跟座位格上一樣：每 3 列一輪白藍），不是看報名資料。
+          <strong>白／藍</strong>可用列號快速篩選；<strong>站／跪</strong>必須在下方隊形圖點座位（或從篩出的白衣再分成兩版）。
+          沒有「前排＝站、後排＝跪」這種系統公式。
+        </div>
+        <div class="who-grid" id="whoGrid"></div>
+        <div class="card" style="margin-top:14px" id="whoDetail"></div>
+      </div>
+
+      <!-- panel look -->
+      <div class="panel" id="p-look">
+        <div class="note warn" style="margin-bottom:12px">
+          現在是<strong>行願千手</strong>隊形（第 3 段 · 場景 02），不是基本座位格。
+          票面編號仍是「列-排」，圖上旁邊的人編號可能跳號。
+          亮點＝此版本<strong>已在隊形圖點選</strong>的座位（原型用範例集合；正式由企劃點選，不是排號公式）。
+        </div>
+        <div class="preview-layout">
+          <div class="map-box">
+            <b>行願千手 · 西一隊形圖（368 席）</b>
+            <p class="sub">亮起來＝目前選中的版本；滑過可看票面編號。沒有姓名。</p>
+            <div class="map-scroll form-scroll"><canvas id="formCanvas" width="720" height="420" aria-label="行願千手隊形圖"></canvas></div>
+            <div class="legend" id="legend"></div>
+            <p class="sub" id="hoverLabel" style="min-height:1.4em;margin-top:8px">把滑鼠移到點上可看編號</p>
+          </div>
+          <div class="side-sum" id="sideSum"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PUB -->
+    <section class="view" id="v-pub">
+      <h1>檢查並發布 · 11/12（四）</h1>
+      <p class="sub">只發布這一天。不會動到五、六、日。</p>
+      <div class="grid2">
+        <div class="card"><div class="check" id="checks"></div></div>
+        <div class="card">
+          <b>發布後會發生什麼</b>
+          <ul style="color:var(--ink2);line-height:1.7;padding-left:18px">
+            <li>有座位的人打開「我的」，會依自己座位看到對應動作</li>
+            <li>被點進「白衣·站」的座位看到該版教材；點進「藍衣·跪」的看到跪版</li>
+            <li>換人坐同一座位 → 看到同一套動作（跟人無關）</li>
+          </ul>
+          <div id="pubNums" style="margin:12px 0;color:var(--ink2)"></div>
+          <button type="button" class="btn pri" id="pubBtn" style="width:100%">發布給 11/12 使用</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ME -->
+    <section class="view" id="v-me">
+      <h1>我的練習</h1>
+      <p class="sub" id="meSeat">座位 8-18 · 白衣 · 女 · 你是「白衣 · 站」</p>
+      <div class="daytabs" id="meDays"></div>
+      <div class="phone" id="phone">
+        <div class="phd">
+          <div class="chip">我的流程</div>
+          <h1 style="font-size:22px;margin-top:8px" id="meTitle">行願</h1>
+          <p class="sub" id="meSub" style="margin:0">第 7 首 · 你的版本：白衣 · 站</p>
+        </div>
+        <div class="pbd">
+          <img id="meTeachTop" alt="我的教材" style="width:100%;border-radius:12px;border:1px solid var(--line);max-height:240px;object-fit:contain;background:var(--bg)">
+          <audio id="meAud" controls preload="metadata" style="width:100%"></audio>
+          <div class="now">
+            <b id="meCue">現在：海浪 · 誰站誰跪</b>
+            <span id="meAct" style="display:block;margin-top:4px;color:var(--ink2);font-size:14px"></span>
+          </div>
+          <img id="meTeach" alt="我的教材" style="width:100%;border-radius:12px;border:1px solid var(--line);max-height:200px;object-fit:contain;background:var(--bg)">
+          <div class="block"><h3>歌詞</h3><p>海濤澎湃，駭浪洶湧，心志已付，身隨之赴～</p></div>
+          <div class="toggle-row">
+            <div><b>播完自動下一首</b><div class="sub" style="margin:0">只存在這支手機，預設關</div></div>
+            <button type="button" class="toggle" id="auto" aria-pressed="false" aria-label="自動下一首"></button>
+          </div>
+          <div class="ctrl">
+            <button type="button" class="btn" id="prev">上一首</button>
+            <span class="chip" id="idx">7 / 13</span>
+            <button type="button" class="btn pri" id="next">進入下一首</button>
+          </div>
+        </div>
+      </div>
+      <div class="empty hidden" id="noSeat">
+        <b style="font-size:22px">還沒有座位</b>
+        <p class="sub">配好座位後，這裡會自動出現你的流程與動作。</p>
+        <a class="btn pri" href="#" style="display:inline-flex;align-items:center;text-decoration:none;margin-top:8px">先看公開教學資源</a>
+        <p class="sub" style="margin-top:12px">不會叫你自己輸入座位號碼。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const DATA = {"media":{"序":{"title":"序","audio":"https://seat-lookup.qori.workers.dev/teach/assets/序.a790f9c1.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/序.45a0a821.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_003.fc8e01bb.webp","demo":"https://www.youtube.com/watch?v=9xXoD2XVbNY&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=1"},"太子":{"title":"太子降誕","audio":"https://seat-lookup.qori.workers.dev/teach/assets/生苦.cd7abacc.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/生苦.0b275099.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_006.7ff15e90.webp","demo":null},"老苦":{"title":"老苦","audio":"https://seat-lookup.qori.workers.dev/teach/assets/老苦.6a917e01.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/老苦.adc4c9bf.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_009.797b6f20.webp","demo":"https://youtu.be/LJZo0hH3nos?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"病苦":{"title":"病苦","audio":"https://seat-lookup.qori.workers.dev/teach/assets/病苦.b2457a09.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/病苦.b83fca57.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_012.6c05f53f.webp","demo":"https://youtu.be/glh-1pF4StQ?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"死苦":{"title":"死苦","audio":"https://seat-lookup.qori.workers.dev/teach/assets/死苦.cb3fef0f.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/死苦.99aff92a.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_015.7edf01df.webp","demo":"https://youtu.be/gx0R8wK_Wkg?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"六度":{"title":"六度","audio":"https://seat-lookup.qori.workers.dev/teach/assets/轉法輪.edfd5de5.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/轉法輪.353c2138.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_018.0ff28d59.webp","demo":"https://youtu.be/gZ9C6HM6keg?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"行願":{"title":"行願","audio":"https://seat-lookup.qori.workers.dev/teach/assets/行願.978c7adc.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/行願.11d58145.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_023.49459d94.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=2bMOTOZnnsofu5CD&t=154"},"開經偈":{"title":"開經偈","audio":"https://seat-lookup.qori.workers.dev/teach/assets/開經偈.16bc65d5.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/開經偈.f48514bf.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_035.79afcef4.webp","demo":"https://youtu.be/Prve-DAF5Fw"},"米籮":{"title":"扛天下米籮","audio":"https://seat-lookup.qori.workers.dev/teach/assets/米籮.3b04545c.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/米籮.f32f51c6.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_039.fcd76951.webp","demo":"https://www.youtube.com/watch?v=xmwAu0XBonE&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=9"},"靜思家風":{"title":"靜思家風","audio":"https://seat-lookup.qori.workers.dev/teach/assets/靜思家風.fbd8c071.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/靜思家風.48e58a31.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_042.33ee3f4d.webp","demo":"https://www.youtube.com/watch?v=FxOew30sJoU&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=10"},"一盞燈":{"title":"點一盞燈","audio":"https://seat-lookup.qori.workers.dev/teach/assets/一盞燈.d03ca2e1.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/一盞燈.a4dddc50.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_047.60d5c570.webp","demo":"https://youtu.be/qBMy7Q4ol7U?si=b_E6Xwke11lvBUQ4&t=140"},"五角錢":{"title":"菜市場的五毛錢","audio":"https://seat-lookup.qori.workers.dev/teach/assets/五毛錢.e34caa58.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/五毛錢.5f798372.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_048.9560f48e.webp","demo":"https://www.youtube.com/watch?v=pzkatOInyss&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=11"},"圍爐":{"title":"圍爐／是諸眾生","audio":"https://seat-lookup.qori.workers.dev/teach/assets/圍爐.1dd12d59.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/圍爐.ac7a150c.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_052.73003e21.webp","demo":"https://youtu.be/vYxBbQ5FWu0?si=RnV_MBR8W0EaBxb3&t=134"}},"variants":[{"id":"ws","name":"白衣 · 站","who":"穿白衣、這一版動作是「站」","rule":"在行願千手隊形圖上點選 · 可先篩「白衣」再細分","how":"隊形圖點選（不是排號公式）","count":94,"action":"左上／右下交替；前面搭肩、後面右前左後；節奏「登 登 登」","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_028.ddc7f08a.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["1-16","1-18","1-20","1-22","13-17","13-19","13-21","14-16"]},{"id":"wk","name":"白衣 · 跪","who":"穿白衣、這一版動作是「跪」","rule":"在行願千手隊形圖上點選 · 可先篩「白衣」再細分","how":"隊形圖點選（不是排號公式）","count":94,"action":"高跪／坐跪；手放前面搭肩或後面右前左後","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_027.381ef102.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["1-17","1-19","1-21","13-16","13-18","13-20","13-22","14-17"]},{"id":"bs","name":"藍衣 · 站","who":"穿藍衣、這一版動作是「站」","rule":"在行願千手隊形圖上點選 · 可先篩「藍衣」再細分","how":"隊形圖點選（不是排號公式）","count":90,"action":"與白衣站姿同拍點；左上／右下","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_030.5a833e56.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["10-16","10-18","10-20","10-22","11-17","11-19","11-21","12-16"]},{"id":"bk","name":"藍衣 · 跪","who":"穿藍衣、這一版動作是「跪」","rule":"在行願千手隊形圖上點選 · 可先篩「藍衣」再細分","how":"隊形圖點選（不是排號公式）","count":90,"action":"藍衣跪姿譜；含藍衣女眾弓步說明","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_029.dbc9e87b.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["10-17","10-19","10-21","11-16","11-18","11-20","11-22","12-17"]}],"variantKeys":{"ws":["1-16","1-18","1-20","1-22","13-17","13-19","13-21","14-16","14-18","14-20","14-22","15-17","15-19","15-21","19-16","19-18","19-20","19-22","2-17","2-19","2-21","20-16","20-18","20-20","20-22","21-17","21-19","21-21","25-16","25-18","25-20","25-22","26-17","26-19","26-21","27-16","27-18","27-20","27-22","3-17","3-19","3-21","31-16","31-18","31-20","31-22","32-17","32-19","32-21","33-16","33-18","33-20","33-22","37-17","37-19","37-21","38-16","38-18","38-20","38-22","39-17","39-19","39-21","43-16","43-18","43-20","43-22","44-17","44-19","44-21","45-16","45-18","45-20","45-22","49-17","49-19","49-21","50-16","50-18","50-20","50-22","51-17","51-19","51-21","7-17","7-19","7-21","8-16","8-18","8-20","8-22","9-17","9-19","9-21"],"wk":["1-17","1-19","1-21","13-16","13-18","13-20","13-22","14-17","14-19","14-21","15-16","15-18","15-20","15-22","19-17","19-19","19-21","2-16","2-18","2-20","2-22","20-17","20-19","20-21","21-16","21-18","21-20","21-22","25-17","25-19","25-21","26-16","26-18","26-20","26-22","27-17","27-19","27-21","3-16","3-18","3-20","3-22","31-17","31-19","31-21","32-16","32-18","32-20","32-22","33-17","33-19","33-21","37-16","37-18","37-20","37-22","38-17","38-19","38-21","39-16","39-18","39-20","39-22","43-17","43-19","43-21","44-16","44-18","44-20","44-22","45-17","45-19","45-21","49-16","49-18","49-20","49-22","50-17","50-19","50-21","51-16","51-18","51-20","7-16","7-18","7-20","7-22","8-17","8-19","8-21","9-16","9-18","9-20","9-22"],"bs":["10-16","10-18","10-20","10-22","11-17","11-19","11-21","12-16","12-18","12-20","12-22","16-17","16-19","16-21","17-16","17-18","17-20","17-22","18-17","18-19","18-21","22-16","22-18","22-20","22-22","23-17","23-19","23-21","24-16","24-18","24-20","24-22","28-17","28-19","28-21","29-16","29-18","29-20","29-22","30-17","30-19","30-21","34-16","34-18","34-20","34-22","35-17","35-19","35-21","36-16","36-18","36-20","36-22","4-17","4-19","4-21","40-16","40-18","40-20","40-22","41-17","41-19","41-21","42-16","42-18","42-20","42-22","46-17","46-19","46-21","47-16","47-18","47-20","47-22","48-17","48-19","48-21","5-16","5-18","5-20","5-22","52-17","52-19","53-16","53-18","54-16","54-18","6-17","6-19","6-21"],"bk":["10-17","10-19","10-21","11-16","11-18","11-20","11-22","12-17","12-19","12-21","16-16","16-18","16-20","16-22","17-17","17-19","17-21","18-16","18-18","18-20","18-22","22-17","22-19","22-21","23-16","23-18","23-20","23-22","24-17","24-19","24-21","28-16","28-18","28-20","28-22","29-17","29-19","29-21","30-16","30-18","30-20","30-22","34-17","34-19","34-21","35-16","35-18","35-20","35-22","36-17","36-19","36-21","4-16","4-18","4-20","4-22","40-17","40-19","40-21","41-16","41-18","41-20","41-22","42-17","42-19","42-21","46-16","46-18","46-20","46-22","47-17","47-19","47-21","48-16","48-18","48-20","48-22","5-17","5-19","5-21","52-16","52-18","52-20","53-17","53-19","54-17","6-16","6-18","6-20","6-22"]},"seats":[{"id":"1-16","x":-0.7903,"y":-3.8268,"c":"白","g":"男","l":1,"p":16},{"id":"1-17","x":-0.7903,"y":-3.7153,"c":"白","g":"男","l":1,"p":17},{"id":"1-18","x":-0.7903,"y":-3.6031,"c":"白","g":"男","l":1,"p":18},{"id":"1-19","x":-0.7903,"y":-3.491,"c":"白","g":"男","l":1,"p":19},{"id":"1-20","x":-0.7903,"y":-3.3794,"c":"白","g":"男","l":1,"p":20},{"id":"1-21","x":-0.7903,"y":-3.2668,"c":"白","g":"男","l":1,"p":21},{"id":"1-22","x":-0.7903,"y":-3.1555,"c":"白","g":"男","l":1,"p":22},{"id":"10-16","x":-2.1077,"y":-3.7019,"c":"藍","g":"女","l":10,"p":16},{"id":"10-17","x":-2.1077,"y":-3.5969,"c":"藍","g":"女","l":10,"p":17},{"id":"10-18","x":-2.1077,"y":-3.491,"c":"藍","g":"女","l":10,"p":18},{"id":"10-19","x":-2.1077,"y":-3.3855,"c":"藍","g":"女","l":10,"p":19},{"id":"10-20","x":-2.1077,"y":-3.2806,"c":"藍","g":"女","l":10,"p":20},{"id":"10-21","x":-2.1077,"y":-3.1749,"c":"藍","g":"女","l":10,"p":21},{"id":"10-22","x":-2.2395,"y":-3.1221,"c":"藍","g":"女","l":10,"p":22},{"id":"11-16","x":-2.2395,"y":-3.8598,"c":"藍","g":"女","l":11,"p":16},{"id":"11-17","x":-2.2395,"y":-3.7543,"c":"藍","g":"女","l":11,"p":17},{"id":"11-18","x":-2.2395,"y":-3.6491,"c":"藍","g":"女","l":11,"p":18},{"id":"11-19","x":-2.2395,"y":-3.5438,"c":"藍","g":"女","l":11,"p":19},{"id":"11-20","x":-2.2395,"y":-3.4381,"c":"藍","g":"女","l":11,"p":20},{"id":"11-21","x":-2.2395,"y":-3.3328,"c":"藍","g":"女","l":11,"p":21},{"id":"11-22","x":-2.2395,"y":-3.2276,"c":"藍","g":"女","l":11,"p":22},{"id":"12-16","x":-2.3711,"y":-3.8074,"c":"藍","g":"女","l":12,"p":16},{"id":"12-17","x":-2.3711,"y":-3.7021,"c":"藍","g":"女","l":12,"p":17},{"id":"12-18","x":-2.3711,"y":-3.5964,"c":"藍","g":"女","l":12,"p":18},{"id":"12-19","x":-2.3711,"y":-3.4912,"c":"藍","g":"女","l":12,"p":19},{"id":"12-20","x":-2.3711,"y":-3.3859,"c":"藍","g":"女","l":12,"p":20},{"id":"12-21","x":-2.3711,"y":-3.2804,"c":"藍","g":"女","l":12,"p":21},{"id":"12-22","x":-2.3711,"y":-3.1749,"c":"藍","g":"女","l":12,"p":22},{"id":"13-16","x":-2.5031,"y":-3.7019,"c":"白","g":"女","l":13,"p":16},{"id":"13-17","x":-2.5031,"y":-3.5971,"c":"白","g":"女","l":13,"p":17},{"id":"13-18","x":-2.5031,"y":-3.491,"c":"白","g":"女","l":13,"p":18},{"id":"13-19","x":-2.5031,"y":-3.3855,"c":"白","g":"女","l":13,"p":19},{"id":"13-20","x":-2.5031,"y":-3.2808,"c":"白","g":"女","l":13,"p":20},{"id":"13-21","x":-2.5031,"y":-3.1749,"c":"白","g":"女","l":13,"p":21},{"id":"13-22","x":-2.6347,"y":-3.1223,"c":"白","g":"女","l":13,"p":22},{"id":"14-16","x":-2.6347,"y":-3.8596,"c":"白","g":"女","l":14,"p":16},{"id":"14-17","x":-2.6347,"y":-3.755,"c":"白","g":"女","l":14,"p":17},{"id":"14-18","x":-2.6347,"y":-3.6491,"c":"白","g":"女","l":14,"p":18},{"id":"14-19","x":-2.6347,"y":-3.5434,"c":"白","g":"女","l":14,"p":19},{"id":"14-20","x":-2.6347,"y":-3.4385,"c":"白","g":"女","l":14,"p":20},{"id":"14-21","x":-2.6347,"y":-3.3328,"c":"白","g":"女","l":14,"p":21},{"id":"14-22","x":-2.6347,"y":-3.2274,"c":"白","g":"女","l":14,"p":22},{"id":"15-16","x":-2.7665,"y":-3.8074,"c":"白","g":"女","l":15,"p":16},{"id":"15-17","x":-2.7665,"y":-3.7019,"c":"白","g":"女","l":15,"p":17},{"id":"15-18","x":-2.7665,"y":-3.5967,"c":"白","g":"女","l":15,"p":18},{"id":"15-19","x":-2.7665,"y":-3.491,"c":"白","g":"女","l":15,"p":19},{"id":"15-20","x":-2.7665,"y":-3.3857,"c":"白","g":"女","l":15,"p":20},{"id":"15-21","x":-2.7665,"y":-3.2806,"c":"白","g":"女","l":15,"p":21},{"id":"15-22","x":-2.7665,"y":-3.1749,"c":"白","g":"女","l":15,"p":22},{"id":"16-16","x":-2.8983,"y":-3.728,"c":"藍","g":"女","l":16,"p":16},{"id":"16-17","x":-2.8983,"y":-3.6228,"c":"藍","g":"女","l":16,"p":17},{"id":"16-18","x":-2.8983,"y":-3.5175,"c":"藍","g":"女","l":16,"p":18},{"id":"16-19","x":-2.8983,"y":-3.4118,"c":"藍","g":"女","l":16,"p":19},{"id":"16-20","x":-2.8983,"y":-3.3065,"c":"藍","g":"女","l":16,"p":20},{"id":"16-21","x":-2.8983,"y":-3.2013,"c":"藍","g":"女","l":16,"p":21},{"id":"16-22","x":-2.8983,"y":-3.0958,"c":"藍","g":"女","l":16,"p":22},{"id":"17-16","x":-3.0296,"y":-3.6756,"c":"藍","g":"女","l":17,"p":16},{"id":"17-17","x":-3.0296,"y":-3.5701,"c":"藍","g":"女","l":17,"p":17},{"id":"17-18","x":-3.0296,"y":-3.4649,"c":"藍","g":"女","l":17,"p":18},{"id":"17-19","x":-3.0296,"y":-3.3596,"c":"藍","g":"女","l":17,"p":19},{"id":"17-20","x":-3.0296,"y":-3.2539,"c":"藍","g":"女","l":17,"p":20},{"id":"17-21","x":-3.0296,"y":-3.1488,"c":"藍","g":"女","l":17,"p":21},{"id":"17-22","x":-3.0296,"y":-3.0433,"c":"藍","g":"女","l":17,"p":22},{"id":"18-16","x":-3.1617,"y":-3.7278,"c":"藍","g":"女","l":18,"p":16},{"id":"18-17","x":-3.1617,"y":-3.6232,"c":"藍","g":"女","l":18,"p":17},{"id":"18-18","x":-3.1617,"y":-3.5175,"c":"藍","g":"女","l":18,"p":18},{"id":"18-19","x":-3.1617,"y":-3.4116,"c":"藍","g":"女","l":18,"p":19},{"id":"18-20","x":-3.1617,"y":-3.3067,"c":"藍","g":"女","l":18,"p":20},{"id":"18-21","x":-3.1617,"y":-3.2015,"c":"藍","g":"女","l":18,"p":21},{"id":"18-22","x":-3.1617,"y":-3.0956,"c":"藍","g":"女","l":18,"p":22},{"id":"19-16","x":-3.2935,"y":-3.6754,"c":"白","g":"女","l":19,"p":16},{"id":"19-17","x":-3.2935,"y":-3.5697,"c":"白","g":"女","l":19,"p":17},{"id":"19-18","x":-3.2935,"y":-3.4649,"c":"白","g":"女","l":19,"p":18},{"id":"19-19","x":-3.2935,"y":-3.3594,"c":"白","g":"女","l":19,"p":19},{"id":"19-20","x":-3.2935,"y":-3.2535,"c":"白","g":"女","l":19,"p":20},{"id":"19-21","x":-3.2935,"y":-3.1488,"c":"白","g":"女","l":19,"p":21},{"id":"19-22","x":-3.2935,"y":-3.0433,"c":"白","g":"女","l":19,"p":22},{"id":"2-16","x":-0.9223,"y":-3.7656,"c":"白","g":"男","l":2,"p":16},{"id":"2-17","x":-0.9223,"y":-3.6537,"c":"白","g":"男","l":2,"p":17},{"id":"2-18","x":-0.9223,"y":-3.5417,"c":"白","g":"男","l":2,"p":18},{"id":"2-19","x":-0.9223,"y":-3.4298,"c":"白","g":"男","l":2,"p":19},{"id":"2-20","x":-0.9223,"y":-3.3178,"c":"白","g":"男","l":2,"p":20},{"id":"2-21","x":-0.9223,"y":-3.2058,"c":"白","g":"男","l":2,"p":21},{"id":"2-22","x":-0.9223,"y":-3.0939,"c":"白","g":"男","l":2,"p":22},{"id":"20-16","x":-3.425,"y":-3.623,"c":"白","g":"女","l":20,"p":16},{"id":"20-17","x":-3.425,"y":-3.5175,"c":"白","g":"女","l":20,"p":17},{"id":"20-18","x":-3.425,"y":-3.412,"c":"白","g":"女","l":20,"p":18},{"id":"20-19","x":-3.425,"y":-3.3067,"c":"白","g":"女","l":20,"p":19},{"id":"20-20","x":-3.425,"y":-3.2013,"c":"白","g":"女","l":20,"p":20},{"id":"20-21","x":-3.425,"y":-3.096,"c":"白","g":"女","l":20,"p":21},{"id":"20-22","x":-3.425,"y":-2.9905,"c":"白","g":"女","l":20,"p":22},{"id":"21-16","x":-3.5568,"y":-3.6754,"c":"白","g":"女","l":21,"p":16},{"id":"21-17","x":-3.5568,"y":-3.5701,"c":"白","g":"女","l":21,"p":17},{"id":"21-18","x":-3.5568,"y":-3.4646,"c":"白","g":"女","l":21,"p":18},{"id":"21-19","x":-3.5568,"y":-3.3594,"c":"白","g":"女","l":21,"p":19},{"id":"21-20","x":-3.5568,"y":-3.2539,"c":"白","g":"女","l":21,"p":20},{"id":"21-21","x":-3.5568,"y":-3.1486,"c":"白","g":"女","l":21,"p":21},{"id":"21-22","x":-3.5568,"y":-3.0431,"c":"白","g":"女","l":21,"p":22},{"id":"22-16","x":-3.6882,"y":-3.9916,"c":"藍","g":"女","l":22,"p":16},{"id":"22-17","x":-3.6882,"y":-3.8864,"c":"藍","g":"女","l":22,"p":17},{"id":"22-18","x":-3.6882,"y":-3.7811,"c":"藍","g":"女","l":22,"p":18},{"id":"22-19","x":-3.6882,"y":-3.6756,"c":"藍","g":"女","l":22,"p":19},{"id":"22-20","x":-3.6882,"y":-3.5701,"c":"藍","g":"女","l":22,"p":20},{"id":"22-21","x":-3.6882,"y":-3.4649,"c":"藍","g":"女","l":22,"p":21},{"id":"22-22","x":-3.6882,"y":-3.3596,"c":"藍","g":"女","l":22,"p":22},{"id":"23-16","x":-3.8202,"y":-3.9396,"c":"藍","g":"女","l":23,"p":16},{"id":"23-17","x":-3.8202,"y":-3.8335,"c":"藍","g":"女","l":23,"p":17},{"id":"23-18","x":-3.8202,"y":-3.7278,"c":"藍","g":"女","l":23,"p":18},{"id":"23-19","x":-3.8202,"y":-3.6232,"c":"藍","g":"女","l":23,"p":19},{"id":"23-20","x":-3.8202,"y":-3.5175,"c":"藍","g":"女","l":23,"p":20},{"id":"23-21","x":-3.8202,"y":-3.4116,"c":"藍","g":"女","l":23,"p":21},{"id":"23-22","x":-3.8202,"y":-3.3067,"c":"藍","g":"女","l":23,"p":22},{"id":"24-16","x":-3.952,"y":-3.8859,"c":"藍","g":"女","l":24,"p":16},{"id":"24-17","x":-3.952,"y":-3.7811,"c":"藍","g":"女","l":24,"p":17},{"id":"24-18","x":-3.952,"y":-3.6754,"c":"藍","g":"女","l":24,"p":18},{"id":"24-19","x":-3.952,"y":-3.5697,"c":"藍","g":"女","l":24,"p":19},{"id":"24-20","x":-3.952,"y":-3.4649,"c":"藍","g":"女","l":24,"p":20},{"id":"24-21","x":-3.952,"y":-3.3594,"c":"藍","g":"女","l":24,"p":21},{"id":"24-22","x":-3.8202,"y":-3.2015,"c":"藍","g":"女","l":24,"p":22},{"id":"25-16","x":-4.4103,"y":-3.0958,"c":"白","g":"女","l":25,"p":16},{"id":"25-17","x":-4.4598,"y":-3.0103,"c":"白","g":"女","l":25,"p":17},{"id":"25-18","x":-4.6536,"y":-3.1221,"c":"白","g":"女","l":25,"p":18},{"id":"25-19","x":-4.7029,"y":-3.0362,"c":"白","g":"女","l":25,"p":19},{"id":"25-20","x":-4.5321,"y":-3.1089,"c":"白","g":"女","l":25,"p":20},{"id":"25-21","x":-4.5814,"y":-3.0235,"c":"白","g":"女","l":25,"p":21},{"id":"25-22","x":-4.6307,"y":-2.9381,"c":"白","g":"女","l":25,"p":22},{"id":"26-16","x":-4.7982,"y":-3.3195,"c":"白","g":"女","l":26,"p":16},{"id":"26-17","x":-4.8477,"y":-3.234,"c":"白","g":"女","l":26,"p":17},{"id":"26-18","x":-4.7259,"y":-3.2207,"c":"白","g":"女","l":26,"p":18},{"id":"26-19","x":-4.7752,"y":-3.1353,"c":"白","g":"女","l":26,"p":19},{"id":"26-20","x":-4.8245,"y":-3.05,"c":"白","g":"女","l":26,"p":20},{"id":"26-21","x":-4.7524,"y":-2.951,"c":"白","g":"女","l":26,"p":21},{"id":"26-22","x":-4.8742,"y":-2.964,"c":"白","g":"女","l":26,"p":22},{"id":"27-16","x":-4.992,"y":-3.4318,"c":"白","g":"女","l":27,"p":16},{"id":"27-17","x":-5.0415,"y":-3.3462,"c":"白","g":"女","l":27,"p":17},{"id":"27-18","x":-4.9199,"y":-3.3328,"c":"白","g":"女","l":27,"p":18},{"id":"27-19","x":-4.9692,"y":-3.2474,"c":"白","g":"女","l":27,"p":19},{"id":"27-20","x":-4.897,"y":-3.1484,"c":"白","g":"女","l":27,"p":20},{"id":"27-21","x":-5.0187,"y":-3.1616,"c":"白","g":"女","l":27,"p":21},{"id":"27-22","x":-4.9465,"y":-3.0628,"c":"白","g":"女","l":27,"p":22},{"id":"28-16","x":-5.1148,"y":-3.464,"c":"藍","g":"女","l":28,"p":16},{"id":"28-17","x":-5.1641,"y":-3.3788,"c":"藍","g":"女","l":28,"p":17},{"id":"28-18","x":-5.2134,"y":-3.2927,"c":"藍","g":"女","l":28,"p":18},{"id":"28-19","x":-5.2629,"y":-3.2077,"c":"藍","g":"女","l":28,"p":19},{"id":"28-20","x":-5.3122,"y":-3.1221,"c":"藍","g":"女","l":28,"p":20},{"id":"28-21","x":-5.3617,"y":-3.0362,"c":"藍","g":"女","l":28,"p":21},{"id":"28-22","x":-5.411,"y":-2.951,"c":"藍","g":"女","l":28,"p":22},{"id":"29-16","x":-5.2364,"y":-3.4772,"c":"藍","g":"女","l":29,"p":16},{"id":"29-17","x":-5.2857,"y":-3.3917,"c":"藍","g":"女","l":29,"p":17},{"id":"29-18","x":-5.3352,"y":-3.3065,"c":"藍","g":"女","l":29,"p":18},{"id":"29-19","x":-5.3845,"y":-3.2207,"c":"藍","g":"女","l":29,"p":19},{"id":"29-20","x":-5.434,"y":-3.1353,"c":"藍","g":"女","l":29,"p":20},{"id":"29-21","x":-5.4833,"y":-3.05,"c":"藍","g":"女","l":29,"p":21},{"id":"29-22","x":-5.5328,"y":-2.964,"c":"藍","g":"女","l":29,"p":22},{"id":"3-16","x":-1.0539,"y":-3.7048,"c":"白","g":"男","l":3,"p":16},{"id":"3-17","x":-1.0539,"y":-3.5923,"c":"白","g":"男","l":3,"p":17},{"id":"3-18","x":-1.0539,"y":-3.4805,"c":"白","g":"男","l":3,"p":18},{"id":"3-19","x":-1.0539,"y":-3.3688,"c":"白","g":"男","l":3,"p":19},{"id":"3-20","x":-1.0539,"y":-3.2562,"c":"白","g":"男","l":3,"p":20},{"id":"3-21","x":-1.0539,"y":-3.1449,"c":"白","g":"男","l":3,"p":21},{"id":"3-22","x":-1.0539,"y":-3.0325,"c":"白","g":"男","l":3,"p":22},{"id":"30-16","x":-5.3087,"y":-3.5762,"c":"藍","g":"女","l":30,"p":16},{"id":"30-17","x":-5.358,"y":-3.4908,"c":"藍","g":"女","l":30,"p":17},{"id":"30-18","x":-5.4075,"y":-3.4051,"c":"藍","g":"女","l":30,"p":18},{"id":"30-19","x":-5.4567,"y":-3.3195,"c":"藍","g":"女","l":30,"p":19},{"id":"30-20","x":-5.5063,"y":-3.234,"c":"藍","g":"女","l":30,"p":20},{"id":"30-21","x":-5.5555,"y":-3.1484,"c":"藍","g":"女","l":30,"p":21},{"id":"30-22","x":-5.605,"y":-3.0628,"c":"藍","g":"女","l":30,"p":22},{"id":"31-16","x":-5.52,"y":-3.4511,"c":"白","g":"女","l":31,"p":16},{"id":"31-17","x":-5.5693,"y":-3.3658,"c":"白","g":"女","l":31,"p":17},{"id":"31-18","x":-5.6188,"y":-3.28,"c":"白","g":"女","l":31,"p":18},{"id":"31-19","x":-5.6681,"y":-3.1944,"c":"白","g":"女","l":31,"p":19},{"id":"31-20","x":-5.7176,"y":-3.1087,"c":"白","g":"女","l":31,"p":20},{"id":"31-21","x":-5.7669,"y":-3.0233,"c":"白","g":"女","l":31,"p":21},{"id":"31-22","x":-5.8162,"y":-2.9372,"c":"白","g":"女","l":31,"p":22},{"id":"32-16","x":-5.6416,"y":-3.4649,"c":"白","g":"女","l":32,"p":16},{"id":"32-17","x":-5.6909,"y":-3.3788,"c":"白","g":"女","l":32,"p":17},{"id":"32-18","x":-5.7404,"y":-3.2932,"c":"白","g":"女","l":32,"p":18},{"id":"32-19","x":-5.7897,"y":-3.2075,"c":"白","g":"女","l":32,"p":19},{"id":"32-20","x":-5.8392,"y":-3.1219,"c":"白","g":"女","l":32,"p":20},{"id":"32-21","x":-5.8885,"y":-3.0365,"c":"白","g":"女","l":32,"p":21},{"id":"32-22","x":-5.938,"y":-2.9508,"c":"白","g":"女","l":32,"p":22},{"id":"33-16","x":-5.7632,"y":-3.4778,"c":"白","g":"女","l":33,"p":16},{"id":"33-17","x":-5.8127,"y":-3.392,"c":"白","g":"女","l":33,"p":17},{"id":"33-18","x":-5.862,"y":-3.3065,"c":"白","g":"女","l":33,"p":18},{"id":"33-19","x":-5.9115,"y":-3.2209,"c":"白","g":"女","l":33,"p":19},{"id":"33-20","x":-5.9608,"y":-3.1353,"c":"白","g":"女","l":33,"p":20},{"id":"33-21","x":-6.0103,"y":-3.0496,"c":"白","g":"女","l":33,"p":21},{"id":"33-22","x":-6.0598,"y":-2.9644,"c":"白","g":"女","l":33,"p":22},{"id":"34-16","x":-6.2014,"y":-3.3721,"c":"藍","g":"女","l":34,"p":16},{"id":"34-17","x":-6.2509,"y":-3.2867,"c":"藍","g":"女","l":34,"p":17},{"id":"34-18","x":-6.3004,"y":-3.2008,"c":"藍","g":"女","l":34,"p":18},{"id":"34-19","x":-6.3497,"y":-3.1156,"c":"藍","g":"女","l":34,"p":19},{"id":"34-20","x":-6.399,"y":-3.03,"c":"藍","g":"女","l":34,"p":20},{"id":"34-21","x":-6.4483,"y":-2.9443,"c":"藍","g":"女","l":34,"p":21},{"id":"34-22","x":-6.498,"y":-2.8587,"c":"藍","g":"女","l":34,"p":22},{"id":"35-16","x":-6.3229,"y":-3.3851,"c":"藍","g":"女","l":35,"p":16},{"id":"35-17","x":-6.3727,"y":-3.2994,"c":"藍","g":"女","l":35,"p":17},{"id":"35-18","x":-6.4217,"y":-3.2142,"c":"藍","g":"女","l":35,"p":18},{"id":"35-19","x":-6.4712,"y":-3.1286,"c":"藍","g":"女","l":35,"p":19},{"id":"35-20","x":-6.5205,"y":-3.0431,"c":"藍","g":"女","l":35,"p":20},{"id":"35-21","x":-6.5471,"y":-2.7733,"c":"藍","g":"女","l":35,"p":21},{"id":"35-22","x":-6.5966,"y":-2.6874,"c":"藍","g":"女","l":35,"p":22},{"id":"36-16","x":-6.3954,"y":-3.4837,"c":"藍","g":"女","l":36,"p":16},{"id":"36-17","x":-6.4449,"y":-3.3984,"c":"藍","g":"女","l":36,"p":17},{"id":"36-18","x":-6.4942,"y":-3.3128,"c":"藍","g":"女","l":36,"p":18},{"id":"36-19","x":-6.5702,"y":-2.9573,"c":"藍","g":"女","l":36,"p":19},{"id":"36-20","x":-6.6195,"y":-2.8719,"c":"藍","g":"女","l":36,"p":20},{"id":"36-21","x":-6.6688,"y":-2.7862,"c":"藍","g":"女","l":36,"p":21},{"id":"36-22","x":-6.7183,"y":-2.7008,"c":"藍","g":"女","l":36,"p":22},{"id":"37-16","x":-6.0067,"y":-3.5037,"c":"白","g":"女","l":37,"p":16},{"id":"37-17","x":-5.8849,"y":-3.4908,"c":"白","g":"女","l":37,"p":17},{"id":"37-18","x":-5.9344,"y":-3.4051,"c":"白","g":"女","l":37,"p":18},{"id":"37-19","x":-5.9837,"y":-3.3193,"c":"白","g":"女","l":37,"p":19},{"id":"37-20","x":-6.033,"y":-3.2343,"c":"白","g":"女","l":37,"p":20},{"id":"37-21","x":-6.0825,"y":-3.1484,"c":"白","g":"女","l":37,"p":21},{"id":"37-22","x":-6.132,"y":-3.063,"c":"白","g":"女","l":37,"p":22},{"id":"38-16","x":-6.5638,"y":-3.4646,"c":"白","g":"女","l":38,"p":16},{"id":"38-17","x":-6.6133,"y":-3.3788,"c":"白","g":"女","l":38,"p":17},{"id":"38-18","x":-6.6626,"y":-3.2934,"c":"白","g":"女","l":38,"p":18},{"id":"38-19","x":-6.056,"y":-3.4181,"c":"白","g":"女","l":38,"p":19},{"id":"38-20","x":-6.1055,"y":-3.3328,"c":"白","g":"女","l":38,"p":20},{"id":"38-21","x":-6.1548,"y":-3.2468,"c":"白","g":"女","l":38,"p":21},{"id":"38-22","x":-6.2043,"y":-3.1618,"c":"白","g":"女","l":38,"p":22},{"id":"39-16","x":-6.6855,"y":-3.4778,"c":"白","g":"女","l":39,"p":16},{"id":"39-17","x":-6.7348,"y":-3.3922,"c":"白","g":"女","l":39,"p":17},{"id":"39-18","x":-6.7841,"y":-3.3065,"c":"白","g":"女","l":39,"p":18},{"id":"39-19","x":-6.7119,"y":-3.2075,"c":"白","g":"女","l":39,"p":19},{"id":"39-20","x":-6.7614,"y":-3.1219,"c":"白","g":"女","l":39,"p":20},{"id":"39-21","x":-6.8109,"y":-3.0362,"c":"白","g":"女","l":39,"p":21},{"id":"39-22","x":-6.8602,"y":-2.9508,"c":"白","g":"女","l":39,"p":22},{"id":"4-16","x":-1.1859,"y":-3.6432,"c":"藍","g":"男","l":4,"p":16},{"id":"4-17","x":-1.1859,"y":-3.5315,"c":"藍","g":"男","l":4,"p":17},{"id":"4-18","x":-1.1859,"y":-3.4193,"c":"藍","g":"男","l":4,"p":18},{"id":"4-19","x":-1.1855,"y":-3.3074,"c":"藍","g":"男","l":4,"p":19},{"id":"4-20","x":-1.1859,"y":-3.196,"c":"藍","g":"男","l":4,"p":20},{"id":"4-21","x":-1.1859,"y":-3.083,"c":"藍","g":"男","l":4,"p":21},{"id":"4-22","x":-1.1857,"y":-2.9715,"c":"藍","g":"男","l":4,"p":22},{"id":"40-16","x":-7.1388,"y":-3.0956,"c":"藍","g":"女","l":40,"p":16},{"id":"40-17","x":-6.5437,"y":-3.2272,"c":"藍","g":"女","l":40,"p":17},{"id":"40-18","x":-6.593,"y":-3.1417,"c":"藍","g":"女","l":40,"p":18},{"id":"40-19","x":-6.6425,"y":-3.0557,"c":"藍","g":"女","l":40,"p":19},{"id":"40-20","x":-6.6918,"y":-2.9704,"c":"藍","g":"女","l":40,"p":20},{"id":"40-21","x":-6.7413,"y":-2.8846,"c":"藍","g":"女","l":40,"p":21},{"id":"40-22","x":-6.7906,"y":-2.7994,"c":"藍","g":"女","l":40,"p":22},{"id":"41-16","x":-7.1881,"y":-3.0099,"c":"藍","g":"女","l":41,"p":16},{"id":"41-17","x":-7.2374,"y":-2.9243,"c":"藍","g":"女","l":41,"p":17},{"id":"41-18","x":-7.2869,"y":-2.8387,"c":"藍","g":"女","l":41,"p":18},{"id":"41-19","x":-7.3364,"y":-2.753,"c":"藍","g":"女","l":41,"p":19},{"id":"41-20","x":-7.3857,"y":-2.6672,"c":"藍","g":"女","l":41,"p":20},{"id":"41-21","x":-7.435,"y":-2.5817,"c":"藍","g":"女","l":41,"p":21},{"id":"41-22","x":-7.5624,"y":-2.5989,"c":"藍","g":"女","l":41,"p":22},{"id":"42-16","x":-7.2167,"y":-3.1975,"c":"藍","g":"女","l":42,"p":16},{"id":"42-17","x":-7.2662,"y":-3.1116,"c":"藍","g":"女","l":42,"p":17},{"id":"42-18","x":-7.3155,"y":-3.0264,"c":"藍","g":"女","l":42,"p":18},{"id":"42-19","x":-7.3648,"y":-2.9406,"c":"藍","g":"女","l":42,"p":19},{"id":"42-20","x":-7.4143,"y":-2.8554,"c":"藍","g":"女","l":42,"p":20},{"id":"42-21","x":-7.4636,"y":-2.7697,"c":"藍","g":"女","l":42,"p":21},{"id":"42-22","x":-7.5131,"y":-2.6841,"c":"藍","g":"女","l":42,"p":22},{"id":"43-16","x":-6.7576,"y":-3.5768,"c":"白","g":"女","l":43,"p":16},{"id":"43-17","x":-6.8071,"y":-3.491,"c":"白","g":"女","l":43,"p":17},{"id":"43-18","x":-6.8564,"y":-3.4055,"c":"白","g":"女","l":43,"p":18},{"id":"43-19","x":-6.8336,"y":-3.2209,"c":"白","g":"女","l":43,"p":19},{"id":"43-20","x":-6.8829,"y":-3.1353,"c":"白","g":"女","l":43,"p":20},{"id":"43-21","x":-6.9324,"y":-3.0496,"c":"白","g":"女","l":43,"p":21},{"id":"43-22","x":-6.9817,"y":-2.964,"c":"白","g":"女","l":43,"p":22},{"id":"44-16","x":-7.6821,"y":-3.3656,"c":"白","g":"女","l":44,"p":16},{"id":"44-17","x":-7.7316,"y":-3.28,"c":"白","g":"女","l":44,"p":17},{"id":"44-18","x":-7.7809,"y":-3.1946,"c":"白","g":"女","l":44,"p":18},{"id":"44-19","x":-6.9059,"y":-3.3195,"c":"白","g":"女","l":44,"p":19},{"id":"44-20","x":-6.955,"y":-3.2343,"c":"白","g":"女","l":44,"p":20},{"id":"44-21","x":-7.0047,"y":-3.1484,"c":"白","g":"女","l":44,"p":21},{"id":"44-22","x":-7.054,"y":-3.063,"c":"白","g":"女","l":44,"p":22},{"id":"45-16","x":-7.5831,"y":-3.5367,"c":"白","g":"女","l":45,"p":16},{"id":"45-17","x":-7.6326,"y":-3.4513,"c":"白","g":"女","l":45,"p":17},{"id":"45-18","x":-7.7107,"y":-3.5534,"c":"白","g":"女","l":45,"p":18},{"id":"45-19","x":-7.76,"y":-3.468,"c":"白","g":"女","l":45,"p":19},{"id":"45-20","x":-7.8095,"y":-3.3821,"c":"白","g":"女","l":45,"p":20},{"id":"45-21","x":-7.8588,"y":-3.2969,"c":"白","g":"女","l":45,"p":21},{"id":"45-22","x":-7.9083,"y":-3.2111,"c":"白","g":"女","l":45,"p":22},{"id":"46-16","x":-7.3934,"y":-3.1288,"c":"藍","g":"女","l":46,"p":16},{"id":"46-17","x":-7.4429,"y":-3.0433,"c":"藍","g":"女","l":46,"p":17},{"id":"46-18","x":-7.4922,"y":-2.9581,"c":"藍","g":"女","l":46,"p":18},{"id":"46-19","x":-7.5415,"y":-2.8721,"c":"藍","g":"女","l":46,"p":19},{"id":"46-20","x":-7.591,"y":-2.7862,"c":"藍","g":"女","l":46,"p":20},{"id":"46-21","x":-7.6405,"y":-2.7008,"c":"藍","g":"女","l":46,"p":21},{"id":"46-22","x":-7.6898,"y":-2.6152,"c":"藍","g":"女","l":46,"p":22},{"id":"47-16","x":-7.4713,"y":-3.2305,"c":"藍","g":"女","l":47,"p":16},{"id":"47-17","x":-7.5208,"y":-3.1449,"c":"藍","g":"女","l":47,"p":17},{"id":"47-18","x":-7.5703,"y":-3.0592,"c":"藍","g":"女","l":47,"p":18},{"id":"47-19","x":-7.6196,"y":-2.9736,"c":"藍","g":"女","l":47,"p":19},{"id":"47-20","x":-7.6689,"y":-2.8882,"c":"藍","g":"女","l":47,"p":20},{"id":"47-21","x":-7.7184,"y":-2.8021,"c":"藍","g":"女","l":47,"p":21},{"id":"47-22","x":-7.7679,"y":-2.7171,"c":"藍","g":"女","l":47,"p":22},{"id":"48-16","x":-7.5494,"y":-3.3322,"c":"藍","g":"女","l":48,"p":16},{"id":"48-17","x":-7.5987,"y":-3.2466,"c":"藍","g":"女","l":48,"p":17},{"id":"48-18","x":-7.6482,"y":-3.1614,"c":"藍","g":"女","l":48,"p":18},{"id":"48-19","x":-7.6975,"y":-3.0755,"c":"藍","g":"女","l":48,"p":19},{"id":"48-20","x":-7.747,"y":-2.9903,"c":"藍","g":"女","l":48,"p":20},{"id":"48-21","x":-7.7963,"y":-2.9047,"c":"藍","g":"女","l":48,"p":21},{"id":"48-22","x":-7.8458,"y":-2.819,"c":"藍","g":"女","l":48,"p":22},{"id":"49-16","x":-7.7391,"y":-3.741,"c":"白","g":"男","l":49,"p":16},{"id":"49-17","x":-7.7886,"y":-3.6553,"c":"白","g":"男","l":49,"p":17},{"id":"49-18","x":-7.8379,"y":-3.5699,"c":"白","g":"男","l":49,"p":18},{"id":"49-19","x":-7.8874,"y":-3.4841,"c":"白","g":"男","l":49,"p":19},{"id":"49-20","x":-7.9367,"y":-3.3988,"c":"白","g":"男","l":49,"p":20},{"id":"49-21","x":-7.9864,"y":-3.313,"c":"白","g":"男","l":49,"p":21},{"id":"49-22","x":-8.0357,"y":-3.228,"c":"白","g":"男","l":49,"p":22},{"id":"5-16","x":-1.3175,"y":-3.5822,"c":"藍","g":"男","l":5,"p":16},{"id":"5-17","x":-1.3175,"y":-3.4701,"c":"藍","g":"男","l":5,"p":17},{"id":"5-18","x":-1.3175,"y":-3.3579,"c":"藍","g":"男","l":5,"p":18},{"id":"5-19","x":-1.3175,"y":-3.2464,"c":"藍","g":"男","l":5,"p":19},{"id":"5-20","x":-1.3175,"y":-3.1338,"c":"藍","g":"男","l":5,"p":20},{"id":"5-21","x":-1.3175,"y":-3.0225,"c":"藍","g":"男","l":5,"p":21},{"id":"5-22","x":-1.3175,"y":-2.9099,"c":"藍","g":"男","l":5,"p":22},{"id":"50-16","x":-7.817,"y":-3.8431,"c":"白","g":"男","l":50,"p":16},{"id":"50-17","x":-7.8665,"y":-3.7573,"c":"白","g":"男","l":50,"p":17},{"id":"50-18","x":-7.916,"y":-3.6716,"c":"白","g":"男","l":50,"p":18},{"id":"50-19","x":-7.9655,"y":-3.5864,"c":"白","g":"男","l":50,"p":19},{"id":"50-20","x":-8.0148,"y":-3.5008,"c":"白","g":"男","l":50,"p":20},{"id":"50-21","x":-8.0643,"y":-3.4151,"c":"白","g":"男","l":50,"p":21},{"id":"50-22","x":-8.1136,"y":-3.3297,"c":"白","g":"男","l":50,"p":22},{"id":"51-16","x":-7.9446,"y":-3.8596,"c":"白","g":"男","l":51,"p":16},{"id":"51-17","x":-7.9939,"y":-3.7742,"c":"白","g":"男","l":51,"p":17},{"id":"51-18","x":-8.0434,"y":-3.6883,"c":"白","g":"男","l":51,"p":18},{"id":"51-19","x":-8.0927,"y":-3.6029,"c":"白","g":"男","l":51,"p":19},{"id":"51-20","x":-8.1422,"y":-3.5173,"c":"白","g":"男","l":51,"p":20},{"id":"51-21","x":-8.1915,"y":-3.4318,"c":"白","g":"男","l":51,"p":21},{"id":"52-16","x":-8.3085,"y":-3.5359,"c":"藍","g":"男","l":52,"p":16},{"id":"52-17","x":-8.358,"y":-3.45,"c":"藍","g":"男","l":52,"p":17},{"id":"52-18","x":-8.4073,"y":-3.3646,"c":"藍","g":"男","l":52,"p":18},{"id":"52-19","x":-8.4568,"y":-3.279,"c":"藍","g":"男","l":52,"p":19},{"id":"52-20","x":-8.5955,"y":-3.3023,"c":"藍","g":"男","l":52,"p":20},{"id":"53-16","x":-8.4472,"y":-3.5591,"c":"藍","g":"男","l":53,"p":16},{"id":"53-17","x":-8.4965,"y":-3.4736,"c":"藍","g":"男","l":53,"p":17},{"id":"53-18","x":-8.5462,"y":-3.3878,"c":"藍","g":"男","l":53,"p":18},{"id":"53-19","x":-8.6849,"y":-3.411,"c":"藍","g":"男","l":53,"p":19},{"id":"54-16","x":-8.5366,"y":-3.6681,"c":"藍","g":"男","l":54,"p":16},{"id":"54-17","x":-8.5861,"y":-3.5822,"c":"藍","g":"男","l":54,"p":17},{"id":"54-18","x":-8.6356,"y":-3.4966,"c":"藍","g":"男","l":54,"p":18},{"id":"6-16","x":-1.4491,"y":-3.643,"c":"藍","g":"男","l":6,"p":16},{"id":"6-17","x":-1.4491,"y":-3.5315,"c":"藍","g":"男","l":6,"p":17},{"id":"6-18","x":-1.4491,"y":-3.4193,"c":"藍","g":"男","l":6,"p":18},{"id":"6-19","x":-1.4491,"y":-3.3074,"c":"藍","g":"男","l":6,"p":19},{"id":"6-20","x":-1.4491,"y":-3.1958,"c":"藍","g":"男","l":6,"p":20},{"id":"6-21","x":-1.4491,"y":-3.0832,"c":"藍","g":"男","l":6,"p":21},{"id":"6-22","x":-1.4491,"y":-2.9719,"c":"藍","g":"男","l":6,"p":22},{"id":"7-16","x":-1.5809,"y":-3.7044,"c":"白","g":"女","l":7,"p":16},{"id":"7-17","x":-1.5809,"y":-3.5925,"c":"白","g":"女","l":7,"p":17},{"id":"7-18","x":-1.5809,"y":-3.4805,"c":"白","g":"女","l":7,"p":18},{"id":"7-19","x":-1.5809,"y":-3.3686,"c":"白","g":"女","l":7,"p":19},{"id":"7-20","x":-1.5809,"y":-3.2566,"c":"白","g":"女","l":7,"p":20},{"id":"7-21","x":-1.5809,"y":-3.1444,"c":"白","g":"女","l":7,"p":21},{"id":"7-22","x":-1.5809,"y":-3.0327,"c":"白","g":"女","l":7,"p":22},{"id":"8-16","x":-1.7123,"y":-3.766,"c":"白","g":"女","l":8,"p":16},{"id":"8-17","x":-1.7125,"y":-3.6537,"c":"白","g":"女","l":8,"p":17},{"id":"8-18","x":-1.7123,"y":-3.5419,"c":"白","g":"女","l":8,"p":18},{"id":"8-19","x":-1.7125,"y":-3.4298,"c":"白","g":"女","l":8,"p":19},{"id":"8-20","x":-1.7123,"y":-3.3178,"c":"白","g":"女","l":8,"p":20},{"id":"8-21","x":-1.7123,"y":-3.2061,"c":"白","g":"女","l":8,"p":21},{"id":"8-22","x":-1.7123,"y":-3.0939,"c":"白","g":"女","l":8,"p":22},{"id":"9-16","x":-1.8443,"y":-3.8268,"c":"白","g":"女","l":9,"p":16},{"id":"9-17","x":-1.8443,"y":-3.7151,"c":"白","g":"女","l":9,"p":17},{"id":"9-18","x":-1.8443,"y":-3.6031,"c":"白","g":"女","l":9,"p":18},{"id":"9-19","x":-1.8443,"y":-3.491,"c":"白","g":"女","l":9,"p":19},{"id":"9-20","x":-1.8443,"y":-3.3792,"c":"白","g":"女","l":9,"p":20},{"id":"9-21","x":-1.8443,"y":-3.267,"c":"白","g":"女","l":9,"p":21},{"id":"9-22","x":-1.8443,"y":-3.1555,"c":"白","g":"女","l":9,"p":22}],"counts":{"total":368,"white":188,"blue":180},"days":[{"label":"11/12（四）","sub":"全區共同場","branch":"46"},{"label":"11/13（五）","sub":"安平聯區＋大橋","branch":"57"},{"label":"11/14（六）","sub":"佳里聯區","branch":"46"},{"label":"11/15（日）","sub":"仁德聯區","branch":"57"}],"formation":{"sceneCode":"02","sceneName":"行願千手","seqLabel":"第 3 段","note":"行願千手隊形座標（場景 02），不是基本座位格。票面仍是列-排；圖上相鄰編號可不連續。站／跪不是排號規則，是企劃點選後的版本名。"}};
+const SEGS = [
+  {k:"序", note:"分波開黃燈"},
+  {k:"太子", note:"白／藍動作不同"},
+  {k:"老苦", note:"有示範影片"},
+  {k:"病苦", note:"白／藍高跪"},
+  {k:"死苦", note:"拍點"},
+  {k:"六度", note:"白左藍右"},
+  {k:"行願", note:"海浪四種人", focus:true},
+  {k:"開經偈", note:"千手／蓮花池"},
+  {k:"米籮", note:"西班、排跪"},
+  {k:"靜思家風", note:"四天相同"},
+  {k:"一盞燈", note:"船／浪／藍衣"},
+  {k:"五角錢", note:"四六／五日不同", branch:true},
+  {k:"圍爐", note:"結尾日別", branch:true},
+];
+
+let role = "planner";
+let activeV = "ws";
+let meIdx = SEGS.findIndex(s => s.k === "行願");
+let panel = "content";
+
+const $ = id => document.getElementById(id);
+const fmt = t => {
+  if (!isFinite(t)) return "—";
+  const m = Math.floor(t/60), s = Math.floor(t%60);
+  return m + ":" + String(s).padStart(2,"0");
+};
+
+function setRole(r) {
+  role = r;
+  document.body.className = "r-" + r;
+  $("role").value = r;
+  $("adminNote").style.display = r === "admin" ? "block" : "none";
+  if (r === "member" || r === "none") {
+    show("me");
+    $("phone").classList.toggle("hidden", r === "none");
+    $("noSeat").classList.toggle("hidden", r !== "none");
+    $("meSeat").textContent = r === "none"
+      ? "尚未配位"
+      : "座位 8-18 · 白衣 · 女 · 命中版本「白衣 · 站」（依隊形圖點選結果）";
+  } else {
+    // 企劃預設進編輯；行政也可看編輯（唯讀）
+    if (!$("v-edit").classList.contains("on") && !$("v-days").classList.contains("on") && !$("v-pub").classList.contains("on")) {
+      show("edit");
+    } else if ($("v-me").classList.contains("on")) {
+      show("edit");
     }
-    document.querySelectorAll('[data-person-state]').forEach(button => button.addEventListener('click', () => {
-      document.querySelectorAll('[data-person-state]').forEach(item => item.classList.toggle('active', item === button));
-      renderPersonal(button.dataset.personState);
-    }));
-    personalResult.addEventListener('click', event => {
-      const toggle = event.target.closest('#autoContinue');
-      if (toggle) {
-        autoContinueEnabled = !autoContinueEnabled;
-        try { localStorage.setItem('flow-auto-continue', String(autoContinueEnabled)); } catch {}
-        toggle.setAttribute('aria-checked', String(autoContinueEnabled));
-        toggle.setAttribute('aria-pressed', String(autoContinueEnabled));
-        document.getElementById('autoContinueCopy').textContent = `${autoContinueEnabled ? '開啟' : '關閉'} · 此裝置偏好，不影響編排與發布`;
+  }
+  document.querySelectorAll("#v-edit input, #v-edit select, #v-edit textarea").forEach(el => {
+    el.disabled = r === "admin";
+  });
+}
+
+function show(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + name));
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.getAttribute("data-v") === name));
+  if (name === "edit") {
+    loadMedia();
+    renderWho();
+    if (panel === "look") renderMap();
+  }
+  if (name === "me") renderMe();
+  if (name === "pub") renderPub();
+  if (name === "days") renderDays();
+}
+
+function setPanel(name) {
+  panel = name;
+  document.querySelectorAll(".edit-tabs button").forEach(b => b.classList.toggle("on", b.getAttribute("data-panel") === name));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "p-" + name));
+  if (name === "look") renderMap();
+  if (name === "who") renderWho();
+}
+
+function loadMedia() {
+  const m = DATA.media["行願"];
+  $("aud").src = m.audio;
+  $("demoVidFile").href = m.video;
+  const v = DATA.variants.find(x => x.id === activeV) || DATA.variants[0];
+  $("heroTeach").src = v.png;
+  $("demoA").href = v.demo || m.demo;
+  $("playerLabel").textContent = "正在聽：行願 · " + v.name;
+  const tick = () => {
+    const d = $("aud").duration;
+    const t = $("aud").currentTime || 0;
+    $("clock").textContent = isFinite(d) ? (fmt(t) + " / " + fmt(d)) : "讀取長度…";
+  };
+  ["loadedmetadata","timeupdate"].forEach(ev => $("aud").addEventListener(ev, tick));
+}
+
+function renderDays() {
+  $("mTot").textContent = DATA.counts.total;
+  $("mW").textContent = DATA.counts.white;
+  $("mB").textContent = DATA.counts.blue;
+  $("thead").innerHTML = `<tr><th class="ord">#</th>${DATA.days.map(d=>`<th>${d.label}<div style="font-weight:500;color:var(--ink3)">${d.sub}</div></th>`).join("")}</tr>`;
+  $("tbody").innerHTML = "";
+  SEGS.forEach((seg, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="ord">${i+1}</td>`;
+    DATA.days.forEach(day => {
+      const td = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "scell" + (seg.focus ? " pick" : "") + (seg.branch ? " branch" : "");
+      const title = DATA.media[seg.k].title;
+      if (!seg.branch) {
+        btn.innerHTML = `<b>${title}</b><small>${seg.note}</small><span class="chip">四天共用</span>`;
+      } else if (seg.k === "五角錢") {
+        btn.innerHTML = day.branch==="46"
+          ? `<b>${title}</b><small>四／六：台詞後不動</small><span class="chip warn">這天特別</span>`
+          : `<b>${title}</b><small>五／日：等口令再接 ending</small><span class="chip warn">這天特別</span>`;
+      } else {
+        btn.innerHTML = day.branch==="46"
+          ? `<b>${title}</b><small>四／六：普明寺文案</small><span class="chip warn">這天特別</span>`
+          : `<b>${title}</b><small>五／日：菩薩道 ending</small><span class="chip warn">這天特別</span>`;
       }
-      const nav = event.target.closest('[data-practice-nav]');
-      if (nav) {
-        const target = practiceSegments[currentPracticeSegment][nav.dataset.practiceNav];
-        if (target) { currentPracticeSegment = target; renderPersonal(currentPersonalState); }
-      }
+      if (seg.focus) btn.addEventListener("click", () => show("edit"));
+      td.appendChild(btn);
+      tr.appendChild(td);
     });
-    renderPersonal('ab');
-  </script>
+    $("tbody").appendChild(tr);
+  });
+  $("thumbs").innerHTML = ["序","老苦","行願","米籮","靜思家風","一盞燈","五角錢","圍爐"].map(k => {
+    const m = DATA.media[k];
+    return `<figure><img src="${m.png}" alt="${m.title}" loading="lazy"><figcaption>${m.title}</figcaption></figure>`;
+  }).join("");
+}
+
+function renderWho() {
+  $("whoGrid").innerHTML = DATA.variants.map(v => `
+    <button type="button" class="who-card ${v.id===activeV?"on":""}" data-id="${v.id}">
+      <img src="${v.png}" alt="${v.name}" loading="lazy">
+      <div class="body">
+        <b>${v.name}</b>
+        <span class="count">${v.count} 席</span>
+        <small>${v.who}</small>
+        <small>${v.how}</small>
+        <small>${v.rule}</small>
+      </div>
+    </button>
+  `).join("");
+  $("whoGrid").querySelectorAll(".who-card").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (role === "admin") return;
+      activeV = btn.getAttribute("data-id");
+      renderWho();
+      loadMedia();
+      if (panel === "look") renderMap();
+    });
+  });
+  const v = DATA.variants.find(x => x.id === activeV);
+  $("whoDetail").innerHTML = `
+    <b style="font-size:18px">${v.name}</b>
+    <p class="sub">選中後，<strong>被點進此版本</strong>的座位會看到下面動作與教材。站／跪不是自動算的。</p>
+    <div class="content-blocks">
+      <div class="block"><h3>動作</h3><p>${v.action}</p></div>
+      <div class="block"><h3>面向</h3><p>${v.facing}</p></div>
+      <div class="block"><h3>教材圖</h3><img src="${v.png}" alt="" style="max-width:100%;border-radius:12px;border:1px solid var(--line)"></div>
+      <div class="block"><h3>示範影片</h3><p><a href="${v.demo}" target="_blank" rel="noreferrer">打開示範</a></p></div>
+      <div class="block"><h3>座位例子</h3><p>${v.sample.join("、")}…（共 ${v.count} 席）</p></div>
+    </div>
+  `;
+  $("fActDefault").value = "沒分到四種版本時看這裡；本節多數人應落在白站／白跪／藍站／藍跪之一。";
+}
+
+function renderMap() {
+  const canvas = $("formCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = 720, H = 440;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = "100%";
+  canvas.style.maxWidth = W + "px";
+  canvas.style.height = "auto";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // 底
+  ctx.fillStyle = "#0f1419";
+  ctx.fillRect(0, 0, W, H);
+
+  const pts = DATA.seats;
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+  const minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+  const padL = 36, padR = 16, padT = 36, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  // 等比縮放（像 /me/flow 走位圖），避免拉成座位格
+  const s = Math.min(plotW / (maxX - minX || 1), plotH / (maxY - minY || 1));
+  const ox = padL + (plotW - (maxX - minX) * s) / 2;
+  const oy = padT + (plotH - (maxY - minY) * s) / 2;
+  // fy 大 → 畫面上方（舞台方向）
+  const toXY = (p) => ({
+    X: ox + (p.x - minX) * s,
+    Y: oy + (maxY - p.y) * s,
+  });
+
+  const owner = new Map();
+  for (const [vid, keys] of Object.entries(DATA.variantKeys)) {
+    for (const k of keys) owner.set(k, vid);
+  }
+
+  ctx.fillStyle = "#8a9aaa";
+  ctx.font = "600 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("舞台方向 ↑　行願千手隊形 · 亮點＝此版本已點選的座位", W / 2, 22);
+
+  const projected = pts.map(p => {
+    const { X, Y } = toXY(p);
+    return { ...p, X, Y, o: owner.get(p.id) || null };
+  });
+
+  // 先畫未選中（半透明），再畫選中
+  const paint = (p, hit) => {
+    ctx.beginPath();
+    ctx.arc(p.X, p.Y, hit ? 6 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = p.c === "白" ? "#e8e6df" : "#4f8fd4";
+    ctx.globalAlpha = hit ? 1 : 0.35;
+    ctx.fill();
+    if (hit) {
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#5eb0ff";
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  };
+  projected.filter(p => p.o !== activeV).forEach(p => paint(p, false));
+  projected.filter(p => p.o === activeV).forEach(p => paint(p, true));
+
+  // 在選中版本裡抽樣標幾個票面編號，讓企劃看到「編號不連續」
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#cfe6ff";
+  const hits = projected.filter(p => p.o === activeV);
+  const samples = [0, Math.floor(hits.length/4), Math.floor(hits.length/2), Math.floor(hits.length*3/4), hits.length-1]
+    .filter((i, idx, a) => i >= 0 && i < hits.length && a.indexOf(i) === idx)
+    .map(i => hits[i]);
+  samples.forEach(p => {
+    ctx.fillText(p.id, p.X + 7, p.Y + 3);
+  });
+
+  canvas._proj = projected;
+  if (!canvas._bound) {
+    canvas._bound = true;
+    canvas.addEventListener("mousemove", (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width, scaleY = H / rect.height;
+      const mx = (ev.clientX - rect.left) * scaleX;
+      const my = (ev.clientY - rect.top) * scaleY;
+      let best = null, bestD = 14;
+      for (const p of (canvas._proj || [])) {
+        const d = Math.hypot(p.X - mx, p.Y - my);
+        if (d < bestD) { bestD = d; best = p; }
+      }
+      const el = $("hoverLabel");
+      if (!best) { el.textContent = "把游標移到點上可看票面編號（列-排）"; return; }
+      const vname = DATA.variants.find(v => v.id === best.o)?.name || "（未分版本）";
+      el.textContent = `票面 ${best.id} · ${best.c}衣 · ${best.g} · ${vname}　← 編號是座位碼，位置在行願隊形上`;
+    });
+  }
+
+  const v = DATA.variants.find(x => x.id === activeV);
+  $("legend").innerHTML = `
+    <span><i style="background:#e8e6df"></i>白衣</span>
+    <span><i style="background:#4f8fd4"></i>藍衣</span>
+    <span><i style="background:#5eb0ff"></i>亮圈＝${v.name}</span>
+    <span>號碼＝票面列-排（圖上可不連續）· 站跪≠排號</span>
+  `;
+  // 找空間上相鄰但編號差很遠的例子（給企劃看）
+  let gapExample = "";
+  const hits2 = projected.filter(p => p.o === activeV);
+  outer: for (let i = 0; i < hits2.length; i++) {
+    for (let j = i + 1; j < hits2.length; j++) {
+      const a = hits2[i], b = hits2[j];
+      const dist = Math.hypot(a.X - b.X, a.Y - b.Y);
+      const lieGap = Math.abs(a.l - b.l);
+      if (dist < 18 && lieGap >= 6) {
+        gapExample = `例如圖上很近的 ${a.id} 與 ${b.id}，列號卻差 ${lieGap}`;
+        break outer;
+      }
+    }
+  }
+  $("sideSum").innerHTML = `
+    <div class="chip">隊形：行願千手（第 3 段 · 02）</div>
+    <div><b>${v.name}</b></div>
+    <div class="big">${v.count} 席已點</div>
+    <div style="color:var(--ink3)">${v.how}</div>
+    <div style="color:var(--ink3)">${v.rule}</div>
+    <div style="color:var(--ink2)">${v.action}</div>
+    <img src="${v.png}" alt="${v.name}教材">
+    <a class="btn" href="${v.demo}" target="_blank" rel="noreferrer" style="text-align:center;text-decoration:none">看這個版本的示範</a>
+    <div class="chip ok">四種已點合計 ${DATA.variants.reduce((a,x)=>a+x.count,0)} 席（須互斥）</div>
+    <p class="sub" style="margin:0">票面例子：${v.sample.join("、")}…</p>
+    ${gapExample ? `<p class="sub" style="margin:0;color:var(--warn)">${gapExample}（說明編號在隊形上可不連續）</p>` : ""}
+    <p class="sub" style="margin:0">正式產品：企劃在此圖點選／取消座位；原型亮點僅為範例集合。</p>
+  `;
+}
+
+function renderPub() {
+  const rows = [
+    ["好", "11 首有啟用，順序沒衝突"],
+    ["好", "行願的歌檔可以播放，長度正常"],
+    ["好", "「海浪」小節已填開始與結束時間"],
+    ["好", `四種人座位不重疊：${DATA.variants.map(v=>v.name+v.count).join("、")}`],
+    ["好", "走位圖對應仍有效"],
+    ["注意", "C 組若只發文字可以；若要走位圖需另處理"],
+  ];
+  $("checks").innerHTML = rows.map(([st,t]) => `
+    <div class="crow"><span class="okdot">${st==="好"?"✓":"!"}</span><div>${t}</div><span class="chip ${st==="好"?"ok":"warn"}">${st==="好"?"可以":"提醒"}</span></div>
+  `).join("");
+  $("pubNums").innerHTML = DATA.variants.map(v => `<div>${v.name} → ${v.count} 人會看到這套</div>`).join("");
+}
+
+function renderMe() {
+  $("meDays").innerHTML = DATA.days.map((d,i) =>
+    `<button type="button" class="daytab ${i===0?"on":""}">${d.label}</button>`
+  ).join("");
+  const seg = SEGS[meIdx];
+  const m = DATA.media[seg.k];
+  const v = DATA.variants.find(x => x.id === "ws");
+  $("meTitle").textContent = m.title;
+  $("meSub").textContent = `第 ${meIdx+1} 首 · 共 ${SEGS.length} 首 · 你的版本：${v.name}（座位在隊形圖上被點到這版）`;
+  $("idx").textContent = `${meIdx+1} / ${SEGS.length}`;
+  const teach = seg.k==="行願" ? v.png : m.png;
+  $("meTeachTop").src = teach;
+  $("meAud").src = m.audio;
+  $("meTeach").src = teach;
+  $("meAct").textContent = seg.k==="行願" ? v.action : seg.note;
+  $("meCue").textContent = seg.k==="行願" ? "現在：海浪 · 誰站誰跪" : ("現在：" + m.title);
+}
+
+// wire
+$("role").addEventListener("change", e => setRole(e.target.value));
+$("theme").addEventListener("click", () => {
+  const r = document.documentElement;
+  r.setAttribute("data-theme", r.getAttribute("data-theme")==="dark"?"light":"dark");
+});
+document.querySelectorAll("#tabs button, [data-v]").forEach(b => {
+  if (!b.getAttribute("data-v")) return;
+  b.addEventListener("click", () => show(b.getAttribute("data-v")));
+});
+document.querySelectorAll(".edit-tabs button").forEach(b => {
+  b.addEventListener("click", () => setPanel(b.getAttribute("data-panel")));
+});
+document.querySelectorAll(".step").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".step").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+  });
+});
+$("prev").addEventListener("click", () => { meIdx = Math.max(0, meIdx-1); renderMe(); });
+$("next").addEventListener("click", () => { meIdx = Math.min(SEGS.length-1, meIdx+1); renderMe(); });
+$("auto").addEventListener("click", e => {
+  const on = e.currentTarget.getAttribute("aria-pressed")==="true";
+  e.currentTarget.setAttribute("aria-pressed", on?"false":"true");
+});
+$("saveBtn").addEventListener("click", () => alert("原型：已模擬儲存（還沒接後端）。"));
+$("pubBtn").addEventListener("click", () => alert("原型：已模擬發布 11/12（還沒接後端）。"));
+
+// boot: 企劃一進來就看編輯頁
+renderDays();
+loadMedia();
+renderWho();
+renderMap();
+renderMe();
+setRole("planner");
+show("edit");
+setPanel("who"); // 企劃最在意「誰做哪一種」— 預設開這頁
+</script>
 </body>
 </html>
