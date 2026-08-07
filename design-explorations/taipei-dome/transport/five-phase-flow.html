@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>演繹流程編排 · 給企劃／行政／演繹者看的原型</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: oklch(0.17 0.014 255);
+  --surface: oklch(0.213 0.016 255);
+  --s2: oklch(0.255 0.018 255);
+  --s3: oklch(0.30 0.02 255);
+  --line: oklch(0.34 0.018 255);
+  --soft: oklch(1 0 0 / .08);
+  --ink: oklch(0.97 0.004 255);
+  --ink2: oklch(0.82 0.01 255);
+  --ink3: oklch(0.70 0.012 255);
+  --brand: oklch(0.68 0.115 245);
+  --brand-ink: oklch(0.16 0.02 255);
+  --brand-soft: oklch(0.68 0.115 245 / .14);
+  --ok: oklch(0.74 0.15 155);
+  --ok-soft: oklch(0.74 0.15 155 / .15);
+  --warn: oklch(0.82 0.13 82);
+  --warn-soft: oklch(0.82 0.13 82 / .15);
+  --danger: oklch(0.68 0.19 25);
+  --white: oklch(0.90 0.01 255);
+  --blue: oklch(0.66 0.12 245);
+  --font: "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --r: 12px; --rl: 16px; --pill: 999px;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: oklch(0.968 0.004 255); --surface: #fff; --s2: oklch(0.978 0.004 255); --s3: oklch(0.945 0.006 255);
+  --line: oklch(0.90 0.006 255); --soft: oklch(0.28 0.02 255 / .1);
+  --ink: oklch(0.24 0.02 255); --ink2: oklch(0.44 0.018 255); --ink3: oklch(0.54 0.016 255);
+  --brand: oklch(0.52 0.145 245); --brand-ink: oklch(0.98 0.003 245); --brand-soft: oklch(0.52 0.145 245 / .12);
+  --white: oklch(0.93 0.008 255); --blue: oklch(0.62 0.13 245);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.5 var(--font); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+a { color: var(--brand); }
+.shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+.top {
+  position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--soft);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 900; }
+.brand i {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--brand); color: var(--brand-ink); font-style: normal;
+}
+.who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.who label { font-size: 13px; color: var(--ink3); font-weight: 750; }
+.who select {
+  min-height: 44px; min-width: 220px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--s2); padding: 0 12px; font-weight: 750;
+}
+.tabs {
+  display: flex; gap: 4px; overflow-x: auto; padding: 0 16px;
+  background: var(--surface); border-bottom: 1px solid var(--soft);
+}
+.tabs button {
+  min-height: 48px; border: 0; border-bottom: 3px solid transparent; background: transparent;
+  color: var(--ink3); font-weight: 800; padding: 0 14px; white-space: nowrap;
+}
+.tabs button.on { color: var(--brand); border-bottom-color: var(--brand); }
+body.r-member .tab-admin, body.r-none .tab-admin { display: none; }
+body.r-planner .tab-member-only, body.r-admin .tab-member-only { display: none; }
+main { max-width: 1280px; width: 100%; margin: 0 auto; padding: 18px 16px 40px; }
+.view { display: none; }
+.view.on { display: block; }
+h1 { margin: 0 0 6px; font-size: clamp(24px, 3vw, 34px); line-height: 1.15; }
+.sub { margin: 0 0 14px; color: var(--ink3); font-size: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.btn {
+  min-height: 48px; padding: 0 16px; border-radius: var(--r); border: 1px solid var(--line);
+  background: var(--s2); font-weight: 800;
+}
+.btn.pri { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 30px; padding: 2px 10px;
+  border-radius: var(--pill); background: var(--s2); border: 1px solid var(--line);
+  font-size: 12px; font-weight: 800; color: var(--ink2);
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.card {
+  background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 16px;
+}
+.note {
+  border-left: 4px solid var(--brand); background: var(--brand-soft); padding: 12px 14px;
+  border-radius: 0 12px 12px 0; color: var(--ink2); font-size: 14px; margin-bottom: 14px;
+}
+.note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+.metric { background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px; }
+.metric b { display: block; font-size: 26px; }
+.metric span { color: var(--ink3); font-size: 13px; }
+
+/* days table */
+.table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: var(--rl); background: var(--surface); }
+table { width: 100%; min-width: 980px; border-collapse: collapse; }
+th, td { border-right: 1px solid var(--soft); border-bottom: 1px solid var(--soft); padding: 8px; vertical-align: top; text-align: left; }
+th:last-child, td:last-child { border-right: 0; }
+thead th { background: var(--s2); font-size: 13px; color: var(--ink2); position: sticky; top: 0; }
+.ord { width: 40px; text-align: center; color: var(--ink3); }
+.scell {
+  width: 100%; min-height: 88px; display: grid; gap: 4px; align-content: start; text-align: left;
+  padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--s2);
+}
+.scell b { font-size: 15px; }
+.scell small { color: var(--ink3); font-size: 12px; }
+.scell.branch { border-color: var(--warn); background: var(--warn-soft); }
+.scell.pick { box-shadow: inset 0 0 0 2px var(--brand); }
+.scell:hover { filter: brightness(1.06); }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 8px; margin-top: 12px; }
+.thumbs figure { margin: 0; }
+.thumbs img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--s3); }
+.thumbs figcaption { font-size: 12px; color: var(--ink3); margin-top: 4px; text-align: center; }
+
+/* ========== PLANNER EDITOR (hero) ========== */
+.editor-hero {
+  display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; margin-bottom: 16px;
+}
+.player {
+  background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px;
+  display: grid; gap: 10px;
+}
+.player video {
+  width: 100%; max-height: 260px; border-radius: 12px; background: #000; object-fit: contain;
+}
+.player audio { width: 100%; }
+.player .meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink3); }
+.steps {
+  background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px;
+}
+.steps h2 { margin: 0 0 10px; font-size: 16px; }
+.step {
+  width: 100%; min-height: 56px; display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center;
+  text-align: left; border: 1px solid transparent; border-radius: 12px; background: transparent; padding: 8px; margin-bottom: 6px;
+}
+.step .n {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--s3); font-weight: 900; color: var(--ink2);
+}
+.step.on { border-color: var(--brand); background: var(--brand-soft); }
+.step.on .n { background: var(--brand); color: var(--brand-ink); }
+.step b { display: block; }
+.step small { color: var(--ink3); }
+
+.edit-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.edit-tabs button {
+  min-height: 48px; padding: 0 16px; border-radius: var(--pill); border: 1px solid var(--line);
+  background: var(--s2); font-weight: 800; color: var(--ink2);
+}
+.edit-tabs button.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.panel { display: none; }
+.panel.on { display: block; }
+
+.form-grid { display: grid; grid-template-columns: 1.4fr .8fr .8fr; gap: 10px; margin-bottom: 12px; }
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13px; font-weight: 800; color: var(--ink3); }
+.input, .select, .ta {
+  min-height: 48px; width: 100%; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--s2); padding: 10px 12px;
+}
+.ta { min-height: 96px; resize: vertical; }
+.content-blocks { display: grid; gap: 10px; }
+.block {
+  border: 1px solid var(--soft); border-radius: 14px; background: var(--surface); padding: 14px;
+}
+.block h3 { margin: 0 0 8px; font-size: 14px; color: var(--ink3); }
+.block p { margin: 0; color: var(--ink2); white-space: pre-wrap; }
+
+/* who does what - big cards */
+.who-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.who-card {
+  border: 2px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden;
+  text-align: left; padding: 0; display: grid; grid-template-columns: 140px 1fr;
+}
+.who-card.on { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.who-card img { width: 140px; height: 100%; min-height: 140px; object-fit: cover; background: var(--s3); }
+.who-card .body { padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.who-card b { font-size: 18px; }
+.who-card .count { font-size: 22px; font-weight: 900; color: var(--brand); }
+.who-card small { color: var(--ink3); display: block; }
+
+.preview-layout { display: grid; grid-template-columns: 1fr 320px; gap: 14px; }
+.map-box { background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 12px; }
+.map-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 8px; }
+.seat-grid {
+  display: grid;
+  grid-template-columns: 32px repeat(54, 10px);
+  grid-auto-rows: 14px;
+  gap: 1px;
+  width: max-content;
+}
+.ax { font-size: 10px; color: var(--ink3); display: grid; place-items: center; }
+.dot { width: 10px; height: 14px; border-radius: 2px; background: var(--s3); }
+.dot.w { background: var(--white); }
+.dot.b { background: var(--blue); }
+.dot.hit { outline: 2px solid var(--brand); outline-offset: -1px; }
+.dot.dim { opacity: .18; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--ink3); margin-top: 10px; }
+.legend i { width: 12px; height: 12px; display: inline-block; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.side-sum { background: var(--surface); border: 1px solid var(--soft); border-radius: var(--rl); padding: 14px; display: grid; gap: 10px; }
+.side-sum img { width: 100%; border-radius: 12px; border: 1px solid var(--line); background: var(--s3); }
+.side-sum .big { font-size: 28px; font-weight: 900; color: var(--brand); }
+.form-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 8px; }
+#formCanvas { width: 100%; max-width: 720px; height: auto; display: block; cursor: crosshair; touch-action: none; }
+
+
+/* publish */
+.check { display: grid; gap: 1px; background: var(--soft); border-radius: 14px; overflow: hidden; }
+.crow { min-height: 58px; display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 10px 14px; background: var(--surface); }
+.okdot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); font-weight: 900; }
+.grid2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+
+/* me */
+.phone {
+  max-width: 420px; margin: 0 auto; border: 1px solid var(--line); border-radius: 28px;
+  overflow: hidden; background: var(--surface); box-shadow: 0 18px 48px oklch(0 0 0 / .28);
+}
+.phd { padding: 16px; border-bottom: 1px solid var(--soft); }
+.pbd { padding: 14px 16px 18px; display: grid; gap: 12px; }
+.now { border-left: 4px solid var(--brand); background: var(--brand-soft); padding: 12px; border-radius: 0 12px 12px 0; }
+.ctrl { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; }
+.daytabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; }
+.daytab {
+  min-height: 42px; padding: 0 14px; border-radius: var(--pill); border: 1px solid var(--line);
+  background: var(--s2); font-weight: 800; color: var(--ink2); white-space: nowrap;
+}
+.daytab.on { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.toggle-row {
+  min-height: 52px; display: flex; justify-content: space-between; align-items: center;
+  border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--s2);
+}
+.toggle {
+  width: 50px; height: 30px; border-radius: var(--pill); border: 1px solid var(--line);
+  background: var(--s3); position: relative;
+}
+.toggle::after {
+  content: ""; width: 22px; height: 22px; border-radius: 50%; background: var(--ink2);
+  position: absolute; top: 3px; left: 4px;
+}
+.toggle[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); }
+.toggle[aria-pressed="true"]::after { left: 22px; background: var(--brand-ink); }
+.empty {
+  max-width: 440px; margin: 24px auto; padding: 24px; text-align: center;
+  background: var(--surface); border: 1px solid var(--soft); border-radius: 18px;
+}
+.hidden { display: none !important; }
+body.r-admin .edit-only { display: none !important; }
+body.r-admin input, body.r-admin select, body.r-admin textarea { pointer-events: none; opacity: .85; }
+
+@media (max-width: 960px) {
+  .editor-hero, .preview-layout, .who-grid, .grid2, .metrics, .form-grid { grid-template-columns: 1fr; }
+  .who-card { grid-template-columns: 100px 1fr; }
+}
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body class="r-planner">
+<div class="shell">
+  <header class="top">
+    <div class="brand"><i>流</i><span>演繹流程編排</span></div>
+    <div class="who">
+      <label for="role">我是…</label>
+      <select id="role">
+        <option value="planner">企劃（編內容、排座位、發布）</option>
+        <option value="admin">合心行政（只能預覽與發布）</option>
+        <option value="member">演繹者（已有座位）</option>
+        <option value="none">演繹者（還沒座位）</option>
+      </select>
+      <button type="button" class="btn ghost" id="theme">淺色／深色</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button type="button" class="tab-admin" data-v="days">① 四天怎麼排</button>
+    <button type="button" class="tab-admin on" data-v="edit">② 編輯這首歌（行願）</button>
+    <button type="button" class="tab-admin" data-v="pub">③ 檢查並發布</button>
+    <button type="button" class="tab-member-only" data-v="me">我的練習</button>
+  </nav>
+
+  <main>
+    <!-- DAYS -->
+    <section class="view" id="v-days">
+      <h1>四天怎麼排</h1>
+      <p class="sub">第一階段曲目。大多數天相同；只有「五毛錢／圍爐」在四六與五日不同。</p>
+      <div class="note">點「行願」那一格，就會打開編輯畫面（企劃主要工作在那裡）。</div>
+      <div class="metrics">
+        <div class="metric"><b id="mTot">—</b><span>A／B 總座位</span></div>
+        <div class="metric"><b id="mW">—</b><span>白衣座位</span></div>
+        <div class="metric"><b id="mB">—</b><span>藍衣座位</span></div>
+        <div class="metric"><b>13</b><span>第一階段曲目</span></div>
+      </div>
+      <div class="table-wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <div class="card" style="margin-top:14px">
+        <b>正式教材縮圖</b>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+    </section>
+
+    <!-- EDIT: planner hero -->
+    <section class="view on" id="v-edit">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="chip">正在編輯</div>
+          <h1 style="margin-top:8px">行願</h1>
+          <p class="sub" style="margin:0">同一首歌；四種動作版本（白站／白跪／藍站／藍跪）— 座位在隊形圖上點，不是用排號自動算</p>
+        </div>
+        <div class="row" style="margin:0">
+          <button type="button" class="btn" data-v="days">看四天表</button>
+          <button type="button" class="btn pri edit-only" id="saveBtn">儲存</button>
+        </div>
+      </div>
+      <div class="note" id="adminNote" style="display:none">你是合心行政：可以看、可以發布，但不能改內容。</div>
+
+      <div class="editor-hero">
+        <div class="player">
+          <div class="meta"><span id="playerLabel">正在聽：行願 · 看教材</span><span id="clock">讀取長度…</span></div>
+          <img id="heroTeach" alt="這首歌的教材" style="width:100%;max-height:280px;object-fit:contain;border-radius:12px;background:var(--bg);border:1px solid var(--line)">
+          <audio id="aud" controls preload="metadata" style="width:100%"></audio>
+          <div class="meta">
+            <a id="demoA" href="#" target="_blank" rel="noreferrer">看示範影片</a>
+            <a id="demoVidFile" href="#" target="_blank" rel="noreferrer">開啟正式影音檔</a>
+          </div>
+        </div>
+        <div class="steps">
+          <h2>這首歌裡的小節</h2>
+          <p class="sub" style="margin-bottom:10px">像彩排時一段一段教。點小節可改內容。</p>
+          <button type="button" class="step" data-step="0"><span class="n">1</span><span><b>前奏 · 收腳</b><small>開始 ～ 約 18 秒</small></span></button>
+          <button type="button" class="step on" data-step="1"><span class="n">2</span><span><b>海浪 · 誰站誰跪</b><small>約 18 秒 ～ 1 分 40 秒 ← 現在編這裡 · 對應行願隊形</small></span></button>
+          <button type="button" class="step" data-step="2"><span class="n">3</span><span><b>船 · 內側外側</b><small>約 1 分 40 秒 ～ 2 分 50 秒</small></span></button>
+          <button type="button" class="step" data-step="3"><span class="n">4</span><span><b>守之不動口令</b><small>約 2 分 50 秒 ～ 結束</small></span></button>
+        </div>
+      </div>
+
+      <div class="edit-tabs" role="tablist">
+        <button type="button" class="on" data-panel="content">寫口令與動作</button>
+        <button type="button" data-panel="who">設定「誰做哪一種」</button>
+        <button type="button" data-panel="look">看座位上會怎樣</button>
+      </div>
+
+      <!-- panel content -->
+      <div class="panel on" id="p-content">
+        <div class="card">
+          <div class="form-grid">
+            <div class="field"><label>小節名稱</label><input class="input" id="fName" value="海浪 · 誰站誰跪"></div>
+            <div class="field"><label>從這秒開始</label><input class="input" id="fStart" value="0:18"></div>
+            <div class="field"><label>到這秒結束</label><input class="input" id="fEnd" value="1:40"></div>
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>對應哪張走位圖？（可選）</label>
+            <select class="select" id="fAnchor">
+              <option selected>第 3 段 · 行願千手（隊形場景 02）</option>
+              <option>不用走位圖，只看文字</option>
+            </select>
+          </div>
+          <div class="content-blocks">
+            <div class="block"><h3>大家一起唱／喊的內容</h3>
+              <textarea class="ta" id="fText">海濤澎湃，駭浪洶湧，心志已付，身隨之赴～</textarea>
+            </div>
+            <div class="block"><h3>預設動作（沒被分到特別版本的人）</h3>
+              <textarea class="ta" id="fActDefault">依下面四種版本：白衣站／白衣跪／藍衣站／藍衣跪</textarea>
+            </div>
+            <div class="block"><h3>面向</h3>
+              <input class="input" id="fFace" value="面向圖騰方向">
+            </div>
+            <div class="block"><h3>隊形</h3>
+              <input class="input" id="fForm" value="行願隊形 · 海浪">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- panel who -->
+      <div class="panel" id="p-who">
+        <div class="note">
+          白衣／藍衣是座位決定的（跟座位格上一樣：每 3 列一輪白藍），不是看報名資料。
+          <strong>白／藍</strong>可用列號快速篩選；<strong>站／跪</strong>必須在下方隊形圖點座位（或從篩出的白衣再分成兩版）。
+          沒有「前排＝站、後排＝跪」這種系統公式。
+        </div>
+        <div class="who-grid" id="whoGrid"></div>
+        <div class="card" style="margin-top:14px" id="whoDetail"></div>
+      </div>
+
+      <!-- panel look -->
+      <div class="panel" id="p-look">
+        <div class="note warn" style="margin-bottom:12px">
+          現在是<strong>行願千手</strong>隊形（第 3 段 · 場景 02），不是基本座位格。
+          票面編號仍是「列-排」，圖上旁邊的人編號可能跳號。
+          亮點＝此版本<strong>已在隊形圖點選</strong>的座位（原型用範例集合；正式由企劃點選，不是排號公式）。
+        </div>
+        <div class="preview-layout">
+          <div class="map-box">
+            <b>行願千手 · 西一隊形圖（368 席）</b>
+            <p class="sub">亮起來＝目前選中的版本；滑過可看票面編號。沒有姓名。</p>
+            <div class="map-scroll form-scroll"><canvas id="formCanvas" width="720" height="420" aria-label="行願千手隊形圖"></canvas></div>
+            <div class="legend" id="legend"></div>
+            <p class="sub" id="hoverLabel" style="min-height:1.4em;margin-top:8px">把滑鼠移到點上可看編號</p>
+          </div>
+          <div class="side-sum" id="sideSum"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PUB -->
+    <section class="view" id="v-pub">
+      <h1>檢查並發布 · 11/12（四）</h1>
+      <p class="sub">只發布這一天。不會動到五、六、日。</p>
+      <div class="grid2">
+        <div class="card"><div class="check" id="checks"></div></div>
+        <div class="card">
+          <b>發布後會發生什麼</b>
+          <ul style="color:var(--ink2);line-height:1.7;padding-left:18px">
+            <li>有座位的人打開「我的」，會依自己座位看到對應動作</li>
+            <li>被點進「白衣·站」的座位看到該版教材；點進「藍衣·跪」的看到跪版</li>
+            <li>換人坐同一座位 → 看到同一套動作（跟人無關）</li>
+          </ul>
+          <div id="pubNums" style="margin:12px 0;color:var(--ink2)"></div>
+          <button type="button" class="btn pri" id="pubBtn" style="width:100%">發布給 11/12 使用</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ME -->
+    <section class="view" id="v-me">
+      <h1>我的練習</h1>
+      <p class="sub" id="meSeat">座位 8-18 · 白衣 · 女 · 你是「白衣 · 站」</p>
+      <div class="daytabs" id="meDays"></div>
+      <div class="phone" id="phone">
+        <div class="phd">
+          <div class="chip">我的流程</div>
+          <h1 style="font-size:22px;margin-top:8px" id="meTitle">行願</h1>
+          <p class="sub" id="meSub" style="margin:0">第 7 首 · 你的版本：白衣 · 站</p>
+        </div>
+        <div class="pbd">
+          <img id="meTeachTop" alt="我的教材" style="width:100%;border-radius:12px;border:1px solid var(--line);max-height:240px;object-fit:contain;background:var(--bg)">
+          <audio id="meAud" controls preload="metadata" style="width:100%"></audio>
+          <div class="now">
+            <b id="meCue">現在：海浪 · 誰站誰跪</b>
+            <span id="meAct" style="display:block;margin-top:4px;color:var(--ink2);font-size:14px"></span>
+          </div>
+          <img id="meTeach" alt="我的教材" style="width:100%;border-radius:12px;border:1px solid var(--line);max-height:200px;object-fit:contain;background:var(--bg)">
+          <div class="block"><h3>歌詞</h3><p>海濤澎湃，駭浪洶湧，心志已付，身隨之赴～</p></div>
+          <div class="toggle-row">
+            <div><b>播完自動下一首</b><div class="sub" style="margin:0">只存在這支手機，預設關</div></div>
+            <button type="button" class="toggle" id="auto" aria-pressed="false" aria-label="自動下一首"></button>
+          </div>
+          <div class="ctrl">
+            <button type="button" class="btn" id="prev">上一首</button>
+            <span class="chip" id="idx">7 / 13</span>
+            <button type="button" class="btn pri" id="next">進入下一首</button>
+          </div>
+        </div>
+      </div>
+      <div class="empty hidden" id="noSeat">
+        <b style="font-size:22px">還沒有座位</b>
+        <p class="sub">配好座位後，這裡會自動出現你的流程與動作。</p>
+        <a class="btn pri" href="#" style="display:inline-flex;align-items:center;text-decoration:none;margin-top:8px">先看公開教學資源</a>
+        <p class="sub" style="margin-top:12px">不會叫你自己輸入座位號碼。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const DATA = {"media":{"序":{"title":"序","audio":"https://seat-lookup.qori.workers.dev/teach/assets/序.a790f9c1.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/序.45a0a821.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_003.fc8e01bb.webp","demo":"https://www.youtube.com/watch?v=9xXoD2XVbNY&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=1"},"太子":{"title":"太子降誕","audio":"https://seat-lookup.qori.workers.dev/teach/assets/生苦.cd7abacc.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/生苦.0b275099.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_006.7ff15e90.webp","demo":null},"老苦":{"title":"老苦","audio":"https://seat-lookup.qori.workers.dev/teach/assets/老苦.6a917e01.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/老苦.adc4c9bf.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_009.797b6f20.webp","demo":"https://youtu.be/LJZo0hH3nos?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"病苦":{"title":"病苦","audio":"https://seat-lookup.qori.workers.dev/teach/assets/病苦.b2457a09.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/病苦.b83fca57.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_012.6c05f53f.webp","demo":"https://youtu.be/glh-1pF4StQ?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"死苦":{"title":"死苦","audio":"https://seat-lookup.qori.workers.dev/teach/assets/死苦.cb3fef0f.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/死苦.99aff92a.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_015.7edf01df.webp","demo":"https://youtu.be/gx0R8wK_Wkg?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"六度":{"title":"六度","audio":"https://seat-lookup.qori.workers.dev/teach/assets/轉法輪.edfd5de5.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/轉法輪.353c2138.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_018.0ff28d59.webp","demo":"https://youtu.be/gZ9C6HM6keg?list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo"},"行願":{"title":"行願","audio":"https://seat-lookup.qori.workers.dev/teach/assets/行願.978c7adc.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/行願.11d58145.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_023.49459d94.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=2bMOTOZnnsofu5CD&t=154"},"開經偈":{"title":"開經偈","audio":"https://seat-lookup.qori.workers.dev/teach/assets/開經偈.16bc65d5.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/開經偈.f48514bf.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_035.79afcef4.webp","demo":"https://youtu.be/Prve-DAF5Fw"},"米籮":{"title":"扛天下米籮","audio":"https://seat-lookup.qori.workers.dev/teach/assets/米籮.3b04545c.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/米籮.f32f51c6.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_039.fcd76951.webp","demo":"https://www.youtube.com/watch?v=xmwAu0XBonE&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=9"},"靜思家風":{"title":"靜思家風","audio":"https://seat-lookup.qori.workers.dev/teach/assets/靜思家風.fbd8c071.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/靜思家風.48e58a31.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_042.33ee3f4d.webp","demo":"https://www.youtube.com/watch?v=FxOew30sJoU&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=10"},"一盞燈":{"title":"點一盞燈","audio":"https://seat-lookup.qori.workers.dev/teach/assets/一盞燈.d03ca2e1.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/一盞燈.a4dddc50.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_047.60d5c570.webp","demo":"https://youtu.be/qBMy7Q4ol7U?si=b_E6Xwke11lvBUQ4&t=140"},"五角錢":{"title":"菜市場的五毛錢","audio":"https://seat-lookup.qori.workers.dev/teach/assets/五毛錢.e34caa58.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/五毛錢.5f798372.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_048.9560f48e.webp","demo":"https://www.youtube.com/watch?v=pzkatOInyss&list=PLzElczFBtIPKBRQc_SS_l2Ia0-IB0wfWo&index=11"},"圍爐":{"title":"圍爐／是諸眾生","audio":"https://seat-lookup.qori.workers.dev/teach/assets/圍爐.1dd12d59.mp3","video":"https://seat-lookup.qori.workers.dev/teach/assets/圍爐.ac7a150c.mp4","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_052.73003e21.webp","demo":"https://youtu.be/vYxBbQ5FWu0?si=RnV_MBR8W0EaBxb3&t=134"}},"variants":[{"id":"ws","name":"白衣 · 站","who":"穿白衣、這一版動作是「站」","rule":"在行願千手隊形圖上點選 · 可先篩「白衣」再細分","how":"隊形圖點選（不是排號公式）","count":94,"action":"左上／右下交替；前面搭肩、後面右前左後；節奏「登 登 登」","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_028.ddc7f08a.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["1-16","1-18","1-20","1-22","13-17","13-19","13-21","14-16"]},{"id":"wk","name":"白衣 · 跪","who":"穿白衣、這一版動作是「跪」","rule":"在行願千手隊形圖上點選 · 可先篩「白衣」再細分","how":"隊形圖點選（不是排號公式）","count":94,"action":"高跪／坐跪；手放前面搭肩或後面右前左後","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_027.381ef102.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["1-17","1-19","1-21","13-16","13-18","13-20","13-22","14-17"]},{"id":"bs","name":"藍衣 · 站","who":"穿藍衣、這一版動作是「站」","rule":"在行願千手隊形圖上點選 · 可先篩「藍衣」再細分","how":"隊形圖點選（不是排號公式）","count":90,"action":"與白衣站姿同拍點；左上／右下","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_030.5a833e56.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["10-16","10-18","10-20","10-22","11-17","11-19","11-21","12-16"]},{"id":"bk","name":"藍衣 · 跪","who":"穿藍衣、這一版動作是「跪」","rule":"在行願千手隊形圖上點選 · 可先篩「藍衣」再細分","how":"隊形圖點選（不是排號公式）","count":90,"action":"藍衣跪姿譜；含藍衣女眾弓步說明","facing":"面向圖騰","png":"https://seat-lookup.qori.workers.dev/teach/P1/page_029.dbc9e87b.webp","demo":"https://youtu.be/9up0Hn_Z8LA?si=Gyb7CiRJaaUQda3e&t=106","sample":["10-17","10-19","10-21","11-16","11-18","11-20","11-22","12-17"]}],"variantKeys":{"ws":["1-16","1-18","1-20","1-22","13-17","13-19","13-21","14-16","14-18","14-20","14-22","15-17","15-19","15-21","19-16","19-18","19-20","19-22","2-17","2-19","2-21","20-16","20-18","20-20","20-22","21-17","21-19","21-21","25-16","25-18","25-20","25-22","26-17","26-19","26-21","27-16","27-18","27-20","27-22","3-17","3-19","3-21","31-16","31-18","31-20","31-22","32-17","32-19","32-21","33-16","33-18","33-20","33-22","37-17","37-19","37-21","38-16","38-18","38-20","38-22","39-17","39-19","39-21","43-16","43-18","43-20","43-22","44-17","44-19","44-21","45-16","45-18","45-20","45-22","49-17","49-19","49-21","50-16","50-18","50-20","50-22","51-17","51-19","51-21","7-17","7-19","7-21","8-16","8-18","8-20","8-22","9-17","9-19","9-21"],"wk":["1-17","1-19","1-21","13-16","13-18","13-20","13-22","14-17","14-19","14-21","15-16","15-18","15-20","15-22","19-17","19-19","19-21","2-16","2-18","2-20","2-22","20-17","20-19","20-21","21-16","21-18","21-20","21-22","25-17","25-19","25-21","26-16","26-18","26-20","26-22","27-17","27-19","27-21","3-16","3-18","3-20","3-22","31-17","31-19","31-21","32-16","32-18","32-20","32-22","33-17","33-19","33-21","37-16","37-18","37-20","37-22","38-17","38-19","38-21","39-16","39-18","39-20","39-22","43-17","43-19","43-21","44-16","44-18","44-20","44-22","45-17","45-19","45-21","49-16","49-18","49-20","49-22","50-17","50-19","50-21","51-16","51-18","51-20","7-16","7-18","7-20","7-22","8-17","8-19","8-21","9-16","9-18","9-20","9-22"],"bs":["10-16","10-18","10-20","10-22","11-17","11-19","11-21","12-16","12-18","12-20","12-22","16-17","16-19","16-21","17-16","17-18","17-20","17-22","18-17","18-19","18-21","22-16","22-18","22-20","22-22","23-17","23-19","23-21","24-16","24-18","24-20","24-22","28-17","28-19","28-21","29-16","29-18","29-20","29-22","30-17","30-19","30-21","34-16","34-18","34-20","34-22","35-17","35-19","35-21","36-16","36-18","36-20","36-22","4-17","4-19","4-21","40-16","40-18","40-20","40-22","41-17","41-19","41-21","42-16","42-18","42-20","42-22","46-17","46-19","46-21","47-16","47-18","47-20","47-22","48-17","48-19","48-21","5-16","5-18","5-20","5-22","52-17","52-19","53-16","53-18","54-16","54-18","6-17","6-19","6-21"],"bk":["10-17","10-19","10-21","11-16","11-18","11-20","11-22","12-17","12-19","12-21","16-16","16-18","16-20","16-22","17-17","17-19","17-21","18-16","18-18","18-20","18-22","22-17","22-19","22-21","23-16","23-18","23-20","23-22","24-17","24-19","24-21","28-16","28-18","28-20","28-22","29-17","29-19","29-21","30-16","30-18","30-20","30-22","34-17","34-19","34-21","35-16","35-18","35-20","35-22","36-17","36-19","36-21","4-16","4-18","4-20","4-22","40-17","40-19","40-21","41-16","41-18","41-20","41-22","42-17","42-19","42-21","46-16","46-18","46-20","46-22","47-17","47-19","47-21","48-16","48-18","48-20","48-22","5-17","5-19","5-21","52-16","52-18","52-20","53-17","53-19","54-17","6-16","6-18","6-20","6-22"]},"seats":[{"id":"1-16","x":-0.7903,"y":-3.8268,"c":"白","g":"男","l":1,"p":16},{"id":"1-17","x":-0.7903,"y":-3.7153,"c":"白","g":"男","l":1,"p":17},{"id":"1-18","x":-0.7903,"y":-3.6031,"c":"白","g":"男","l":1,"p":18},{"id":"1-19","x":-0.7903,"y":-3.491,"c":"白","g":"男","l":1,"p":19},{"id":"1-20","x":-0.7903,"y":-3.3794,"c":"白","g":"男","l":1,"p":20},{"id":"1-21","x":-0.7903,"y":-3.2668,"c":"白","g":"男","l":1,"p":21},{"id":"1-22","x":-0.7903,"y":-3.1555,"c":"白","g":"男","l":1,"p":22},{"id":"10-16","x":-2.1077,"y":-3.7019,"c":"藍","g":"女","l":10,"p":16},{"id":"10-17","x":-2.1077,"y":-3.5969,"c":"藍","g":"女","l":10,"p":17},{"id":"10-18","x":-2.1077,"y":-3.491,"c":"藍","g":"女","l":10,"p":18},{"id":"10-19","x":-2.1077,"y":-3.3855,"c":"藍","g":"女","l":10,"p":19},{"id":"10-20","x":-2.1077,"y":-3.2806,"c":"藍","g":"女","l":10,"p":20},{"id":"10-21","x":-2.1077,"y":-3.1749,"c":"藍","g":"女","l":10,"p":21},{"id":"10-22","x":-2.2395,"y":-3.1221,"c":"藍","g":"女","l":10,"p":22},{"id":"11-16","x":-2.2395,"y":-3.8598,"c":"藍","g":"女","l":11,"p":16},{"id":"11-17","x":-2.2395,"y":-3.7543,"c":"藍","g":"女","l":11,"p":17},{"id":"11-18","x":-2.2395,"y":-3.6491,"c":"藍","g":"女","l":11,"p":18},{"id":"11-19","x":-2.2395,"y":-3.5438,"c":"藍","g":"女","l":11,"p":19},{"id":"11-20","x":-2.2395,"y":-3.4381,"c":"藍","g":"女","l":11,"p":20},{"id":"11-21","x":-2.2395,"y":-3.3328,"c":"藍","g":"女","l":11,"p":21},{"id":"11-22","x":-2.2395,"y":-3.2276,"c":"藍","g":"女","l":11,"p":22},{"id":"12-16","x":-2.3711,"y":-3.8074,"c":"藍","g":"女","l":12,"p":16},{"id":"12-17","x":-2.3711,"y":-3.7021,"c":"藍","g":"女","l":12,"p":17},{"id":"12-18","x":-2.3711,"y":-3.5964,"c":"藍","g":"女","l":12,"p":18},{"id":"12-19","x":-2.3711,"y":-3.4912,"c":"藍","g":"女","l":12,"p":19},{"id":"12-20","x":-2.3711,"y":-3.3859,"c":"藍","g":"女","l":12,"p":20},{"id":"12-21","x":-2.3711,"y":-3.2804,"c":"藍","g":"女","l":12,"p":21},{"id":"12-22","x":-2.3711,"y":-3.1749,"c":"藍","g":"女","l":12,"p":22},{"id":"13-16","x":-2.5031,"y":-3.7019,"c":"白","g":"女","l":13,"p":16},{"id":"13-17","x":-2.5031,"y":-3.5971,"c":"白","g":"女","l":13,"p":17},{"id":"13-18","x":-2.5031,"y":-3.491,"c":"白","g":"女","l":13,"p":18},{"id":"13-19","x":-2.5031,"y":-3.3855,"c":"白","g":"女","l":13,"p":19},{"id":"13-20","x":-2.5031,"y":-3.2808,"c":"白","g":"女","l":13,"p":20},{"id":"13-21","x":-2.5031,"y":-3.1749,"c":"白","g":"女","l":13,"p":21},{"id":"13-22","x":-2.6347,"y":-3.1223,"c":"白","g":"女","l":13,"p":22},{"id":"14-16","x":-2.6347,"y":-3.8596,"c":"白","g":"女","l":14,"p":16},{"id":"14-17","x":-2.6347,"y":-3.755,"c":"白","g":"女","l":14,"p":17},{"id":"14-18","x":-2.6347,"y":-3.6491,"c":"白","g":"女","l":14,"p":18},{"id":"14-19","x":-2.6347,"y":-3.5434,"c":"白","g":"女","l":14,"p":19},{"id":"14-20","x":-2.6347,"y":-3.4385,"c":"白","g":"女","l":14,"p":20},{"id":"14-21","x":-2.6347,"y":-3.3328,"c":"白","g":"女","l":14,"p":21},{"id":"14-22","x":-2.6347,"y":-3.2274,"c":"白","g":"女","l":14,"p":22},{"id":"15-16","x":-2.7665,"y":-3.8074,"c":"白","g":"女","l":15,"p":16},{"id":"15-17","x":-2.7665,"y":-3.7019,"c":"白","g":"女","l":15,"p":17},{"id":"15-18","x":-2.7665,"y":-3.5967,"c":"白","g":"女","l":15,"p":18},{"id":"15-19","x":-2.7665,"y":-3.491,"c":"白","g":"女","l":15,"p":19},{"id":"15-20","x":-2.7665,"y":-3.3857,"c":"白","g":"女","l":15,"p":20},{"id":"15-21","x":-2.7665,"y":-3.2806,"c":"白","g":"女","l":15,"p":21},{"id":"15-22","x":-2.7665,"y":-3.1749,"c":"白","g":"女","l":15,"p":22},{"id":"16-16","x":-2.8983,"y":-3.728,"c":"藍","g":"女","l":16,"p":16},{"id":"16-17","x":-2.8983,"y":-3.6228,"c":"藍","g":"女","l":16,"p":17},{"id":"16-18","x":-2.8983,"y":-3.5175,"c":"藍","g":"女","l":16,"p":18},{"id":"16-19","x":-2.8983,"y":-3.4118,"c":"藍","g":"女","l":16,"p":19},{"id":"16-20","x":-2.8983,"y":-3.3065,"c":"藍","g":"女","l":16,"p":20},{"id":"16-21","x":-2.8983,"y":-3.2013,"c":"藍","g":"女","l":16,"p":21},{"id":"16-22","x":-2.8983,"y":-3.0958,"c":"藍","g":"女","l":16,"p":22},{"id":"17-16","x":-3.0296,"y":-3.6756,"c":"藍","g":"女","l":17,"p":16},{"id":"17-17","x":-3.0296,"y":-3.5701,"c":"藍","g":"女","l":17,"p":17},{"id":"17-18","x":-3.0296,"y":-3.4649,"c":"藍","g":"女","l":17,"p":18},{"id":"17-19","x":-3.0296,"y":-3.3596,"c":"藍","g":"女","l":17,"p":19},{"id":"17-20","x":-3.0296,"y":-3.2539,"c":"藍","g":"女","l":17,"p":20},{"id":"17-21","x":-3.0296,"y":-3.1488,"c":"藍","g":"女","l":17,"p":21},{"id":"17-22","x":-3.0296,"y":-3.0433,"c":"藍","g":"女","l":17,"p":22},{"id":"18-16","x":-3.1617,"y":-3.7278,"c":"藍","g":"女","l":18,"p":16},{"id":"18-17","x":-3.1617,"y":-3.6232,"c":"藍","g":"女","l":18,"p":17},{"id":"18-18","x":-3.1617,"y":-3.5175,"c":"藍","g":"女","l":18,"p":18},{"id":"18-19","x":-3.1617,"y":-3.4116,"c":"藍","g":"女","l":18,"p":19},{"id":"18-20","x":-3.1617,"y":-3.3067,"c":"藍","g":"女","l":18,"p":20},{"id":"18-21","x":-3.1617,"y":-3.2015,"c":"藍","g":"女","l":18,"p":21},{"id":"18-22","x":-3.1617,"y":-3.0956,"c":"藍","g":"女","l":18,"p":22},{"id":"19-16","x":-3.2935,"y":-3.6754,"c":"白","g":"女","l":19,"p":16},{"id":"19-17","x":-3.2935,"y":-3.5697,"c":"白","g":"女","l":19,"p":17},{"id":"19-18","x":-3.2935,"y":-3.4649,"c":"白","g":"女","l":19,"p":18},{"id":"19-19","x":-3.2935,"y":-3.3594,"c":"白","g":"女","l":19,"p":19},{"id":"19-20","x":-3.2935,"y":-3.2535,"c":"白","g":"女","l":19,"p":20},{"id":"19-21","x":-3.2935,"y":-3.1488,"c":"白","g":"女","l":19,"p":21},{"id":"19-22","x":-3.2935,"y":-3.0433,"c":"白","g":"女","l":19,"p":22},{"id":"2-16","x":-0.9223,"y":-3.7656,"c":"白","g":"男","l":2,"p":16},{"id":"2-17","x":-0.9223,"y":-3.6537,"c":"白","g":"男","l":2,"p":17},{"id":"2-18","x":-0.9223,"y":-3.5417,"c":"白","g":"男","l":2,"p":18},{"id":"2-19","x":-0.9223,"y":-3.4298,"c":"白","g":"男","l":2,"p":19},{"id":"2-20","x":-0.9223,"y":-3.3178,"c":"白","g":"男","l":2,"p":20},{"id":"2-21","x":-0.9223,"y":-3.2058,"c":"白","g":"男","l":2,"p":21},{"id":"2-22","x":-0.9223,"y":-3.0939,"c":"白","g":"男","l":2,"p":22},{"id":"20-16","x":-3.425,"y":-3.623,"c":"白","g":"女","l":20,"p":16},{"id":"20-17","x":-3.425,"y":-3.5175,"c":"白","g":"女","l":20,"p":17},{"id":"20-18","x":-3.425,"y":-3.412,"c":"白","g":"女","l":20,"p":18},{"id":"20-19","x":-3.425,"y":-3.3067,"c":"白","g":"女","l":20,"p":19},{"id":"20-20","x":-3.425,"y":-3.2013,"c":"白","g":"女","l":20,"p":20},{"id":"20-21","x":-3.425,"y":-3.096,"c":"白","g":"女","l":20,"p":21},{"id":"20-22","x":-3.425,"y":-2.9905,"c":"白","g":"女","l":20,"p":22},{"id":"21-16","x":-3.5568,"y":-3.6754,"c":"白","g":"女","l":21,"p":16},{"id":"21-17","x":-3.5568,"y":-3.5701,"c":"白","g":"女","l":21,"p":17},{"id":"21-18","x":-3.5568,"y":-3.4646,"c":"白","g":"女","l":21,"p":18},{"id":"21-19","x":-3.5568,"y":-3.3594,"c":"白","g":"女","l":21,"p":19},{"id":"21-20","x":-3.5568,"y":-3.2539,"c":"白","g":"女","l":21,"p":20},{"id":"21-21","x":-3.5568,"y":-3.1486,"c":"白","g":"女","l":21,"p":21},{"id":"21-22","x":-3.5568,"y":-3.0431,"c":"白","g":"女","l":21,"p":22},{"id":"22-16","x":-3.6882,"y":-3.9916,"c":"藍","g":"女","l":22,"p":16},{"id":"22-17","x":-3.6882,"y":-3.8864,"c":"藍","g":"女","l":22,"p":17},{"id":"22-18","x":-3.6882,"y":-3.7811,"c":"藍","g":"女","l":22,"p":18},{"id":"22-19","x":-3.6882,"y":-3.6756,"c":"藍","g":"女","l":22,"p":19},{"id":"22-20","x":-3.6882,"y":-3.5701,"c":"藍","g":"女","l":22,"p":20},{"id":"22-21","x":-3.6882,"y":-3.4649,"c":"藍","g":"女","l":22,"p":21},{"id":"22-22","x":-3.6882,"y":-3.3596,"c":"藍","g":"女","l":22,"p":22},{"id":"23-16","x":-3.8202,"y":-3.9396,"c":"藍","g":"女","l":23,"p":16},{"id":"23-17","x":-3.8202,"y":-3.8335,"c":"藍","g":"女","l":23,"p":17},{"id":"23-18","x":-3.8202,"y":-3.7278,"c":"藍","g":"女","l":23,"p":18},{"id":"23-19","x":-3.8202,"y":-3.6232,"c":"藍","g":"女","l":23,"p":19},{"id":"23-20","x":-3.8202,"y":-3.5175,"c":"藍","g":"女","l":23,"p":20},{"id":"23-21","x":-3.8202,"y":-3.4116,"c":"藍","g":"女","l":23,"p":21},{"id":"23-22","x":-3.8202,"y":-3.3067,"c":"藍","g":"女","l":23,"p":22},{"id":"24-16","x":-3.952,"y":-3.8859,"c":"藍","g":"女","l":24,"p":16},{"id":"24-17","x":-3.952,"y":-3.7811,"c":"藍","g":"女","l":24,"p":17},{"id":"24-18","x":-3.952,"y":-3.6754,"c":"藍","g":"女","l":24,"p":18},{"id":"24-19","x":-3.952,"y":-3.5697,"c":"藍","g":"女","l":24,"p":19},{"id":"24-20","x":-3.952,"y":-3.4649,"c":"藍","g":"女","l":24,"p":20},{"id":"24-21","x":-3.952,"y":-3.3594,"c":"藍","g":"女","l":24,"p":21},{"id":"24-22","x":-3.8202,"y":-3.2015,"c":"藍","g":"女","l":24,"p":22},{"id":"25-16","x":-4.4103,"y":-3.0958,"c":"白","g":"女","l":25,"p":16},{"id":"25-17","x":-4.4598,"y":-3.0103,"c":"白","g":"女","l":25,"p":17},{"id":"25-18","x":-4.6536,"y":-3.1221,"c":"白","g":"女","l":25,"p":18},{"id":"25-19","x":-4.7029,"y":-3.0362,"c":"白","g":"女","l":25,"p":19},{"id":"25-20","x":-4.5321,"y":-3.1089,"c":"白","g":"女","l":25,"p":20},{"id":"25-21","x":-4.5814,"y":-3.0235,"c":"白","g":"女","l":25,"p":21},{"id":"25-22","x":-4.6307,"y":-2.9381,"c":"白","g":"女","l":25,"p":22},{"id":"26-16","x":-4.7982,"y":-3.3195,"c":"白","g":"女","l":26,"p":16},{"id":"26-17","x":-4.8477,"y":-3.234,"c":"白","g":"女","l":26,"p":17},{"id":"26-18","x":-4.7259,"y":-3.2207,"c":"白","g":"女","l":26,"p":18},{"id":"26-19","x":-4.7752,"y":-3.1353,"c":"白","g":"女","l":26,"p":19},{"id":"26-20","x":-4.8245,"y":-3.05,"c":"白","g":"女","l":26,"p":20},{"id":"26-21","x":-4.7524,"y":-2.951,"c":"白","g":"女","l":26,"p":21},{"id":"26-22","x":-4.8742,"y":-2.964,"c":"白","g":"女","l":26,"p":22},{"id":"27-16","x":-4.992,"y":-3.4318,"c":"白","g":"女","l":27,"p":16},{"id":"27-17","x":-5.0415,"y":-3.3462,"c":"白","g":"女","l":27,"p":17},{"id":"27-18","x":-4.9199,"y":-3.3328,"c":"白","g":"女","l":27,"p":18},{"id":"27-19","x":-4.9692,"y":-3.2474,"c":"白","g":"女","l":27,"p":19},{"id":"27-20","x":-4.897,"y":-3.1484,"c":"白","g":"女","l":27,"p":20},{"id":"27-21","x":-5.0187,"y":-3.1616,"c":"白","g":"女","l":27,"p":21},{"id":"27-22","x":-4.9465,"y":-3.0628,"c":"白","g":"女","l":27,"p":22},{"id":"28-16","x":-5.1148,"y":-3.464,"c":"藍","g":"女","l":28,"p":16},{"id":"28-17","x":-5.1641,"y":-3.3788,"c":"藍","g":"女","l":28,"p":17},{"id":"28-18","x":-5.2134,"y":-3.2927,"c":"藍","g":"女","l":28,"p":18},{"id":"28-19","x":-5.2629,"y":-3.2077,"c":"藍","g":"女","l":28,"p":19},{"id":"28-20","x":-5.3122,"y":-3.1221,"c":"藍","g":"女","l":28,"p":20},{"id":"28-21","x":-5.3617,"y":-3.0362,"c":"藍","g":"女","l":28,"p":21},{"id":"28-22","x":-5.411,"y":-2.951,"c":"藍","g":"女","l":28,"p":22},{"id":"29-16","x":-5.2364,"y":-3.4772,"c":"藍","g":"女","l":29,"p":16},{"id":"29-17","x":-5.2857,"y":-3.3917,"c":"藍","g":"女","l":29,"p":17},{"id":"29-18","x":-5.3352,"y":-3.3065,"c":"藍","g":"女","l":29,"p":18},{"id":"29-19","x":-5.3845,"y":-3.2207,"c":"藍","g":"女","l":29,"p":19},{"id":"29-20","x":-5.434,"y":-3.1353,"c":"藍","g":"女","l":29,"p":20},{"id":"29-21","x":-5.4833,"y":-3.05,"c":"藍","g":"女","l":29,"p":21},{"id":"29-22","x":-5.5328,"y":-2.964,"c":"藍","g":"女","l":29,"p":22},{"id":"3-16","x":-1.0539,"y":-3.7048,"c":"白","g":"男","l":3,"p":16},{"id":"3-17","x":-1.0539,"y":-3.5923,"c":"白","g":"男","l":3,"p":17},{"id":"3-18","x":-1.0539,"y":-3.4805,"c":"白","g":"男","l":3,"p":18},{"id":"3-19","x":-1.0539,"y":-3.3688,"c":"白","g":"男","l":3,"p":19},{"id":"3-20","x":-1.0539,"y":-3.2562,"c":"白","g":"男","l":3,"p":20},{"id":"3-21","x":-1.0539,"y":-3.1449,"c":"白","g":"男","l":3,"p":21},{"id":"3-22","x":-1.0539,"y":-3.0325,"c":"白","g":"男","l":3,"p":22},{"id":"30-16","x":-5.3087,"y":-3.5762,"c":"藍","g":"女","l":30,"p":16},{"id":"30-17","x":-5.358,"y":-3.4908,"c":"藍","g":"女","l":30,"p":17},{"id":"30-18","x":-5.4075,"y":-3.4051,"c":"藍","g":"女","l":30,"p":18},{"id":"30-19","x":-5.4567,"y":-3.3195,"c":"藍","g":"女","l":30,"p":19},{"id":"30-20","x":-5.5063,"y":-3.234,"c":"藍","g":"女","l":30,"p":20},{"id":"30-21","x":-5.5555,"y":-3.1484,"c":"藍","g":"女","l":30,"p":21},{"id":"30-22","x":-5.605,"y":-3.0628,"c":"藍","g":"女","l":30,"p":22},{"id":"31-16","x":-5.52,"y":-3.4511,"c":"白","g":"女","l":31,"p":16},{"id":"31-17","x":-5.5693,"y":-3.3658,"c":"白","g":"女","l":31,"p":17},{"id":"31-18","x":-5.6188,"y":-3.28,"c":"白","g":"女","l":31,"p":18},{"id":"31-19","x":-5.6681,"y":-3.1944,"c":"白","g":"女","l":31,"p":19},{"id":"31-20","x":-5.7176,"y":-3.1087,"c":"白","g":"女","l":31,"p":20},{"id":"31-21","x":-5.7669,"y":-3.0233,"c":"白","g":"女","l":31,"p":21},{"id":"31-22","x":-5.8162,"y":-2.9372,"c":"白","g":"女","l":31,"p":22},{"id":"32-16","x":-5.6416,"y":-3.4649,"c":"白","g":"女","l":32,"p":16},{"id":"32-17","x":-5.6909,"y":-3.3788,"c":"白","g":"女","l":32,"p":17},{"id":"32-18","x":-5.7404,"y":-3.2932,"c":"白","g":"女","l":32,"p":18},{"id":"32-19","x":-5.7897,"y":-3.2075,"c":"白","g":"女","l":32,"p":19},{"id":"32-20","x":-5.8392,"y":-3.1219,"c":"白","g":"女","l":32,"p":20},{"id":"32-21","x":-5.8885,"y":-3.0365,"c":"白","g":"女","l":32,"p":21},{"id":"32-22","x":-5.938,"y":-2.9508,"c":"白","g":"女","l":32,"p":22},{"id":"33-16","x":-5.7632,"y":-3.4778,"c":"白","g":"女","l":33,"p":16},{"id":"33-17","x":-5.8127,"y":-3.392,"c":"白","g":"女","l":33,"p":17},{"id":"33-18","x":-5.862,"y":-3.3065,"c":"白","g":"女","l":33,"p":18},{"id":"33-19","x":-5.9115,"y":-3.2209,"c":"白","g":"女","l":33,"p":19},{"id":"33-20","x":-5.9608,"y":-3.1353,"c":"白","g":"女","l":33,"p":20},{"id":"33-21","x":-6.0103,"y":-3.0496,"c":"白","g":"女","l":33,"p":21},{"id":"33-22","x":-6.0598,"y":-2.9644,"c":"白","g":"女","l":33,"p":22},{"id":"34-16","x":-6.2014,"y":-3.3721,"c":"藍","g":"女","l":34,"p":16},{"id":"34-17","x":-6.2509,"y":-3.2867,"c":"藍","g":"女","l":34,"p":17},{"id":"34-18","x":-6.3004,"y":-3.2008,"c":"藍","g":"女","l":34,"p":18},{"id":"34-19","x":-6.3497,"y":-3.1156,"c":"藍","g":"女","l":34,"p":19},{"id":"34-20","x":-6.399,"y":-3.03,"c":"藍","g":"女","l":34,"p":20},{"id":"34-21","x":-6.4483,"y":-2.9443,"c":"藍","g":"女","l":34,"p":21},{"id":"34-22","x":-6.498,"y":-2.8587,"c":"藍","g":"女","l":34,"p":22},{"id":"35-16","x":-6.3229,"y":-3.3851,"c":"藍","g":"女","l":35,"p":16},{"id":"35-17","x":-6.3727,"y":-3.2994,"c":"藍","g":"女","l":35,"p":17},{"id":"35-18","x":-6.4217,"y":-3.2142,"c":"藍","g":"女","l":35,"p":18},{"id":"35-19","x":-6.4712,"y":-3.1286,"c":"藍","g":"女","l":35,"p":19},{"id":"35-20","x":-6.5205,"y":-3.0431,"c":"藍","g":"女","l":35,"p":20},{"id":"35-21","x":-6.5471,"y":-2.7733,"c":"藍","g":"女","l":35,"p":21},{"id":"35-22","x":-6.5966,"y":-2.6874,"c":"藍","g":"女","l":35,"p":22},{"id":"36-16","x":-6.3954,"y":-3.4837,"c":"藍","g":"女","l":36,"p":16},{"id":"36-17","x":-6.4449,"y":-3.3984,"c":"藍","g":"女","l":36,"p":17},{"id":"36-18","x":-6.4942,"y":-3.3128,"c":"藍","g":"女","l":36,"p":18},{"id":"36-19","x":-6.5702,"y":-2.9573,"c":"藍","g":"女","l":36,"p":19},{"id":"36-20","x":-6.6195,"y":-2.8719,"c":"藍","g":"女","l":36,"p":20},{"id":"36-21","x":-6.6688,"y":-2.7862,"c":"藍","g":"女","l":36,"p":21},{"id":"36-22","x":-6.7183,"y":-2.7008,"c":"藍","g":"女","l":36,"p":22},{"id":"37-16","x":-6.0067,"y":-3.5037,"c":"白","g":"女","l":37,"p":16},{"id":"37-17","x":-5.8849,"y":-3.4908,"c":"白","g":"女","l":37,"p":17},{"id":"37-18","x":-5.9344,"y":-3.4051,"c":"白","g":"女","l":37,"p":18},{"id":"37-19","x":-5.9837,"y":-3.3193,"c":"白","g":"女","l":37,"p":19},{"id":"37-20","x":-6.033,"y":-3.2343,"c":"白","g":"女","l":37,"p":20},{"id":"37-21","x":-6.0825,"y":-3.1484,"c":"白","g":"女","l":37,"p":21},{"id":"37-22","x":-6.132,"y":-3.063,"c":"白","g":"女","l":37,"p":22},{"id":"38-16","x":-6.5638,"y":-3.4646,"c":"白","g":"女","l":38,"p":16},{"id":"38-17","x":-6.6133,"y":-3.3788,"c":"白","g":"女","l":38,"p":17},{"id":"38-18","x":-6.6626,"y":-3.2934,"c":"白","g":"女","l":38,"p":18},{"id":"38-19","x":-6.056,"y":-3.4181,"c":"白","g":"女","l":38,"p":19},{"id":"38-20","x":-6.1055,"y":-3.3328,"c":"白","g":"女","l":38,"p":20},{"id":"38-21","x":-6.1548,"y":-3.2468,"c":"白","g":"女","l":38,"p":21},{"id":"38-22","x":-6.2043,"y":-3.1618,"c":"白","g":"女","l":38,"p":22},{"id":"39-16","x":-6.6855,"y":-3.4778,"c":"白","g":"女","l":39,"p":16},{"id":"39-17","x":-6.7348,"y":-3.3922,"c":"白","g":"女","l":39,"p":17},{"id":"39-18","x":-6.7841,"y":-3.3065,"c":"白","g":"女","l":39,"p":18},{"id":"39-19","x":-6.7119,"y":-3.2075,"c":"白","g":"女","l":39,"p":19},{"id":"39-20","x":-6.7614,"y":-3.1219,"c":"白","g":"女","l":39,"p":20},{"id":"39-21","x":-6.8109,"y":-3.0362,"c":"白","g":"女","l":39,"p":21},{"id":"39-22","x":-6.8602,"y":-2.9508,"c":"白","g":"女","l":39,"p":22},{"id":"4-16","x":-1.1859,"y":-3.6432,"c":"藍","g":"男","l":4,"p":16},{"id":"4-17","x":-1.1859,"y":-3.5315,"c":"藍","g":"男","l":4,"p":17},{"id":"4-18","x":-1.1859,"y":-3.4193,"c":"藍","g":"男","l":4,"p":18},{"id":"4-19","x":-1.1855,"y":-3.3074,"c":"藍","g":"男","l":4,"p":19},{"id":"4-20","x":-1.1859,"y":-3.196,"c":"藍","g":"男","l":4,"p":20},{"id":"4-21","x":-1.1859,"y":-3.083,"c":"藍","g":"男","l":4,"p":21},{"id":"4-22","x":-1.1857,"y":-2.9715,"c":"藍","g":"男","l":4,"p":22},{"id":"40-16","x":-7.1388,"y":-3.0956,"c":"藍","g":"女","l":40,"p":16},{"id":"40-17","x":-6.5437,"y":-3.2272,"c":"藍","g":"女","l":40,"p":17},{"id":"40-18","x":-6.593,"y":-3.1417,"c":"藍","g":"女","l":40,"p":18},{"id":"40-19","x":-6.6425,"y":-3.0557,"c":"藍","g":"女","l":40,"p":19},{"id":"40-20","x":-6.6918,"y":-2.9704,"c":"藍","g":"女","l":40,"p":20},{"id":"40-21","x":-6.7413,"y":-2.8846,"c":"藍","g":"女","l":40,"p":21},{"id":"40-22","x":-6.7906,"y":-2.7994,"c":"藍","g":"女","l":40,"p":22},{"id":"41-16","x":-7.1881,"y":-3.0099,"c":"藍","g":"女","l":41,"p":16},{"id":"41-17","x":-7.2374,"y":-2.9243,"c":"藍","g":"女","l":41,"p":17},{"id":"41-18","x":-7.2869,"y":-2.8387,"c":"藍","g":"女","l":41,"p":18},{"id":"41-19","x":-7.3364,"y":-2.753,"c":"藍","g":"女","l":41,"p":19},{"id":"41-20","x":-7.3857,"y":-2.6672,"c":"藍","g":"女","l":41,"p":20},{"id":"41-21","x":-7.435,"y":-2.5817,"c":"藍","g":"女","l":41,"p":21},{"id":"41-22","x":-7.5624,"y":-2.5989,"c":"藍","g":"女","l":41,"p":22},{"id":"42-16","x":-7.2167,"y":-3.1975,"c":"藍","g":"女","l":42,"p":16},{"id":"42-17","x":-7.2662,"y":-3.1116,"c":"藍","g":"女","l":42,"p":17},{"id":"42-18","x":-7.3155,"y":-3.0264,"c":"藍","g":"女","l":42,"p":18},{"id":"42-19","x":-7.3648,"y":-2.9406,"c":"藍","g":"女","l":42,"p":19},{"id":"42-20","x":-7.4143,"y":-2.8554,"c":"藍","g":"女","l":42,"p":20},{"id":"42-21","x":-7.4636,"y":-2.7697,"c":"藍","g":"女","l":42,"p":21},{"id":"42-22","x":-7.5131,"y":-2.6841,"c":"藍","g":"女","l":42,"p":22},{"id":"43-16","x":-6.7576,"y":-3.5768,"c":"白","g":"女","l":43,"p":16},{"id":"43-17","x":-6.8071,"y":-3.491,"c":"白","g":"女","l":43,"p":17},{"id":"43-18","x":-6.8564,"y":-3.4055,"c":"白","g":"女","l":43,"p":18},{"id":"43-19","x":-6.8336,"y":-3.2209,"c":"白","g":"女","l":43,"p":19},{"id":"43-20","x":-6.8829,"y":-3.1353,"c":"白","g":"女","l":43,"p":20},{"id":"43-21","x":-6.9324,"y":-3.0496,"c":"白","g":"女","l":43,"p":21},{"id":"43-22","x":-6.9817,"y":-2.964,"c":"白","g":"女","l":43,"p":22},{"id":"44-16","x":-7.6821,"y":-3.3656,"c":"白","g":"女","l":44,"p":16},{"id":"44-17","x":-7.7316,"y":-3.28,"c":"白","g":"女","l":44,"p":17},{"id":"44-18","x":-7.7809,"y":-3.1946,"c":"白","g":"女","l":44,"p":18},{"id":"44-19","x":-6.9059,"y":-3.3195,"c":"白","g":"女","l":44,"p":19},{"id":"44-20","x":-6.955,"y":-3.2343,"c":"白","g":"女","l":44,"p":20},{"id":"44-21","x":-7.0047,"y":-3.1484,"c":"白","g":"女","l":44,"p":21},{"id":"44-22","x":-7.054,"y":-3.063,"c":"白","g":"女","l":44,"p":22},{"id":"45-16","x":-7.5831,"y":-3.5367,"c":"白","g":"女","l":45,"p":16},{"id":"45-17","x":-7.6326,"y":-3.4513,"c":"白","g":"女","l":45,"p":17},{"id":"45-18","x":-7.7107,"y":-3.5534,"c":"白","g":"女","l":45,"p":18},{"id":"45-19","x":-7.76,"y":-3.468,"c":"白","g":"女","l":45,"p":19},{"id":"45-20","x":-7.8095,"y":-3.3821,"c":"白","g":"女","l":45,"p":20},{"id":"45-21","x":-7.8588,"y":-3.2969,"c":"白","g":"女","l":45,"p":21},{"id":"45-22","x":-7.9083,"y":-3.2111,"c":"白","g":"女","l":45,"p":22},{"id":"46-16","x":-7.3934,"y":-3.1288,"c":"藍","g":"女","l":46,"p":16},{"id":"46-17","x":-7.4429,"y":-3.0433,"c":"藍","g":"女","l":46,"p":17},{"id":"46-18","x":-7.4922,"y":-2.9581,"c":"藍","g":"女","l":46,"p":18},{"id":"46-19","x":-7.5415,"y":-2.8721,"c":"藍","g":"女","l":46,"p":19},{"id":"46-20","x":-7.591,"y":-2.7862,"c":"藍","g":"女","l":46,"p":20},{"id":"46-21","x":-7.6405,"y":-2.7008,"c":"藍","g":"女","l":46,"p":21},{"id":"46-22","x":-7.6898,"y":-2.6152,"c":"藍","g":"女","l":46,"p":22},{"id":"47-16","x":-7.4713,"y":-3.2305,"c":"藍","g":"女","l":47,"p":16},{"id":"47-17","x":-7.5208,"y":-3.1449,"c":"藍","g":"女","l":47,"p":17},{"id":"47-18","x":-7.5703,"y":-3.0592,"c":"藍","g":"女","l":47,"p":18},{"id":"47-19","x":-7.6196,"y":-2.9736,"c":"藍","g":"女","l":47,"p":19},{"id":"47-20","x":-7.6689,"y":-2.8882,"c":"藍","g":"女","l":47,"p":20},{"id":"47-21","x":-7.7184,"y":-2.8021,"c":"藍","g":"女","l":47,"p":21},{"id":"47-22","x":-7.7679,"y":-2.7171,"c":"藍","g":"女","l":47,"p":22},{"id":"48-16","x":-7.5494,"y":-3.3322,"c":"藍","g":"女","l":48,"p":16},{"id":"48-17","x":-7.5987,"y":-3.2466,"c":"藍","g":"女","l":48,"p":17},{"id":"48-18","x":-7.6482,"y":-3.1614,"c":"藍","g":"女","l":48,"p":18},{"id":"48-19","x":-7.6975,"y":-3.0755,"c":"藍","g":"女","l":48,"p":19},{"id":"48-20","x":-7.747,"y":-2.9903,"c":"藍","g":"女","l":48,"p":20},{"id":"48-21","x":-7.7963,"y":-2.9047,"c":"藍","g":"女","l":48,"p":21},{"id":"48-22","x":-7.8458,"y":-2.819,"c":"藍","g":"女","l":48,"p":22},{"id":"49-16","x":-7.7391,"y":-3.741,"c":"白","g":"男","l":49,"p":16},{"id":"49-17","x":-7.7886,"y":-3.6553,"c":"白","g":"男","l":49,"p":17},{"id":"49-18","x":-7.8379,"y":-3.5699,"c":"白","g":"男","l":49,"p":18},{"id":"49-19","x":-7.8874,"y":-3.4841,"c":"白","g":"男","l":49,"p":19},{"id":"49-20","x":-7.9367,"y":-3.3988,"c":"白","g":"男","l":49,"p":20},{"id":"49-21","x":-7.9864,"y":-3.313,"c":"白","g":"男","l":49,"p":21},{"id":"49-22","x":-8.0357,"y":-3.228,"c":"白","g":"男","l":49,"p":22},{"id":"5-16","x":-1.3175,"y":-3.5822,"c":"藍","g":"男","l":5,"p":16},{"id":"5-17","x":-1.3175,"y":-3.4701,"c":"藍","g":"男","l":5,"p":17},{"id":"5-18","x":-1.3175,"y":-3.3579,"c":"藍","g":"男","l":5,"p":18},{"id":"5-19","x":-1.3175,"y":-3.2464,"c":"藍","g":"男","l":5,"p":19},{"id":"5-20","x":-1.3175,"y":-3.1338,"c":"藍","g":"男","l":5,"p":20},{"id":"5-21","x":-1.3175,"y":-3.0225,"c":"藍","g":"男","l":5,"p":21},{"id":"5-22","x":-1.3175,"y":-2.9099,"c":"藍","g":"男","l":5,"p":22},{"id":"50-16","x":-7.817,"y":-3.8431,"c":"白","g":"男","l":50,"p":16},{"id":"50-17","x":-7.8665,"y":-3.7573,"c":"白","g":"男","l":50,"p":17},{"id":"50-18","x":-7.916,"y":-3.6716,"c":"白","g":"男","l":50,"p":18},{"id":"50-19","x":-7.9655,"y":-3.5864,"c":"白","g":"男","l":50,"p":19},{"id":"50-20","x":-8.0148,"y":-3.5008,"c":"白","g":"男","l":50,"p":20},{"id":"50-21","x":-8.0643,"y":-3.4151,"c":"白","g":"男","l":50,"p":21},{"id":"50-22","x":-8.1136,"y":-3.3297,"c":"白","g":"男","l":50,"p":22},{"id":"51-16","x":-7.9446,"y":-3.8596,"c":"白","g":"男","l":51,"p":16},{"id":"51-17","x":-7.9939,"y":-3.7742,"c":"白","g":"男","l":51,"p":17},{"id":"51-18","x":-8.0434,"y":-3.6883,"c":"白","g":"男","l":51,"p":18},{"id":"51-19","x":-8.0927,"y":-3.6029,"c":"白","g":"男","l":51,"p":19},{"id":"51-20","x":-8.1422,"y":-3.5173,"c":"白","g":"男","l":51,"p":20},{"id":"51-21","x":-8.1915,"y":-3.4318,"c":"白","g":"男","l":51,"p":21},{"id":"52-16","x":-8.3085,"y":-3.5359,"c":"藍","g":"男","l":52,"p":16},{"id":"52-17","x":-8.358,"y":-3.45,"c":"藍","g":"男","l":52,"p":17},{"id":"52-18","x":-8.4073,"y":-3.3646,"c":"藍","g":"男","l":52,"p":18},{"id":"52-19","x":-8.4568,"y":-3.279,"c":"藍","g":"男","l":52,"p":19},{"id":"52-20","x":-8.5955,"y":-3.3023,"c":"藍","g":"男","l":52,"p":20},{"id":"53-16","x":-8.4472,"y":-3.5591,"c":"藍","g":"男","l":53,"p":16},{"id":"53-17","x":-8.4965,"y":-3.4736,"c":"藍","g":"男","l":53,"p":17},{"id":"53-18","x":-8.5462,"y":-3.3878,"c":"藍","g":"男","l":53,"p":18},{"id":"53-19","x":-8.6849,"y":-3.411,"c":"藍","g":"男","l":53,"p":19},{"id":"54-16","x":-8.5366,"y":-3.6681,"c":"藍","g":"男","l":54,"p":16},{"id":"54-17","x":-8.5861,"y":-3.5822,"c":"藍","g":"男","l":54,"p":17},{"id":"54-18","x":-8.6356,"y":-3.4966,"c":"藍","g":"男","l":54,"p":18},{"id":"6-16","x":-1.4491,"y":-3.643,"c":"藍","g":"男","l":6,"p":16},{"id":"6-17","x":-1.4491,"y":-3.5315,"c":"藍","g":"男","l":6,"p":17},{"id":"6-18","x":-1.4491,"y":-3.4193,"c":"藍","g":"男","l":6,"p":18},{"id":"6-19","x":-1.4491,"y":-3.3074,"c":"藍","g":"男","l":6,"p":19},{"id":"6-20","x":-1.4491,"y":-3.1958,"c":"藍","g":"男","l":6,"p":20},{"id":"6-21","x":-1.4491,"y":-3.0832,"c":"藍","g":"男","l":6,"p":21},{"id":"6-22","x":-1.4491,"y":-2.9719,"c":"藍","g":"男","l":6,"p":22},{"id":"7-16","x":-1.5809,"y":-3.7044,"c":"白","g":"女","l":7,"p":16},{"id":"7-17","x":-1.5809,"y":-3.5925,"c":"白","g":"女","l":7,"p":17},{"id":"7-18","x":-1.5809,"y":-3.4805,"c":"白","g":"女","l":7,"p":18},{"id":"7-19","x":-1.5809,"y":-3.3686,"c":"白","g":"女","l":7,"p":19},{"id":"7-20","x":-1.5809,"y":-3.2566,"c":"白","g":"女","l":7,"p":20},{"id":"7-21","x":-1.5809,"y":-3.1444,"c":"白","g":"女","l":7,"p":21},{"id":"7-22","x":-1.5809,"y":-3.0327,"c":"白","g":"女","l":7,"p":22},{"id":"8-16","x":-1.7123,"y":-3.766,"c":"白","g":"女","l":8,"p":16},{"id":"8-17","x":-1.7125,"y":-3.6537,"c":"白","g":"女","l":8,"p":17},{"id":"8-18","x":-1.7123,"y":-3.5419,"c":"白","g":"女","l":8,"p":18},{"id":"8-19","x":-1.7125,"y":-3.4298,"c":"白","g":"女","l":8,"p":19},{"id":"8-20","x":-1.7123,"y":-3.3178,"c":"白","g":"女","l":8,"p":20},{"id":"8-21","x":-1.7123,"y":-3.2061,"c":"白","g":"女","l":8,"p":21},{"id":"8-22","x":-1.7123,"y":-3.0939,"c":"白","g":"女","l":8,"p":22},{"id":"9-16","x":-1.8443,"y":-3.8268,"c":"白","g":"女","l":9,"p":16},{"id":"9-17","x":-1.8443,"y":-3.7151,"c":"白","g":"女","l":9,"p":17},{"id":"9-18","x":-1.8443,"y":-3.6031,"c":"白","g":"女","l":9,"p":18},{"id":"9-19","x":-1.8443,"y":-3.491,"c":"白","g":"女","l":9,"p":19},{"id":"9-20","x":-1.8443,"y":-3.3792,"c":"白","g":"女","l":9,"p":20},{"id":"9-21","x":-1.8443,"y":-3.267,"c":"白","g":"女","l":9,"p":21},{"id":"9-22","x":-1.8443,"y":-3.1555,"c":"白","g":"女","l":9,"p":22}],"counts":{"total":368,"white":188,"blue":180},"days":[{"label":"11/12（四）","sub":"全區共同場","branch":"46"},{"label":"11/13（五）","sub":"安平聯區＋大橋","branch":"57"},{"label":"11/14（六）","sub":"佳里聯區","branch":"46"},{"label":"11/15（日）","sub":"仁德聯區","branch":"57"}],"formation":{"sceneCode":"02","sceneName":"行願千手","seqLabel":"第 3 段","note":"行願千手隊形座標（場景 02），不是基本座位格。票面仍是列-排；圖上相鄰編號可不連續。站／跪不是排號規則，是企劃點選後的版本名。"}};
+const SEGS = [
+  {k:"序", note:"分波開黃燈"},
+  {k:"太子", note:"白／藍動作不同"},
+  {k:"老苦", note:"有示範影片"},
+  {k:"病苦", note:"白／藍高跪"},
+  {k:"死苦", note:"拍點"},
+  {k:"六度", note:"白左藍右"},
+  {k:"行願", note:"海浪四種人", focus:true},
+  {k:"開經偈", note:"千手／蓮花池"},
+  {k:"米籮", note:"西班、排跪"},
+  {k:"靜思家風", note:"四天相同"},
+  {k:"一盞燈", note:"船／浪／藍衣"},
+  {k:"五角錢", note:"四六／五日不同", branch:true},
+  {k:"圍爐", note:"結尾日別", branch:true},
+];
+
+let role = "planner";
+let activeV = "ws";
+let meIdx = SEGS.findIndex(s => s.k === "行願");
+let panel = "content";
+
+const $ = id => document.getElementById(id);
+const fmt = t => {
+  if (!isFinite(t)) return "—";
+  const m = Math.floor(t/60), s = Math.floor(t%60);
+  return m + ":" + String(s).padStart(2,"0");
+};
+
+function setRole(r) {
+  role = r;
+  document.body.className = "r-" + r;
+  $("role").value = r;
+  $("adminNote").style.display = r === "admin" ? "block" : "none";
+  if (r === "member" || r === "none") {
+    show("me");
+    $("phone").classList.toggle("hidden", r === "none");
+    $("noSeat").classList.toggle("hidden", r !== "none");
+    $("meSeat").textContent = r === "none"
+      ? "尚未配位"
+      : "座位 8-18 · 白衣 · 女 · 命中版本「白衣 · 站」（依隊形圖點選結果）";
+  } else {
+    // 企劃預設進編輯；行政也可看編輯（唯讀）
+    if (!$("v-edit").classList.contains("on") && !$("v-days").classList.contains("on") && !$("v-pub").classList.contains("on")) {
+      show("edit");
+    } else if ($("v-me").classList.contains("on")) {
+      show("edit");
+    }
+  }
+  document.querySelectorAll("#v-edit input, #v-edit select, #v-edit textarea").forEach(el => {
+    el.disabled = r === "admin";
+  });
+}
+
+function show(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + name));
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.getAttribute("data-v") === name));
+  if (name === "edit") {
+    loadMedia();
+    renderWho();
+    if (panel === "look") renderMap();
+  }
+  if (name === "me") renderMe();
+  if (name === "pub") renderPub();
+  if (name === "days") renderDays();
+}
+
+function setPanel(name) {
+  panel = name;
+  document.querySelectorAll(".edit-tabs button").forEach(b => b.classList.toggle("on", b.getAttribute("data-panel") === name));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "p-" + name));
+  if (name === "look") renderMap();
+  if (name === "who") renderWho();
+}
+
+function loadMedia() {
+  const m = DATA.media["行願"];
+  $("aud").src = m.audio;
+  $("demoVidFile").href = m.video;
+  const v = DATA.variants.find(x => x.id === activeV) || DATA.variants[0];
+  $("heroTeach").src = v.png;
+  $("demoA").href = v.demo || m.demo;
+  $("playerLabel").textContent = "正在聽：行願 · " + v.name;
+  const tick = () => {
+    const d = $("aud").duration;
+    const t = $("aud").currentTime || 0;
+    $("clock").textContent = isFinite(d) ? (fmt(t) + " / " + fmt(d)) : "讀取長度…";
+  };
+  ["loadedmetadata","timeupdate"].forEach(ev => $("aud").addEventListener(ev, tick));
+}
+
+function renderDays() {
+  $("mTot").textContent = DATA.counts.total;
+  $("mW").textContent = DATA.counts.white;
+  $("mB").textContent = DATA.counts.blue;
+  $("thead").innerHTML = `<tr><th class="ord">#</th>${DATA.days.map(d=>`<th>${d.label}<div style="font-weight:500;color:var(--ink3)">${d.sub}</div></th>`).join("")}</tr>`;
+  $("tbody").innerHTML = "";
+  SEGS.forEach((seg, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="ord">${i+1}</td>`;
+    DATA.days.forEach(day => {
+      const td = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "scell" + (seg.focus ? " pick" : "") + (seg.branch ? " branch" : "");
+      const title = DATA.media[seg.k].title;
+      if (!seg.branch) {
+        btn.innerHTML = `<b>${title}</b><small>${seg.note}</small><span class="chip">四天共用</span>`;
+      } else if (seg.k === "五角錢") {
+        btn.innerHTML = day.branch==="46"
+          ? `<b>${title}</b><small>四／六：台詞後不動</small><span class="chip warn">這天特別</span>`
+          : `<b>${title}</b><small>五／日：等口令再接 ending</small><span class="chip warn">這天特別</span>`;
+      } else {
+        btn.innerHTML = day.branch==="46"
+          ? `<b>${title}</b><small>四／六：普明寺文案</small><span class="chip warn">這天特別</span>`
+          : `<b>${title}</b><small>五／日：菩薩道 ending</small><span class="chip warn">這天特別</span>`;
+      }
+      if (seg.focus) btn.addEventListener("click", () => show("edit"));
+      td.appendChild(btn);
+      tr.appendChild(td);
+    });
+    $("tbody").appendChild(tr);
+  });
+  $("thumbs").innerHTML = ["序","老苦","行願","米籮","靜思家風","一盞燈","五角錢","圍爐"].map(k => {
+    const m = DATA.media[k];
+    return `<figure><img src="${m.png}" alt="${m.title}" loading="lazy"><figcaption>${m.title}</figcaption></figure>`;
+  }).join("");
+}
+
+function renderWho() {
+  $("whoGrid").innerHTML = DATA.variants.map(v => `
+    <button type="button" class="who-card ${v.id===activeV?"on":""}" data-id="${v.id}">
+      <img src="${v.png}" alt="${v.name}" loading="lazy">
+      <div class="body">
+        <b>${v.name}</b>
+        <span class="count">${v.count} 席</span>
+        <small>${v.who}</small>
+        <small>${v.how}</small>
+        <small>${v.rule}</small>
+      </div>
+    </button>
+  `).join("");
+  $("whoGrid").querySelectorAll(".who-card").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (role === "admin") return;
+      activeV = btn.getAttribute("data-id");
+      renderWho();
+      loadMedia();
+      if (panel === "look") renderMap();
+    });
+  });
+  const v = DATA.variants.find(x => x.id === activeV);
+  $("whoDetail").innerHTML = `
+    <b style="font-size:18px">${v.name}</b>
+    <p class="sub">選中後，<strong>被點進此版本</strong>的座位會看到下面動作與教材。站／跪不是自動算的。</p>
+    <div class="content-blocks">
+      <div class="block"><h3>動作</h3><p>${v.action}</p></div>
+      <div class="block"><h3>面向</h3><p>${v.facing}</p></div>
+      <div class="block"><h3>教材圖</h3><img src="${v.png}" alt="" style="max-width:100%;border-radius:12px;border:1px solid var(--line)"></div>
+      <div class="block"><h3>示範影片</h3><p><a href="${v.demo}" target="_blank" rel="noreferrer">打開示範</a></p></div>
+      <div class="block"><h3>座位例子</h3><p>${v.sample.join("、")}…（共 ${v.count} 席）</p></div>
+    </div>
+  `;
+  $("fActDefault").value = "沒分到四種版本時看這裡；本節多數人應落在白站／白跪／藍站／藍跪之一。";
+}
+
+function renderMap() {
+  const canvas = $("formCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = 720, H = 440;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = "100%";
+  canvas.style.maxWidth = W + "px";
+  canvas.style.height = "auto";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // 底
+  ctx.fillStyle = "#0f1419";
+  ctx.fillRect(0, 0, W, H);
+
+  const pts = DATA.seats;
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+  const minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+  const padL = 36, padR = 16, padT = 36, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  // 等比縮放（像 /me/flow 走位圖），避免拉成座位格
+  const s = Math.min(plotW / (maxX - minX || 1), plotH / (maxY - minY || 1));
+  const ox = padL + (plotW - (maxX - minX) * s) / 2;
+  const oy = padT + (plotH - (maxY - minY) * s) / 2;
+  // fy 大 → 畫面上方（舞台方向）
+  const toXY = (p) => ({
+    X: ox + (p.x - minX) * s,
+    Y: oy + (maxY - p.y) * s,
+  });
+
+  const owner = new Map();
+  for (const [vid, keys] of Object.entries(DATA.variantKeys)) {
+    for (const k of keys) owner.set(k, vid);
+  }
+
+  ctx.fillStyle = "#8a9aaa";
+  ctx.font = "600 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("舞台方向 ↑　行願千手隊形 · 亮點＝此版本已點選的座位", W / 2, 22);
+
+  const projected = pts.map(p => {
+    const { X, Y } = toXY(p);
+    return { ...p, X, Y, o: owner.get(p.id) || null };
+  });
+
+  // 先畫未選中（半透明），再畫選中
+  const paint = (p, hit) => {
+    ctx.beginPath();
+    ctx.arc(p.X, p.Y, hit ? 6 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = p.c === "白" ? "#e8e6df" : "#4f8fd4";
+    ctx.globalAlpha = hit ? 1 : 0.35;
+    ctx.fill();
+    if (hit) {
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#5eb0ff";
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  };
+  projected.filter(p => p.o !== activeV).forEach(p => paint(p, false));
+  projected.filter(p => p.o === activeV).forEach(p => paint(p, true));
+
+  // 在選中版本裡抽樣標幾個票面編號，讓企劃看到「編號不連續」
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#cfe6ff";
+  const hits = projected.filter(p => p.o === activeV);
+  const samples = [0, Math.floor(hits.length/4), Math.floor(hits.length/2), Math.floor(hits.length*3/4), hits.length-1]
+    .filter((i, idx, a) => i >= 0 && i < hits.length && a.indexOf(i) === idx)
+    .map(i => hits[i]);
+  samples.forEach(p => {
+    ctx.fillText(p.id, p.X + 7, p.Y + 3);
+  });
+
+  canvas._proj = projected;
+  if (!canvas._bound) {
+    canvas._bound = true;
+    canvas.addEventListener("mousemove", (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width, scaleY = H / rect.height;
+      const mx = (ev.clientX - rect.left) * scaleX;
+      const my = (ev.clientY - rect.top) * scaleY;
+      let best = null, bestD = 14;
+      for (const p of (canvas._proj || [])) {
+        const d = Math.hypot(p.X - mx, p.Y - my);
+        if (d < bestD) { bestD = d; best = p; }
+      }
+      const el = $("hoverLabel");
+      if (!best) { el.textContent = "把游標移到點上可看票面編號（列-排）"; return; }
+      const vname = DATA.variants.find(v => v.id === best.o)?.name || "（未分版本）";
+      el.textContent = `票面 ${best.id} · ${best.c}衣 · ${best.g} · ${vname}　← 編號是座位碼，位置在行願隊形上`;
+    });
+  }
+
+  const v = DATA.variants.find(x => x.id === activeV);
+  $("legend").innerHTML = `
+    <span><i style="background:#e8e6df"></i>白衣</span>
+    <span><i style="background:#4f8fd4"></i>藍衣</span>
+    <span><i style="background:#5eb0ff"></i>亮圈＝${v.name}</span>
+    <span>號碼＝票面列-排（圖上可不連續）· 站跪≠排號</span>
+  `;
+  // 找空間上相鄰但編號差很遠的例子（給企劃看）
+  let gapExample = "";
+  const hits2 = projected.filter(p => p.o === activeV);
+  outer: for (let i = 0; i < hits2.length; i++) {
+    for (let j = i + 1; j < hits2.length; j++) {
+      const a = hits2[i], b = hits2[j];
+      const dist = Math.hypot(a.X - b.X, a.Y - b.Y);
+      const lieGap = Math.abs(a.l - b.l);
+      if (dist < 18 && lieGap >= 6) {
+        gapExample = `例如圖上很近的 ${a.id} 與 ${b.id}，列號卻差 ${lieGap}`;
+        break outer;
+      }
+    }
+  }
+  $("sideSum").innerHTML = `
+    <div class="chip">隊形：行願千手（第 3 段 · 02）</div>
+    <div><b>${v.name}</b></div>
+    <div class="big">${v.count} 席已點</div>
+    <div style="color:var(--ink3)">${v.how}</div>
+    <div style="color:var(--ink3)">${v.rule}</div>
+    <div style="color:var(--ink2)">${v.action}</div>
+    <img src="${v.png}" alt="${v.name}教材">
+    <a class="btn" href="${v.demo}" target="_blank" rel="noreferrer" style="text-align:center;text-decoration:none">看這個版本的示範</a>
+    <div class="chip ok">四種已點合計 ${DATA.variants.reduce((a,x)=>a+x.count,0)} 席（須互斥）</div>
+    <p class="sub" style="margin:0">票面例子：${v.sample.join("、")}…</p>
+    ${gapExample ? `<p class="sub" style="margin:0;color:var(--warn)">${gapExample}（說明編號在隊形上可不連續）</p>` : ""}
+    <p class="sub" style="margin:0">正式產品：企劃在此圖點選／取消座位；原型亮點僅為範例集合。</p>
+  `;
+}
+
+function renderPub() {
+  const rows = [
+    ["好", "11 首有啟用，順序沒衝突"],
+    ["好", "行願的歌檔可以播放，長度正常"],
+    ["好", "「海浪」小節已填開始與結束時間"],
+    ["好", `四種人座位不重疊：${DATA.variants.map(v=>v.name+v.count).join("、")}`],
+    ["好", "走位圖對應仍有效"],
+    ["注意", "C 組若只發文字可以；若要走位圖需另處理"],
+  ];
+  $("checks").innerHTML = rows.map(([st,t]) => `
+    <div class="crow"><span class="okdot">${st==="好"?"✓":"!"}</span><div>${t}</div><span class="chip ${st==="好"?"ok":"warn"}">${st==="好"?"可以":"提醒"}</span></div>
+  `).join("");
+  $("pubNums").innerHTML = DATA.variants.map(v => `<div>${v.name} → ${v.count} 人會看到這套</div>`).join("");
+}
+
+function renderMe() {
+  $("meDays").innerHTML = DATA.days.map((d,i) =>
+    `<button type="button" class="daytab ${i===0?"on":""}">${d.label}</button>`
+  ).join("");
+  const seg = SEGS[meIdx];
+  const m = DATA.media[seg.k];
+  const v = DATA.variants.find(x => x.id === "ws");
+  $("meTitle").textContent = m.title;
+  $("meSub").textContent = `第 ${meIdx+1} 首 · 共 ${SEGS.length} 首 · 你的版本：${v.name}（座位在隊形圖上被點到這版）`;
+  $("idx").textContent = `${meIdx+1} / ${SEGS.length}`;
+  const teach = seg.k==="行願" ? v.png : m.png;
+  $("meTeachTop").src = teach;
+  $("meAud").src = m.audio;
+  $("meTeach").src = teach;
+  $("meAct").textContent = seg.k==="行願" ? v.action : seg.note;
+  $("meCue").textContent = seg.k==="行願" ? "現在：海浪 · 誰站誰跪" : ("現在：" + m.title);
+}
+
+// wire
+$("role").addEventListener("change", e => setRole(e.target.value));
+$("theme").addEventListener("click", () => {
+  const r = document.documentElement;
+  r.setAttribute("data-theme", r.getAttribute("data-theme")==="dark"?"light":"dark");
+});
+document.querySelectorAll("#tabs button, [data-v]").forEach(b => {
+  if (!b.getAttribute("data-v")) return;
+  b.addEventListener("click", () => show(b.getAttribute("data-v")));
+});
+document.querySelectorAll(".edit-tabs button").forEach(b => {
+  b.addEventListener("click", () => setPanel(b.getAttribute("data-panel")));
+});
+document.querySelectorAll(".step").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".step").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+  });
+});
+$("prev").addEventListener("click", () => { meIdx = Math.max(0, meIdx-1); renderMe(); });
+$("next").addEventListener("click", () => { meIdx = Math.min(SEGS.length-1, meIdx+1); renderMe(); });
+$("auto").addEventListener("click", e => {
+  const on = e.currentTarget.getAttribute("aria-pressed")==="true";
+  e.currentTarget.setAttribute("aria-pressed", on?"false":"true");
+});
+$("saveBtn").addEventListener("click", () => alert("原型：已模擬儲存（還沒接後端）。"));
+$("pubBtn").addEventListener("click", () => alert("原型：已模擬發布 11/12（還沒接後端）。"));
+
+// boot: 企劃一進來就看編輯頁
+renderDays();
+loadMedia();
+renderWho();
+renderMap();
+renderMe();
+setRole("planner");
+show("edit");
+setPanel("who"); // 企劃最在意「誰做哪一種」— 預設開這頁
+</script>
+</body>
+</html>
