@@ -1,33 +1,36 @@
-import json,sys,numpy as np
-class cKDTree:
-    def __init__(s,pts): s.a=np.array(pts)
-    def query_ball_point(s,q,r):
-        d=np.hypot(s.a[:,0]-q[0],s.a[:,1]-q[1]); return np.nonzero(d<r)[0]
-d=json.load(open(sys.argv[1])); P=d['persons']
-def pos(p,t):
-    a=p['path']
-    if t<=a[0][2]: return a[0][:2]
-    if t>=a[-1][2]: return a[-1][:2]
-    lo,hi=0,len(a)-1
-    while hi-lo>1:
-        m=(lo+hi)//2
-        if a[m][2]<=t: lo=m
-        else: hi=m
-    u,v=a[lo],a[hi]; f=(t-u[2])/((v[2]-u[2]) or 1)
-    return (u[0]+(v[0]-u[0])*f,u[1]+(v[1]-u[1])*f)
-bad=set(); ex={}
-for t in np.arange(6,d['meta']['tEnd'],0.25):
-    st=[p for p in P if p['t']['assembly']<=t<p['t']['enter']-0.05]
-    mv=[p for p in P if (p['t']['leave']<t<p['t']['assembly']-0.05) or (p['t']['enter']+0.05<t<p['t']['gate'])]
-    if not st or not mv: continue
-    tr=cKDTree([pos(p,t) for p in st])
-    for p in mv:
-        q=pos(p,t)
-        for k in tr.query_ball_point(q,0.03):
-            s=st[k]
-            if s['lie']==p['lie']: continue
-            bad.add(p['id']); ex.setdefault(p['id'],(round(t,1),s['id'],s['assembly'],p['assembly']))
-print('穿過站定者人數',len(bad))
-import collections
-print(collections.Counter((v[3],v[2]) for v in ex.values()))
-print(list(ex.items())[:12])
+"""檢查「行進中的人穿過已站定者」:任何時刻,走動中的人與已在集結區站定的人(含同一列)距離 < R 即算一次。
+
+用法: python3 check.py new.json
+時間步長 DT 秒、行進速度約 1.1 單位/秒,每步最多走 0.055 單位;直線穿過站定者時必有一個取樣點落在 R=0.03 內。
+"""
+import json, sys, collections
+import numpy as np
+
+DT, R = 0.05, 0.03
+d = json.load(open(sys.argv[1])); P = d['persons']
+T = np.arange(6, d['meta']['tEnd'], DT)
+X = np.empty((len(P), len(T))); Y = np.empty_like(X)
+for i, p in enumerate(P):
+    a = np.array(p['path'])
+    X[i] = np.interp(T, a[:, 2], a[:, 0]); Y[i] = np.interp(T, a[:, 2], a[:, 1])
+tt = lambda k: np.array([p['t'][k] for p in P])
+leave, assembly, enter, gate = tt('leave'), tt('assembly'), tt('enter'), tt('gate')
+lie = np.array([p['lie'] for p in P])
+
+bad = {}
+for k, t in enumerate(T):
+    st = np.nonzero((assembly <= t) & (t < enter - 0.05))[0]
+    mv = np.nonzero(((leave < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < gate)))[0]
+    if not len(st) or not len(mv): continue
+    grid = collections.defaultdict(list)
+    for i in st: grid[(int(X[i, k] // R), int(Y[i, k] // R))].append(i)
+    for i in mv:
+        if P[i]['id'] in bad: continue
+        cx, cy = int(X[i, k] // R), int(Y[i, k] // R)
+        for gx in (cx - 1, cx, cx + 1):
+            for gy in (cy - 1, cy, cy + 1):
+                for j in grid.get((gx, gy), ()):
+                    if (X[i, k] - X[j, k]) ** 2 + (Y[i, k] - Y[j, k]) ** 2 < R * R:
+                        bad.setdefault(P[i]['id'], (round(float(t), 2), P[j]['id'], '同列' if lie[i] == lie[j] else '他列'))
+print('穿過站定者人數', len(bad), '(同列', sum(v[2] == '同列' for v in bad.values()), ')')
+for pid, v in list(bad.items())[:12]: print(' ', pid, v)

@@ -15,8 +15,6 @@ T0 = 6.73                                 # 第一人離座
 GATE_GAP, LANE_STAGGER, DADUI_GAP = 0.4, 0.17, 2.5
 M = D['map']
 B1 = Poly(pairs(M['b1Corridor'])); B2 = Poly(pairs(M['b2Corridor'])); ST = Poly(pairs(M['stair']))
-OLDP = {p['id']: p for p in D['persons']}
-OLDF = {f['lie']: f for f in D['files']}
 LIE_N = {f['lie']: f['n'] for f in D['files']}
 
 def dadui_of(lie): return (lie - 1) // 6 + 1
@@ -43,8 +41,8 @@ def zone_of(lie):
     if c == '藍': return 'P%d' % (1 + (d // 2))           # 2,3→P2 4,5→P3 6,7→P4 8,9→P5
     return {2: 'STAIR', 3: 'P6', 4: 'P7', 5: 'P7', 6: 'P8', 7: 'P8', 8: 'P9', 9: 'P9'}[d]
 def first_in_zone(lie):            # 同區兩個大隊時,較早進場者站靠內側(往 6口 不穿越)
-    d = dadui_of(lie)
-    return d == 1 or d == 2 or d == 3 and costume_of(lie) == '白' or (d % 2 == 0)
+    d = dadui_of(lie)              # 偶數大隊與 白 3(單獨一區)先進場;大隊 1 獨佔集結區 1
+    return d == 1 or d % 2 == 0 or (d == 3 and costume_of(lie) == '白')
 def slot_offset(lie):
     z, j, first = zone_of(lie), lane_of(lie), first_in_zone(lie)
     if z == 'P1': return 0.2 - 0.08 * j
@@ -175,7 +173,6 @@ def pai_order(lie):
     pais = sorted([p['pai'] for p in D['persons'] if p['lie'] == lie])
     return pais if ZONES[zone_of(lie)]['kind'] == 'LIFO' else pais[::-1]
 SEAT_OF = {}      # id -> seat dict
-ROW_SEGS = collections.defaultdict(list)
 for ch in 'ABC':
     k = 0
     for lie in CHAIN_ROWS[ch]:
@@ -242,9 +239,6 @@ def timed(pts, t0):
         t += dd / V; out.append((b[0], b[1], t))
     return out
 
-def time_at_leg(path_len_before, u0, u1, u, t_leave):
-    return t_leave + (path_len_before + abs(u - u0)) / V
-
 # 每人的抵達路線(座位、格位固定;時間只差離座時刻)
 PERSON = {}
 for lie in range(1, 55):
@@ -295,19 +289,28 @@ def exit_time(lt, reg):
     return best
 
 # ---------- 離座時間(含等候放行) ----------
+ARR_GAP = 0.28                    # 同列相鄰兩人抵達格位的最小間隔
+
 def schedule():
+    """離座時刻。同列依格位順序抵達(死巷區最裡面的先到、其餘最前面的先到),
+    走得近的人在座位上多等一下,不會比前一位先到而穿過他;
+    要穿過某集結區的人還沒過完前,往該區的整列再延後離座。"""
     delay = collections.defaultdict(float)     # 列的額外延後
-    rows_p = collections.defaultdict(list)
-    for pid, P in PERSON.items(): rows_p[P['lie']].append(pid)
+    rows_p = {lie: sorted((pid for pid, P in PERSON.items() if P['lie'] == lie), key=lambda pid: SEAT_OF[pid]['qi'])
+              for lie in range(1, 55)}
     for it in range(500):
-        start = {}
+        start, leave = {}, {}
         for ch in 'ABC':
             t = T0
             for lie in CHAIN_ROWS[ch]:
                 t = t + delay[lie]
                 start[lie] = t
-                t = t + GAP_SEAT * (LIE_N[lie] - 1) + GAP_ROW
-        leave = {pid: start[P['lie']] + GAP_SEAT * SEAT_OF[pid]['qi'] for pid, P in PERSON.items()}
+                prev_arr = -1e9
+                for pid in rows_p[lie]:
+                    walk = PERSON[pid]['L'] / V
+                    lv = max(t, prev_arr + ARR_GAP - walk)
+                    leave[pid] = lv; prev_arr = lv + walk; t = lv + GAP_SEAT
+                t = t - GAP_SEAT + GAP_ROW
         LT = {pid: leg_times(pid, leave[pid]) for pid in PERSON}
         need = {}
         for z in ZONES:
@@ -317,15 +320,16 @@ def schedule():
                 e = exit_time(lt, REGION[z])
                 if e is not None: m = max(m, e)
             need[z] = m
-        changed = False
+        # 每條鏈只修第一個違規的列(同鏈後面的列會跟著順延);不同鏈互不影響,可同一輪一起修
+        fixed = set()
         for lie in ORDER:
-            z = zone_of(lie)
+            ch = ASSIGN[lie]
+            if ch in fixed: continue
             arr = min(LT[pid][-1][4] for pid in rows_p[lie])
-            if need[z] + 0.5 > arr + 1e-6:
-                delay[lie] += need[z] + 0.5 - arr
-                changed = True
-                break                       # 依優先序逐列修正
-        if not changed:
+            if need[zone_of(lie)] + 0.5 > arr + 1e-6:
+                delay[lie] += need[zone_of(lie)] + 0.5 - arr
+                fixed.add(ch)
+        if not fixed:
             print('排程迭代', it, '延後', {l: round(v, 1) for l, v in delay.items() if v})
             return start, leave
     raise SystemExit('離座排程未收斂')
@@ -395,7 +399,7 @@ for op in D['persons']:
     np_.update(dict(
         zu='B2' if ZONES[z]['corr'] == 'B2' else 'B1',
         qi=s['qi'], gateIdx=P['slot'], laneIdx=lane_of(lie),
-        walkLane='ABC'.index(s['chain']), corrLane=CORR_LANE[(s['chain'], costume_of(lie))],
+        walkLane=('ABC'.index(s['chain']) if ZONES[z]['corr'] == 'B2' else lane_of(lie)), corrLane=CORR_LANE[(s['chain'], costume_of(lie))],
         rest=dict(sec=s['sec'], pai=s['pai'], no=s['no'], X=s['X'], Y=s['Y']),
         block=s['block'], chain=s['chain'], exitWave=s['exitWave'], exitSide=s['exitSide'],
         assembly=z, gate='GATE6',
@@ -442,8 +446,10 @@ nodes = json.loads(json.dumps(D['nodes']))
 for k, Z in ZONES.items():
     if k in nodes:
         nodes[k]['label'] = Z['label']
-        if Z['corr'] == 'B1':
-            x, y = B1.at(Z['head']); nodes[k]['X'], nodes[k]['Y'] = round(x, 3), round(y, 3)
+        nodes[k]['floor'] = Z['floor']
+        nodes[k]['dadui'] = min(dadui_of(l) for l in range(1, 55) if zone_of(l) == k)   # 標記顏色 = 先進場的大隊
+        if Z['kind'] == 'LIFO' or Z['corr'] == 'B1':      # 本版重訂區頭的區(B2 藍衣、B1 白衣):標記移到區頭
+            x, y = (B1 if Z['corr'] == 'B1' else B2).at(Z['head']); nodes[k]['X'], nodes[k]['Y'] = round(x, 3), round(y, 3)
 nodes['STAIR_TOP']['label'] = '樓梯(B1)'
 rest = []
 who = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}

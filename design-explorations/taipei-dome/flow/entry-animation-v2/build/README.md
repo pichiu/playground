@@ -7,7 +7,7 @@
 sed -n '/^const DATA = /p' ../../entry-animation/index.html | sed 's/^const DATA = //; s/;$//' > old.json
 # 2. 重排休息區座位、重算路徑與時間
 python3 build.py old.json new.json plan.json
-# 3. 檢查「行進中穿過已站定者」人數(應為 0)
+# 3. 檢查「行進中穿過已站定者」人數(含同一列,應為 0)
 python3 check.py new.json
 # 4. 產生頁面
 python3 page.py ../../entry-animation/index.html new.json ../index.html
