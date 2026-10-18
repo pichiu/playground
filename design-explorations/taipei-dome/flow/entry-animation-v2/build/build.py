@@ -102,6 +102,8 @@ def white_route(j, u_from, off_from):
     return pts
 
 # ---------- 休息區鏈 ----------
+BLOCK_MOVE = {'141L': ('A', 'B', '140L')}   # 區塊: (原鏈, 新鏈, 接在哪個區塊之後)
+
 def chain_seq():
     seqs = {}
     for ch in 'ABC':
@@ -109,6 +111,13 @@ def chain_seq():
         seqs[ch] = [dict(sec=p['rest']['sec'], pai=p['rest']['pai'], no=p['rest']['no'], X=p['rest']['X'], Y=p['rest']['Y'],
                          block=p['block'], exitSide=p['exitSide'], exitWave=p['exitWave'],
                          aisle=p['path'][1][:2], entry=p['path'][2][:2]) for p in ps]
+    # 版本 2 重新平衡三條鏈:鏈 A(139/141L/143/142R)比鏈 B 多約 190 席,尾段的大隊 6、7 白衣會拖慢進場;
+    # 把 141L 改走鏈 B,依 BLOCK_MOVE 指定接在哪個區塊之後(座位、區塊與離座箭頭不變)
+    for blk, (src, dst, after) in BLOCK_MOVE.items():
+        moved = [s for s in seqs[src] if s['block'] == blk]
+        seqs[src] = [s for s in seqs[src] if s['block'] != blk]
+        i = max(k for k, s in enumerate(seqs[dst]) if s['block'] == after) + 1
+        seqs[dst] = seqs[dst][:i] + moved + seqs[dst][i:]
     seatxy = {(s['sec'], s['pai'], s['no']): s for s in D['restSeats']}
     # 各鏈最後一排接續的空位(10/18 座位:142 區 1 排已全給鏈 A;145 區 1 排 11–23 號留空)
     extra = {'A': [],
@@ -132,6 +141,8 @@ ORDER = PH1 + PH2
 NOT_A = {43, 44, 45, 49, 50, 51}
 assert sorted(ORDER) == list(range(1, 55))
 
+W_EXP = 2.5    # 優先序權重:越大越堅持先出的列先離座(試過 1–4,2.5–3 最短且無穿越)
+
 def partition():
     capA, capB, capC = CAP['A'], CAP['B'], CAP['C']
     INF = 1e18
@@ -140,7 +151,7 @@ def partition():
     cum = 0
     A_idx = np.arange(capA + 1)[:, None]; B_idx = np.arange(capB + 1)[None, :]
     for r, lie in enumerate(ORDER):
-        n = LIE_N[lie]; w = (len(ORDER) - r) ** 1.5
+        n = LIE_N[lie]; w = (len(ORDER) - r) ** W_EXP
         C_load = cum - A_idx - B_idx
         cand = np.full((3, capA + 1, capB + 1), INF)
         # A
