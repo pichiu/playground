@@ -314,9 +314,11 @@ REGION = {z: region(z) for z in ZONES}
 # 同一條走廊上的集結區站位不得互相重疊(後進場大隊往後退之後也一樣)
 for z1 in ZONES:
     for z2 in ZONES:
-        if z1 < z2 and REGION[z1][0][0] == REGION[z2][0][0] != 'STAIR':
-            (_, a1, b1), (_, a2, b2) = REGION[z1][0], REGION[z2][0]
-            assert b1 - 0.1 <= a2 + 0.1 or b2 - 0.1 <= a1 + 0.1, ('集結區重疊', z1, z2)   # 去掉 ±0.1 邊距後比
+        if z1 >= z2: continue
+        for c1, a1, b1 in REGION[z1]:
+            for c2, a2, b2 in REGION[z2]:
+                if c1 == c2 != 'STAIR':
+                    assert b1 - 0.1 <= a2 + 0.1 or b2 - 0.1 <= a1 + 0.1, ('集結區重疊', z1, z2)   # 去掉 ±0.1 邊距後比
 
 def exit_time(lt, reg):
     """路人 legs 時間 lt 穿過 reg 的最晚離開時間(未經過回 None)"""
@@ -352,7 +354,7 @@ def schedule():
         start, leave = {}, {}
         for ch in 'ABC':
             t = T0
-            mouth_dep = {}       # 走道口 → 上一位離開它的時刻(同鏈跨列也算:下一列可能從同一個走道口出來)
+            mouth_dep = {}       # 座位排在走道上的出口點 → 上一位離開它的時刻(同鏈跨列也算:下一列可能接續同一座位排)
             for lie in CHAIN_ROWS[ch]:
                 t = t + ROW_DELAY[lie]
                 start[lie] = t
@@ -441,6 +443,7 @@ else:
 # 逐一把等超過 LONG_WAIT 的人的讓行時刻往回收(二分搜尋),仍不互撞才採用
 LONG_WAIT = 0.5
 for pid in sorted((p for p, v in MOUTH_WAIT.items() if v > LONG_WAIT), key=lambda p: -MOUTH_WAIT[p]):
+    schedule()                                    # 以目前採用的讓行時刻重排,MOUTH_WAIT 才是現況
     hi_t = MOUTH_MIN[pid]; lo_t = hi_t - MOUTH_WAIT[pid]
     while hi_t - lo_t > 0.05:
         mid = (lo_t + hi_t) / 2; MOUTH_MIN[pid] = mid
