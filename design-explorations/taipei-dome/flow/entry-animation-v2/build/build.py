@@ -111,14 +111,15 @@ def chain_seq():
                          block=p['block'], exitSide=p['exitSide'], exitWave=p['exitWave'],
                          aisle=p['path'][1][:2], entry=p['path'][2][:2]) for p in ps]
     seatxy = {(s['sec'], s['pai'], s['no']): s for s in D['restSeats']}
-    extra = {'A': [('142', 1, n) for n in range(16, 11, -1)],
+    # 各鏈最後一排接續的空位(10/18 座位:142 區 1 排已全給鏈 A;145 區 1 排 11–23 號留空)
+    extra = {'A': [],
              'B': [('144', 1, n) for n in range(15, 7, -1)],
-             'C': [('145', 1, n) for n in range(16, 24)]}
+             'C': [('145', 1, n) for n in range(11, 24)]}
     for ch, keys in extra.items():
         last = seqs[ch][-1]
         for k in keys:
+            if seatxy[k]['who'] is not None: continue
             s = seatxy[k]
-            assert s['who'] is None, k
             seqs[ch].append(dict(last, sec=k[0], pai=k[1], no=k[2], X=s['X'], Y=s['Y'], extra=True))
     return seqs
 SEQ = chain_seq()
