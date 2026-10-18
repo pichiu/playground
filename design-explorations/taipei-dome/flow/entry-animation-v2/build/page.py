@@ -29,7 +29,7 @@ def rep(a, b, cnt=1):
     h = h.replace(a, b)
 rep('<title>入經藏進場動線</title>', '<title>入經藏進場動線 v2</title>')
 rep('<p class="eyebrow">2026 入經藏 · 台南區動線演練 · 版本 1</p><h1>從休息區，到每一個位置</h1><p class="subtitle">西一（嘉南高屏）＋桃竹 · 9 大隊 · 54 列 · 1,609 人 · <a href="../entry-animation-v2/index.html">看版本 2：藍衣全部 B2 集結</a></p>',
-    '<p class="eyebrow">2026 入經藏 · 台南區動線演練 · 版本 2：藍衣全部 B2 集結</p><h1>從休息區，到每一個位置</h1><p class="subtitle">西一（嘉南高屏）＋桃竹 · 9 大隊 · 54 列 · 1,609 人 · 每大隊都六路進場 · <a href="../entry-animation/index.html">看版本 1</a></p>')
+    '<p class="eyebrow">2026 入經藏 · 台南區動線演練 · 版本 2：藍衣全部 B2 集結</p><h1>從休息區，到每一個位置</h1><p class="subtitle">西一（嘉南高屏）＋桃竹 · 9 大隊 · 54 列 · 1,609 人 · 每大隊都六路進場 · <a href="../entry-animation/index.html">看版本 1</a> · <a href="redesign/index.html">看新設計（五種看法）</a></p>')
 rep("[['A','A 組 · 1–5'],['B','B 組 · 6–9']]", "[['B2','B2 集結 · 藍衣＋大隊 1'],['B1','B1 集結 · 白衣 2–9']]")
 rep('<span class="filter-title">組別</span>', '<span class="filter-title">集結樓層</span>')
 old_rule = re.search(r'<p>集結是為了把每個大隊的三白三藍六列湊齊：.*?</p>', h).group(0)
