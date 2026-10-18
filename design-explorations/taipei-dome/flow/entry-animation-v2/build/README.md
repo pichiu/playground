@@ -15,6 +15,26 @@ python3 page.py ../../entry-animation/index.html new.json ../index.html
 python3 excel.py <解壓目錄> plan.json new.json 休息區座位_藍衣B2集結版_2026-10-18.xlsx
 ```
 
+### 只改了版本 1 的頁面外殼（版面、文案、互動），資料沒變
+
+版本 2 頁以版本 1 頁為模板產生，所以版本 1 改完版面後要重跑第 4 步。不必重算動線：直接取現有版本 2 頁的 DATA，
+把 `meta.assumptions` 換回版本 1 的（page.py 的輸入是 build.py 的輸出格式），再跑 page.py：
+
+```bash
+python3 - <<'PY'
+import json
+def data(f):
+    for l in open(f):
+        if l.startswith('const DATA = '): return json.loads(l[13:].rstrip().rstrip(';'))
+v1, v2 = data('../../entry-animation/index.html'), data('../index.html')
+v2['meta']['assumptions'] = v1['meta']['assumptions']
+json.dump(v2, open('new.json', 'w'), ensure_ascii=False)
+PY
+python3 page.py ../../entry-animation/index.html new.json ../index.html
+```
+
+重跑後 `const DATA = …` 那一行應與原本完全相同；page.py 的每個 `rep` 都斷言只命中一次，模板改到那些字串時會直接報錯，照新模板更新對應的 `rep` 即可。
+
 ## 檔案分工
 
 - **git**：產生腳本，以及座位表 `../休息區座位_藍衣B2集結版.csv`（每人的集結區與休息座位，一人一列）。
