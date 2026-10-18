@@ -1,12 +1,13 @@
 """藍衣全部 B2 集結版:由舊版動畫資料(座位/場地幾何)重算休息區座位、路徑與時間。
 
-用法: python3 build.py old_data.json out_data.json out_plan.json
+用法: python3 build.py old_data.json out_data.json out_plan.json [out_seats.csv]
 """
-import json, math, sys, collections
+import csv, json, math, sys, collections
 import numpy as np
 from geo import Poly, pairs
 
 OLD, OUT, PLAN = sys.argv[1:4]
+SEATS_CSV = sys.argv[4] if len(sys.argv) > 4 else None
 D = json.load(open(OLD))
 V = D['meta']['speedUnitPerSec']          # 1.1 單位/秒
 GAP_SEAT = 0.28                           # 同列相鄰兩人離座間隔
@@ -474,3 +475,15 @@ plan = dict(assign=ASSIGN, chainRows=CHAIN_ROWS, cap=CAP, tDadui=T_DADUI, tEnd=T
             zones={k: dict(label=v['label'], floor=v['floor'], kind=v['kind']) for k, v in ZONES.items()},
             rowStart={l: round(t, 2) for l, t in START.items()})
 json.dump(plan, open(PLAN, 'w'), ensure_ascii=False, indent=1)
+
+# 座位表(文字檔,放進 git 方便在 PR 上看出誰換了座位;不含模擬時間,時間變動不影響此檔)
+if SEATS_CSV:
+    WAVE = {1: '第一先出', 2: '第二先出', 3: '第三先出', 4: '第四出'}
+    with open(SEATS_CSV, 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f, lineterminator='\n')
+        w.writerow(['身分證', '列', '排', '大隊', '衣色', '集結區', '休息區', '休息排', '休息號', '區塊', '鏈', '離座波次', '列內離座序'])
+        for pid in sorted(SEAT_OF, key=lambda p: tuple(map(int, p.split('-')))):
+            s = SEAT_OF[pid]; lie, pai = map(int, pid.split('-'))
+            z = zone_of(lie)
+            w.writerow([pid, lie, pai, dadui_of(lie), costume_of(lie), '集結區 1' if z == 'P1' else ZONES[z]['label'] + (' (樓梯)' if z == 'STAIR' else ''),
+                        s['sec'], s['pai'], s['no'], s['block'].replace('M', ''), s['chain'], WAVE[s['exitWave']], s['qi'] + 1])
