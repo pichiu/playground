@@ -23,4 +23,4 @@ python3 excel.py <解壓目錄> plan.json new.json 休息區座位_藍衣B2集�
   （二進位檔看不出差異，而且它的版面底稿 10/17 修正版 xlsx 不在 repo 裡）。
   更新時在 Drive 對既有檔案用「管理版本 → 上傳新版本」，連結不變。
 
-需要 Python 3、numpy、Pillow。build.py 內含避撞迭代,約 1 分鐘;check.py 以 0.01 秒取樣,約 30 秒。
+需要 Python 3、numpy、Pillow。build.py 含避撞迭代與收尾全程碰撞自我檢查(與 check.py 同一套判定,見 `collide.py`),約 1 分鐘;check.py 約 30 秒。
