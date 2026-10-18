@@ -6,15 +6,19 @@
 <title>我的一條路</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
 <style>
-:root{--bg:#f4f1ea;--paper:#fffdf8;--ink:#1d2b33;--dim:#5e6b70;--rule:#e2ddd1;--blue:#1d5fae;--blue-soft:#e3ecf7;--sand:#d9d2c2;--floor:#ebe6da;--go:#c8541f;color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11181c;--paper:#182227;--ink:#e8ece8;--dim:#9aa8aa;--rule:#2a363b;--blue:#6aa6ec;--blue-soft:#1d3247;--sand:#3a4648;--floor:#1c272b;--go:#f08a52;color-scheme:dark}}
+:root{--bg:#f4f1ea;--paper:#fffdf8;--ink:#1d2b33;--dim:#5e6b70;--rule:#e2ddd1;--blue:#1d5fae;--blue-soft:#e3ecf7;--sand:#d9d2c2;--floor:#ebe6da;--go:#c8541f;--ghost:#8c97a0;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11181c;--paper:#182227;--ink:#e8ece8;--dim:#9aa8aa;--rule:#2a363b;--blue:#6aa6ec;--blue-soft:#1d3247;--sand:#3a4648;--floor:#1c272b;--go:#f08a52;--ghost:#6f7d82;color-scheme:dark}}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 ::selection{background:var(--blue);color:var(--paper)}
 button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .wrap{max-width:1080px;margin:auto;padding:16px max(16px,env(safe-area-inset-left)) 40px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .back{color:var(--dim);text-decoration:none;font-size:14px}
+.vswitch{display:inline-flex;background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:3px}
+.vswitch button{border:0;background:none;border-radius:999px;padding:5px 14px;font-size:14px;color:var(--dim);cursor:pointer}
+.vswitch button[aria-pressed=true]{background:var(--ink);color:var(--paper);font-weight:700}
 .ask{margin:14px 0 18px}
 .ask h1{font-size:28px;line-height:1.25;margin:0 0 14px;font-weight:900;letter-spacing:.02em}
 .id{display:flex;align-items:stretch;gap:8px}
@@ -36,6 +40,21 @@ canvas{display:block;width:100%;height:min(62vh,520px)}
 .scrub input{flex:1;accent-color:var(--blue)}
 .scrub output{font-weight:700;min-width:48px;text-align:right}
 .orient{font-size:13px;color:var(--dim);padding:8px 14px 12px}
+.orient i{display:inline-block;width:18px;vertical-align:middle;border-top:3px solid var(--go);margin-right:4px}
+.orient i.g{border-top:2px dashed var(--ghost)}
+/* 對照：你在兩個版本的差別 */
+.diff{background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:14px 16px;margin-bottom:16px}
+.diff h2{margin:0 0 8px;font-size:17px}
+.diff table{width:100%;border-collapse:collapse;font-size:14px}
+.diff th{text-align:left;font-weight:500;color:var(--dim);font-size:12px;padding:0 0 4px}
+.diff td{padding:7px 0;border-top:1px solid var(--rule);vertical-align:top}
+.diff td:first-child{color:var(--dim);width:4.5em}
+.diff td.v1{color:var(--dim)}
+.diff td.v2{font-weight:700}
+.diff .same{color:var(--dim);font-weight:400}
+.chip{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:4px;vertical-align:1px}
+.chip.better{background:var(--blue-soft);color:var(--blue)}
+.chip.worse{background:color-mix(in srgb,var(--go) 16%,transparent);color:var(--go)}
 ol.steps{list-style:none;margin:0;padding:0;position:relative}
 ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;width:2px;background:var(--rule)}
 .step{position:relative;display:grid;grid-template-columns:44px 1fr;gap:12px;padding:6px 0;cursor:pointer;border-radius:14px}
@@ -44,8 +63,9 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 .step.now .dot{background:var(--blue);border-color:var(--blue);color:var(--paper)}
 .step .body{padding:6px 14px 12px;border-radius:14px}
 .step.now .body{background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(20,40,60,.07)}
-.step h2{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px}
-.step h2 time{color:var(--blue);font-size:17px}
+.step h2{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.step h2 time{color:var(--blue);font-size:17px;white-space:nowrap}
+.step h2 time s{color:var(--dim);font-weight:400;font-size:14px;margin-right:6px;text-decoration-thickness:1px}
 .step p{margin:4px 0 0;color:var(--dim);font-size:15px}
 .step p strong{color:var(--ink)}
 .step:hover .body{background:var(--paper)}
@@ -53,11 +73,12 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 .buddy{margin-top:18px;background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .buddy div{font-size:14px;color:var(--dim)}.buddy b{display:block;font-size:24px;color:var(--ink)}
 .buddy p{grid-column:1/-1;margin:0;font-size:13px;color:var(--dim)}
+.loading{color:var(--dim);padding:24px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
-<a class="back" href="index.html">‹ 五個方向</a>
+<div class="top"><a class="back" href="index.html">‹ 五個方向</a><div id="vs"></div></div>
 <section class="ask">
  <h1>你的身分證位置是？</h1>
  <form class="id" id="f">
@@ -68,74 +89,90 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
  </form>
  <p class="err" id="err" role="status"></p>
 </section>
-<div class="grid">
+<div class="grid" id="main">
  <div class="mapcol">
   <div class="who"><b id="who"></b><span id="meta"></span></div>
   <div class="mapbox">
    <canvas id="c" aria-label="你的動線地圖，甲舞台朝上"></canvas>
    <div class="scrub"><button id="play" aria-label="播放我的路"><svg width="14" height="16" viewBox="0 0 14 16" id="ico"><path d="M1 1v14l12-7z" fill="currentColor"/></svg></button><input type="range" id="tl" min="0" max="1" step=".01" aria-label="我的時間軸"><output id="clk">00:00</output></div>
-   <div class="orient">甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。</div>
+   <div class="orient" id="orient"></div>
   </div>
  </div>
  <div>
-  <ol class="steps" id="steps"></ol>
+  <div class="diff" id="diff" hidden></div>
+  <ol class="steps" id="steps"><li class="loading">讀取動線資料…</li></ol>
   <div class="buddy" id="buddy"></div>
  </div>
 </div>
 </div>
-<script src="data.js"></script><script src="core.js"></script>
+<script src="core.js"></script>
 <script>
 'use strict';
-const {D,P,T_END,byId,pos,state,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+const {pos,fmt,delta,View,bounds}=Dome,$=id=>document.getElementById(id);
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
-let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go'])C[n]=css(n);};readC();
-const v=new View($('c'),{rotate:true,pad:28});window.__v=v;
-const slot=new Map(P.map(p=>[`${p.dadui}|${p.laneIdx}|${p.gateIdx}`,p]));
-let me=null,t=0,playing=false,last=0,dirty=true,steps=[],segB=null;
+let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go','ghost'])C[n]=css(n);};readC();
+const v=new View($('c'),{rotate:true,pad:28});
+let sets=[],ds=null,me=null,ghost=null,t=0,playing=false,last=0,dirty=true,steps=[];
 const side={N:'北',S:'南'},chainName={A:'靠牆',B:'中間',C:'最外'};
-function assemblyName(p){if(p.assembly==='STAIR')return '樓梯與 B2 平台';const n=D.nodes[p.assembly];return `集結點 ${n.label}（${n.floor}）`;}
-function pathIn(a,b){return me.path.filter(q=>q[2]>=a-.01&&q[2]<=b+.01).map(q=>[q[0],q[1]]);}
-function build(){const p=me,s=p.t,ahead=slot.get(`${p.dadui}|${p.laneIdx}|${p.gateIdx-1}`),behind=slot.get(`${p.dadui}|${p.laneIdx}|${p.gateIdx+1}`);
- $('who').textContent=p.id;$('meta').textContent=`大隊 ${p.dadui} · ${p.costume}衣 · ${p.zu} 組 · ${p.a}`;
- steps=[
-  {k:'起',t:s.leave,to:s.assembly,h:'離座',d:`從 <strong>${p.rest.sec} 區 ${p.rest.pai} 排 ${p.rest.no} 號</strong>起身，往<strong>${side[p.exitSide]}側走道</strong>出去（第${'一二三四'[p.exitWave-1]}出）。`},
-  {k:'走',t:s.leave+.5,to:s.assembly,h:'走到集結點',d:`走<strong>${chainName[p.chain]}那條</strong>（鏈 ${p.chain}），一路不換道${p.zu==='A'?`；下樓梯靠${['北','中間','南'][p.walkLane]}側`:''}。`},
-  {k:'集',t:s.assembly,to:s.enter,h:'集結',d:`站進 <strong>${assemblyName(p)}</strong> 你這一列。`,w:s.enter-s.assembly},
-  {k:'進',t:s.enter,to:s.gate+4,h:'跟大隊進場',d:`大隊 ${p.dadui} 出發。${p.zu==='B'?'先下樓梯，':''}從 <strong>6口</strong> 走六路的<strong>第 ${p.laneIdx+1} 路</strong>${ahead?`，跟緊 <strong>${ahead.id}</strong>`:'，你是這一路的第一位'}。`},
+const seatOf=p=>`${p.rest.sec} 區 ${p.rest.pai} 排 ${p.rest.no} 號`;
+function slotMap(d){return d.slot||(d.slot=new Map(d.P.map(p=>[`${p.dadui}|${p.laneIdx}|${p.gateIdx}`,p])));}
+function pathIn(p,a,b){return p.path.filter(q=>q[2]>=a-.01&&q[2]<=b+.01).map(q=>[q[0],q[1]]);}
+function stepsFor(d,p){const s=p.t,ahead=slotMap(d).get(`${p.dadui}|${p.laneIdx}|${p.gateIdx-1}`),fl=p.assembly==='STAIR'?'B2':d.D.nodes[p.assembly].floor;
+ return [
+  {k:'起',t:s.leave,to:s.assembly,h:'離座',d:`從 <strong>${seatOf(p)}</strong>起身，往<strong>${side[p.exitSide]}側走道</strong>出去（第${'一二三四'[p.exitWave-1]}出）。`},
+  {k:'走',t:s.leave+.5,to:s.assembly,h:'走到集結',d:`走<strong>${chainName[p.chain]}那條</strong>（鏈 ${p.chain}），一路不換道${fl==='B2'?`；下樓梯靠${['北','中間','南'][p.walkLane]}側`:'；留在 B1'}。`},
+  {k:'集',t:s.assembly,to:s.enter,h:'集結',d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列。`,w:s.enter-s.assembly},
+  {k:'進',t:s.enter,to:s.gate+4,h:'跟大隊進場',d:`大隊 ${p.dadui} 出發。${fl==='B1'?'先下樓梯，':''}從 <strong>6口</strong> 走六路的<strong>第 ${p.laneIdx+1} 路</strong>${ahead?`，跟緊 <strong>${ahead.id}</strong>`:'，你是這一路的第一位'}。`},
   {k:'到',t:s.arrive,to:s.arrive,h:'到位',d:`沿牆到西南角，排 1 外側通道往北，轉進<strong>第 ${p.lie} 列</strong>，走到<strong>排 ${p.pai}</strong> 停下。`},
- ];
- $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${fmt(x.t)}</time></h2><p>${x.d}</p>${x.w?`<span class="wait">要等 ${Math.round(x.w/60*10)/10} 分鐘（動畫時間）</span>`:''}</div></li>`).join('');
- $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時 6口 第 ${p.laneIdx+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
- $('tl').min=s.leave-4;$('tl').max=s.arrive+2;t=s.leave-4;focusStep(-1);
-}
-function focusStep(i){let b;if(i<0)b=bounds(me.path.map(q=>[q[0],q[1]]),.8);else{const st=steps[i],pts=st.k==='集'?pathIn(st.t-6,st.t+.1).concat([[me.field.X,me.field.Y]].slice(0,0)):pathIn(st.t,st.to);b=bounds(pts.length>1?pts:[pos(me,st.t)],1.6);}v.fit(b);dirty=true;}
+ ];}
+function chip(dv){if(Math.abs(dv)<1)return '';return `<span class="chip ${dv<0?'better':'worse'}">${delta(dv)}</span>`;}
+function build(){const id=me.id,cmp=sets.length>1,p1=cmp?sets[0].byId.get(id):null;ghost=p1;
+ $('who').textContent=me.id;$('meta').textContent=`大隊 ${me.dadui} · ${me.costume}衣 · ${me.a}`;
+ steps=stepsFor(ds,me);const old=cmp?stepsFor(sets[0],p1):null;
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${old&&Math.abs(old[i].t-x.t)>=1?`<s>${fmt(old[i].t)}</s>`:''}${fmt(x.t)}</time></h2><p>${x.d}</p>${x.w?`<span class="wait">要等 ${fmt(x.w)}（動畫時間）${old?chip(x.w-old[i].w):''}</span>`:''}</div></li>`).join('');
+ const sl=slotMap(ds),ahead=sl.get(`${me.dadui}|${me.laneIdx}|${me.gateIdx-1}`),behind=sl.get(`${me.dadui}|${me.laneIdx}|${me.gateIdx+1}`);
+ $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時 6口 第 ${me.laneIdx+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
+ // 對照：只列真的有差的項目，相同的淡化
+ $('diff').hidden=!cmp;
+ if(cmp){const row=(k,a,b,extra='')=>a===b?`<tr><td>${k}</td><td colspan="2" class="same">${b}（兩版相同）</td></tr>`:`<tr><td>${k}</td><td class="v1">${a}</td><td class="v2">${b}${extra}</td></tr>`;
+  const w1=p1.t.enter-p1.t.assembly,w2=me.t.enter-me.t.assembly;
+  $('diff').innerHTML=`<h2>你在版本 2 有什麼不同</h2><table><tr><th></th><th>版本 1</th><th>版本 2</th></tr>
+   ${row('休息座位',seatOf(p1),seatOf(me))}${row('離座',`第${'一二三四'[p1.exitWave-1]}出 ${fmt(p1.t.leave)}`,`第${'一二三四'[me.exitWave-1]}出 ${fmt(me.t.leave)}`)}
+   ${row('集結',sets[0].nodeName(p1.assembly),ds.nodeName(me.assembly))}${row('等待',fmt(w1),fmt(w2),chip(w2-w1))}
+   ${row('到位',fmt(p1.t.arrive),fmt(me.t.arrive),chip(me.t.arrive-p1.t.arrive))}</table>`;}
+ $('orient').innerHTML=cmp?`<i></i>版本 2 的路　<i class="g"></i>版本 1 的路（對照）。甲舞台朝上，與 app《我的走位》同向。`:'甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';
+ const lo=Math.min(me.t.leave,ghost?ghost.t.leave:1e9)-4,hi=Math.max(me.t.arrive,ghost?ghost.t.arrive:0)+2;
+ $('tl').min=lo;$('tl').max=hi;t=lo;focusStep(-1);}
+function focusStep(i){let pts;if(i<0){pts=me.path.map(q=>[q[0],q[1]]);if(ghost)pts=pts.concat(ghost.path.map(q=>[q[0],q[1]]));}else{const st=steps[i];pts=st.k==='集'?pathIn(me,st.t-6,st.t+.1):pathIn(me,st.t,st.to);if(pts.length<2)pts=[pos(me,st.t)];}v.fit(bounds(pts,i<0?.8:1.6));dirty=true;}
 $('steps').onclick=e=>{const li=e.target.closest('.step');if(!li)return;const i=+li.dataset.i;playing=false;setIco();t=steps[i].t;focusStep(i);};
 $('steps').onkeydown=e=>{if(e.key==='Enter')e.target.click();};
-function find(){const lie=+$('lie').value,pai=+$('pai').value,p=byId.get(lie+'-'+pai);if(!p){const row=P.filter(q=>q.lie===lie);$('err').textContent=row.length?`第 ${lie} 列只有排 ${Math.min(...row.map(q=>q.pai))}–${Math.max(...row.map(q=>q.pai))}`:'西一＋桃竹只有第 1–54 列';return;}$('err').textContent='';me=p;build();}
+function find(){if(!ds)return;const lie=+$('lie').value,pai=+$('pai').value,p=ds.byId.get(lie+'-'+pai);if(!p){const row=ds.P.filter(q=>q.lie===lie);$('err').textContent=row.length?`第 ${lie} 列只有排 ${Math.min(...row.map(q=>q.pai))}–${Math.max(...row.map(q=>q.pai))}`:'西一＋桃竹只有第 1–54 列';return;}$('err').textContent='';me=p;build();}
 $('f').onsubmit=e=>{e.preventDefault();find();};
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';}
-$('play').onclick=()=>{playing=!playing;if(playing&&t>=me.t.arrive)t=me.t.leave-4;last=0;setIco();if(playing)focusStep(-1);};
+$('play').onclick=()=>{if(!me)return;playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();if(playing)focusStep(-1);};
 $('tl').oninput=e=>{t=+e.target.value;dirty=true;};
-function draw(){const c=v.begin(C.paper);
- v.base({floor:C.floor,stage:C.rule,wall:C.sand,wallW:1.5,band:C.sand,bandA:.35,lane:C.sand,laneA:.3,stand:C.sand});
+function draw(){const c=v.begin(C.paper),D=ds.D,P=ds.P;
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.sand,wallW:1.5,band:C.sand,bandA:.35,lane:C.sand,laneA:.3,stand:C.sand});
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:12});
  v.text('甲舞台',-6.3,0,{color:C.dim,size:13,weight:700});
- const mates=P.filter(q=>q.lie===me.lie&&q!==me),r=Math.max(1.2,.04*v.s);
+ const r=Math.max(1.2,.04*v.s);
  c.globalAlpha=.5;for(const q of P){if(q.lie===me.lie)continue;const x=pos(q,t);v.dot(x[0],x[1],r*.7,C.sand);}c.globalAlpha=1;
- for(const q of mates){const x=pos(q,t);v.dot(x[0],x[1],r,null,C.blue,1.2);}
+ for(const q of P)if(q.lie===me.lie&&q!==me){const x=pos(q,t);v.dot(x[0],x[1],r,null,C.blue,1.2);}
+ if(ghost){v.stroke(ghost.path.flatMap(q=>[q[0],q[1]]),C.ghost,1.8,[5,4]);const g=pos(ghost,t);v.dot(g[0],g[1],Math.max(5,r*1.6),C.paper,C.ghost,2);}
  const pts=me.path,past=pts.filter(q=>q[2]<=t).flatMap(q=>[q[0],q[1]]),fut=pts.filter(q=>q[2]>t).flatMap(q=>[q[0],q[1]]),now=pos(me,t);
  v.stroke([...fut.length?[now[0],now[1]]:[],...fut],C.go,2.5,[2,5]);v.stroke([...past,now[0],now[1]],C.go,3.5);
  v.dot(me.field.X,me.field.Y,7,null,C.go,2);
  v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
  v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
  $('clk').textContent=fmt(t);$('tl').value=t;
- const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});
-}
+ const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
+async function setVersion(m){try{sets=m==='cmp'?await Promise.all([Dome.load(1),Dome.load(2)]):[await Dome.load(+m)];}catch(e){Dome.fail($('main'),e);return;}ds=sets[sets.length-1];find();}
 v.onresize=()=>{dirty=true;};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
-function frame(n){if(playing){if(last)t=Math.min(me.t.arrive+2,t+(n-last)/1000*4);last=n;dirty=true;if(t>=me.t.arrive+2){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty&&me){draw();dirty=false;}requestAnimationFrame(frame);}
-find();requestAnimationFrame(frame);
-window.__seek=x=>{t=me.t.leave+x/T_END*(me.t.arrive-me.t.leave);dirty=true;};
+function frame(n){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*4);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty&&me){draw();dirty=false;}requestAnimationFrame(frame);}
+Dome.switcher($('vs'),Dome.mode(),setVersion);
+setVersion(Dome.mode());requestAnimationFrame(frame);
+window.__seek=x=>{if(me){t=me.t.leave+x/ds.T_END*(me.t.arrive-me.t.leave);dirty=true;}};
 </script>
 </body>
 </html>

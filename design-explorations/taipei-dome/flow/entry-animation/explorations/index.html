@@ -6,8 +6,9 @@
 <title>進場動畫 · 五個方向</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--warn:#b4531b;color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--warn:#f0995c;color-scheme:dark}}
+:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--v1:#b26a2e;--v2:#2f6fd0;--grid:#ecebe5;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--v1:#c27a3e;--v2:#4f8fe8;--grid:#223034;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--v1:#c27a3e;--v2:#4f8fe8;--grid:#223034;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 ::selection{background:var(--accent);color:var(--bg)}
@@ -16,8 +17,36 @@ a{color:var(--accent);text-underline-offset:3px}
 .wrap{max-width:1120px;margin:auto;padding:24px max(16px,env(safe-area-inset-left)) 64px}
 .back{color:var(--dim);text-decoration:none;font-size:14px}
 h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(30px,5vw,50px);line-height:1.15;margin:18px 0 12px}
-.lede{font-size:18px;max-width:62ch;color:var(--dim);margin:0 0 40px}
+.lede{font-size:18px;max-width:64ch;color:var(--dim);margin:0 0 12px}
+.vers{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 36px;font-size:15px}
+.vers a{border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:6px 12px;text-decoration:none;color:var(--ink)}
+.vers a:hover{border-color:var(--accent)}
+.vers small{color:var(--dim);margin-left:6px}
 h2{font-family:"Noto Serif TC",serif;font-size:26px;margin:56px 0 14px;line-height:1.3}
+h2+p.sub{margin:-6px 0 18px;color:var(--dim);max-width:64ch}
+/* 兩版比較 */
+.cmpbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:start}
+.cmpbox table{width:100%;border-collapse:collapse;font-size:15px}
+.cmpbox th,.cmpbox td{padding:9px 8px;border-top:1px solid var(--rule);text-align:right;vertical-align:top}
+.cmpbox th:first-child,.cmpbox td:first-child{text-align:left;padding-left:0}
+.cmpbox thead th{border-top:0;color:var(--dim);font-weight:500;font-size:13px}
+.cmpbox td.v2{font-weight:700}
+.cmpbox td small{display:block;color:var(--dim);font-size:12px;font-weight:400}
+.d{font-size:13px;font-weight:700;color:var(--dim)}
+.read{margin-top:14px;color:var(--dim);font-size:15px;max-width:60ch}
+.read b{color:var(--ink)}
+.chart h3{margin:0 0 2px;font-size:16px}
+.chart p{margin:0 0 8px;color:var(--dim);font-size:13px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--dim);margin-bottom:4px}
+.legend span{display:flex;align-items:center;gap:6px}
+#dumb{display:block;width:100%;overflow:visible}
+#dumb text{font:12px "Noto Sans TC",system-ui,sans-serif;fill:var(--dim)}
+#dumb .lab{fill:var(--ink);font-weight:500}
+#dumb .row:hover .hit{fill:var(--grid)}
+.tip{position:fixed;pointer-events:none;background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .12s}
+.tip b{display:block}
+.err{color:var(--dim);font-size:15px}
+/* 診斷與方向 */
 .diag{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
 .diag img{width:100%;border:1px solid var(--rule);border-radius:8px;display:block}
 .diag ol{margin:0;padding-left:1.3em}
@@ -33,116 +62,163 @@ h2{font-family:"Noto Serif TC",serif;font-size:26px;margin:56px 0 14px;line-heig
 .dir dl{margin:12px 0;display:grid;grid-template-columns:4.5em 1fr;gap:6px 12px;font-size:15px}
 .dir dt{color:var(--dim)}
 .dir dd{margin:0}
-.open{display:inline-block;margin-top:6px;font-weight:700;text-decoration:none;border:1.5px solid var(--accent);border-radius:8px;padding:8px 16px}
-.open:hover{background:var(--accent);color:var(--bg)}
+.open{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.open a{font-weight:700;text-decoration:none;border:1.5px solid var(--accent);border-radius:8px;padding:7px 14px;font-size:15px}
+.open a:first-child{background:var(--accent);color:var(--bg)}
+.open a:hover{background:var(--accent);color:var(--bg)}
 .rec{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:20px 24px}
 .rec ol{margin:8px 0 0;padding-left:1.3em}.rec li{margin-bottom:8px}
-table{width:100%;border-collapse:collapse;font-size:15px;margin-top:8px}
-th,td{text-align:left;padding:9px 10px;border-top:1px solid var(--rule);vertical-align:top}
-th{color:var(--dim);font-weight:500;font-size:13px}
-td:first-child{font-weight:700;white-space:nowrap}
+.matrix{width:100%;border-collapse:collapse;font-size:15px;margin-top:8px}
+.matrix th,.matrix td{text-align:left;padding:9px 10px;border-top:1px solid var(--rule);vertical-align:top}
+.matrix th{color:var(--dim);font-weight:500;font-size:13px}
+.matrix td:first-child{font-weight:700;white-space:nowrap}
 .scroll{overflow-x:auto}
-@media(max-width:820px){.diag,.dir,.dir.phone{grid-template-columns:1fr}.dir.phone img{max-width:300px}}
+@media(max-width:820px){.diag,.dir,.dir.phone,.cmpbox{grid-template-columns:1fr}.dir.phone img{max-width:300px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<a class="back" href="../index.html">‹ 現行進場動畫</a>
+<a class="back" href="../index.html">‹ 進場動畫 · 版本 1</a>
 <h1>同一份動線資料，五種看法</h1>
-<p class="lede">現行頁面把企劃、大隊長、每一位菩薩要的東西放在同一個畫面，結果每個人都得自己找。這裡不改動線、不改資料（1,609 人的時間戳全部沿用），只換「給誰看、在哪裡看」。五個都可以實際操作。</p>
+<p class="lede">現行頁面把企劃、大隊長、每一位菩薩要的東西放在同一個畫面，結果每個人都得自己找。這裡不改動線、不改資料，只換「給誰看、在哪裡看」。五個方向都能切換<b>版本 1、版本 2</b>，也都有<b>對照</b>模式。</p>
+<p class="vers"><a href="../index.html">版本 1<small>10/18 座位 · 原排法</small></a><a href="../../entry-animation-v2/index.html">版本 2<small>藍衣全部 B2 集結</small></a></p>
+
+<h2>兩個版本差在哪</h2>
+<p class="sub">直接從兩個版本頁讀出的數字，版本頁重新產生後這裡會跟著變。</p>
+<div class="cmpbox" id="cmpbox"><p class="err">讀取兩個版本的資料…</p></div>
 
 <h2>現行版本卡在哪裡</h2>
 <div class="diag">
- <img src="shots/0.jpg" alt="現行進場動畫頁 1440×900 截圖" loading="lazy">
+ <img src="shots/0.jpg" alt="現行進場動畫頁（版本 1）1440×900 截圖" loading="lazy">
  <ol>
   <li><b>一頁服務三種人</b><span>「找自己的位置」在桌面藏在右上、手機在第三個區塊；1,609 位菩薩才是最大的讀者群。</span></li>
   <li><b>地圖大半是空的東半場</b><span>動線全在西側，卻擠在地圖左三分之一；預設取景應該框西半。</span></li>
   <li><b>時間講了三次</b><span>波次條、四條階段軌、七顆跳轉鈕，各自一套刻度。可以合成一條多軌時間軸。</span></li>
-  <li><b>看不見瓶頸</b><span>四個統計數字是當下快照。資料裡其實有一個大訊號：集結等待平均 01:32，最久的第 27 列等 02:59——現行畫面完全看不出來。</span></li>
-  <li><b>和 app 方向不同</b><span>北朝上，但《我的走位》是甲舞台朝上，要讀者自己轉 90°。給菩薩看的畫面應與 app 同向。</span></li>
-  <li><b>系統語言，不是口令語言</b><span>「鏈 A」「走廊六路第 3 路」「路內第 12 位」是排程用詞；現場要的是「走靠牆那條」「跟緊 27-16」。前後位資料其實已經在 <code>gateIdx</code> 裡。</span></li>
-  <li><b>篩選佔掉整個側欄</b><span>大隊、組別、衣色、行政區四組勾選，但多數情境只看「一個大隊」或「一個人」。</span></li>
+  <li><b>看不見瓶頸</b><span>四個統計數字是當下快照，看不出誰在集結點站最久——而這正是兩個版本最大的差別。</span></li>
+  <li><b>兩個版本只能分頁來回切</b><span>版本 1、2 互相連結，但沒有同一時刻並排，也看不出「我換座位了沒」。版本 2 的 1,609 人裡有一千五百多人換了休息座位。</span></li>
+  <li><b>和 app 方向不同</b><span>北朝上，但《我的走位》是甲舞台朝上，要讀者自己轉 90°。</span></li>
+  <li><b>系統語言，不是口令語言</b><span>「鏈 A」「走廊六路第 3 路」是排程用詞；現場要的是「走靠牆那條」「跟緊 27-16」。</span></li>
  </ol>
 </div>
 
 <h2>五個方向</h2>
 
 <section class="dir">
- <img src="shots/a.jpg" alt="A 演練指揮台截圖" loading="lazy">
+ <img src="shots/a.jpg" alt="A 演練指揮台，對照模式截圖" loading="lazy">
  <div>
   <h3>A · 演練指揮台</h3>
   <p class="who">企劃 · 行前說明會投影、彩排檢討</p>
-  <p>地圖滿版、深底投影，介面退到四角。人用短拖尾表示移動方向，集結點用橘色圈的大小直接講壅塞程度。底部一條時間軸同時放「第一～四出」與「大隊 1–9 進場」兩軌，右下是會自動往前捲的口令表。</p>
-  <dl><dt>拿掉</dt><dd>篩選側欄、四張統計卡、十項圖例</dd><dt>新增</dt><dd>流量柱（五態一根柱子）、壅塞圈、拖尾、口令表</dd></dl>
-  <a class="open" href="a-console.html">打開 A</a>
+  <p>地圖滿版、深底投影。人用短拖尾表示移動方向，集結區用橘色圈的大小直接講壅塞程度。<b>對照</b>時兩版左右並排、共用同一個時鐘，底部兩條大隊進場軌一眼看出版本 2 提早收尾。</p>
+  <dl><dt>拿掉</dt><dd>篩選側欄、四張統計卡、十項圖例</dd><dt>新增</dt><dd>流量柱、壅塞圈、拖尾、口令表、雙版並排</dd></dl>
+  <div class="open"><a href="a-console.html?v=cmp">打開對照</a><a href="a-console.html?v=1">版本 1</a><a href="a-console.html?v=2">版本 2</a></div>
  </div>
 </section>
 
 <section class="dir phone">
- <img src="shots/b.jpg" alt="B 我的一條路手機截圖" loading="lazy">
+ <img src="shots/b.jpg" alt="B 我的一條路，對照模式手機截圖" loading="lazy">
  <div>
   <h3>B · 我的一條路</h3>
   <p class="who">每一位菩薩 · 手機、彩排前一晚或走廊上</p>
-  <p>一進來只問一件事：你的身分證位置。列、排分兩格數字鍵盤輸入，不必猜「27-15」的格式。地圖<strong>甲舞台朝上</strong>，與 app《我的走位》同向，只畫你和你這一列。下面是五步口令：起、走、集、進、到，點哪一步地圖就飛到那一段。</p>
-  <dl><dt>新增</dt><dd>「你前面／你後面」是誰（由 6口 的路序算出），彩排時先互相認識；集結要等多久</dd><dt>用語</dt><dd>「走靠牆那條」取代「鏈 A」</dd></dl>
-  <a class="open" href="b-journey.html">打開 B</a>
+  <p>一進來只問身分證位置。地圖<strong>甲舞台朝上</strong>，與 app 同向；下面是起、走、集、進、到五步口令。<b>對照</b>時最上面多一張「你在版本 2 有什麼不同」：休息座位、離座波次、集結區、等待、到位，只把變了的標出來；地圖用虛線疊上版本 1 的路。</p>
+  <dl><dt>新增</dt><dd>你前面／你後面是誰、集結要等多久、兩版差異卡</dd></dl>
+  <div class="open"><a href="b-journey.html?v=cmp">打開對照</a><a href="b-journey.html?v=1">版本 1</a><a href="b-journey.html?v=2">版本 2</a></div>
  </div>
 </section>
 
 <section class="dir">
- <img src="shots/c.jpg" alt="C 動線總譜截圖" loading="lazy">
+ <img src="shots/c.jpg" alt="C 動線總譜，對照模式截圖" loading="lazy">
  <div>
   <h3>C · 動線總譜</h3>
-  <p class="who">企劃 · 筆電上調排程</p>
-  <p>不播放動畫，把時間攤開：54 列 × 時間，每一條細線是一位菩薩，綠是走、橘是等、藍是進場。一眼就看出大隊 4、5 最早離座、卻等最久——要縮短總時長，該調的是離座波次，不是走路速度。滑過任一列，右邊地圖只亮那一列。</p>
-  <dl><dt>適合</dt><dd>回答「哪裡卡住」「改了之後有沒有變好」</dd><dt>代價</dt><dd>手機上不好用；是分析工具，不是給現場看的</dd></dl>
-  <a class="open" href="c-score.html">打開 C</a>
+  <p class="who">企劃 · 筆電上調排程、決定用哪一版</p>
+  <p>54 列 × 時間，每一條細線是一位菩薩，綠是走、橘是等、藍是進場。<b>對照</b>時每一列上下兩條（淡的是版本 1），右側列出各大隊平均等待與差值。長等待從中段大隊搬到最後兩個大隊的藍衣，在這張圖上是一眼的事。</p>
+  <dl><dt>適合</dt><dd>回答「哪裡卡住」「改了之後有沒有變好」「代價落在誰身上」</dd><dt>代價</dt><dd>手機上不好用</dd></dl>
+  <div class="open"><a href="c-score.html?v=cmp">打開對照</a><a href="c-score.html?v=1">版本 1</a><a href="c-score.html?v=2">版本 2</a></div>
  </div>
 </section>
 
 <section class="dir">
- <img src="shots/d.jpg" alt="D 六格講義截圖" loading="lazy">
+ <img src="shots/d.jpg" alt="D 六格講義，對照模式截圖" loading="lazy">
  <div>
   <h3>D · 六格講義</h3>
-  <p class="who">幹部 · 印成 A3 發下去、貼在集結點</p>
-  <p>六個關鍵時刻的小圖並排，紙張配色、明體標題。靜態圖沒辦法播放，所以每個人畫出「前 8 秒走過的路」當軌跡，方向一看就懂。每格附一句話和四個數字。<code>@page</code> 已設 A3 橫式。</p>
+  <p class="who">幹部 · 印成 A3 發下去、貼在集結區</p>
+  <p>六個關鍵時刻的小圖，每人畫出前 8 秒走過的路當軌跡。單一版本時，六個時刻和說明照該版的排法各寫一套；<b>對照</b>時改成同一個絕對時刻左右並排，下面附兩版的人數表，適合開會時討論要選哪一版。</p>
   <dl><dt>適合</dt><dd>沒有網路的地下層、不看手機的長輩、會前發的書面資料</dd></dl>
-  <a class="open" href="d-keyframes.html">打開 D</a>
+  <div class="open"><a href="d-keyframes.html?v=cmp">打開對照</a><a href="d-keyframes.html?v=1">版本 1</a><a href="d-keyframes.html?v=2">版本 2</a></div>
  </div>
 </section>
 
 <section class="dir phone">
- <img src="shots/e.jpg" alt="E 大隊長口令卡手機截圖" loading="lazy">
+ <img src="shots/e.jpg" alt="E 大隊長口令卡，對照模式手機截圖" loading="lazy">
  <div>
   <h3>E · 大隊長口令卡</h3>
-  <p class="who">大隊長 · 手機，在集結點喊口令</p>
-  <p>選一個大隊，整頁換成那個大隊的顏色。最上面是「下一個口令」和倒數，下面六條橫條是這個大隊六列各自的狀態（休息區／走廊／集結／進場／到位），到齊就亮。口令表從「第一位離座」排到「全隊到位」，包含「前一大隊最後一位過 6口」這個交接點。</p>
-  <dl><dt>新增</dt><dd>交接點、六列到齊判斷、倒數</dd></dl>
-  <a class="open" href="e-captain.html">打開 E</a>
+  <p class="who">大隊長 · 手機，在集結區喊口令</p>
+  <p>選一個大隊，整頁換成那個大隊的顏色：下一個口令與倒數、六列各自的狀態、口令表。版本 2 白衣和藍衣分開集結，口令會自動拆成「白衣到齊」「藍衣到齊」。<b>對照</b>時口令表並列兩版時間與差值，大隊長一眼知道自己的時程往前還是往後挪。</p>
+  <dl><dt>新增</dt><dd>交接點、依集結區到齊、兩版時程差</dd></dl>
+  <div class="open"><a href="e-captain.html?v=cmp">打開對照</a><a href="e-captain.html?v=1">版本 1</a><a href="e-captain.html?v=2">版本 2</a></div>
  </div>
 </section>
 
 <h2>比較</h2>
-<div class="scroll"><table>
- <tr><th>方向</th><th>給誰</th><th>裝置</th><th>回答的問題</th><th>從現行頁拿掉</th></tr>
- <tr><td>A 指揮台</td><td>企劃</td><td>投影、大螢幕</td><td>全場現在進行到哪、哪裡塞</td><td>側欄、統計卡、長說明</td></tr>
- <tr><td>B 我的路</td><td>每位菩薩</td><td>手機</td><td>我要往哪走、跟誰、等多久</td><td>其他 1,600 人的細節</td></tr>
- <tr><td>C 總譜</td><td>企劃</td><td>筆電</td><td>瓶頸在哪、怎麼縮短</td><td>動畫本身</td></tr>
- <tr><td>D 講義</td><td>幹部、長輩</td><td>紙本</td><td>六個時刻各長什麼樣</td><td>所有互動</td></tr>
- <tr><td>E 口令卡</td><td>大隊長</td><td>手機</td><td>下一個口令是什麼、六列到齊沒</td><td>其他八個大隊</td></tr>
+<div class="scroll"><table class="matrix">
+ <tr><th>方向</th><th>給誰</th><th>裝置</th><th>回答的問題</th><th>對照模式看什麼</th></tr>
+ <tr><td>A 指揮台</td><td>企劃</td><td>投影、大螢幕</td><td>全場現在進行到哪、哪裡塞</td><td>同一時刻兩版並排</td></tr>
+ <tr><td>B 我的路</td><td>每位菩薩</td><td>手機</td><td>我要往哪走、跟誰、等多久</td><td>我的座位、集結區、等待變了沒</td></tr>
+ <tr><td>C 總譜</td><td>企劃</td><td>筆電</td><td>瓶頸在哪、怎麼縮短</td><td>每一列、每個大隊的等待差</td></tr>
+ <tr><td>D 講義</td><td>幹部、長輩</td><td>紙本</td><td>六個時刻各長什麼樣</td><td>同一時刻並排的人數表</td></tr>
+ <tr><td>E 口令卡</td><td>大隊長</td><td>手機</td><td>下一個口令是什麼、六列到齊沒</td><td>我這個大隊的時程往前或往後挪</td></tr>
 </table></div>
 
-<h2>建議</h2>
+<h2>怎麼套用到兩個版本</h2>
 <div class="rec">
- <p>不是五選一。這份資料有三種讀者，應該拆成三個入口，共用同一份 <code>data.js</code> 與內插引擎（本目錄的 <code>core.js</code> 已經是這個形狀）：</p>
  <ol>
-  <li><b>先做 B。</b>讀者最多（1,609 人），而且最終要進 app 的《我的走位》，方向已經對齊。</li>
-  <li><b>E 跟著做。</b>九位大隊長，邏輯幾乎都是 B 的聚合。</li>
-  <li><b>現行頁改成 A + C 的組合</b>：預設 A 的滿版地圖與合併時間軸，加一個「總譜」分頁。篩選收成「看單一大隊／單一人」兩個入口。</li>
-  <li>D 在定案後產一次，印給集結點。</li>
+  <li><b>資料只有一份來源。</b>五個方向都直接讀兩個版本頁內嵌的資料，不另存副本；版本頁用 <code>build/</code> 重新產生後，這裡自動是最新的。新增版本 3 時，在 <code>core.js</code> 的 <code>VERSIONS</code> 加一行。</li>
+  <li><b>先用 C 的對照決定要不要換成版本 2。</b>版本 2 總時長較短、多數大隊等得少，但最後兩個大隊的藍衣等得更久，這是要企劃拍板的取捨，不是設計問題。</li>
+  <li><b>定案後先推 B。</b>不管選哪一版，B 的對照卡能直接告訴每一位菩薩「你換座位了沒、集結區在哪」；版本 2 有一千五百多人換了休息座位，這件事光靠一張新座位表很難說清楚。</li>
+  <li><b>E 跟著做</b>，九位大隊長；它的口令會依版本的集結方式自動調整。</li>
+  <li><b>現行頁的改善只要改一次。</b>版本 2 頁由 <code>build/page.py</code> 以版本 1 頁為模板產生，所以把 A 的滿版地圖、合併時間軸、壅塞圈、口令語言回填到版本 1 的 <code>index.html</code>，重跑 <code>page.py</code> 兩版就都有了。</li>
  </ol>
- <p>即使不拆頁，以下可以直接回填現行版本：預設取景框西半、時間軸合一、壅塞圈、個人卡改口令語言、加「你前面／你後面」。</p>
 </div>
 </div>
+<div class="tip" id="tip" role="tooltip"></div>
+<script src="core.js"></script>
+<script>
+'use strict';
+const {fmt,delta}=Dome,$=id=>document.getElementById(id);
+const avg=xs=>xs.reduce((a,b)=>a+b,0)/xs.length;
+function stats(ds){const P=ds.P,w=P.map(ds.wait),worst=P.reduce((a,p)=>ds.wait(p)>ds.wait(a)?p:a);
+ return {T:ds.T_END,avg:avg(w),worst,dad:Array.from({length:9},(_,i)=>avg(P.filter(p=>p.dadui===i+1).map(ds.wait))),
+  first:Math.min(...P.filter(p=>p.dadui===1).map(p=>p.t.enter))};}
+(async()=>{let a,b;try{[a,b]=await Promise.all([Dome.load(1),Dome.load(2)]);}catch(e){$('cmpbox').innerHTML=`<p class="err">${e.message}。這一段直接讀兩個版本頁的資料，需要經由網頁伺服器開啟（GitHub Pages 或 <code>python3 -m http.server</code>）。</p>`;return;}
+ const A=stats(a),B=stats(b),moved=a.P.filter(p=>{const q=b.byId.get(p.id);return q&&(p.rest.sec!==q.rest.sec||p.rest.pai!==q.rest.pai||p.rest.no!==q.rest.no);}).length;
+ const asm=a.P.filter(p=>{const q=b.byId.get(p.id);return q&&a.nodeName(p.assembly)!==b.nodeName(q.assembly);}).length;
+ const row=(k,x,y,d)=>`<tr><td>${k}</td><td>${x}</td><td class="v2">${y}</td><td class="d">${d||''}</td></tr>`;
+ const rk=s=>s.dad.map((w,i)=>[w,i+1]).sort((p,q)=>q[0]-p[0]).slice(0,2).map(x=>x[1]).sort().join('、');
+ const table=`<div><table><thead><tr><th></th><th>版本 1</th><th>版本 2</th><th>差</th></tr></thead><tbody>
+  ${row('全員到位',fmt(A.T),fmt(B.T),delta(B.T-A.T))}
+  ${row('大隊 1 出發',fmt(A.first),fmt(B.first),delta(B.first-A.first))}
+  ${row('平均集結等待',fmt(A.avg),fmt(B.avg),delta(B.avg-A.avg))}
+  ${row('最久等待',`${fmt(a.wait(A.worst))}<small>${A.worst.id} · 大隊 ${A.worst.dadui}${A.worst.costume}衣</small>`,`${fmt(b.wait(B.worst))}<small>${B.worst.id} · 大隊 ${B.worst.dadui}${B.worst.costume}衣</small>`,delta(b.wait(B.worst)-a.wait(A.worst)))}
+  ${row('等最久的大隊',rk(A),rk(B))}
+  ${row('換休息座位','—',`${moved.toLocaleString('zh-TW')} 人`)}
+  ${row('換集結區','—',`${asm.toLocaleString('zh-TW')} 人`)}
+ </tbody></table>
+ <p class="read">版本 2 讓<b>全員早 ${fmt(A.T-B.T).replace(/^00:/,'0:')} 到位</b>、大隊 1–5 的等待大幅縮短；代價是<b>大隊 ${rk(B)} 的藍衣</b>得在 B2 站得更久。這是排法的取捨，要企劃決定，不是設計問題。</p></div>`;
+ $('cmpbox').innerHTML=table+`<div class="chart"><h3>各大隊平均集結等待</h3><p>點越靠左，等得越短；右側是版本 2 減版本 1。</p><div class="legend"><span><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="var(--v1)" stroke-width="2"/></svg>版本 1</span><span><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--v2)"/></svg>版本 2</span></div><svg id="dumb" role="img" aria-label="各大隊平均集結等待，版本 1 與版本 2 對照"></svg></div>`;
+ drawDumb(A,B);addEventListener('resize',()=>drawDumb(A,B));})();
+// 啞鈴圖：每個大隊一列；版本 1 空心、版本 2 實心，形狀＋顏色雙重編碼
+function drawDumb(A,B){const svg=$('dumb'),W=svg.getBoundingClientRect().width,L=56,R=58,RH=30,H=RH*9+28,max=Math.ceil(Math.max(...A.dad,...B.dad)/60)*60;
+ const x=v=>L+v/max*(W-L-R);let s=`<g>`;
+ for(let m=0;m<=max;m+=60)s+=`<line x1="${x(m)}" x2="${x(m)}" y1="0" y2="${RH*9}" stroke="var(--grid)"/><text x="${x(m)}" y="${RH*9+18}" text-anchor="middle">${m/60} 分</text>`;
+ s+='</g>';
+ for(let i=0;i<9;i++){const y=i*RH+RH/2,a=A.dad[i],b=B.dad[i],d=b-a;
+  s+=`<g class="row" data-i="${i}"><rect class="hit" x="0" y="${i*RH}" width="${W}" height="${RH}" fill="transparent" rx="4"/>
+  <text class="lab" x="0" y="${y+4}">大隊 ${i+1}</text>
+  <line x1="${x(a)}" x2="${x(b)}" y1="${y}" y2="${y}" stroke="var(--dim)" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+  <circle cx="${x(a)}" cy="${y}" r="5" fill="var(--card)" stroke="var(--v1)" stroke-width="2"/>
+  <circle cx="${x(b)}" cy="${y}" r="5.5" fill="var(--v2)" stroke="var(--card)" stroke-width="2"/>
+  <text x="${W}" y="${y+4}" text-anchor="end" style="fill:var(--ink);font-weight:700">${delta(d)}</text></g>`;}
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('height',H);svg.innerHTML=s;
+ const tip=$('tip');svg.querySelectorAll('.row').forEach(g=>{g.onpointermove=e=>{const i=+g.dataset.i;tip.innerHTML=`<b>大隊 ${i+1}</b>版本 1　${fmt(A.dad[i])}<br>版本 2　${fmt(B.dad[i])}（${delta(B.dad[i]-A.dad[i])}）`;tip.style.left=Math.min(innerWidth-180,e.clientX+14)+'px';tip.style.top=e.clientY+14+'px';tip.style.opacity=1;};g.onpointerleave=()=>tip.style.opacity=0;});}
+</script>
 </body>
 </html>
