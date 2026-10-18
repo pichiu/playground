@@ -38,6 +38,11 @@ input[aria-invalid=true]{border-color:var(--highlight);outline-color:var(--highl
  .phase-track{grid-template-columns:minmax(0,1fr);height:auto}.phase-track span{white-space:normal}.map-heading{flex-wrap:wrap}.map-help{font-size:12px}.map-tools{left:auto;right:8px;flex-direction:column}#fit{display:none}
 }
 /* 時間軸合一：上排離座波次、下排大隊進場，與播放軸同寬對齊；原「階段與跳轉」面板併入這裡 */
+/* 離座波次在時間上重疊：標籤靠各自區塊起點，後一出的色塊才不會蓋住前一出的字 */
+.wave-block{text-align:left}.wave-block span{padding-left:6px}
+.dadui-block{text-align:center}.dadui-block span{padding-left:0}
+/* 個人卡：「排程細節」排到最後，狀態列緊接在口令與前後位之後 */
+.selection:not(:empty){display:flex;flex-direction:column}.selection>.person-more{order:1}
 .dadui-bars{margin-top:4px}.dadui-block i{opacity:.32}.dadui-block span{font-weight:700}
 .track-note{margin:6px 0 0;font-size:11px;color:var(--muted);line-height:1.6}
 .swatch.crowd{background:transparent;border:1.5px solid var(--highlight);width:12px;height:12px}
