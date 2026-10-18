@@ -5,6 +5,7 @@
 import csv, json, math, sys, collections
 import numpy as np
 from geo import Poly, pairs
+from collide import collisions
 
 OLD, OUT, PLAN = sys.argv[1:4]
 SEATS_CSV = sys.argv[4] if len(sys.argv) > 4 else None
@@ -41,15 +42,15 @@ def zone_of(lie):
     if d == 1: return 'P1'
     if c == '藍': return 'P%d' % (1 + (d // 2))           # 2,3→P2 4,5→P3 6,7→P4 8,9→P5
     return {2: 'STAIR', 3: 'P6', 4: 'P7', 5: 'P7', 6: 'P8', 7: 'P8', 8: 'P9', 9: 'P9'}[d]
-def first_in_zone(lie):            # 同區兩個大隊時,較早進場者站靠內側(往 6口 不穿越)
+def first_in_zone(lie):            # 同區兩個大隊時,較早進場者站在直通 6口 收攏點的那一側(往 6口 不穿越)
     d = dadui_of(lie)              # 偶數大隊與 白 3(單獨一區)先進場;大隊 1 獨佔集結區 1
     return d == 1 or d % 2 == 0 or (d == 3 and costume_of(lie) == '白')
 def slot_offset(lie):
     z, j, first = zone_of(lie), lane_of(lie), first_in_zone(lie)
     if z == 'P1': return 0.2 - 0.08 * j
-    if ZONES[z]['corr'] == 'B2':       # 藍:6口 南三路 3,4,5;內側(+)為場內側
-        k = j - 3
-        return (0.04 + 0.08 * k) if first else (-0.2 + 0.08 * k)
+    if ZONES[z]['corr'] == 'B2':       # 藍:6口 南三路 3,4,5。6口 收攏點在走廊上是斜的(第 j 路偏移 0.2-0.08j),
+        k = j - 3                      # 3–5 路在外側(−);先進場的大隊直接站那三個偏移,後進場的站內側、順序相同,
+        return (-0.04 - 0.08 * k) if first else (0.2 - 0.08 * k)   # 輪到時整排往外平移,不交叉
     k = j                              # 白:6口 北三路 0,1,2;B1 + 為看台側,接樓梯北路
     return (0.2 - 0.08 * k) if first else (-0.04 - 0.08 * k)
 
@@ -69,10 +70,16 @@ def slot_xy(lie, i):
         a, b = pts[-2], pts[-1]
         return (b[0] + (b[0] - a[0]) * (i - len(pts) + 1), b[1] + (b[1] - a[1]) * (i - len(pts) + 1))
     poly = B1 if Z['corr'] == 'B1' else B2
-    return poly.off(Z['head'] + Z['step'] * i, slot_offset(lie))
+    return poly.off(slot_u(lie, i), slot_offset(lie))
+U_SHIFT0, U_SHIFT1 = 5.25, 4.95   # B2 藍衣區後進場的大隊在 u 5.25→4.95 平行外移到 6口 那三路
+def second_back(z):
+    """後進場大隊整排往後退的距離:區頭離平行外移起點太近(只有藍 2·3)才需要,留出外移的空間"""
+    Z = ZONES[z]
+    return max(0.0, U_SHIFT0 + 0.1 - Z['head']) if Z['kind'] == 'LIFO' else 0.0
 def slot_u(lie, i):
-    Z = ZONES[zone_of(lie)]
-    return Z['head'] + Z['step'] * i
+    z = zone_of(lie); Z = ZONES[z]
+    back = 0.0 if first_in_zone(lie) else second_back(z)
+    return Z['head'] + Z['step'] * i + back
 
 # ---------- 路線 ----------
 CHAIN_OFF = {('A', '藍'): 0.2, ('A', '白'): 0.12, ('B', '藍'): 0.04, ('B', '白'): -0.04, ('C', '藍'): -0.12, ('C', '白'): -0.2}
@@ -102,6 +109,8 @@ def white_route(j, u_from, off_from):
     return pts
 
 # ---------- 休息區鏈 ----------
+BLOCK_MOVE = {'141L': ('A', 'B', '140L')}   # 區塊: (原鏈, 新鏈, 接在哪個區塊之後)
+
 def chain_seq():
     seqs = {}
     for ch in 'ABC':
@@ -109,6 +118,17 @@ def chain_seq():
         seqs[ch] = [dict(sec=p['rest']['sec'], pai=p['rest']['pai'], no=p['rest']['no'], X=p['rest']['X'], Y=p['rest']['Y'],
                          block=p['block'], exitSide=p['exitSide'], exitWave=p['exitWave'],
                          aisle=p['path'][1][:2], entry=p['path'][2][:2]) for p in ps]
+    # 版本 2 重新平衡三條鏈:鏈 A(139/141L/143/142R)比鏈 B 多約 190 席,尾段的大隊 6、7 白衣會拖慢進場;
+    # 把 141L 改走鏈 B,依 BLOCK_MOVE 指定接在哪個區塊之後(座位、區塊與離座箭頭不變)
+    for blk, (src, dst, after) in BLOCK_MOVE.items():
+        if not any(s['block'] == blk for s in seqs[src]):
+            raise SystemExit(f'BLOCK_MOVE: 區塊 {blk} 不在鏈 {src} 上')
+        if not any(s['block'] == after for s in seqs[dst]):
+            raise SystemExit(f'BLOCK_MOVE: 鏈 {dst} 上沒有區塊 {after},無法接在它後面')
+        moved = [s for s in seqs[src] if s['block'] == blk]
+        seqs[src] = [s for s in seqs[src] if s['block'] != blk]
+        i = max(k for k, s in enumerate(seqs[dst]) if s['block'] == after) + 1
+        seqs[dst] = seqs[dst][:i] + moved + seqs[dst][i:]
     seatxy = {(s['sec'], s['pai'], s['no']): s for s in D['restSeats']}
     # 各鏈最後一排接續的空位(10/18 座位:142 區 1 排已全給鏈 A;145 區 1 排 11–23 號留空)
     extra = {'A': [],
@@ -128,9 +148,19 @@ CAP = {ch: len(v) for ch, v in SEQ.items()}
 PH1 = [46, 47, 48, 52, 53, 54, 34, 35, 36, 40, 41, 42, 22, 23, 24, 28, 29, 30, 10, 11, 12, 16, 17, 18, 4, 5, 6, 1, 2, 3]
 PH2 = [7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27, 31, 32, 33, 37, 38, 39, 43, 44, 45, 49, 50, 51]
 ORDER = PH1 + PH2
-# 鏈 A 尾段在 143/142R(走道口約 u=6.0,在白 8·9 區南邊):白 8·9 只能坐鏈 B/C 尾段的 144/145
-NOT_A = {43, 44, 45, 49, 50, 51}
 assert sorted(ORDER) == list(range(1, 55))
+
+def b1_transfer_u(z):
+    """B1 白衣區(頭朝樓梯)從區尾外換路的位置;從看台出來的人要在它北邊(u 較小)進走廊,才不必逆走穿過站定者"""
+    Z = ZONES[z]
+    return max(Z['head'] + Z['step'] * 35 - 0.15, 0.3)
+# 白衣排在鏈尾。鏈尾區塊的走道口若在某 B1 白衣區換路點的南邊,該區的列就不能放在這條鏈
+# (例:鏈 A 尾段 142R 的走道口 u≈6.0,在白 8·9 區換路點 u≈3.4 南邊 → 白 8·9 不能坐鏈 A)
+CHAIN_TAIL_U = {ch: B1.proj(SEQ[ch][-1]['entry'])[0] for ch in 'ABC'}
+FORBID = {lie: {ch for ch in 'ABC' if CHAIN_TAIL_U[ch] > b1_transfer_u(zone_of(lie)) + 0.05}
+          for lie in PH2 if ZONES[zone_of(lie)]['corr'] == 'B1'}
+
+W_EXP = 3.5    # 優先序權重:越大越堅持先出的列先離座。實測 2–4 都無互撞,3.5 最短(278.5 秒);1.5 避撞排不開
 
 def partition():
     capA, capB, capC = CAP['A'], CAP['B'], CAP['C']
@@ -140,15 +170,15 @@ def partition():
     cum = 0
     A_idx = np.arange(capA + 1)[:, None]; B_idx = np.arange(capB + 1)[None, :]
     for r, lie in enumerate(ORDER):
-        n = LIE_N[lie]; w = (len(ORDER) - r) ** 1.5
+        n = LIE_N[lie]; w = (len(ORDER) - r) ** W_EXP
         C_load = cum - A_idx - B_idx
         cand = np.full((3, capA + 1, capB + 1), INF)
         # A
         cand[0, n:, :] = dp[:-n, :] + w * (A_idx[:-n] * GAP_SEAT)
-        if lie in NOT_A: cand[0] = INF
         cand[1, :, n:] = dp[:, :-n] + w * (B_idx[:, :-n] * GAP_SEAT)
         okC = (C_load + n <= capC) & (C_load >= 0)
         cand[2] = np.where(okC, dp + w * (np.maximum(C_load, 0) * GAP_SEAT), INF)
+        for c in FORBID.get(lie, ()): cand['ABC'.index(c)] = INF
         ch = np.argmin(cand, axis=0); dp = np.min(cand, axis=0)
         choice.append(ch.astype(np.int8))
         cum += n
@@ -156,9 +186,12 @@ def partition():
     Cl = cum - A_idx - B_idx
     base = {ch: sum(1 for x in SEQ[ch] if not x.get('extra')) for ch in 'ABC'}
     over = np.maximum(A_idx - base['A'], 0) + np.maximum(B_idx - base['B'], 0) + np.maximum(Cl - base['C'], 0)
-    final = np.where((Cl >= 0) & (Cl <= capC), dp + 1e7 * over, INF)
+    # 先求動用加座最少,其次才看等候成本(字典序,不用懸殊權重相加以免互相吃掉)
+    feas = (Cl >= 0) & (Cl <= capC) & (dp < INF)
+    assert feas.any(), '容量不可行'
+    best_over = over[feas].min()
+    final = np.where(feas & (over == best_over), dp, INF)
     a, b = np.unravel_index(np.argmin(final), final.shape)
-    assert final[a, b] < INF, '容量不可行'
     assign = {}
     for r in range(len(ORDER) - 1, -1, -1):
         lie = ORDER[r]; n = LIE_N[lie]; c = int(choice[r][a, b])
@@ -182,6 +215,12 @@ for ch in 'ABC':
             SEAT_OF['%d-%d' % (lie, pai)] = dict(s, chain=ch, qi=q)
     assert k <= CAP[ch]
     print('鏈', ch, '使用', k, '/', CAP[ch], '列', CHAIN_ROWS[ch])
+# FORBID 只看鏈尾;這裡逐人確認:往 B1 白衣區的人,走道口都在該區換路點北邊(不必逆走穿過站定者)
+for pid, s in SEAT_OF.items():
+    z = zone_of(int(pid.split('-')[0]))
+    if ZONES[z]['corr'] == 'B1':
+        u_in = B1.proj(s['entry'])[0]
+        assert u_in <= b1_transfer_u(z) + 0.05, f'{pid} 往 {ZONES[z]["label"]} 但走道口 u={u_in:.2f} 在換路點南邊'
 
 # ---------- 抵達路徑 ----------
 def arrival_route(pid, lie, i):
@@ -250,12 +289,12 @@ for lie in range(1, 55):
         cum = [0.0]
         for a, b in zip(pts, pts[1:]): cum.append(cum[-1] + math.dist(a, b))
         PERSON[pid] = dict(lie=lie, pai=pai, slot=i, pts=pts, legs=legs, L=cum[-1],
-                           d_entry=cum[2])
+                           d_entry=cum[2], d_aisle=cum[1], mouth=(round(pts[1][0], 3), round(pts[1][1], 3)))
 
 def leg_times(pid, t_leave):
     """回傳每段走廊的 (corr,u0,u1,t0,t1);用直線距離近似"""
     P = PERSON[pid]; out = []
-    d = P['d_entry']
+    d = P['d_entry']; t_leave = t_leave + MOUTH_WAIT[pid]      # 在看台走道口等的時間在進走廊之前
     for corr, u0, u1 in P['legs']:
         if corr == 'STAIR':
             L = ST.L
@@ -269,9 +308,17 @@ def region(z):
     Z = ZONES[z]
     if z == 'STAIR': return [('STAIR', 0, 1), ('B1', STAIR_U_B1 - 0.3, STAIR_U_B1)]
     nmax = max(LIE_N[l] for l in range(1, 55) if zone_of(l) == z)
-    a, b = Z['head'], Z['head'] + Z['step'] * (nmax - 1)
+    a, b = Z['head'], Z['head'] + Z['step'] * (nmax - 1) + second_back(z)
     return [(Z['corr'], min(a, b) - 0.1, max(a, b) + 0.1)]
 REGION = {z: region(z) for z in ZONES}
+# 同一條走廊上的集結區站位不得互相重疊(後進場大隊往後退之後也一樣)
+for z1 in ZONES:
+    for z2 in ZONES:
+        if z1 >= z2: continue
+        for c1, a1, b1 in REGION[z1]:
+            for c2, a2, b2 in REGION[z2]:
+                if c1 == c2 != 'STAIR':
+                    assert b1 - 0.1 <= a2 + 0.1 or b2 - 0.1 <= a1 + 0.1, ('集結區重疊', z1, z2)   # 去掉 ±0.1 邊距後比
 
 def exit_time(lt, reg):
     """路人 legs 時間 lt 穿過 reg 的最晚離開時間(未經過回 None)"""
@@ -292,25 +339,35 @@ def exit_time(lt, reg):
 # ---------- 離座時間(含等候放行) ----------
 ARR_GAP = 0.28                    # 同列相鄰兩人抵達格位的最小間隔
 
+ROW_DELAY = collections.defaultdict(float)    # 列的額外延後(等前面要穿過集結區的人過完)
+MOUTH_MIN = collections.defaultdict(lambda: -1e9)  # 個人最早可離開看台走道口進走廊的時刻(讓走廊上的人先過)
+MOUTH_WAIT = collections.defaultdict(float)   # 由排程算出:在走道口停的秒數
+ROWS_P = {lie: sorted((pid for pid, P in PERSON.items() if P['lie'] == lie), key=lambda pid: SEAT_OF[pid]['qi'])
+          for lie in range(1, 55)}
+
 def schedule():
     """離座時刻。同列依格位順序抵達(死巷區最裡面的先到、其餘最前面的先到),
     走得近的人在座位上多等一下,不會比前一位先到而穿過他;
     要穿過某集結區的人還沒過完前,往該區的整列再延後離座。"""
-    delay = collections.defaultdict(float)     # 列的額外延後
-    rows_p = {lie: sorted((pid for pid, P in PERSON.items() if P['lie'] == lie), key=lambda pid: SEAT_OF[pid]['qi'])
-              for lie in range(1, 55)}
+    ROW_DELAY.clear()
     for it in range(500):
         start, leave = {}, {}
         for ch in 'ABC':
             t = T0
+            mouth_dep = {}       # 座位排在走道上的出口點 → 上一位離開它的時刻(同鏈跨列也算:下一列可能接續同一座位排)
             for lie in CHAIN_ROWS[ch]:
-                t = t + delay[lie]
+                t = t + ROW_DELAY[lie]
                 start[lie] = t
                 prev_arr = -1e9
-                for pid in rows_p[lie]:
-                    walk = PERSON[pid]['L'] / V
-                    lv = max(t, prev_arr + ARR_GAP - walk)
-                    leave[pid] = lv; prev_arr = lv + walk; t = lv + GAP_SEAT
+                for pid in ROWS_P[lie]:
+                    d1 = PERSON[pid]['d_aisle'] / V; rest = PERSON[pid]['L'] / V - d1
+                    mouth = PERSON[pid]['mouth']
+                    # 走到走道口時,前一位已離開該走道口 ARR_GAP 秒;同列抵達格位依序;不早於 MOUTH_MIN
+                    lv = max(t, prev_arr + ARR_GAP - d1 - rest, mouth_dep.get(mouth, -1e9) + ARR_GAP - d1)
+                    dep = max(lv + d1, MOUTH_MIN[pid])
+                    MOUTH_WAIT[pid] = dep - (lv + d1)
+                    assert dep + rest >= prev_arr + ARR_GAP - 1e-9     # 在走道口等只會更晚到,不會插到前一位前面
+                    leave[pid] = lv; mouth_dep[mouth] = dep; prev_arr = dep + rest; t = lv + GAP_SEAT
                 t = t - GAP_SEAT + GAP_ROW
         LT = {pid: leg_times(pid, leave[pid]) for pid in PERSON}
         need = {}
@@ -326,20 +383,81 @@ def schedule():
         for lie in ORDER:
             ch = ASSIGN[lie]
             if ch in fixed: continue
-            arr = min(LT[pid][-1][4] for pid in rows_p[lie])
+            arr = min(LT[pid][-1][4] for pid in ROWS_P[lie])
             if need[zone_of(lie)] + 0.5 > arr + 1e-6:
-                delay[lie] += need[zone_of(lie)] + 0.5 - arr
+                ROW_DELAY[lie] += need[zone_of(lie)] + 0.5 - arr
                 fixed.add(ch)
         if not fixed:
-            print('排程迭代', it, '延後', {l: round(v, 1) for l, v in delay.items() if v})
             return start, leave
     raise SystemExit('離座排程未收斂')
+
+def timed_arrival(pid, t_leave):
+    """座位 → 集結格位的計時路徑;MOUTH_WAIT 秒停在看台走道口(path 第 2 點)"""
+    pts = PERSON[pid]['pts']; w = MOUTH_WAIT[pid]
+    head = timed(pts[:2], t_leave)
+    if w > 0: head.append((pts[1][0], pts[1][1], head[-1][2] + w))
+    return head + timed(pts[1:], head[-1][2])[1:]
+
+CONTACT_R, CONTACT_DT, WAIT_STEP = 0.035, 0.05, 0.15   # 0.035:比驗收(check.py 的 0.03)嚴一點,抵銷取樣誤差
+def walker_contacts(leave):
+    """走向集結區途中,兩個都在走的人距離 < CONTACT_R 的配對(依時間取樣)"""
+    pids = list(PERSON)
+    paths = [np.array(timed_arrival(p, leave[p])) for p in pids]
+    t0 = min(a[0, 2] for a in paths); t1 = max(a[-1, 2] for a in paths)
+    T = np.arange(t0, t1, CONTACT_DT)
+    X = np.array([np.interp(T, a[:, 2], a[:, 0]) for a in paths]); Y = np.array([np.interp(T, a[:, 2], a[:, 1]) for a in paths])
+    lo = np.array([a[0, 2] for a in paths]); hi = np.array([a[-1, 2] for a in paths])
+    found = {}
+    cell = CONTACT_R + 2 * V * CONTACT_DT          # 一個取樣區間內兩人最多靠近的距離
+    for k in range(len(T) - 1):
+        t = T[k]
+        mv = np.nonzero((lo + 0.05 < t) & (t < hi - 0.05))[0]
+        grid = collections.defaultdict(list)
+        for i in mv: grid[(int(X[i, k] // cell), int(Y[i, k] // cell))].append(i)
+        for i in mv:
+            cx, cy = int(X[i, k] // cell), int(Y[i, k] // cell)
+            for gx in (cx - 1, cx, cx + 1):
+                for gy in (cy - 1, cy, cy + 1):
+                    for j in grid.get((gx, gy), ()):
+                        if j <= i or (i, j) in found: continue
+                        # 區間內相對位置線性變化,取最近距離
+                        dx0, dy0 = X[i, k] - X[j, k], Y[i, k] - Y[j, k]
+                        dx1, dy1 = X[i, k + 1] - X[j, k + 1], Y[i, k + 1] - Y[j, k + 1]
+                        ex, ey = dx1 - dx0, dy1 - dy0; ee = ex * ex + ey * ey
+                        f = 0.0 if ee < 1e-12 else min(1.0, max(0.0, -(dx0 * ex + dy0 * ey) / ee))
+                        if (dx0 + ex * f) ** 2 + (dy0 + ey * f) ** 2 < CONTACT_R ** 2:
+                            found[(i, j)] = (pids[i], pids[j], float(t))
+    return list(found.values())
+
+for rnd in range(300):
+    START, LEAVE = schedule()
+    hits = walker_contacts(LEAVE)
+    print('  避撞第', rnd, '輪:互撞', len(hits), file=sys.stderr)
+    if not hits: break
+    dep = lambda p: LEAVE[p] + PERSON[p]['d_aisle'] / V + MOUTH_WAIT[p]
+    later = {a if dep(a) > dep(b) else b for a, b, _ in hits}   # 較晚進走廊的那位在走道口多讓一下
+    for pid in later: MOUTH_MIN[pid] = dep(pid) + WAIT_STEP
+else:
+    raise SystemExit('走廊互撞未能排開')
+# MOUTH_MIN 是絕對時刻:之後別的列延後縮短、本列提早離座時,舊的讓行時刻會變成在走道口久等。
+# 逐一把等超過 LONG_WAIT 的人的讓行時刻往回收(二分搜尋),仍不互撞才採用
+LONG_WAIT = 0.5
+for pid in sorted((p for p, v in MOUTH_WAIT.items() if v > LONG_WAIT), key=lambda p: -MOUTH_WAIT[p]):
+    schedule()                                    # 以目前採用的讓行時刻重排,MOUTH_WAIT 才是現況
+    hi_t = MOUTH_MIN[pid]; lo_t = hi_t - MOUTH_WAIT[pid]
+    while hi_t - lo_t > 0.05:
+        mid = (lo_t + hi_t) / 2; MOUTH_MIN[pid] = mid
+        START_, LEAVE_ = schedule()
+        if walker_contacts(LEAVE_): lo_t = mid
+        else: hi_t = mid
+    MOUTH_MIN[pid] = hi_t
 START, LEAVE = schedule()
+assert not walker_contacts(LEAVE)
+print('排程:列延後', {l: round(v, 1) for l, v in ROW_DELAY.items() if v}, '| 避撞輪數', rnd,
+      '走道口等候', len([p for p, v in MOUTH_WAIT.items() if v]), '人,最多', round(max(MOUTH_WAIT.values(), default=0), 2), '秒')
 
 # ---------- 進場 ----------
-ARR = {}
-for pid, P in PERSON.items():
-    ARR[pid] = timed(P['pts'], LEAVE[pid])
+ARR = {pid: timed_arrival(pid, LEAVE[pid]) for pid in PERSON}
 
 def depart_route(pid):
     P = PERSON[pid]; lie = P['lie']; z = zone_of(lie); Z = ZONES[z]; j = lane_of(lie); i = P['slot']
@@ -347,8 +465,12 @@ def depart_route(pid):
     if z == 'P1':
         return [s0, tuple(GATE_PTS[j])]
     if Z['corr'] == 'B2':
-        o = slot_offset(lie)
-        return [s0] + lane_run(B2, slot_u(lie, i), 4.95, o) + [tuple(GATE_PTS[j])]
+        o = slot_offset(lie); o_gate = 0.2 - 0.08 * j     # 6口 第 j 路收攏點的偏移
+        if abs(o - o_gate) < 1e-9:
+            return [s0] + lane_run(B2, slot_u(lie, i), U_SHIFT1, o) + [tuple(GATE_PTS[j])]
+        # 後進場的大隊:三路在 U_SHIFT0→U_SHIFT1 一起平行外移到 6口 那三路,不互相擠壓
+        assert slot_u(lie, i) >= U_SHIFT0, (lie, i)
+        return [s0] + lane_run(B2, slot_u(lie, i), U_SHIFT0, o) + [B2.off(U_SHIFT1, o_gate), tuple(GATE_PTS[j])]
     if z == 'STAIR':
         pts = STAIR_SLOTS[j]
         return [s0] + [tuple(pts[0])] + white_route(j, None, None)[2:]
@@ -410,6 +532,9 @@ for op in D['persons']:
     persons.append(np_)
 
 TEND = max(p['t']['arrive'] for p in persons)
+# 收尾自我檢查:全程(到集結區、離開集結區到 6口、場內就位)與 check.py 同一套判定,有碰撞就不輸出
+_stand, _walk = collisions(persons, TEND)
+assert not _stand and not _walk, ('全程碰撞', list(_stand.items())[:3], list(_walk.items())[:3])
 print('全長', round(TEND, 2), '秒;大隊起點', {d: round(t, 1) for d, t in T_DADUI.items()})
 
 # ---------- 列資料 ----------

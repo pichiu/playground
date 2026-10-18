@@ -7,7 +7,7 @@
 sed -n '/^const DATA = /p' ../../entry-animation/index.html | sed 's/^const DATA = //; s/;$//' > old.json
 # 2. 重排休息區座位、重算路徑與時間
 python3 build.py old.json new.json plan.json ../休息區座位_藍衣B2集結版.csv
-# 3. 檢查「行進中穿過已站定者」人數(含同一列,應為 0)
+# 3. 碰撞檢查(兩項都必須是 0,否則 exit 1):行進中穿過已站定者(含同一列)、兩個走路的人互撞(全程)
 python3 check.py new.json
 # 4. 產生頁面
 python3 page.py ../../entry-animation/index.html new.json ../index.html
@@ -23,4 +23,4 @@ python3 excel.py <解壓目錄> plan.json new.json 休息區座位_藍衣B2集�
   （二進位檔看不出差異，而且它的版面底稿 10/17 修正版 xlsx 不在 repo 裡）。
   更新時在 Drive 對既有檔案用「管理版本 → 上傳新版本」，連結不變。
 
-需要 Python 3、numpy、Pillow。
+需要 Python 3、numpy、Pillow。build.py 含避撞迭代與收尾全程碰撞自我檢查(與 check.py 同一套判定,見 `collide.py`),約 1 分鐘;check.py 約 30 秒。
