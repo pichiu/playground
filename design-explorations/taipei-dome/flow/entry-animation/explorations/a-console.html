@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>演練指揮台</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#0d1315;--map:#0f171a;--ink:#e9efe9;--dim:#8fa29f;--faint:#3a4a4b;--line:#22302f;--floor:#152124;--white:#f5efe3;--blue:#4f93e6;--amber:#f2a73b;--teal:#57c3a6;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums;overflow:hidden}
+::selection{background:var(--amber);color:#111}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
+.stage{position:fixed;inset:0;display:grid;grid-template-rows:1fr auto}
+canvas{display:block;width:100%;height:100%}
+.map{position:relative;min-height:0}
+.title{position:absolute;left:28px;top:22px;pointer-events:none}
+.title a{pointer-events:auto;color:var(--dim);text-decoration:none;font-size:12px}
+.title a:hover{color:var(--ink)}
+.title h1{margin:6px 0 0;font-size:26px;font-weight:900;letter-spacing:.04em}
+.title p{margin:2px 0 0;color:var(--dim);font-size:13px}
+.clock{position:absolute;right:28px;top:18px;text-align:right}
+.clock b{display:block;font-size:64px;line-height:1;font-weight:700;letter-spacing:-.02em}
+.clock span{color:var(--dim);font-size:13px}
+.phase{color:var(--amber)!important;font-weight:700}
+/* 左側流量柱：一根柱子講完「人在哪」，取代四張統計卡 */
+.flow{position:absolute;left:28px;bottom:24px;width:200px}
+.flow-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin-bottom:12px}
+.flow-bar i{display:block;height:100%;transition:width .25s linear}
+.flow dl{margin:0;display:grid;grid-template-columns:12px 1fr auto;gap:5px 9px;align-items:center;font-size:13px}
+.flow dt{width:10px;height:10px;border-radius:50%}
+.flow dd{margin:0}.flow dd.n{font-weight:700;text-align:right;min-width:48px}
+.flow dd.l{color:var(--dim)}
+.focus{position:absolute;right:28px;bottom:24px;width:250px;font-size:13px;color:var(--dim)}
+.focus strong{color:var(--ink);font-size:15px;display:block;margin-bottom:6px}
+.focus ol{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.focus li{display:grid;grid-template-columns:44px 1fr;gap:8px}
+.focus li.now{color:var(--ink)}.focus li.now span:first-child{color:var(--amber)}
+/* 底部時間軸：波次、大隊進場刻度、播放頭 */
+.deck{border-top:1px solid var(--line);padding:14px 28px 18px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--bg)}
+.ctl{display:flex;gap:6px;align-items:center}
+.play{width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.play:hover{background:#fff}
+.speed{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:8px}
+.speed button{padding:6px 10px;color:var(--dim);font-size:13px}
+.speed button[aria-pressed=true]{background:var(--line);color:var(--ink)}
+.track{position:relative;height:66px;cursor:pointer;touch-action:none}
+.lane{position:absolute;left:0;right:0;height:16px;font-size:11px;color:var(--dim)}
+.lane.w{top:0}.lane.d{top:24px}.lane.e{top:48px;height:12px}
+.lane i{position:absolute;top:0;height:100%;border-radius:3px;font-style:normal}
+.lane.w i{background:var(--teal);box-shadow:0 0 0 1px var(--bg)}
+.lane.w i span,.lane.d i span{position:absolute;left:6px;top:0;line-height:16px;color:var(--bg);font-weight:700;white-space:nowrap}
+.lane.d i{background:var(--faint)}
+.lane.d i span{color:var(--ink)}
+.lane.e{background:linear-gradient(90deg,var(--line),var(--line)) center/100% 2px no-repeat}
+.head{position:absolute;top:-6px;bottom:-4px;width:2px;background:var(--amber);pointer-events:none}
+.head::after{content:'';position:absolute;top:-4px;left:-5px;border:6px solid transparent;border-top-color:var(--amber)}
+.legend{position:absolute;left:28px;top:118px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--dim)}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{width:9px;height:9px;border-radius:50%}
+@media(max-width:860px){.focus{display:none}.title p{display:none}.clock{top:auto;bottom:190px;right:16px}.clock b{font-size:36px}.title h1{font-size:20px}.flow{width:170px}.deck{padding:10px 16px;grid-template-columns:1fr}.legend{display:none}.title{left:16px}.clock{right:16px}.flow{left:16px}}
+</style>
+</head>
+<body>
+<div class="stage">
+ <div class="map">
+  <canvas id="c" aria-label="大巨蛋西側動線即時地圖"></canvas>
+  <div class="title"><a href="index.html">‹ 五個方向</a><h1>入經藏 · 西一＋桃竹 進場</h1><p>1,609 人 · 9 大隊 · 休息區 → 集結 → 6口 → 身分證位置</p></div>
+  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase">休息區就座</span> <span>／ 全長 <span id="end"></span></span></div>
+  <div class="legend"><span><i style="background:var(--white)"></i>白衣</span><span><i style="background:var(--blue)"></i>藍衣</span><span><i style="border:1.5px solid var(--amber)"></i>集結點壅塞度</span></div>
+  <div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div>
+  <div class="focus"><strong>口令表</strong><ol id="cues"></ol></div>
+ </div>
+ <div class="deck">
+  <div class="ctl">
+   <button class="play" id="play" aria-label="播放"><svg width="18" height="20" viewBox="0 0 18 20" id="ico"><path d="M2 1.5v17L17 10z" fill="currentColor"/></svg></button>
+   <div class="speed" id="speed" role="group" aria-label="播放速度"></div>
+  </div>
+  <div class="track" id="track" role="slider" aria-label="時間軸" tabindex="0">
+   <div class="lane w" id="waves"></div>
+   <div class="lane d" id="daduis"></div>
+   <div class="lane e" id="ends"></div>
+   <div class="head" id="head"></div>
+  </div>
+ </div>
+</div>
+<script src="data.js"></script><script src="core.js"></script>
+<script>
+'use strict';
+const {D,P,T_END,pos,state,counts,B,fmt,View}=Dome,$=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const C={bg:css('map'),floor:css('floor'),line:css('line'),faint:css('faint'),dim:css('dim'),ink:css('ink'),white:css('white'),blue:css('blue'),amber:css('amber'),teal:css('teal')};
+const v=new View($('c'),{pad:40});v.fit([-15.5,-11.6,4,11.6],true);
+let t=0,playing=false,speed=6,last=0;
+const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','集結等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
+$('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:${c}"></dt><dd class="l">${l}</dd><dd class="n" id="n-${k}">0</dd>`).join('');
+$('bar').innerHTML=STATES.map(([k,,c])=>`<i id="b-${k}" style="background:${c}"></i>`).join('');
+$('end').textContent=fmt(T_END);
+// 時間軸：上排四出、中排九大隊進場區間
+const pct=x=>x/T_END*100+'%';
+const waves=[1,2,3,4].map(w=>{const ts=P.filter(p=>p.exitWave===w).map(p=>p.t.leave);return {w,a:Math.min(...ts),b:Math.max(...ts)};});
+$('waves').innerHTML=waves.map(o=>`<i style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px);opacity:${.45+o.w*.13}"><span>第${'一二三四'[o.w-1]}出</span></i>`).join('');
+const dad=Array.from({length:9},(_,i)=>{const ps=P.filter(p=>p.dadui===i+1);return {k:i+1,a:Math.min(...ps.map(p=>p.t.enter)),b:Math.max(...ps.map(p=>p.t.arrive)),ready:Math.max(...ps.map(p=>p.t.assembly))};});
+$('daduis').innerHTML=dad.map(o=>`<i style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)"><span>${o.k}</span></i>`).join('');
+const cues=[{t:0,s:'全員休息區就座'},...waves.map(o=>({t:o.a,s:`第${'一二三四'[o.w-1]}出 離座`})),...dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由 6口 進場`})),{t:T_END,s:'全員到位'}].sort((a,b)=>a.t-b.t);
+function renderCues(){let i=cues.findIndex(c=>c.t>t);if(i<0)i=cues.length;const from=Math.max(0,i-2),list=cues.slice(from,from+5);$('cues').innerHTML=list.map((c,j)=>`<li class="${from+j===i-1?'now':''}"><span>${fmt(c.t)}</span><span>${c.s}</span></li>`).join('');}
+function phaseName(){const c=counts(t);if(c.done===P.length)return '全員到位';if(t<waves[0].a)return '休息區就座';if(t<dad[0].a)return '離座 · 往集結點';const cur=dad.filter(o=>t>=o.a).pop();return `大隊 ${cur.k} 進場中`;}
+// 地圖
+const NODES=Object.entries(D.nodes).filter(([k])=>/^P\d$/.test(k)).map(([k,n])=>({k,...n}));
+function draw(){const c=v.begin(C.bg);
+ v.base({floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber});
+ for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:11,dx:-14});
+ // 目標位置：淡點
+ c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
+ // 集結點壅塞環：半徑∝等待人數
+ const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
+ for(const n of NODES){const w=wait[n.k]||0;if(w){v.dot(n.X,n.Y,6+Math.sqrt(w)*2.1,'rgba(242,167,59,.08)',C.amber,1);}v.text(n.label,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.bg,dx:n.floor==='B1'?-16:0,dy:n.floor==='B1'?0:16});}
+ v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.bg,dx:-22});
+ // 人：移動中拖尾、到位填實
+ const r=Math.max(1.1,.042*v.s);
+ for(const p of P){const st=state(p,t),col=p.costume==='白'?C.white:C.blue,q=pos(p,t);
+  if(st==='walk'||st==='enter'){const q0=pos(p,Math.max(0,t-2.2));c.globalAlpha=.35;v.stroke([q0[0],q0[1],q[0],q[1]],col,r*1.4);c.globalAlpha=1;v.dot(q[0],q[1],r,col);}
+  else if(st==='seated'){c.globalAlpha=.45;v.dot(q[0],q[1],r*.8,col);c.globalAlpha=1;}
+  else if(st==='wait'){v.dot(q[0],q[1],r,col);}
+  else v.dot(q[0],q[1],r,col);}
+}
+function ui(){const c=counts(t);for(const [k] of STATES){$('n-'+k).textContent=c[k].toLocaleString('zh-TW');$('b-'+k).style.width=c[k]/P.length*100+'%';}$('clock').textContent=fmt(t);$('phase').textContent=phaseName();$('head').style.left=pct(t);renderCues();}
+function setPlaying(on){playing=on;if(on&&t>=T_END)t=0;$('play').setAttribute('aria-label',on?'暫停':'播放');$('ico').innerHTML=on?'<rect x="2" y="1.5" width="5" height="17" fill="currentColor"/><rect x="11" y="1.5" width="5" height="17" fill="currentColor"/>':'<path d="M2 1.5v17L17 10z" fill="currentColor"/>';last=0;}
+$('play').onclick=()=>setPlaying(!playing);
+$('speed').innerHTML=[3,6,12,30].map(s=>`<button data-s="${s}" aria-pressed="${s===speed}">×${s}</button>`).join('');
+$('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.dataset.s;$('speed').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));};
+const track=$('track');function scrub(e){const r=track.getBoundingClientRect();t=Math.max(0,Math.min(T_END,(e.clientX-r.left)/r.width*T_END));dirty=true;}
+let drag=false,dirty=true;track.onpointerdown=e=>{drag=true;track.setPointerCapture(e.pointerId);scrub(e);};track.onpointermove=e=>drag&&scrub(e);track.onpointerup=()=>drag=false;
+document.onkeydown=e=>{if(e.code==='Space'){e.preventDefault();setPlaying(!playing);}if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T_END,t+(e.key==='ArrowLeft'?-10:10)));dirty=true;}};
+v.onresize=()=>{v.fit([-15.5,-11.6,4,11.6],true);dirty=true;};
+function frame(now){if(playing){if(last)t=Math.min(T_END,t+(now-last)/1000*speed);last=now;dirty=true;if(t>=T_END)setPlaying(false);}if(v.step(now))dirty=true;if(dirty){draw();ui();dirty=false;}requestAnimationFrame(frame);}
+window.__seek=x=>{t=x;dirty=true;};
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

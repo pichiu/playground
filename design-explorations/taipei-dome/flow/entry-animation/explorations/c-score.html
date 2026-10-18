@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>動線總譜</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#fbfbf8;--ink:#17262b;--dim:#5b6a6d;--rule:#e4e6e0;--faint:#eef0eb;--walk:#2f8f7a;--wait:#e0922a;--enter:#2b62b0;--hi:#c2410c;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--wait);color:#111}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--enter);outline-offset:2px}
+.wrap{max-width:1500px;margin:auto;padding:20px max(16px,env(safe-area-inset-left)) 32px}
+.back{color:var(--dim);text-decoration:none;font-size:13px}
+header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin:8px 0 18px;border-bottom:1px solid var(--rule);padding-bottom:16px}
+h1{margin:0;font-size:30px;letter-spacing:.02em}
+.lede{margin:6px 0 0;max-width:68ch;color:var(--dim);font-size:15px}
+.lede b{color:var(--ink)}
+.keys{display:flex;gap:16px;font-size:13px;color:var(--dim)}
+.keys span{display:flex;align-items:center;gap:6px}.keys i{width:18px;height:6px;border-radius:2px}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px;align-items:start}
+.score{position:relative}
+#g{display:block;width:100%;cursor:crosshair;touch-action:none}
+.side{position:sticky;top:16px;display:grid;gap:14px}
+.mapbox{border:1px solid var(--rule);border-radius:10px;background:#fff;overflow:hidden}
+#m{display:block;width:100%;height:440px}
+.read{border:1px solid var(--rule);border-radius:10px;background:#fff;padding:14px 16px}
+.read h2{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between}
+.read h2 output{color:var(--hi)}
+.read table{width:100%;border-collapse:collapse;font-size:13px}
+.read td{padding:4px 0;border-top:1px solid var(--faint)}
+.read td:last-child{text-align:right;font-weight:700}
+.tip{font-size:12px;color:var(--dim);margin-top:8px}
+.bars{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--faint);margin:6px 0 10px}
+.bars i{height:100%}
+@media(max-width:1100px){.body{grid-template-columns:1fr}.side{position:static;grid-template-columns:1fr 1fr}#m{height:340px}}
+@media(max-width:640px){.side{grid-template-columns:1fr}header{grid-template-columns:1fr}.keys{flex-wrap:wrap}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="index.html">‹ 五個方向</a>
+<header>
+ <div><h1>動線總譜</h1><p class="lede" id="lede"></p></div>
+ <div class="keys"><span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--wait)"></i>集結等待</span><span><i style="background:var(--enter)"></i>進場中</span></div>
+</header>
+<div class="body">
+ <div class="score"><canvas id="g" aria-label="54 列 × 時間的總譜，每條細線是一位菩薩"></canvas></div>
+ <aside class="side">
+  <div class="mapbox"><canvas id="m" aria-label="同步地圖"></canvas></div>
+  <div class="read" id="read"></div>
+ </aside>
+</div>
+</div>
+<script src="data.js"></script><script src="core.js"></script>
+<script>
+'use strict';
+const {D,P,T_END,pos,state,counts,B,fmt,View}=Dome,$=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const C={};for(const n of ['bg','ink','dim','rule','faint','walk','wait','enter','hi'])C[n]=css(n);
+const rows=D.files.map(f=>({lie:f.lie,dadui:f.dadui,costume:f.costume,ps:P.filter(p=>p.lie===f.lie).sort((a,b)=>a.t.leave-b.t.leave)}));
+for(const r of rows){r.maxWait=Math.max(...r.ps.map(p=>p.t.enter-p.t.assembly));r.span=[Math.min(...r.ps.map(p=>p.t.leave)),Math.max(...r.ps.map(p=>p.t.arrive))];}
+const worst=rows.reduce((a,b)=>b.maxWait>a.maxWait?b:a),avgWait=P.reduce((s,p)=>s+p.t.enter-p.t.assembly,0)/P.length;
+$('lede').innerHTML=`每一條細線是一位菩薩，從離座畫到到位。<b>橘色越長，站在集結點越久</b>：平均 ${fmt(avgWait)}，最久的是<b>第 ${worst.lie} 列（大隊 ${worst.dadui}）${fmt(worst.maxWait)}</b>。大隊 4、5 最早離座，卻得等前三個大隊進完才動——要縮短總時長，先看中段那片最長的橘色。`;
+// 版面
+const g=$('g'),gx=g.getContext('2d');let W=0,H=0,dpr=1,L=104,R=10,TOP=30,RH=13,GAP=7;
+function yOf(i){return TOP+i*RH+(rows[i].dadui-1)*GAP;}
+function layout(){W=g.getBoundingClientRect().width;H=yOf(rows.length-1)+RH+28;dpr=Math.min(2,devicePixelRatio||1);g.style.height=H+'px';g.width=W*dpr;g.height=H*dpr;paintStatic();}
+const xOf=t=>L+t/T_END*(W-L-R),tOf=x=>Math.max(0,Math.min(T_END,(x-L)/(W-L-R)*T_END));
+let staticImg=null,t=200,hover=-1;
+function paintStatic(){gx.setTransform(dpr,0,0,dpr,0,0);gx.fillStyle=C.bg;gx.fillRect(0,0,W,H);
+ gx.font='500 11px "Noto Sans TC",system-ui';gx.textBaseline='middle';
+ for(let s=0;s<=T_END;s+=30){const x=xOf(s);gx.fillStyle=s%60?C.faint:C.rule;gx.fillRect(x,TOP-6,1,H-TOP-16);if(s%60===0){gx.fillStyle=C.dim;gx.textAlign='center';gx.fillText(fmt(s),x,TOP-16);}}
+ rows.forEach((r,i)=>{const y=yOf(i),n=r.ps.length;
+  r.ps.forEach((p,j)=>{const yy=y+1+j/n*(RH-3),s=p.t;
+   gx.fillStyle=C.walk;gx.fillRect(xOf(s.leave),yy,Math.max(1,xOf(s.assembly)-xOf(s.leave)),1);
+   gx.fillStyle=C.wait;gx.globalAlpha=.75;gx.fillRect(xOf(s.assembly),yy,Math.max(1,xOf(s.enter)-xOf(s.assembly)),1);gx.globalAlpha=1;
+   gx.fillStyle=C.enter;gx.fillRect(xOf(s.enter),yy,Math.max(1,xOf(s.arrive)-xOf(s.enter)),1);});
+  gx.fillStyle=C.dim;gx.textAlign='right';gx.fillText(`${r.lie}${r.costume==='白'?' 白':' 藍'}`,L-8,y+RH/2);
+ });
+ for(let k=1;k<=9;k++){const idx=rows.map((r,i)=>r.dadui===k?i:-1).filter(i=>i>=0),y0=yOf(idx[0]),y1=yOf(idx[idx.length-1])+RH;gx.fillStyle=C.ink;gx.font='700 12px "Noto Sans TC",system-ui';gx.textAlign='left';gx.fillText('大隊 '+k,4,(y0+y1)/2);gx.fillStyle=C.rule;gx.fillRect(4,y1+GAP/2,W-8,1);}
+ staticImg=gx.getImageData(0,0,g.width,g.height);}
+function paint(){gx.putImageData(staticImg,0,0);gx.setTransform(dpr,0,0,dpr,0,0);
+ if(hover>=0){const y=yOf(hover);gx.strokeStyle=C.hi;gx.lineWidth=1.5;gx.strokeRect(L-2,y-1.5,W-L-R+4,RH+1);}
+ const x=xOf(t);gx.fillStyle=C.hi;gx.fillRect(x-1,TOP-8,2,H-TOP-12);gx.beginPath();gx.moveTo(x-6,TOP-14);gx.lineTo(x+6,TOP-14);gx.lineTo(x,TOP-6);gx.fill();
+ gx.font='700 12px "Noto Sans TC",system-ui';gx.textAlign=x>W-80?'right':'left';gx.fillText(fmt(t),x+(x>W-80?-8:8),H-12);}
+let drag=false;
+function rowAt(y){for(let i=0;i<rows.length;i++){const a=yOf(i);if(y>=a-2&&y<=a+RH+2)return i;}return -1;}
+g.onpointerdown=e=>{drag=true;g.setPointerCapture(e.pointerId);move(e);};
+g.onpointerup=()=>drag=false;
+function move(e){const r=g.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(drag)t=tOf(x);hover=rowAt(y);dirty=true;}
+g.onpointermove=move;g.onpointerleave=()=>{hover=-1;dirty=true;};
+document.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T_END,t+(e.key==='ArrowLeft'?-5:5)));dirty=true;}};
+// 地圖
+const v=new View($('m'),{pad:14});v.fit(B.west,true);v.onresize=()=>{v.fit(B.west,true);dirty=true;};
+function paintMap(){const c=v.begin('#fff');v.base({floor:C.faint,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,lane:C.walk,laneA:.08,stand:C.rule});
+ const sel=hover>=0?rows[hover].lie:null,r=Math.max(1,.04*v.s);
+ for(const p of P){const st=state(p,t),q=pos(p,t),on=sel===null||p.lie===sel;c.globalAlpha=on?1:.15;
+  const col=st==='walk'?C.walk:st==='wait'?C.wait:st==='enter'?C.enter:st==='done'?C.ink:C.rule;v.dot(q[0],q[1],sel!==null&&on?r*1.6:r,col);}
+ c.globalAlpha=1;}
+function paintRead(){const k=counts(t),rr=hover>=0?rows[hover]:null,list=rr?rr.ps:P,c=rr?counts(t,list):k,n=list.length;
+ $('read').innerHTML=`<h2><span>${rr?`第 ${rr.lie} 列 · 大隊 ${rr.dadui} ${rr.costume}衣`:'全體 1,609 人'}</span><output>${fmt(t)}</output></h2>
+ <div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${c[s]/n*100}%;background:${col}"></i>`).join('')}</div>
+ <table><tr><td>休息區</td><td>${c.seated}</td></tr><tr><td>走廊／樓梯</td><td>${c.walk}</td></tr><tr><td>集結等待</td><td>${c.wait}</td></tr><tr><td>進場中</td><td>${c.enter}</td></tr><tr><td>已到位</td><td>${c.done}</td></tr>${rr?`<tr><td>本列最久等待</td><td>${fmt(rr.maxWait)}</td></tr>`:''}</table>
+ <p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間。'}</p>`;}
+let dirty=true;new ResizeObserver(()=>{layout();dirty=true;}).observe(g);
+window.__seek=x=>{t=x;dirty=true;};
+(function f(){if(dirty&&staticImg){paint();paintMap();paintRead();dirty=false;}requestAnimationFrame(f);})();
+</script>
+</body>
+</html>

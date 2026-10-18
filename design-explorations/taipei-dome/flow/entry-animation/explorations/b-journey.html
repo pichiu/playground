@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>我的一條路</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#f4f1ea;--paper:#fffdf8;--ink:#1d2b33;--dim:#5e6b70;--rule:#e2ddd1;--blue:#1d5fae;--blue-soft:#e3ecf7;--sand:#d9d2c2;--floor:#ebe6da;--go:#c8541f;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11181c;--paper:#182227;--ink:#e8ece8;--dim:#9aa8aa;--rule:#2a363b;--blue:#6aa6ec;--blue-soft:#1d3247;--sand:#3a4648;--floor:#1c272b;--go:#f08a52;color-scheme:dark}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--blue);color:var(--paper)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.wrap{max-width:1080px;margin:auto;padding:16px max(16px,env(safe-area-inset-left)) 40px}
+.back{color:var(--dim);text-decoration:none;font-size:14px}
+.ask{margin:14px 0 18px}
+.ask h1{font-size:28px;line-height:1.25;margin:0 0 14px;font-weight:900;letter-spacing:.02em}
+.id{display:flex;align-items:stretch;gap:8px}
+.id label{flex:1;display:flex;flex-direction:column;background:var(--paper);border:1.5px solid var(--rule);border-radius:14px;padding:8px 14px}
+.id label:focus-within{border-color:var(--blue)}
+.id small{font-size:13px;color:var(--dim)}
+.id input{border:0;background:none;font-size:34px;font-weight:700;width:100%;padding:0;line-height:1.2;outline:none}
+.id .dash{align-self:center;font-size:28px;color:var(--dim)}
+.id button{background:var(--blue);color:var(--paper);border:0;border-radius:14px;padding:0 20px;font-weight:700;font-size:17px;cursor:pointer}
+.err{color:var(--go);font-size:14px;min-height:1.6em;margin-top:6px}
+.grid{display:grid;gap:18px}
+@media(min-width:900px){.grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:16px}}
+.who{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 2px 10px}
+.who b{font-size:22px}.who span{color:var(--dim);font-size:14px}
+.mapbox{background:var(--paper);border:1px solid var(--rule);border-radius:18px;overflow:hidden}
+canvas{display:block;width:100%;height:min(62vh,520px)}
+.scrub{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--rule)}
+.scrub button{width:44px;height:44px;border-radius:50%;border:0;background:var(--ink);color:var(--paper);display:grid;place-items:center;cursor:pointer;flex:none}
+.scrub input{flex:1;accent-color:var(--blue)}
+.scrub output{font-weight:700;min-width:48px;text-align:right}
+.orient{font-size:13px;color:var(--dim);padding:8px 14px 12px}
+ol.steps{list-style:none;margin:0;padding:0;position:relative}
+ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;width:2px;background:var(--rule)}
+.step{position:relative;display:grid;grid-template-columns:44px 1fr;gap:12px;padding:6px 0;cursor:pointer;border-radius:14px}
+.step .dot{width:44px;height:44px;border-radius:50%;background:var(--paper);border:2px solid var(--rule);display:grid;place-items:center;font-weight:700;font-size:15px;position:relative;z-index:1}
+.step.past .dot{background:var(--sand);border-color:var(--sand);color:var(--ink)}
+.step.now .dot{background:var(--blue);border-color:var(--blue);color:var(--paper)}
+.step .body{padding:6px 14px 12px;border-radius:14px}
+.step.now .body{background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(20,40,60,.07)}
+.step h2{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px}
+.step h2 time{color:var(--blue);font-size:17px}
+.step p{margin:4px 0 0;color:var(--dim);font-size:15px}
+.step p strong{color:var(--ink)}
+.step:hover .body{background:var(--paper)}
+.wait{display:inline-block;margin-top:6px;font-size:13px;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:2px 10px;font-weight:500}
+.buddy{margin-top:18px;background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.buddy div{font-size:14px;color:var(--dim)}.buddy b{display:block;font-size:24px;color:var(--ink)}
+.buddy p{grid-column:1/-1;margin:0;font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="index.html">‹ 五個方向</a>
+<section class="ask">
+ <h1>你的身分證位置是？</h1>
+ <form class="id" id="f">
+  <label><small>列</small><input id="lie" inputmode="numeric" pattern="[0-9]*" value="27" aria-label="列"></label>
+  <span class="dash" aria-hidden="true">–</span>
+  <label><small>排</small><input id="pai" inputmode="numeric" pattern="[0-9]*" value="15" aria-label="排"></label>
+  <button>看我的路</button>
+ </form>
+ <p class="err" id="err" role="status"></p>
+</section>
+<div class="grid">
+ <div class="mapcol">
+  <div class="who"><b id="who"></b><span id="meta"></span></div>
+  <div class="mapbox">
+   <canvas id="c" aria-label="你的動線地圖，甲舞台朝上"></canvas>
+   <div class="scrub"><button id="play" aria-label="播放我的路"><svg width="14" height="16" viewBox="0 0 14 16" id="ico"><path d="M1 1v14l12-7z" fill="currentColor"/></svg></button><input type="range" id="tl" min="0" max="1" step=".01" aria-label="我的時間軸"><output id="clk">00:00</output></div>
+   <div class="orient">甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。</div>
+  </div>
+ </div>
+ <div>
+  <ol class="steps" id="steps"></ol>
+  <div class="buddy" id="buddy"></div>
+ </div>
+</div>
+</div>
+<script src="data.js"></script><script src="core.js"></script>
+<script>
+'use strict';
+const {D,P,T_END,byId,pos,state,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go'])C[n]=css(n);};readC();
+const v=new View($('c'),{rotate:true,pad:28});window.__v=v;
+const slot=new Map(P.map(p=>[`${p.dadui}|${p.laneIdx}|${p.gateIdx}`,p]));
+let me=null,t=0,playing=false,last=0,dirty=true,steps=[],segB=null;
+const side={N:'北',S:'南'},chainName={A:'靠牆',B:'中間',C:'最外'};
+function assemblyName(p){if(p.assembly==='STAIR')return '樓梯與 B2 平台';const n=D.nodes[p.assembly];return `集結點 ${n.label}（${n.floor}）`;}
+function pathIn(a,b){return me.path.filter(q=>q[2]>=a-.01&&q[2]<=b+.01).map(q=>[q[0],q[1]]);}
+function build(){const p=me,s=p.t,ahead=slot.get(`${p.dadui}|${p.laneIdx}|${p.gateIdx-1}`),behind=slot.get(`${p.dadui}|${p.laneIdx}|${p.gateIdx+1}`);
+ $('who').textContent=p.id;$('meta').textContent=`大隊 ${p.dadui} · ${p.costume}衣 · ${p.zu} 組 · ${p.a}`;
+ steps=[
+  {k:'起',t:s.leave,to:s.assembly,h:'離座',d:`從 <strong>${p.rest.sec} 區 ${p.rest.pai} 排 ${p.rest.no} 號</strong>起身，往<strong>${side[p.exitSide]}側走道</strong>出去（第${'一二三四'[p.exitWave-1]}出）。`},
+  {k:'走',t:s.leave+.5,to:s.assembly,h:'走到集結點',d:`走<strong>${chainName[p.chain]}那條</strong>（鏈 ${p.chain}），一路不換道${p.zu==='A'?`；下樓梯靠${['北','中間','南'][p.walkLane]}側`:''}。`},
+  {k:'集',t:s.assembly,to:s.enter,h:'集結',d:`站進 <strong>${assemblyName(p)}</strong> 你這一列。`,w:s.enter-s.assembly},
+  {k:'進',t:s.enter,to:s.gate+4,h:'跟大隊進場',d:`大隊 ${p.dadui} 出發。${p.zu==='B'?'先下樓梯，':''}從 <strong>6口</strong> 走六路的<strong>第 ${p.laneIdx+1} 路</strong>${ahead?`，跟緊 <strong>${ahead.id}</strong>`:'，你是這一路的第一位'}。`},
+  {k:'到',t:s.arrive,to:s.arrive,h:'到位',d:`沿牆到西南角，排 1 外側通道往北，轉進<strong>第 ${p.lie} 列</strong>，走到<strong>排 ${p.pai}</strong> 停下。`},
+ ];
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${fmt(x.t)}</time></h2><p>${x.d}</p>${x.w?`<span class="wait">要等 ${Math.round(x.w/60*10)/10} 分鐘（動畫時間）</span>`:''}</div></li>`).join('');
+ $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時 6口 第 ${p.laneIdx+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
+ $('tl').min=s.leave-4;$('tl').max=s.arrive+2;t=s.leave-4;focusStep(-1);
+}
+function focusStep(i){let b;if(i<0)b=bounds(me.path.map(q=>[q[0],q[1]]),.8);else{const st=steps[i],pts=st.k==='集'?pathIn(st.t-6,st.t+.1).concat([[me.field.X,me.field.Y]].slice(0,0)):pathIn(st.t,st.to);b=bounds(pts.length>1?pts:[pos(me,st.t)],1.6);}v.fit(b);dirty=true;}
+$('steps').onclick=e=>{const li=e.target.closest('.step');if(!li)return;const i=+li.dataset.i;playing=false;setIco();t=steps[i].t;focusStep(i);};
+$('steps').onkeydown=e=>{if(e.key==='Enter')e.target.click();};
+function find(){const lie=+$('lie').value,pai=+$('pai').value,p=byId.get(lie+'-'+pai);if(!p){const row=P.filter(q=>q.lie===lie);$('err').textContent=row.length?`第 ${lie} 列只有排 ${Math.min(...row.map(q=>q.pai))}–${Math.max(...row.map(q=>q.pai))}`:'西一＋桃竹只有第 1–54 列';return;}$('err').textContent='';me=p;build();}
+$('f').onsubmit=e=>{e.preventDefault();find();};
+function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';}
+$('play').onclick=()=>{playing=!playing;if(playing&&t>=me.t.arrive)t=me.t.leave-4;last=0;setIco();if(playing)focusStep(-1);};
+$('tl').oninput=e=>{t=+e.target.value;dirty=true;};
+function draw(){const c=v.begin(C.paper);
+ v.base({floor:C.floor,stage:C.rule,wall:C.sand,wallW:1.5,band:C.sand,bandA:.35,lane:C.sand,laneA:.3,stand:C.sand});
+ for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:12});
+ v.text('甲舞台',-6.3,0,{color:C.dim,size:13,weight:700});
+ const mates=P.filter(q=>q.lie===me.lie&&q!==me),r=Math.max(1.2,.04*v.s);
+ c.globalAlpha=.5;for(const q of P){if(q.lie===me.lie)continue;const x=pos(q,t);v.dot(x[0],x[1],r*.7,C.sand);}c.globalAlpha=1;
+ for(const q of mates){const x=pos(q,t);v.dot(x[0],x[1],r,null,C.blue,1.2);}
+ const pts=me.path,past=pts.filter(q=>q[2]<=t).flatMap(q=>[q[0],q[1]]),fut=pts.filter(q=>q[2]>t).flatMap(q=>[q[0],q[1]]),now=pos(me,t);
+ v.stroke([...fut.length?[now[0],now[1]]:[],...fut],C.go,2.5,[2,5]);v.stroke([...past,now[0],now[1]],C.go,3.5);
+ v.dot(me.field.X,me.field.Y,7,null,C.go,2);
+ v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
+ v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
+ $('clk').textContent=fmt(t);$('tl').value=t;
+ const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});
+}
+v.onresize=()=>{dirty=true;};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
+function frame(n){if(playing){if(last)t=Math.min(me.t.arrive+2,t+(n-last)/1000*4);last=n;dirty=true;if(t>=me.t.arrive+2){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty&&me){draw();dirty=false;}requestAnimationFrame(frame);}
+find();requestAnimationFrame(frame);
+window.__seek=x=>{t=me.t.leave+x/T_END*(me.t.arrive-me.t.leave);dirty=true;};
+</script>
+</body>
+</html>
