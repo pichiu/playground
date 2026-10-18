@@ -53,6 +53,8 @@ canvas{display:block;width:100%;height:100%}
 .legend{position:absolute;left:28px;top:150px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--dim);z-index:2}
 .legend span{display:flex;align-items:center;gap:8px}
 .legend i{width:9px;height:9px;border-radius:50%}
+.legend i.ln{width:22px;height:3px;border-radius:2px}.legend i.ln.dim{opacity:.55}
+.legend .num{color:var(--amber);font-size:12px;min-width:22px}
 /* 底部時間軸 */
 .deck{grid-row:2;border-top:1px solid var(--line);padding:14px 28px 18px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--bg)}
 .ctl{display:flex;gap:6px;align-items:center}
@@ -73,8 +75,9 @@ canvas{display:block;width:100%;height:100%}
 .head{position:absolute;top:-6px;bottom:-4px;width:2px;background:var(--amber);pointer-events:none}
 .head::after{content:'';position:absolute;top:-4px;left:-5px;border:6px solid transparent;border-top-color:var(--amber)}
 .track.has-labels{margin-left:44px}
+.cmp-mode .legend{display:none}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim)}
-@media(max-width:860px){.focus,.legend{display:none}.title p{display:none}.clock{top:auto;bottom:200px;right:16px}.clock b{font-size:36px}.title h1{font-size:20px}.flows{width:180px;left:16px}.deck{padding:10px 16px;grid-template-columns:1fr}.title{left:16px}.maps.cmp{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.pane+.pane{border-left:0;border-top:1px solid var(--line)}.cmp-mode .flows{display:none}.cmp-mode .clock{bottom:auto;top:14px}.cmp-mode .clock b{font-size:28px}.cmp-mode .clock .phase,.cmp-mode .title h1{display:none}.pane h2{bottom:8px;font-size:13px}}
+@media(max-width:860px){.focus,.legend{display:none}.title p{display:none}.clock{top:auto;bottom:24px;right:16px;max-width:150px}.clock b{font-size:34px}.clock span{display:block}.title h1{font-size:20px}.flows{width:180px;left:16px}.deck{padding:10px 16px;grid-template-columns:1fr}.title{left:16px}.maps.cmp{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.pane+.pane{border-left:0;border-top:1px solid var(--line)}.cmp-mode .flows{display:none}.cmp-mode .clock{bottom:auto;top:14px}.cmp-mode .clock b{font-size:28px}.cmp-mode .clock .phase,.cmp-mode .title h1{display:none}.pane h2{bottom:8px;font-size:13px}}
 </style>
 </head>
 <body>
@@ -83,7 +86,7 @@ canvas{display:block;width:100%;height:100%}
  <div class="hud">
  <div class="title"><a href="index.html">‹ 版本 2 新設計</a><h1>入經藏 · 西一＋桃竹 進場</h1><p>1,609 人 · 9 大隊 · 休息區 → 集結 → 6口 → 身分證位置</p><div id="vs"></div></div>
  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span> <span>／ 全長 <span id="end"></span></span></div>
- <div class="legend"><span><i style="background:var(--white)"></i>白衣</span><span><i style="background:var(--blue)"></i>藍衣</span><span><i style="border:1.5px solid var(--amber)"></i>集結區壅塞度</span></div>
+ <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集結區排隊中</span><span><b class="num">196</b>集結區旁數字＝在那裡等的人數</span></div>
  <div class="flows" id="flows"></div>
  <div class="focus" id="focus"><strong>口令表</strong><ol id="cues"></ol></div>
  </div>
@@ -102,7 +105,7 @@ const {pos,state,counts,fmt,delta,View}=Dome,$=id=>document.getElementById(id);
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);
 const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','集結等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
-const FRAME=[-15.5,-11.6,4,11.6];
+const frameFor=v=>v.w<760?[-19,-11.6,4,11.6]:[-15.5,-11.6,4,11.6];
 let sets=[],panes=[],t=0,playing=false,speed=6,last=0,dirty=true,T=1,cues=[];
 const pct=x=>x/T*100+'%';
 function stats(ds){const P=ds.P,waves=[1,2,3,4].map(w=>{const ts=P.filter(p=>p.exitWave===w).map(p=>p.t.leave);return {w,a:Math.min(...ts),b:Math.max(...ts)};});
@@ -113,7 +116,7 @@ async function setVersion(m){$('loading')&&($('loading').hidden=false);
  T=Math.max(...sets.map(d=>d.T_END));t=Math.min(t,T);
  const cmp=sets.length>1;$('maps').className='maps'+(cmp?' cmp':'');$('stage').classList.toggle('cmp-mode',cmp);
  $('maps').innerHTML=sets.map((d,i)=>`<div class="pane"><canvas id="cv${i}" aria-label="${d.label}動線地圖"></canvas><h2>${d.label}<small>${d.sub}</small></h2></div>`).join('');
- panes=sets.map((d,i)=>{const v=new View($('cv'+i),{pad:cmp?24:40});v.fit(FRAME,true);v.onresize=()=>{v.fit(FRAME,true);dirty=true;};return v;});
+ panes=sets.map((d,i)=>{const v=new View($('cv'+i),{pad:cmp?24:40});v.fit(frameFor(v),true);v.onresize=()=>{v.fit(frameFor(v),true);dirty=true;};return v;});
  $('end').textContent=cmp?sets.map(d=>fmt(d.T_END)).join(' / '):fmt(T);
  $('focus').hidden=cmp;
  // 時間軸：單版本 = 四出 + 九大隊；對照 = 兩版各一條大隊軌
@@ -127,19 +130,25 @@ async function setVersion(m){$('loading')&&($('loading').hidden=false);
  $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:${c}"></dt><dd class="l">${l}</dd>${cmp?`<dd class="n" data-n="0-${k}"></dd>`:''}<dd class="n" data-n="${sets.length-1}-${k}"></dd>`).join('');
  $('loading')&&$('loading').remove();dirty=true;}
 function phaseName(ds){const c=counts(t,ds.P),{waves,dad}=ds.s;if(c.done===ds.P.length)return '全員到位';if(t<waves[0].a)return '休息區就座';if(t<dad[0].a)return '離座 · 往集結';return `大隊 ${dad.filter(o=>t>=o.a).pop().k} 進場中`;}
-function drawPane(v,ds){const c=v.begin(C.map),D=ds.D,P=ds.P;
+function drawPane(v,ds){const c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*v.s);
  v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber});
- for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:11,dx:-14});
+ for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
- // 集結區壅塞環：半徑∝等待人數
+ // 集結區：名稱旁直接寫此刻等待人數，不畫圈，免得蓋住排隊的人
  const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
- for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0;if(w)v.dot(n.X,n.Y,6+Math.sqrt(w)*2.1,'rgba(242,167,59,.08)',C.amber,1);v.text(n.label,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,dx:n.floor==='B1'?-22:0,dy:n.floor==='B1'?0:16});}
+ for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0;v.text(w?`${n.label}　${w}`:n.label,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
  v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,dx:-22});
- const r=Math.max(1.1,.042*v.s);
- for(const p of P){const st=state(p,t),col=p.costume==='白'?C.white:C.blue,q=pos(p,t);
-  if(st==='walk'||st==='enter'){const q0=pos(p,Math.max(0,t-2.2));c.globalAlpha=.35;v.stroke([q0[0],q0[1],q[0],q[1]],col,r*1.4);c.globalAlpha=1;v.dot(q[0],q[1],r,col);}
-  else if(st==='seated'){c.globalAlpha=.45;v.dot(q[0],q[1],r*.8,col);c.globalAlpha=1;}
-  else v.dot(q[0],q[1],r,col);}}
+ // 休息區淡點、到位實點
+ for(const p of P){const st=state(p,t);if(st!=='seated'&&st!=='done')continue;const q=pos(p,t);c.globalAlpha=st==='seated'?.3:1;v.dot(q[0],q[1],st==='seated'?r*.7:r,p.costume==='白'?C.white:C.blue);}c.globalAlpha=1;
+ // 隊伍線：同一列、同一階段（走／等／進場）的人依前後順序連成一條；彼此距離拉開就斷開。排隊中畫淡，行進中在線頭加點標出前方
+ const rows=new Map();for(const p of P){const st=state(p,t);if(st==='seated'||st==='done')continue;const key=p.lie+'|'+st;(rows.get(key)||rows.set(key,[]).get(key)).push(p);}
+ c.lineCap='round';c.lineJoin='round';
+ for(const [key,ps] of rows){const st=key.split('|')[1],col=ps[0].costume==='白'?C.white:C.blue;
+  ps.sort((a,b)=>st==='enter'?a.t.gate-b.t.gate:st==='wait'?a.t.assembly-b.t.assembly:a.t.leave-b.t.leave);
+  const pts=ps.map(p=>pos(p,t));let seg=[pts[0]];
+  const flush=()=>{c.globalAlpha=st==='wait'?.55:.95;if(seg.length>1)v.stroke(seg.flat(),col,r*1.7);else v.dot(seg[0][0],seg[0][1],r,col);c.globalAlpha=1;};
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];if(Math.hypot(a[0]-b[0],a[1]-b[1])>.45){flush();seg=[b];}else seg.push(b);}flush();
+  if(st!=='wait')v.dot(pts[0][0],pts[0][1],r*1.5,col,C.map,1);}}
 function ui(){const cmp=sets.length>1,cs=sets.map(d=>counts(t,d.P));
  sets.forEach((d,i)=>{for(const [k] of STATES){$('bar'+i).querySelector(`[data-k=${k}]`).style.width=cs[i][k]/d.P.length*100+'%';const n=document.querySelector(`[data-n="${i}-${k}"]`);if(n)n.textContent=cs[i][k].toLocaleString('zh-TW');}});
  $('clock').textContent=fmt(t);$('phase').textContent=cmp?sets.map(d=>`${d.label.replace('版本 ','v')}：${phaseName(d)}`).join('　'):phaseName(sets[0]);$('head').style.left=pct(t);
