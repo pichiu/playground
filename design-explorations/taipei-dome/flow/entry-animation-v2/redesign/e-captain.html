@@ -132,7 +132,7 @@ function draw(){const team=TEAM[k-1],ps=ds.P.filter(p=>p.dadui===k),D=ds.D;
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
 $('play').onclick=()=>{playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();};
 $('tl').oninput=e=>{t=+e.target.value;dirty=true;};
-async function setVersion(m){try{sets=m==='cmp'?await Promise.all([Dome.load(1),Dome.load(2)]):[await Dome.load(+m)];}catch(e){Dome.fail($('wrap'),e);return;}ds=sets[sets.length-1];choose(k);}
+async function setVersion(m){const got=await Dome.fetchSets(m);if(!got)return;sets=got;ds=sets[sets.length-1];choose(k);}
 function frame(n){if(ds){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*6);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty){draw();dirty=false;}}requestAnimationFrame(frame);}
 Dome.switcher($('vs'),Dome.mode(),setVersion);setVersion(Dome.mode());requestAnimationFrame(frame);
 window.__seek=x=>{t=x;dirty=true;};

@@ -111,12 +111,12 @@ const pct=x=>x/T*100+'%';
 function stats(ds){const P=ds.P,waves=[1,2,3,4].map(w=>{const ts=P.filter(p=>p.exitWave===w).map(p=>p.t.leave);return {w,a:Math.min(...ts),b:Math.max(...ts)};});
  const dad=Array.from({length:9},(_,i)=>{const ps=P.filter(p=>p.dadui===i+1);return {k:i+1,a:Math.min(...ps.map(p=>p.t.enter)),b:Math.max(...ps.map(p=>p.t.arrive))};});return {waves,dad};}
 async function setVersion(m){$('loading')&&($('loading').hidden=false);
- try{sets=m==='cmp'?await Promise.all([Dome.load(1),Dome.load(2)]):[await Dome.load(+m)];}catch(e){Dome.fail($('maps'),e);return;}
+ const got=await Dome.fetchSets(m);if(!got)return;sets=got;
  for(const ds of sets)ds.s=ds.s||stats(ds);
  T=Math.max(...sets.map(d=>d.T_END));t=Math.min(t,T);
  const cmp=sets.length>1;$('maps').className='maps'+(cmp?' cmp':'');$('stage').classList.toggle('cmp-mode',cmp);
  $('maps').innerHTML=sets.map((d,i)=>`<div class="pane"><canvas id="cv${i}" aria-label="${d.label}動線地圖"></canvas><h2>${d.label}<small>${d.sub}</small></h2></div>`).join('');
- panes=sets.map((d,i)=>{const v=new View($('cv'+i),{pad:cmp?24:40});v.fit(frameFor(v),true);v.onresize=()=>{v.fit(frameFor(v),true);dirty=true;};return v;});
+ panes.forEach(v=>v.destroy());panes=sets.map((d,i)=>{const v=new View($('cv'+i),{pad:cmp?24:40});v.fit(frameFor(v),true);v.onresize=()=>{v.fit(frameFor(v),true);dirty=true;};return v;});
  $('end').textContent=cmp?sets.map(d=>fmt(d.T_END)).join(' / '):fmt(T);
  $('focus').hidden=cmp;
  // 時間軸：單版本 = 四出 + 九大隊；對照 = 兩版各一條大隊軌
@@ -137,6 +137,7 @@ function drawPane(v,ds){const c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042
  // 集結區：名稱旁直接寫此刻等待人數，不畫圈，免得蓋住排隊的人
  const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
  for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0;v.text(w?`${n.label}　${w}`:n.label,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
+ {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT,w=wait.STAIR||0;v.text(w?`樓梯　${w}`:'樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
  v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,dx:-22});
  // 休息區淡點、到位實點
  for(const p of P){const st=state(p,t);if(st!=='seated'&&st!=='done')continue;const q=pos(p,t);c.globalAlpha=st==='seated'?.3:1;v.dot(q[0],q[1],st==='seated'?r*.7:r,p.costume==='白'?C.white:C.blue);}c.globalAlpha=1;
@@ -158,7 +159,7 @@ $('play').onclick=()=>setPlaying(!playing);
 $('speed').innerHTML=[3,6,12,30].map(s=>`<button data-s="${s}" aria-pressed="${s===speed}">×${s}</button>`).join('');
 $('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.dataset.s;$('speed').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));};
 const track=$('track');function scrub(e){const r=$('lanes').getBoundingClientRect();t=Math.max(0,Math.min(T,(e.clientX-r.left)/r.width*T));dirty=true;}
-let drag=false;track.onpointerdown=e=>{drag=true;track.setPointerCapture(e.pointerId);scrub(e);};track.onpointermove=e=>drag&&scrub(e);track.onpointerup=()=>drag=false;
+let drag=false;track.onpointerdown=e=>{drag=true;track.setPointerCapture(e.pointerId);scrub(e);};track.onpointermove=e=>drag&&scrub(e);track.onpointerup=track.onpointercancel=()=>drag=false;
 document.onkeydown=e=>{if(e.code==='Space'){e.preventDefault();setPlaying(!playing);}if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T,t+(e.key==='ArrowLeft'?-10:10)));dirty=true;}};
 function frame(now){if(sets.length){if(playing){if(last)t=Math.min(T,t+(now-last)/1000*speed);last=now;dirty=true;if(t>=T)setPlaying(false);}panes.forEach(v=>{if(v.step(now))dirty=true;});if(dirty){panes.forEach((v,i)=>drawPane(v,sets[i]));ui();dirty=false;}}requestAnimationFrame(frame);}
 Dome.switcher($('vs'),Dome.mode(),setVersion);

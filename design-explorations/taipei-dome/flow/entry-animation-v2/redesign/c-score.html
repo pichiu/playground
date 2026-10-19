@@ -6,7 +6,9 @@
 <title>動線總譜</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-:root{--bg:#fbfbf8;--ink:#17262b;--dim:#5b6a6d;--rule:#e4e6e0;--faint:#eef0eb;--walk:#2f8f7a;--wait:#e0922a;--enter:#2b62b0;--hi:#c2410c;--good:#2b62b0;color-scheme:light}
+:root{--bg:#fbfbf8;--card:#fff;--ink:#17262b;--dim:#5b6a6d;--rule:#e4e6e0;--faint:#eef0eb;--walk:#2f8f7a;--wait:#e0922a;--enter:#2b62b0;--hi:#c2410c;--good:#2b62b0;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--card:#182225;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#2a363b;--faint:#1f2a2d;--walk:#3fb39a;--wait:#e9a23b;--enter:#5b93e6;--hi:#f08a52;--good:#6aa6ec;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#121819;--card:#182225;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#2a363b;--faint:#1f2a2d;--walk:#3fb39a;--wait:#e9a23b;--enter:#5b93e6;--hi:#f08a52;--good:#6aa6ec;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 ::selection{background:var(--wait);color:#111}
@@ -15,9 +17,9 @@ button{font:inherit;color:inherit}
 .wrap{max-width:1500px;margin:auto;padding:20px max(16px,env(safe-area-inset-left)) 32px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .back{color:var(--dim);text-decoration:none;font-size:13px}
-.vswitch{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:#fff}
+.vswitch{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--card)}
 .vswitch button{border:0;background:none;padding:6px 14px;color:var(--dim);cursor:pointer}
-.vswitch button[aria-pressed=true]{background:var(--ink);color:#fff;font-weight:700}
+.vswitch button[aria-pressed=true]{background:var(--ink);color:var(--bg);font-weight:700}
 header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin:8px 0 18px;border-bottom:1px solid var(--rule);padding-bottom:16px}
 h1{margin:0;font-size:30px;letter-spacing:.02em}
 .lede{margin:6px 0 0;max-width:72ch;color:var(--dim);font-size:15px}
@@ -26,14 +28,14 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 .keys span{display:flex;align-items:center;gap:6px}.keys i{width:18px;height:6px;border-radius:2px}
 .keys .v1k i{opacity:.45}
 .body{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px;align-items:start}
-#g{display:block;width:100%;cursor:crosshair;touch-action:none}
+#g{display:block;width:100%;cursor:crosshair;touch-action:pan-y}
 .side{position:sticky;top:16px;display:grid;gap:14px}
 .maps{display:grid;gap:8px}
-.mapbox{border:1px solid var(--rule);border-radius:10px;background:#fff;overflow:hidden;position:relative}
+.mapbox{border:1px solid var(--rule);border-radius:10px;background:var(--card);overflow:hidden;position:relative}
 .mapbox canvas{display:block;width:100%;height:440px}
 .cmp .mapbox canvas{height:250px}
 .mapbox b{position:absolute;left:10px;top:8px;font-size:12px;color:var(--dim);font-weight:500}
-.read{border:1px solid var(--rule);border-radius:10px;background:#fff;padding:14px 16px}
+.read{border:1px solid var(--rule);border-radius:10px;background:var(--card);padding:14px 16px}
 .read h2{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between}
 .read h2 output{color:var(--hi)}
 .read table{width:100%;border-collapse:collapse;font-size:13px}
@@ -68,7 +70,7 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 'use strict';
 const {pos,state,counts,fmt,delta,View}=Dome,$=id=>document.getElementById(id);
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
-const C={};for(const n of ['bg','ink','dim','rule','faint','walk','wait','enter','hi','good'])C[n]=css(n);
+const C={},readC=()=>{for(const n of ['bg','card','ink','dim','rule','faint','walk','wait','enter','hi','good'])C[n]=css(n);};readC();
 const KEY=`<span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--wait)"></i>集結等待</span><span><i style="background:var(--enter)"></i>進場中</span>`;
 let sets=[],rows=[],views=[],T=1,t=200,hover=-1,dirty=true,staticImg=null;
 function rowsFor(ds){return ds.D.files.map(f=>{const ps=ds.P.filter(p=>p.lie===f.lie).sort((a,b)=>a.t.leave-b.t.leave);return {lie:f.lie,dadui:f.dadui,costume:f.costume,ps,maxWait:Math.max(...ps.map(ds.wait))};});}
@@ -76,8 +78,8 @@ const avg=(xs)=>xs.reduce((a,b)=>a+b,0)/xs.length;
 function summary(ds){const r=ds.rows,worst=r.reduce((a,b)=>b.maxWait>a.maxWait?b:a);return {worst,avgWait:avg(ds.P.map(ds.wait)),dad:Array.from({length:9},(_,i)=>avg(ds.P.filter(p=>p.dadui===i+1).map(ds.wait)))};}
 function lede(){if(sets.length===1){const ds=sets[0],s=ds.sum,early=s.dad.map((w,i)=>[w,i+1]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(x=>x[1]).sort();
   return `每一條細線是一位菩薩，從離座畫到到位。<b>橘色越長，站在集結點越久</b>：平均 ${fmt(s.avgWait)}，最久的是<b>第 ${s.worst.lie} 列（大隊 ${s.worst.dadui}）${fmt(s.worst.maxWait)}</b>。等最久的是大隊 ${early.join('、')}——要縮短總時長，先看那片最長的橘色。`;}
- const [a,b]=sets.map(d=>d.sum);
- return `每一列上下兩條：<b>淡的是版本 1、深的是版本 2</b>。版本 2 全長 <b>${fmt(sets[1].T_END)}</b>（${delta(sets[1].T_END-sets[0].T_END)}），平均等待 ${fmt(a.avgWait)} → <b>${fmt(b.avgWait)}</b>；但最久的等待從第 ${a.worst.lie} 列 ${fmt(a.worst.maxWait)} 變成<b>第 ${b.worst.lie} 列 ${fmt(b.worst.maxWait)}</b>——長等待從中段大隊移到了最後兩個大隊的藍衣。`;}
+ const [a,b]=sets.map(d=>d.sum),dT=sets[1].T_END-sets[0].T_END,top=s=>s.dad.map((w,i)=>[w,i+1]).sort((x,y)=>y[0]-x[0]).slice(0,2).map(x=>x[1]).sort().join('、');
+ return `每一列上下兩條：<b>淡的是版本 1、深的是版本 2</b>。版本 2 全長 <b>${fmt(sets[1].T_END)}</b>（${delta(dT)}），平均等待 ${fmt(a.avgWait)} → <b>${fmt(b.avgWait)}</b>；最久的等待從第 ${a.worst.lie} 列 ${fmt(a.worst.maxWait)} 變成<b>第 ${b.worst.lie} 列 ${fmt(b.worst.maxWait)}</b>。平均等最久的大隊：版本 1 是 ${top(a)}，版本 2 是 <b>${top(b)}</b>。`;}
 // 版面
 const g=$('g'),gx=g.getContext('2d');let W=0,H=0,dpr=1,L=104,R=10,TOP=30,RH=13,GAP=7;
 function yOf(i){return TOP+i*RH+(rows[i].dadui-1)*GAP;}
@@ -103,12 +105,13 @@ function paint(){gx.putImageData(staticImg,0,0);gx.setTransform(dpr,0,0,dpr,0,0)
  gx.font='700 12px "Noto Sans TC",system-ui';gx.textAlign=x>W-80?'right':'left';gx.fillText(fmt(t),x+(x>W-80?-8:8),TOP-16);}
 let drag=false;
 function rowAt(y){for(let i=0;i<rows.length;i++){const a=yOf(i);if(y>=a-2&&y<=a+RH+2)return i;}return -1;}
-g.onpointerdown=e=>{drag=true;g.setPointerCapture(e.pointerId);move(e);};
-g.onpointerup=()=>drag=false;
-function move(e){const r=g.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(drag)t=tOf(x);hover=rowAt(y);dirty=true;}
+let start=null;
+g.onpointerdown=e=>{start=[e.clientX,e.clientY,e.pointerType];if(e.pointerType!=='touch'){drag=true;g.setPointerCapture(e.pointerId);}move(e);};
+g.onpointerup=g.onpointercancel=()=>{drag=false;start=null;};
+function move(e){const r=g.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(!drag&&start&&start[2]==='touch'){const dx=Math.abs(e.clientX-start[0]),dy=Math.abs(e.clientY-start[1]);if(dx>8&&dx>dy){drag=true;g.setPointerCapture(e.pointerId);}}if(drag)t=tOf(x);hover=rowAt(y);dirty=true;}
 g.onpointermove=move;g.onpointerleave=()=>{hover=-1;dirty=true;};
 document.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T,t+(e.key==='ArrowLeft'?-5:5)));dirty=true;}};
-function paintMap(v,ds){const c=v.begin('#fff');v.base(ds.D.map,{floor:C.faint,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,lane:C.walk,laneA:.08,stand:C.rule});
+function paintMap(v,ds){const c=v.begin(C.card);v.base(ds.D.map,{floor:C.faint,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,lane:C.walk,laneA:.08,stand:C.rule});
  const sel=hover>=0?rows[hover].lie:null,r=Math.max(1,.04*v.s);
  for(const p of ds.P){const st=state(p,t),q=pos(p,t),on=sel===null||p.lie===sel;c.globalAlpha=on?1:.15;
   const col=st==='walk'?C.walk:st==='wait'?C.wait:st==='enter'?C.enter:st==='done'?C.ink:C.rule;v.dot(q[0],q[1],sel!==null&&on?r*1.6:r,col);}
@@ -122,16 +125,17 @@ function paintRead(){const rr=hover>=0?rows[hover]:null,cmp=sets.length>1;
  if(!cmp)body=`<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[0][s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[0][k]}</td></tr>`).join('')}${rr?`<tr><td>本列最久等待</td><td class="n">${fmt(rr.maxWait)}</td></tr>`:''}</table>`;
  else{const w=sets.map(ds=>rr?ds.rows[hover].maxWait:null);
   body=`<table><tr><th>此刻</th><th>版本 1</th><th>版本 2</th><th>差</th></tr>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td>${cs[0][k]}</td><td class="n">${cs[1][k]}</td>${dcell(cs[0][k],cs[1][k],k!=='done')}</tr>`).join('')}</table>
-  <table style="margin-top:12px"><tr><th>平均等待</th><th>版本 1</th><th>版本 2</th><th>差</th></tr>${rr?`<tr><td>本列最久</td><td>${fmt(w[0])}</td><td class="n">${fmt(w[1])}</td><td class="${w[1]<w[0]?'dn':'up'}">${delta(w[1]-w[0])}</td></tr>`:sets[0].sum.dad.map((a,i)=>{const b=sets[1].sum.dad[i];return `<tr><td>大隊 ${i+1}</td><td>${fmt(a)}</td><td class="n">${fmt(b)}</td><td class="${b<a?'dn':'up'}">${delta(b-a)}</td></tr>`;}).join('')}</table>`;}
+  <table style="margin-top:12px"><tr><th>平均等待</th><th>版本 1</th><th>版本 2</th><th>差</th></tr>${rr?`<tr><td>本列最久</td><td>${fmt(w[0])}</td><td class="n">${fmt(w[1])}</td><td class="${w[1]===w[0]?'':w[1]<w[0]?'dn':'up'}">${delta(w[1]-w[0])}</td></tr>`:sets[0].sum.dad.map((a,i)=>{const b=sets[1].sum.dad[i];return `<tr><td>大隊 ${i+1}</td><td>${fmt(a)}</td><td class="n">${fmt(b)}</td><td class="${Math.round(b)===Math.round(a)?'':b<a?'dn':'up'}">${delta(b-a)}</td></tr>`;}).join('')}</table>`;}
  $('read').innerHTML=`<h2><span>${title}</span><output>${fmt(t)}</output></h2>${body}<p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間。'}</p>`;}
-async function setVersion(m){try{sets=m==='cmp'?await Promise.all([Dome.load(1),Dome.load(2)]):[await Dome.load(+m)];}catch(e){Dome.fail($('wrap'),e);return;}
+async function setVersion(m){const got=await Dome.fetchSets(m);if(!got)return;sets=got;
  for(const ds of sets){ds.rows=ds.rows||rowsFor(ds);ds.sum=ds.sum||summary(ds);}
  const cmp=sets.length>1;rows=sets[sets.length-1].rows;T=Math.max(...sets.map(d=>d.T_END));t=Math.min(t,T);
  $('lede').innerHTML=lede();$('keys').innerHTML=KEY+(cmp?`<span class="v1k"><i style="background:var(--dim)"></i>淡色＝版本 1</span>`:'');
  document.body.classList.toggle('cmp',cmp);
  $('maps').innerHTML=sets.map((d,i)=>`<div class="mapbox"><canvas id="m${i}" aria-label="${d.label}同步地圖"></canvas>${cmp?`<b>${d.label}</b>`:''}</div>`).join('');
- views=sets.map((d,i)=>{const v=new View($('m'+i),{pad:14});v.fit(d.B.west,true);v.onresize=()=>{v.fit(d.B.west,true);dirty=true;};return v;});
+ views.forEach(v=>v.destroy());views=sets.map((d,i)=>{const v=new View($('m'+i),{pad:14});v.fit(d.B.west,true);v.onresize=()=>{v.fit(d.B.west,true);dirty=true;};return v;});
  layout();dirty=true;}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();layout();dirty=true;});
 new ResizeObserver(()=>{layout();dirty=true;}).observe(g);
 window.__seek=x=>{t=x;dirty=true;};
 (function f(){if(dirty&&staticImg){paint();views.forEach((v,i)=>paintMap(v,sets[i]));paintRead();dirty=false;}requestAnimationFrame(f);})();

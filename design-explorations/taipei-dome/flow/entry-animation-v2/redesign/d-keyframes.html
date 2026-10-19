@@ -92,13 +92,13 @@ const MOMENTS={
   {t:ds.T_END,h:'全員到位',d:'1,609 人全部站在身分證位置。'}],
 };
 let sets=[],jobs=[];
-async function setVersion(m){try{sets=m==='cmp'?await Promise.all([Dome.load(1),Dome.load(2)]):[await Dome.load(+m)];}catch(e){Dome.fail($('frames'),e);return;}
+async function setVersion(m){const got=await Dome.fetchSets(m);if(!got)return;sets=got;
  const cmp=sets.length>1;document.body.classList.toggle('cmp',cmp);
  $('ver').textContent=cmp?'版本 1 對照版本 2 · 同一時刻左右並排':`${sets[0].label} · ${sets[0].sub}`;
  // 對照：同一個絕對時刻，兩版並排；時刻取兩版共同的節點
  let F;if(cmp){const [a,b]=sets;F=[[wave(a,2)+25,'第二出離座中'],[dStart(b,1)-1,'版本 2 大隊 1 出發前'],[dStart(a,1)+20,'版本 1 大隊 1 進場中'],[dStart(a,5)+5,'版本 1 大隊 5 出發'],[b.T_END,'版本 2 全員到位'],[a.T_END,'版本 1 全員到位']].map(([t,h])=>({t,h})).sort((x,y)=>x.t-y.t);}
  else F=MOMENTS[sets[0].v](sets[0]);
- const frames=$('frames');frames.innerHTML='';jobs=[];
+ for(const j of jobs)j.v&&j.v.destroy();const frames=$('frames');frames.innerHTML='';jobs=[];
  for(const f of F){const fig=document.createElement('figure'),pair=document.createElement('div');pair.className='pair';fig.append(pair);
   sets.forEach(ds=>{const box=document.createElement('div'),cv=document.createElement('canvas');cv.setAttribute('aria-label',`${ds.label} ${fmt(f.t)}`);box.append(cv);if(cmp)box.insertAdjacentHTML('beforeend',`<b>${ds.label}</b>`);pair.append(box);jobs.push({cv,ds,t:f.t});});
   const cs=sets.map(ds=>counts(f.t,ds.P));

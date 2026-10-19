@@ -166,7 +166,7 @@ function draw(){const c=v.begin(C.paper),D=ds.D,P=ds.P;
  v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
  $('clk').textContent=fmt(t);$('tl').value=t;
  const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
-async function setVersion(m){try{sets=m==='cmp'?await Promise.all([Dome.load(1),Dome.load(2)]):[await Dome.load(+m)];}catch(e){Dome.fail($('main'),e);return;}ds=sets[sets.length-1];find();}
+async function setVersion(m){const got=await Dome.fetchSets(m);if(!got)return;sets=got;ds=sets[sets.length-1];find();}
 v.onresize=()=>{dirty=true;};
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
 function frame(n){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*4);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty&&me){draw();dirty=false;}requestAnimationFrame(frame);}

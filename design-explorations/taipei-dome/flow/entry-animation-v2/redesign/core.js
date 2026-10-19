@@ -30,7 +30,11 @@ function extract(html){const i=html.indexOf('const DATA = ');if(i<0)return null;
 function load(v){if(cache[v])return cache[v];
   cache[v]=(async()=>{for(const url of VERSIONS[v].src){try{const r=await fetch(url);if(!r.ok)continue;const D=extract(await r.text());if(D)return dataset(v,D);}catch(e){}}
     throw new Error(`讀不到${VERSIONS[v].label}的資料`);})();
+  cache[v].catch(()=>{delete cache[v];});  // 失敗不留在快取，下次點版本會重新抓
   return cache[v];}
+// 依模式載入資料。只有最後一次呼叫的結果會交回，較慢的舊請求回來時直接丟掉；失敗時顯示橫幅並回傳 null，頁面維持原狀。
+let reqId=0;
+async function fetchSets(m){const my=++reqId;try{const s=m==='cmp'?await Promise.all([load(1),load(2)]):[await load(+m)];return my===reqId?s:null;}catch(e){if(my===reqId)fail(e);return null;}}
 
 // 版本：?v=1、?v=2、?v=cmp（對照）。這裡是版本 2 的新設計，沒帶參數時看版本 2。切換只改網址參數，不重新載入頁面。
 function mode(){const v=new URLSearchParams(location.search).get('v');return v==='1'||v==='cmp'?v:'2';}
@@ -41,11 +45,13 @@ function switcher(el,cur,onChange,{compare=true}={}){
   el.setAttribute('role','group');el.setAttribute('aria-label','版本');el.classList.add('vswitch');
   el.innerHTML=items.map(([k,l])=>`<button type="button" data-m="${k}" aria-pressed="${k===cur}">${l}</button>`).join('');
   el.onclick=e=>{const b=e.target.closest('button');if(!b||b.getAttribute('aria-pressed')==='true')return;el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));setMode(b.dataset.m);onChange(b.dataset.m);};}
-function fail(el,err){el.innerHTML=`<p style="padding:24px;max-width:46ch">${err.message}。這些頁面直接讀版本頁內嵌的資料，需要經由網頁伺服器開啟（例如 GitHub Pages 或 <code>python3 -m http.server</code>），直接開 file:// 會被瀏覽器擋下。</p>`;}
+function fail(err){let b=document.getElementById('dome-err');if(!b){b=document.createElement('p');b.id='dome-err';b.setAttribute('role','alert');b.style.cssText='position:fixed;left:16px;right:16px;bottom:16px;z-index:50;margin:0 auto;max-width:560px;padding:12px 16px;border-radius:10px;background:#3a1d14;color:#fde7dc;font:14px/1.6 "Noto Sans TC",system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25)';document.body.append(b);}
+  b.innerHTML=`${err.message}。這些頁面直接讀版本頁內嵌的資料，需要經由網頁伺服器開啟（GitHub Pages 或 <code>python3 -m http.server</code>）；網路斷線時重新點一次版本即可重試。`;}
 
 // 投影：rotate=true 時順時針轉 90°，與 app《我的走位》同向（甲舞台朝上）。
 class View{
-  constructor(canvas,{rotate=false,pad=16}={}){this.c=canvas;this.ctx=canvas.getContext('2d');this.rotate=rotate;this.pad=pad;this.b=[-16,-12,12,12];this.cam=null;this.resize();new ResizeObserver(()=>{this.resize();this.onresize&&this.onresize();}).observe(canvas);}
+  constructor(canvas,{rotate=false,pad=16}={}){this.c=canvas;this.ctx=canvas.getContext('2d');this.rotate=rotate;this.pad=pad;this.b=[-16,-12,12,12];this.cam=null;this.resize();this.ro=new ResizeObserver(()=>{this.resize();this.onresize&&this.onresize();});this.ro.observe(canvas);}
+  destroy(){this.ro.disconnect();this.onresize=null;}
   resize(){const r=this.c.getBoundingClientRect();this.w=r.width;this.h=r.height;this.dpr=Math.min(2,devicePixelRatio||1);this.c.width=Math.round(this.w*this.dpr);this.c.height=Math.round(this.h*this.dpr);this.fit(this.b,true);}
   rot(x,y){return this.rotate?[-y,x]:[x,y];}
   fit(b,now=false){const cs=[[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]].map(([x,y])=>this.rot(x,y)),r=bounds(cs,0);const s=Math.min((this.w-this.pad*2)/(r[2]-r[0]),(this.h-this.pad*2)/(r[3]-r[1]));const to={s,cx:(r[0]+r[2])/2,cy:(r[1]+r[3])/2};this.b=b;if(now||!this.s){Object.assign(this,to);this.cam=null;}else this.cam={from:{s:this.s,cx:this.cx,cy:this.cy},to,t0:performance.now()};}
@@ -70,5 +76,5 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
-window.Dome={VERSIONS,load,mode,setMode,switcher,fail,pos,state,counts,bounds,fmt,delta,View,pairs};
+window.Dome={VERSIONS,load,fetchSets,mode,setMode,switcher,fail,pos,state,counts,bounds,fmt,delta,View,pairs};
 })();
