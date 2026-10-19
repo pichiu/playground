@@ -9,6 +9,7 @@ import plan
 STAIR_U_B1, B2_U_START = 13.15, 1.0      # 樓梯口在 B1 走廊折線的 u；B2 走廊起點 u
 U_SHIFT0, U_SHIFT1 = 5.25, 4.95          # B2 死巷後進場的大隊平行外移到 6口 三路的區間
 LANE_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
+JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
 ZONES = {
     'P1':    dict(label='1',      floor='B2', kind='FIFO', corr='B2',    head=4.15,  step=-0.073),
     'P2':    dict(label='藍 2·3', floor='B2', kind='LIFO', corr='B2',    head=5.0,   step=0.075),
@@ -96,8 +97,10 @@ class Geometry:
         z, j, lane = person['assembly'], person['gateLane'], person['lane']
         Z = self.ZONES.get(z)
         off = self.LANE_OFF[lane]
-        pts = [(person['rest']['X'], person['rest']['Y']), tuple(person['aisle']), tuple(person['entry'])]
-        u_in = self.B1.proj(pts[2])[0]
+        pts = [(person['rest']['X'], person['rest']['Y'])] + [tuple(q) for q in person['approach']]   # 座位 → 走道口 → … → 走廊邊
+        u_in = self.B1.proj(pts[-1])[0] + JOIN_AHEAD                                                # 斜向前方併入自己那一路
+        if z == 'P6':                                                                               # 白3 的格位可能就在接入點前方不到 0.3：直接斜走到格位前
+            u_in = min(u_in, self.slot_u(person, i) - 0.05)
         pts.append(self.B1.off(u_in, off))
         if z == 'FEEDER':
             pts += lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off) + self._b2_to_gate(j)
@@ -105,11 +108,15 @@ class Geometry:
         if Z['corr'] == 'B2':
             pts += lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off)
             so = self.slot_offset(person)
-            if Z['kind'] == 'FIFO':                    # 大隊 1：從尾端（樓梯側）進，沿自己那路往前
-                ut = 1.45
-                pts += lane_run(self.B2, B2_U_START, ut, off)
-                pts.append(self.B2.off(ut + 0.2, so))
-                pts += lane_run(self.B2, ut + 0.2, self.slot_u(person, i), so)
+            if Z['kind'] == 'FIFO':                    # 大隊 1：從尾端（樓梯側）進
+                if person['costume'] == '藍':          # 藍1 緊跟在藍2 隊尾後面：沿自己那路走到格位前 0.25 才側移，不踩到還在通過的藍2
+                    ut = self.slot_u(person, i) - 0.25
+                    pts += lane_run(self.B2, B2_U_START, ut, off)
+                else:                                  # 白1 到時藍1 已站定在 −0.04…−0.2：先在 1.45→1.65 側移到 0.04…0.2 再往前
+                    ut = 1.45
+                    pts += lane_run(self.B2, B2_U_START, ut, off)
+                    pts.append(self.B2.off(ut + 0.2, so))
+                    pts += lane_run(self.B2, ut + 0.2, self.slot_u(person, i), so)
             else:                                      # 死巷：在區頭前換到自己那路，往裡走
                 ut = Z['head'] - 0.3
                 pts += lane_run(self.B2, B2_U_START, ut, off)

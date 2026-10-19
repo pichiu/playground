@@ -9,7 +9,7 @@ import sys
 # ---------- 樓梯序與路別（spec §3.1） ----------
 BLOCKS = [f'藍{k}' for k in range(9, 0, -1)] + [f'白{k}' for k in range(1, 10)]
 LANES = 'ABC'
-LANE_COL = {'白': {'A': -5, 'B': -4, 'C': -3}, '藍': {'A': 0, 'B': -1, 'C': -2}}   # 列 = 6k + 偏移
+LANE_COL = {'白': {'A': -5, 'B': -4, 'C': -3}, '藍': {'A': -2, 'B': -1, 'C': 0}}   # 列 = 6k + 偏移；藍 A=6k−2 讓內側路對到內側格位（不折返、不交叉）
 
 # ---------- 出口（spec §3.2） ----------
 EXITS = ['139', '140', '141', '142', '143', '144', '145']
@@ -122,17 +122,43 @@ def _v1_block_people(base, exit_key):
     return [p for p in base['persons'] if p['block'] == blk]
 
 
-def aisle_point(base, exit_key, pai):
-    """該排在出口側的走道口：版本 1 同區塊、同排任一人的 path[1]。"""
+CORRIDOR_EDGE = 0.25      # B1 走廊看台側邊緣的偏移（三路在 +0.12 / 0 / −0.12）
+_B1 = {}
+
+
+def _b1(base):
+    key = id(base)
+    if key not in _B1:
+        from geo import Poly, pairs
+        _B1[key] = Poly(pairs(base['map']['b1Corridor']))
+    return _B1[key]
+
+
+def approach(base, exit_key, pai):
+    """該排從走道口到 B1 走廊接入點的折線（含兩端）：取版本 1 同區塊、同排任一人的 path[1…第一個落在走廊上的點]。
+    143 的 11–14 排與 141L 少數排在上階梯前還有一段斜走，所以不能只取 path[2]。"""
+    B1 = _b1(base)
     for p in _v1_block_people(base, exit_key):
-        if p['rest']['pai'] == pai:
-            return (p['path'][1][0], p['path'][1][1])
+        if p['rest']['pai'] != pai:
+            continue
+        pts = [(q[0], q[1]) for q in p['path']]
+        k = next(i for i in range(2, len(pts)) if B1.proj(pts[i])[2] < 0.25)
+        # 版本 1 的 path[k] 是當時那條鏈的匯入點（偏移 ±0.2 不等），不是走廊邊；2c 改成同一 u 的看台側走廊邊（+0.25），
+        # 之後再由 routes 斜向前方併入自己那一路，避免折返
+        u = B1.proj(pts[k])[0]
+        return pts[1:k] + [B1.off(u, CORRIDOR_EDGE)]
     raise KeyError(f'版本 1 沒有 {exit_key} 第 {pai} 排的走道口')
 
 
+def aisle_point(base, exit_key, pai):
+    """該排在出口側的走道口。"""
+    return approach(base, exit_key, pai)[0]
+
+
 def entry_point(base, exit_key):
-    """出口接入 B1 走廊的點：版本 1 同區塊所有人 path[2] 去重後的平均。"""
-    pts = sorted({(p['path'][2][0], p['path'][2][1]) for p in _v1_block_people(base, exit_key)})
+    """出口接入 B1 走廊的代表點：各排接入點的平均。"""
+    pais = sorted({p['rest']['pai'] for p in _v1_block_people(base, exit_key)})
+    pts = [approach(base, exit_key, pai)[-1] for pai in pais]
     return (sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts))
 
 
@@ -148,13 +174,14 @@ def assign_seats(base, seqs):
         if len(group) > len(seats):
             raise SystemExit(f'出口 {e} 需要 {len(group)} 席，只有 {len(seats)} 席')
         group.sort(key=lambda p: p['laneIdx'])
-        entry = entry_point(base, e)
         for k, p in enumerate(group):
             seat = seats[k]
+            app = approach(base, e, seat['pai'])
             p['exitSeq'] = k
             p['rest'] = seat
-            p['aisle'] = list(aisle_point(base, e, seat['pai']))
-            p['entry'] = list(entry)
+            p['approach'] = [list(q) for q in app]
+            p['aisle'] = list(app[0])
+            p['entry'] = list(app[-1])
     for p in people:
         src = who[p['id']]
         p['field'] = dict(X=src['field']['X'], Y=src['field']['Y'])

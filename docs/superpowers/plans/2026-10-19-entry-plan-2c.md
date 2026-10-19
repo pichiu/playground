@@ -13,11 +13,11 @@
 ## Global Constraints
 
 - 步速 V = 1.1 單位/秒；HEADWAY = 0.4 秒；LANE_STAGGER = 0.17 秒；同排相鄰離座 ≥ 0.28 秒；T0 = 6.73 秒；站定後 ≥ 0.6 秒才起步；1 單位 ≈ 7.6 m（spec §3.6）。
-- 樓梯序：藍9…藍1、白1…白9；路 A/B/C 偏移 +0.12 / 0 / −0.12；白 k 的 A/B/C = 列 6k−5/6k−4/6k−3，藍 k 的 A/B/C = 列 6k/6k−1/6k−2；6口 路 j = (lie−1) mod 6（spec §3.1）。
+- 樓梯序：藍9…藍1、白1…白9；路 A/B/C 偏移 +0.12 / 0 / −0.12；白 k 的 A/B/C = 列 6k−5/6k−4/6k−3，藍 k 的 A/B/C = 列 6k−2/6k−1/6k；6口 路 j = (lie−1) mod 6（spec §3.1，建造時修正藍衣對應）。
 - 出口巢狀排序 139 < 140 < 141 < 142 < 143 < 144 < 145；指派表固定為 spec §3.3，不搜尋、不拆欄。
 - 139 的 1–5 號不用；`kind` 為 blocked/work 的座位不用（spec §3.2）。
 - 碰撞處理只允許 spec §3.6 的三階手段；座位與路別不動。
-- 檢核門檻依 spec §3.7；不斷拍門檻 0.25–0.55 秒且順序 = 計畫序號。
+- 檢核門檻依 spec §3.7；群內拍距 0.25–0.55 秒、群交界對齊空檔 ≤ 5 秒、順序 = 計畫序號。
 - 全部頁面中文、只讀 `./data.json`、375px 無橫向捲動、無版本切換；時間顯示 mm:ss。
 - 開發路徑 `design-explorations/taipei-dome/flow/entry-animation-2c/`；最後一個 task 才改名與刪舊版；在那之前不得刪除或修改 `entry-animation/`、`entry-animation-v2*`。
 - 測試一律放 `build/tests/`，用 `Path(__file__)` 定位檔案，不寫死絕對路徑；Playwright 一律 `executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`。

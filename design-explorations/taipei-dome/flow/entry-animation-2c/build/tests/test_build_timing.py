@@ -21,9 +21,14 @@ def test_build_no_avoid(root, tmp_path):
         assert t['leave'] <= t['assembly'] <= t['enter'] <= t['gate'] <= t['arrive'], p['id']
         assert p['path'][0][:2] == [p['rest']['X'], p['rest']['Y']] and p['path'][-1][2] == t['arrive']
         assert all(b[2] >= a[2] for a, b in zip(p['path'], p['path'][1:])), p['id']
-    for j in range(6):
-        g = sorted(p['t']['gate'] for p in P.values() if p['gateLane'] == j)
-        assert all(abs((b - a) - 0.4) < 1e-6 for a, b in zip(g, g[1:]))
+    for j in range(6):                                   # 同大隊內 0.4 不斷拍；大隊交界六路對齊，可有 ≤ 4 秒的對齊空檔
+        ps = sorted((p for p in P.values() if p['gateLane'] == j), key=lambda p: p['gateIdx'])
+        for a, b in zip(ps, ps[1:]):
+            gap = b['t']['gate'] - a['t']['gate']
+            if a['dadui'] == b['dadui']:
+                assert abs(gap - 0.4) < 1e-6, (a['id'], b['id'], gap)
+            else:
+                assert 0.4 - 1e-6 <= gap <= 5.0, (a["id"], b["id"], gap)
     w4 = [p for p in P.values() if p['dadui'] >= 4 and p['costume'] == '白']
     assert all(p['t']['assembly'] == p['t']['enter'] for p in w4)
     staged = [p for p in P.values() if p['assembly'] != 'FEEDER']

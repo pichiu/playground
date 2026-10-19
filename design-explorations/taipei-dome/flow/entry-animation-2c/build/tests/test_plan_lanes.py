@@ -7,8 +7,8 @@ def seqs_of(base):
 
 def test_lane_totals(base):
     seqs = seqs_of(base)
-    assert [len(seqs[L]) for L in 'ABC'] == [535, 537, 537]
-    assert [s['block'] for s in seqs['A'][:18]] == ['藍9'] * 18 and seqs['A'][18]['block'] == '藍8'
+    assert [len(seqs[L]) for L in 'ABC'] == [541, 537, 531]
+    assert [s['block'] for s in seqs['A'][:20]] == ['藍9'] * 20 and seqs['A'][20]['block'] == '藍8'   # A 路藍9 = 列 52（20 人）
 
 
 def test_block_exits(base):
@@ -37,14 +37,14 @@ def test_within_column_order(base):
     A = plan.lane_sequence(base, 'A')
     assert [s['pai'] for s in A if s['block'] == '藍9'][:3] == [1, 2, 3]        # 死巷：排 1 先
     assert [s['pai'] for s in A if s['block'] == '白1'][:3] == [28, 27, 26]     # FIFO：排大先
-    top3 = sorted((p['pai'] for p in base['persons'] if p['lie'] == 6), reverse=True)[:3]   # 列 6 的排是 2–34
+    top3 = sorted((p['pai'] for p in base['persons'] if p['lie'] == 4), reverse=True)[:3]   # 藍1 的 A 路 = 列 4
     assert [s['pai'] for s in A if s['block'] == '藍1'][:3] == top3                          # 藍1 進 P1（FIFO）：排大先
 
 
 def test_exit_usage(base):
     from collections import Counter
     c = Counter(s['exit'] for L in 'ABC' for s in plan.lane_sequence(base, L))
-    assert c == {'139': 199, '140': 283, '141': 256, '142': 234, '143': 179, '144': 190, '145': 268}
+    assert c == {'139': 205, '140': 283, '141': 256, '142': 228, '143': 179, '144': 190, '145': 268}
 
 
 def test_lane_idx_and_fields(base):
@@ -52,4 +52,4 @@ def test_lane_idx_and_fields(base):
     assert [s['laneIdx'] for s in A] == list(range(len(A)))
     s = A[0]
     assert set(s) >= {'id', 'lie', 'pai', 'dadui', 'costume', 'block', 'lane', 'laneIdx', 'exit', 'assembly'}
-    assert s['id'] == '54-1' and s['lie'] == 54 and s['costume'] == '藍' and s['dadui'] == 9 and s['assembly'] == 'P5'
+    assert s['id'] == '52-1' and s['lie'] == 52 and s['costume'] == '藍' and s['dadui'] == 9 and s['assembly'] == 'P5'

@@ -25,7 +25,7 @@ def test_routes_start_and_end(base):
     for p in P[::37]:
         pts = G.arrival_route(p, 0)
         assert tuple(pts[0]) == (p['rest']['X'], p['rest']['Y'])
-        assert tuple(pts[1]) == tuple(p['aisle']) and tuple(pts[2]) == tuple(p['entry'])
+        assert tuple(pts[1]) == tuple(p['aisle']) and tuple(pts[len(p['approach'])]) == tuple(p['entry'])
         if p['assembly'] == 'FEEDER':
             assert math.dist(pts[-1], G.GATE_PTS[p['gateLane']]) < 1e-6 and G.depart_route(p, 0) == []
         else:
