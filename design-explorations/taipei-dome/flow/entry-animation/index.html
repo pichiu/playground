@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>進場動線 2c · 總覽</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap"></noscript>
 <style>
 :root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--white:#b9a77a;--blue:#2f6fd0;--ok:#1f8a5a;--ng:#c0392b;--grid:#ecebe5;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--white:#e6d9b4;--blue:#4f8fe8;--ok:#5fcf93;--ng:#ef8a7a;--grid:#223034;color-scheme:dark}}
@@ -35,7 +36,7 @@ td.n{text-align:right;white-space:nowrap}
 .stair{display:flex;gap:2px;margin:8px 0 4px;min-width:0}
 .stair [data-block]{min-width:0;flex:1 1 0;background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:6px 4px;font-size:12px;line-height:1.3;text-align:center;overflow:hidden}
 .stair [data-block] b{display:block;font-size:14px}
-.stair [data-block] small{color:var(--dim);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stair [data-block] small{color:var(--dim);display:block}.stair [data-block] small span{display:block}
 .stair .藍{border-top:4px solid var(--blue)}.stair .白{border-top:4px solid var(--white)}
 .stair-hint{color:var(--dim);font-size:13px;margin:0 0 6px}
 /* 出口用量 */
@@ -83,7 +84,7 @@ td.n{text-align:right;white-space:nowrap}
 <div class="scroll"><table data-lane-table><thead><tr><th>路</th><th>第一段</th><th>第二段</th><th>第三段</th><th class="n">合計</th></tr></thead><tbody></tbody></table></div>
 
 <h2>樓梯序</h2>
-<p class="stair-hint">18 個區塊依序通過三路樓梯；每格寫三欄分別從哪個出口來（A·B·C），寬度依人數。</p>
+<p class="stair-hint">18 個區塊依序通過三路樓梯；每格三行依序是 A、B、C 三欄從哪個出口來，寬度依人數。</p>
 <div class="stair" data-stair-order></div>
 
 <h2>七個出口的用量</h2>
@@ -117,15 +118,16 @@ const {fmt}=Dome,$=id=>document.getElementById(id);
 Dome.nav('index.html');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function checksTable(C){
- const gate=Object.values(C.continuity.gate),st=Object.values(C.continuity.stairPhase1),fd=Object.values(C.continuity.feederStairTop);
+ const gate=Object.values(C.continuity.gate),st=Object.values(C.continuity.stairPhase1),fd=Object.values(C.continuity.feederStairTop),A=C.assignment||{},S=C.seats;
  const rng=vs=>`${Math.min(...vs.map(v=>v.minGap))}–${Math.max(...vs.map(v=>v.maxGapWithin))} 秒`,bnd=vs=>Math.max(...vs.map(v=>v.maxGapBoundary));
  const rows=[
   ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>`${e.who.join(' × ')} @ ${fmt(e.t)}`)],
   ['逐序號巢狀（A 的出口 < B < C）',`${C.nesting.violations} / ${C.nesting.indices} 個序號違反`,'0',C.nesting.violations===0,(C.nesting.examples||[]).map(e=>`序號 ${e.idx}：${Object.values(e.exits).join(' / ')}`)],
+  ['指派：換口往下游 / 三路落在同一座階梯 / 拆欄',`${A.upstreamViolations} / ${A.distinctStairViolations} / ${A.splitColumns}（每路 ${['A','B','C'].map(L=>(A.segments||{})[L]).join('、')} 段）`,'0 / 0 / 0',A.upstreamViolations===0&&A.distinctStairViolations===0&&A.splitColumns===0,(A.examples||[]).map(e=>e.lie!=null?`列 ${e.lie}：${e.exits.join(' / ')}`:e.stairs?`序號 ${e.idx}：${e.stairs.join(' / ')}`:`${e.lane} 路序號 ${e.idx}：${e.exits.join(' → ')}`)],
   ['不斷拍：群內拍距 · 交界對齊空檔',`6口 ${rng(gate)}，交界 ≤ ${bnd(gate)} 秒；樓梯口 ${rng(st)}；接尾 ${rng(fd)}`,'0.25–0.55 秒；交界 ≤ 5 秒',C.continuity.ok,[]],
-  ['座位：唯一 / 違規席 / 順序違反',`${C.seats.unique} / ${C.seats.illegal} / ${C.seats.orderViolations}`,'1609 / 0 / 0',C.seats.unique===1609&&C.seats.illegal===0&&C.seats.orderViolations===0,[]],
+  ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['白3 隊尾在 140 接入點下游；白2 全員在樓梯格位',`隊尾 u ${C.staging.white3TailU} vs 接入 u ${C.staging.entry140U}；${C.staging.white2InSlots?'在格位':'不在格位'}`,'成立',C.staging.ok,[]],
-  ['出口用量 ≤ 可用席',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity),[]]];
+  ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];
  return `<p class="verdict">${C.ok?'全部通過':'未通過'}</p><div class="scroll"><table><thead><tr><th>項目</th><th>結果</th><th>門檻</th></tr></thead><tbody>${rows.map(([n,v,t,ok,ex])=>`<tr class="${ok?'ok':'ng'}"><td>${n}${ex.length?`<div class="ex">${ex.map(esc).join('；')}</div>`:''}</td><td>${esc(v)}</td><td>${t}</td></tr>`).join('')}</tbody></table></div>`;}
 (async()=>{let ds;try{ds=await Dome.load();}catch(e){$('rules').innerHTML='';document.querySelector('[data-checks]').innerHTML=`<p class="err">${esc(e.message)}</p>`;return;}
  const D=ds.D,M=D.meta;
@@ -133,7 +135,7 @@ function checksTable(C){
  $('rules').innerHTML=M.rules.map(r=>`<li>${esc(r)}</li>`).join('');
  const segName=s=>`<span class="seg"><b>${s.exit}</b><small>${s.fromBlock===s.toBlock?s.fromBlock:s.fromBlock+'…'+s.toBlock} · ${s.n} 人</small></span>`;
  document.querySelector('[data-lane-table] tbody').innerHTML=['A','B','C'].map(L=>{const l=ds.lanes[L];return `<tr class="lane-${L}"><td><b>${ds.laneName(L)}</b></td>${l.segments.map(s=>`<td>${segName(s)}</td>`).join('')}<td class="n">${l.total}</td></tr>`;}).join('');
- document.querySelector('[data-stair-order]').innerHTML=ds.groups.map(g=>`<div data-block="${g.key}" class="${g.costume}" style="flex-grow:${g.population}" title="${g.key}：${g.population} 人，${fmt(g.tStairFirst)}–${fmt(g.tStairLast)} 通過樓梯口"><b>${g.key}</b><small>${['A','B','C'].map(L=>g.lanes[L].exit).join('·')}</small></div>`).join('');
+ document.querySelector('[data-stair-order]').innerHTML=ds.groups.map(g=>`<div data-block="${g.key}" class="${g.costume}" style="flex-grow:${g.population}" title="${g.key}：${g.population} 人，${fmt(g.tStairFirst)}–${fmt(g.tStairLast)} 通過樓梯口"><b>${g.key}</b><small>${['A','B','C'].map(L=>`<span>${g.lanes[L].exit}</span>`).join('')}</small></div>`).join('');
  const maxCap=Math.max(...ds.exits.map(e=>e.capacity));
  document.querySelector('[data-exit-usage]').innerHTML=ds.exits.map(e=>{const blue=e.order.filter(id=>ds.byId.get(id).costume==='藍').length;return `<div data-exit="${e.key}"><b>${e.key}</b><div class="bar" title="${e.stairLabel}"><i class="b" style="width:${blue/maxCap*100}%"></i><i class="w" style="left:${blue/maxCap*100}%;width:${(e.used-blue)/maxCap*100}%"></i></div><span class="n">${e.used} / ${e.capacity}</span></div>`;}).join('');
  const box=document.querySelector('[data-checks]');box.innerHTML=checksTable(M.checks);box.classList.toggle('ok',!!M.checks.ok);

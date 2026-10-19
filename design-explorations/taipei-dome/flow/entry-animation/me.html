@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>進場動線 2c · 我的路</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
 <style>
 :root{--bg:#f4f1ea;--paper:#fffdf8;--ink:#1d2b33;--dim:#5e6b70;--rule:#e2ddd1;--blue:#1d5fae;--blue-soft:#e3ecf7;--sand:#d9d2c2;--floor:#ebe6da;--go:#c8541f;--ghost:#8c97a0;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11181c;--paper:#182227;--ink:#e8ece8;--dim:#9aa8aa;--rule:#2a363b;--blue:#6aa6ec;--blue-soft:#1d3247;--sand:#3a4648;--floor:#1c272b;--go:#f08a52;--ghost:#6f7d82;color-scheme:dark}}
@@ -28,6 +29,7 @@ button,input{font:inherit;color:inherit}
 .id input::placeholder{color:var(--sand);font-weight:500}
 .id .dash{align-self:center;font-size:28px;color:var(--dim)}
 .id button{background:var(--blue);color:var(--paper);border:0;border-radius:14px;padding:0 20px;font-weight:700;font-size:17px;cursor:pointer;flex:none}
+.id button:disabled{opacity:.45;cursor:progress}
 .err{color:var(--go);font-size:14px;min-height:1.6em;margin:6px 0 0}
 .hint{color:var(--dim);font-size:14px;margin:6px 0 0}
 .grid{display:grid;gap:18px}
@@ -70,9 +72,10 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
   <label><small>列</small><input id="lie" inputmode="numeric" autocomplete="off" placeholder="1–54" aria-label="列"></label>
   <span class="dash" aria-hidden="true">–</span>
   <label><small>排</small><input id="pai" inputmode="numeric" autocomplete="off" placeholder="1–34" aria-label="排"></label>
-  <button type="submit">查</button>
+  <button type="submit" id="go" disabled>查</button>
  </form>
  <p class="err" id="notfound" role="status" hidden></p>
+ <p class="hint" id="load" role="status" aria-live="polite">讀取動線資料…讀好後「查」會亮起；先輸入也可以，讀好會自動查。</p>
  <p class="hint" id="hint">輸入身分證上的列與排，或用網址 <code>me.html?id=列-排</code>。</p>
 </section>
 <div class="grid" id="main" hidden>
@@ -119,6 +122,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
  const feeder=p.assembly==='FEEDER',holdB1=p.assembly==='P6';
  const tExit=tAtVertex(p,(x,y)=>nearPoly(x,y,D.map.b1Corridor,.35),s.leave+.01)??s.leave+Math.hypot(p.rest.X-ex.entry[0],p.rest.Y-ex.entry[1])/(D.meta.speedUnitPerSec||1.1);
  const ST=D.nodes.STAIR_TOP,tStair=tNearPoint(p,ST.X,ST.Y,.3,tExit);
+ const SB=D.nodes.STAIR_BOT,tBottom=feeder?(tNearPoint(p,SB.X,SB.Y,.3,s.enter)??(s.enter+s.gate)/2):s.enter;   // 接尾者「進」從到樓梯底算起，才和「集」（下樓）分得開
  const tWalkEnd=feeder?s.enter:holdB1?s.assembly:Math.min(tStair??s.assembly,s.assembly);
  const aheadTxt=!ahead?'你是這一路的第一位':ahead.exit===p.exit?`跟在 <strong>${ahead.id}</strong> 後面`:`<strong>${ahead.id}</strong>（${ahead.exit} 出口）在你前面接上`;
  const seat=[p.rest.X,p.rest.Y];
@@ -134,7 +138,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
      d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到 6口</strong>，不進集結區。`}
    :{k:'集',h:'集結',t:s.assembly,show:s.assembly,tl:'站定',pts:pathIn(p,s.assembly-6,s.assembly+.1),pad:1.6,w:s.enter-s.assembly,
      d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。`},
-  {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過 6口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
+  {k:'進',h:'進場',t:tBottom,show:s.gate,tl:'過 6口',pts:pathIn(p,tBottom,s.gate+4),pad:1.6,
    d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>6口 第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過 6口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
    d:`過 6口 後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
@@ -164,7 +168,7 @@ function lookup(lieRaw,paiRaw){const id=parseId(lieRaw,paiRaw),p=id?ds.byId.get(
 function fromUrl(raw){const m=/^([0-9]{1,3})-([0-9]{1,3})$/.exec(raw.trim());if(m){lookup(m[1],m[2]);return;}
  const parts=norm(raw).split(/[-－–—]/);if(parts.length===2){$('lie').value=parts[0];$('pai').value=parts[1];}
  showNotFound('網址請寫成 ?id=列-排（半形數字，例如 ?id=1-28）');}
-$('f').onsubmit=e=>{e.preventDefault();if(ds)lookup($('lie').value,$('pai').value);};
+$('f').onsubmit=e=>{e.preventDefault();if(!ds){$('load').textContent='動線資料還在讀取，讀好會自動查你輸入的列排。';return;}lookup($('lie').value,$('pai').value);};
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';}
 $('play').onclick=()=>{if(!me)return;playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();if(playing)focusStep(-1);};
 $('tl').oninput=e=>{t=+e.target.value;dirty=true;};
@@ -187,9 +191,11 @@ function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
 function frame(n){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*4);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v&&v.step(n))dirty=true;if(dirty&&me&&v){draw();dirty=false;}requestAnimationFrame(frame);}
 
-(async()=>{try{ds=await Dome.load();}catch(e){$('steps').innerHTML='';return;}
+(async()=>{try{ds=await Dome.load();}catch(e){$('steps').innerHTML='';$('load').textContent='動線資料讀取失敗，請看畫面下方的提示。';return;}
+ $('load').hidden=true;$('go').disabled=false;
  const q=new URLSearchParams(location.search);
  if(q.has('id'))fromUrl(q.get('id')||'');
+ else if(norm($('lie').value)&&norm($('pai').value))lookup($('lie').value,$('pai').value);   // 讀取中就先打好的列排
  requestAnimationFrame(function first(n){frame(n);window.__dome_ready=true;});})();
 window.__seek=x=>{if(me){t=me.t.leave+x*(me.t.arrive-me.t.leave);dirty=true;}};
 </script>

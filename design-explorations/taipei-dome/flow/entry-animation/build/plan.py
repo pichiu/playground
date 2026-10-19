@@ -98,6 +98,7 @@ EXIT_DEF = {
     '145': dict(sec='145', side='S', v1block='145',  fill='asc',  stairLabel='144｜145 階梯北半'),
 }
 UNUSED_KINDS = {'blocked', 'work'}
+STAIR_OF = {e: d['stairLabel'].split(' ')[0] for e, d in EXIT_DEF.items()}   # 出口所在的階梯：139/140 同一座、144/145 同一座
 
 
 def seat_usable(seat):

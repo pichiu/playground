@@ -124,10 +124,13 @@
 |---|---|
 | 穿過站定者 / 走路互撞（collide.py） | 0 / 0 |
 | 逐序號巢狀：每個樓梯序號 i，rank(exit_A(i)) < rank(exit_B(i)) < rank(exit_C(i)) | 違反 0 |
+| 指派（3.3 的性質）：每路沿序號換口只往上游（rank 不遞減）；每個序號三路出口在三座不同階梯（139/140 同一座、144/145 同一座）；零拆欄（同一演繹列只有一個出口） | 違反 0 / 0 / 0 |
 | 不斷拍：6口 六路、集結階段樓梯口三路、接尾者樓梯口三路，群內相鄰兩人間隔 | 0.25–0.55 秒；群交界對齊空檔 ≤ 5 秒；通過順序 = 計畫序號 |
-| 座位：1,609 席唯一、不在 blocked/work、不在 139 的 1–5 號、每出口符合 3.4 的順序 | 全部成立 |
+| 座位：1,609 席唯一、不在 blocked/work、不在 139 的 1–5 號、休息區＝出口的區、每出口符合 3.4 的順序、`exits[].order` 名單＝該出口全員（依 `exitSeq` 0…n−1） | 全部成立 |
 | 白3 候隊：隊尾 u − 0.1 ≥ 10.96；白2 全員在 `STAIR_SLOTS` 內 | 成立 |
-| 容量：各出口用量 ≤ 可用席 | 成立 |
+| 容量：各出口用量（數 persons）≤ 可用席（由 restSeats 重算），且與 `exits[].used / capacity` 一致 | 成立 |
+
+所有數字都由 `persons` / `restSeats` 重算，`data.json` 裡 `exits` 的 `used / capacity / order` 只拿來比對，不信任。
 
 ## 4. 產出物
 
@@ -159,6 +162,8 @@ design-explorations/taipei-dome/flow/entry-animation/
 刪除：`flow/entry-animation/index.html`（舊版本 1 單頁）、`flow/entry-animation-v2/`、`flow/entry-animation-v2a/`、`flow/entry-animation-v2b/` 整個資料夾。刪除前先把版本 1 的 DATA 抽成 `build/base.json`，並把 `geo.py`、`collide.py` 搬過來；`build.py` 以版本 2 的 `build/build.py` 為底改寫，不從零寫。
 
 順序（建造者的判斷已定）：先在新資料夾建好全部、跑 `check.py`；**全綠才**刪舊資料夾、換首頁卡片。有紅字就停在那裡回報，舊版照舊保留，不出貨。
+
+**暫緩刪除 `flow/entry-animation-v2/`**：這個資料夾的連結已經外傳（GitHub Pages），所以先原樣保留（與刪除前的 commit 逐檔相同），首頁與 2c 的頁面都不連到它；另在它的 `redesign/src/v1.html` 放版本 1 頁原樣，讓它的「版本 1／對照」切換仍讀得到資料。PR 正式合併、確認可以改連結後再清（刪資料夾、把 `tests/test_release.py` 的保留測試改回「不存在」）。
 
 `taipei-dome/index.html` 的五張進場動畫卡片換成一張：標題「進場動線 · 2c」、副標「西一＋桃竹 1,609 人 · 七出口三路接續 · 10/19」、四個 chip（休息區七出口、三路巢狀不交叉、藍衣 B2／白衣 B1 與樓梯、6口 六路）、說明兩句、按鈕「開啟總覽」連到 `flow/entry-animation/index.html`。首頁「模組」一節若有列出進場動畫的字樣一併更新。
 
