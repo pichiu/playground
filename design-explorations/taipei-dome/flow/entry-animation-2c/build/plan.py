@@ -202,3 +202,14 @@ def build_plan(base):
                         rank=EXIT_RANK[e], capacity=len(usable_seats(base, e)), used=len(group), rows=rows,
                         order=[p['id'] for p in group])
     return dict(blocks=blocks, lanes=lanes_out, exits=exits, people=people)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        raise SystemExit(__doc__)
+    base_path, out_path = sys.argv[1:3]
+    base = json.load(open(base_path, encoding='utf-8'))
+    planj = build_plan(base)
+    json.dump(planj, open(out_path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    used = {e: v['used'] for e, v in planj['exits'].items()}
+    print('plan.json 寫出：', len(planj['people']), '人；出口用量', used)
