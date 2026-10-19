@@ -67,7 +67,7 @@ canvas{display:block;width:100%;height:300px;border-radius:12px}
 <body>
 <div class="wrap" id="wrap">
 <div class="top"><a class="back" href="index.html">‹ 版本 2a · 上藍下白</a><div id="vs"></div></div>
-<div class="notice"><b>白衣 1→9 · 三路接續複核</b>　動畫為示意進度，非現場秒數；尚未通過全程無交叉驗證。<br>三路依序接續，前隊三路隊尾通過共用斜切段後，後隊提早斜切，不等前隊全員站定。</div>
+<div class="notice"><b>白衣 1→9 · 三路接續複核</b>　動畫為示意進度，非現場秒數；白衣相關時序點距檢查通過；全場及現場容量尚未認證。<br>三路依序接續，白衣保留樓梯候隊；多出口提前供應，逐路持續接尾，不等整隊清空。</div>
 <div class="filters"><label>衣色 <select id="color"><option value="藍">藍衣</option><option value="白">白衣</option><option value="all">三藍三白</option></select></label><label>路線 <select id="route-phase"><option value="arrival">離座 → 集結</option><option value="departure">集結 → 6口</option><option value="field">6口 → 就定位</option><option value="all">完整流程</option></select></label><label><input id="following" type="checkbox">疊看後兩隊</label><label><input id="routes" type="checkbox" checked>畫出路線</label></div>
 <div class="pick" id="pick" role="group" aria-label="選擇大隊"></div>
 <div class="grid two">
@@ -101,9 +101,9 @@ function cuesFor(d){const ps=d.P.filter(p=>p.dadui===k&&(color==='all'||p.costum
  return [
   {id:'l0',t:minT(ps,'leave'),h:'第一位離座',d:'休息區開始有人起身'},
   {id:'l1',t:maxT(ps,'leave'),h:'最後一位離座',d:'選取隊列離開休息座位'},
-  ...spots.map(s=>{const g=ps.filter(p=>p.assembly===s),c=[...new Set(g.map(p=>p.costume))];return {id:'a-'+c.join(''),t:maxT(g,'assembly'),h:one?'選取隊列到齊':`${c.join('')}衣到齊`,d:`${d.nodeName(s)} ${g.length} 人湊齊`};}),
-  ...(prev.length?[{id:'p',t:maxT(prev,'gate'),h:`大隊 ${k-1} 最後一位過 6口`,d:'示意交接節點；場內佔用仍須確認'}]:[]),
-  {id:'go',t:minT(ps,'enter'),h:`大隊 ${k} 出發`,d:'試排路徑由集結區往 6口；是否可放行仍需完成交叉與佔用驗證'},
+  ...spots.map(s=>{const g=ps.filter(p=>p.assembly===s),c=[...new Set(g.map(p=>p.costume))];return {id:'a-'+c.join(''),t:maxT(g,'assembly'),h:s==='FEEDER'?'最後一位匯入固定路':one?'選取隊列到齊':`${c.join('')}衣到齊`,d:s==='FEEDER'?'各出口按序接尾；不在單點等待全隊':`${d.nodeName(s)} ${g.length} 人提前就緒`};}),
+  ...(prev.length?[{id:'p',t:maxT(prev,'gate'),h:`大隊 ${k-1} 最後一位過 6口`,d:'參考事件；後隊已逐路接尾，此非離座條件'}]:[]),
+  {id:'go',t:minT(ps,'enter'),h:`大隊 ${k} 出發`,d:'每一路跟前人接續，換大隊不停止、不重新同步'},
   {id:'g1',t:maxT(ps,'gate'),h:'最後一位過 6口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊'},
   {id:'ok',t:maxT(ps,'arrive'),h:'選取隊列到位',d:'示意路徑完成，非現場放行認證'},
  ].sort((a,b)=>a.t-b.t);}
@@ -116,7 +116,7 @@ function choose(n){k=n;document.documentElement.style.setProperty('--team',TEAM[
   return `<li data-t="${c.t}">${cmp?`<time class="old">${o?fmt(o.t):'—'}</time>`:''}<time>${fmt(c.t)}</time><span class="h">${c.h}</span>${cmp?`<span class="d">${o?'—':'新'}</span>`:'<span></span>'}</li>`;}).join('');
  $('sum').textContent='兩版進度各自正規化，不能用百分比差判斷快慢。切換版本檢視其地圖；對照模式地圖顯示 2b。';
  $('lanes-h').textContent=`大隊 ${k} · 隊列狀態`;
- $('tl').min=Math.max(0,cues[0].t-.3);$('tl').max=Math.min(ds.T_END,cues[cues.length-1].t+.3);t=+$('tl').min;
+ $('tl').min=Math.max(0,cues[0].t-.3);$('tl').max=Math.min(ds.T_END,Math.max(cues[cues.length-1].t,...following().map(p=>p.t.arrive))+.3);t=+$('tl').min;
  updateDetails(); fitRoute(); dirty=true;}
 function selected(){return ds.P.filter(p=>p.dadui===k&&(color==='all'||p.costume===color));}
 function route(p){const a=$('route-phase').value;return p.path.filter(q=>a==='all'||(a==='arrival'?q[2]<=p.t.assembly:a==='departure'?q[2]>=p.t.enter&&q[2]<=p.t.gate:q[2]>=p.t.gate));}
@@ -128,10 +128,12 @@ function updateDetails(){renderCrossTeam();const gs=ds.D.groups.filter(g=>g.dadu
 }
 function renderCrossTeam(){const el=$('cross-team');if(!ds||color!=='白'){el.innerHTML='';return;}
  const chain=[1,2,3].map(j=>Array.from({length:9},(_,d)=>j+6*d).join(' → '));
- el.innerHTML='<p><b>白衣三路接續</b><br>'+chain.map((x,j)=>`<span style="color:${['#edc56c','#65d7bc','#bc9df5'][j]}">${'ABC'[j]}：${x}</span>`).join('<br>')+'</p><p>目前缺少白衣固定出口與三路有序匯入限制。白2樓梯候隊未經容量驗證；候選改法是留在自有休息區等候，按三路隊尾淨空逐段接續。</p>';
- if(whiteAudit){const pairs=whiteAudit.crossArrival.filter(p=>p.from===k&&p.to<=k+2);el.innerHTML+='<b>與後隊的 B1/B2 分層靜態橫切</b>'+pairs.map(p=>`<p>白${p.from} ↔ 白${p.to}：${p.count} 個幾何交點（${p.personPairs} 組人員路徑）<br><button onclick="showCross(${p.from},${p.to})">放大一個交點</button></p>`).join('')+'<p>金色圈為跨隊交點樣本；每列本身與後續同路應接尾，共用同向路段不算橫切。數量不是同時碰撞人數。</p>';}
+ el.innerHTML='<p><b>白衣三路連續接尾</b><br>'+chain.map((x,j)=>`<span style="color:${['#edc56c','#65d7bc','#bc9df5'][j]}">${'ABC'[j]}：${x}</span>`).join('<br>')+'</p><p>A：白1–5用139，白6–9接140右。<br>B：白1–4用141右，白5–9接143。<br>C：白1–9用145。</p><p><b>白2提前在樓梯與下端候隊，白3提前在B1接尾。</b>白4以後由各出口提前補入，不等前大隊過6口才離座。</p><button onclick="showQueue()">看白1／白2／白3候隊</button> <button onclick="showHandoff()">看本隊與後隊持續接尾</button>';
+ if(whiteAudit){const pairs=whiteAudit.crossArrival.filter(p=>p.from===k&&p.to<=k+2);el.innerHTML+='<p>三路各自272／269／268人，跨白1→9相鄰過口間隔均為0.32示意單位；沒有大隊空拍。場內先導為C、B、A，固定時差後各路不停。</p><p>涉及白衣的全程同時點距衝突：'+whiteAudit.allWhiteRelatedTimedPairs+'（門檻0.03圖面單位，含候隊與已定位者，非人體寬度認證）。</p>'+pairs.map(p=>`<p>白${p.from} → 白${p.to}：B1／樓梯至6口橫切 ${p.count}；場內 ${p.fieldCrossings} 個靜態交點，由固定先導時差錯開。<br><button onclick="showCross(${p.from},${p.to})">看場內連續轉入</button></p>`).join('')+'<p><a href="../white-continuous-seats.png" style="color:#8acbff">看重排座位與候隊實圖</a> · <a href="../white-review.json" style="color:#8acbff">逐路接續驗證</a></p>';}
 }
-function showCross(from,to){const pair=whiteAudit.crossArrival.find(p=>p.from===from&&p.to===to),ex=pair&&pair.examples[0];if(!ex)return;$('following').checked=true;$('routes').checked=true;$('route-phase').value='arrival';v.fit(Dome.bounds([...ex.firstSegment,...ex.secondSegment],.3),true);dirty=true;}
+function showCross(from,to){const pair=whiteAudit.crossArrival.find(p=>p.from===from&&p.to===to),ex=pair&&pair.fieldExamples[0];if(!ex)return;$('following').checked=true;$('routes').checked=true;$('route-phase').value='field';v.fit(Dome.bounds([...ex.firstSegment,...ex.secondSegment],.6),true);t=ex.nextHeadProgress;dirty=true;}
+function showQueue(){$('routes').checked=false;color='白';$('color').value=color;$('following').checked=true;$('route-phase').value='all';choose(1);t=ds.D.meta.gateStartProgress-0.5;v.fit([-14,-2.8,-10.4,4.5],true);dirty=true;}
+function showHandoff(){$('routes').checked=false;color='白';$('color').value=color;$('following').checked=true;$('route-phase').value='all';choose(k);t=maxT(selected(),'gate');v.fit([-14,-3,-10,4.6],true);dirty=true;}
 $('following').onchange=()=>{fitRoute();dirty=true;};
 $('color').onchange=e=>{color=e.target.value;choose(k);};
 $('route-phase').onchange=()=>{fitRoute();const key={arrival:'leave',departure:'enter',field:'gate',all:'leave'}[$('route-phase').value];t=minT(selected(),key);dirty=true;};
@@ -150,11 +152,12 @@ function draw(){const team=TEAM[k-1],ps=ds.P.filter(p=>p.dadui===k&&(color==='al
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b'});
  if($('routes').checked){
  for(const p of following()){c.globalAlpha=.25;v.stroke(route(p).flatMap(q=>q.slice(0,2)),['#edc56c','#65d7bc','#bc9df5'][(p.lie-1)%3],1,[4,3]);}c.globalAlpha=1;
- if(color==='白'&&whiteAudit&&$('following').checked&&['arrival','all'].includes($('route-phase').value))for(const pair of whiteAudit.crossArrival.filter(p=>p.from===k&&p.to<=k+2))for(const ex of pair.examples)v.dot(ex.point[0],ex.point[1],6,null,'#ffb33f',2);
+ if(color==='白'&&whiteAudit&&$('following').checked&&['field','all'].includes($('route-phase').value))for(const pair of whiteAudit.crossArrival.filter(p=>p.from===k&&p.to<=k+2))for(const ex of pair.fieldExamples)v.dot(ex.point[0],ex.point[1],6,null,'#ffb33f',2);
  for(const p of ps){c.globalAlpha=.20;v.stroke(route(p).flatMap(q=>q.slice(0,2)),p.costume==='白'?['#edc56c','#65d7bc','#bc9df5'][(p.lie-1)%3]:'#5a9be8',1);}c.globalAlpha=1;
  const ph=$('route-phase').value;for(const g of D.groups.filter(g=>g.dadui===k&&(color==='all'||g.costume===color)))for(const [key,ch] of Object.entries(g.checks))if(ph==='all'||key===ph)for(const ex of ch.examples){const q=ex.point||ex.at||ex.xy;if(Array.isArray(q))v.dot(q[0],q[1],5,null,'#ffa64d',1.5);}}
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.25;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?['#edc56c','#65d7bc','#bc9df5'][(p.lie-1)%3]:'#5a9be8');}
+ for(const p of following()){const q=pos(p,t);c.globalAlpha=.7;v.dot(q[0],q[1],r*.9,['#edc56c','#65d7bc','#bc9df5'][(p.lie-1)%3]);}c.globalAlpha=1;
  v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',dx:-18});}
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
 $('play').onclick=()=>{playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();};

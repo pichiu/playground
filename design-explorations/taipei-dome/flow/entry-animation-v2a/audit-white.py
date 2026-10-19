@@ -1,3 +1,4 @@
+# Historical v2a/v2b pre-repair audit. For current revision use audit-white-timing.py.
 #!/usr/bin/env python3
 """Reproducible, floor-aware white-chain audit of full-diagonal-plans.json.
 
