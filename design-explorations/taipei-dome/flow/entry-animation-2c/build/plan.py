@@ -85,3 +85,120 @@ def check_nesting(seqs):
         if not (ranks[0] < ranks[1] < ranks[2]):
             bad.append(dict(idx=i, exits={L: seqs[L][i]['exit'] for L in LANES}))
     return bad
+
+
+# ---------- 出口定義與座位（spec §3.2、§3.4） ----------
+EXIT_DEF = {
+    '139': dict(sec='139', side='N', v1block='139',  fill='desc', stairLabel='139｜140 階梯南半'),
+    '140': dict(sec='140', side='S', v1block='140L', fill='asc',  stairLabel='139｜140 階梯北半'),
+    '141': dict(sec='141', side='S', v1block='141L', fill='asc',  stairLabel='140｜141 階梯'),
+    '142': dict(sec='142', side='S', v1block='142L', fill='asc',  stairLabel='141｜142 階梯'),
+    '143': dict(sec='143', side='S', v1block='143',  fill='asc',  stairLabel='142｜143 階梯'),
+    '144': dict(sec='144', side='N', v1block='144M', fill='desc', stairLabel='144｜145 階梯南半'),
+    '145': dict(sec='145', side='S', v1block='145',  fill='asc',  stairLabel='144｜145 階梯北半'),
+}
+UNUSED_KINDS = {'blocked', 'work'}
+
+
+def seat_usable(seat):
+    if seat['kind'] in UNUSED_KINDS:
+        return False
+    if seat['sec'] == '139' and seat['no'] <= 5:          # 139 的 1–5 號沿現況不用
+        return False
+    return True
+
+
+def usable_seats(base, exit_key):
+    """由上排往下、每排由出口側往中央排好的可用席。"""
+    d = EXIT_DEF[exit_key]
+    seats = [s for s in base['restSeats'] if s['sec'] == d['sec'] and seat_usable(s)]
+    sign = 1 if d['fill'] == 'asc' else -1
+    seats.sort(key=lambda s: (-s['pai'], sign * s['no']))
+    return [dict(sec=s['sec'], pai=s['pai'], no=s['no'], X=s['X'], Y=s['Y']) for s in seats]
+
+
+def _v1_block_people(base, exit_key):
+    blk = EXIT_DEF[exit_key]['v1block']
+    return [p for p in base['persons'] if p['block'] == blk]
+
+
+def aisle_point(base, exit_key, pai):
+    """該排在出口側的走道口：版本 1 同區塊、同排任一人的 path[1]。"""
+    for p in _v1_block_people(base, exit_key):
+        if p['rest']['pai'] == pai:
+            return (p['path'][1][0], p['path'][1][1])
+    raise KeyError(f'版本 1 沒有 {exit_key} 第 {pai} 排的走道口')
+
+
+def entry_point(base, exit_key):
+    """出口接入 B1 走廊的點：版本 1 同區塊所有人 path[2] 去重後的平均。"""
+    pts = sorted({(p['path'][2][0], p['path'][2][1]) for p in _v1_block_people(base, exit_key)})
+    return (sum(x for x, _ in pts) / len(pts), sum(y for _, y in pts) / len(pts))
+
+
+def assign_seats(base, seqs):
+    """三路合併 → 每出口依樓梯序號成一條 FIFO → 由上排往下配座；補齊 6口 路與序號、場內定位。"""
+    who = _people_index(base)
+    people = [dict(s) for L in LANES for s in seqs[L]]
+    by_exit = collections.defaultdict(list)
+    for p in people:
+        by_exit[p['exit']].append(p)
+    for e, group in by_exit.items():
+        seats = usable_seats(base, e)
+        if len(group) > len(seats):
+            raise SystemExit(f'出口 {e} 需要 {len(group)} 席，只有 {len(seats)} 席')
+        group.sort(key=lambda p: p['laneIdx'])
+        entry = entry_point(base, e)
+        for k, p in enumerate(group):
+            seat = seats[k]
+            p['exitSeq'] = k
+            p['rest'] = seat
+            p['aisle'] = list(aisle_point(base, e, seat['pai']))
+            p['entry'] = list(entry)
+    for p in people:
+        src = who[p['id']]
+        p['field'] = dict(X=src['field']['X'], Y=src['field']['Y'])
+        p['gateLane'] = (p['lie'] - 1) % 6
+    for j in range(6):
+        lane_people = sorted((p for p in people if p['gateLane'] == j), key=lambda p: (p['dadui'], -p['pai']))
+        for g, p in enumerate(lane_people):
+            p['gateIdx'] = g
+    return people
+
+
+def build_plan(base):
+    seqs = {L: lane_sequence(base, L) for L in LANES}
+    bad = check_nesting(seqs)
+    if bad:
+        raise SystemExit(f'巢狀被破壞 {len(bad)} 個序號，例如 {bad[:3]}')
+    people = assign_seats(base, seqs)
+    blocks = []
+    for block in BLOCKS:
+        costume, k = block_parts(block)
+        lanes = {}
+        for L in LANES:
+            members = [p for p in people if p['block'] == block and p['lane'] == L]
+            lanes[L] = dict(lie=column_of(block, L), exit=members[0]['exit'], n=len(members))
+        blocks.append(dict(key=block, costume=costume, dadui=k, population=sum(v['n'] for v in lanes.values()),
+                           columns=[column_of(block, L) for L in LANES], assembly=ZONE_OF[block], lanes=lanes))
+    lanes_out = {}
+    for L in LANES:
+        segs = []
+        for exit_key, b_from, b_to in ASSIGN[L]:
+            idx = [s['laneIdx'] for s in seqs[L] if BLOCKS.index(b_from) <= BLOCKS.index(s['block']) <= BLOCKS.index(b_to)]
+            segs.append(dict(exit=exit_key, fromBlock=b_from, toBlock=b_to, n=len(idx), fromIdx=min(idx), toIdx=max(idx)))
+        lanes_out[L] = dict(total=len(seqs[L]), segments=segs)
+    exits = {}
+    for e in EXITS:
+        d = EXIT_DEF[e]
+        group = sorted((p for p in people if p['exit'] == e), key=lambda p: p['exitSeq'])
+        rows = []
+        for p in group:
+            if not rows or rows[-1]['pai'] != p['rest']['pai']:
+                rows.append(dict(pai=p['rest']['pai'], seats=[], ids=[]))
+            rows[-1]['seats'].append(p['rest']['no'])
+            rows[-1]['ids'].append(p['id'])
+        exits[e] = dict(sec=d['sec'], side=d['side'], stairLabel=d['stairLabel'], entry=list(entry_point(base, e)),
+                        rank=EXIT_RANK[e], capacity=len(usable_seats(base, e)), used=len(group), rows=rows,
+                        order=[p['id'] for p in group])
+    return dict(blocks=blocks, lanes=lanes_out, exits=exits, people=people)
