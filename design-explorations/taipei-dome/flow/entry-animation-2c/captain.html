@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>進場動線 2c · 口令卡</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#141a1c;--card:#1d2528;--ink:#f1f3ef;--dim:#a3b0ae;--rule:#2d383b;--team:#e05d63;--team-ink:#1a0d0e;--white:#f3eee4;--blue:#5a9be8;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--team);color:var(--team-ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--team);outline-offset:3px}
+.dome-nav.bar{--line:var(--rule)}
+.wrap{max-width:1180px;margin:auto;padding:14px max(16px,env(safe-area-inset-left)) 40px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:6px 16px;flex-wrap:wrap}
+.back{color:var(--dim);text-decoration:none;font-size:14px}
+h1{margin:2px 0 0;font-size:22px;line-height:1.3;font-weight:900}
+.who{margin:0;color:var(--dim);font-size:13px;max-width:52ch}
+.pick{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;margin:14px 0 16px}
+.pick button{border:1.5px solid var(--rule);background:var(--card);border-radius:12px;height:52px;font-size:20px;font-weight:900;position:relative;padding:0}
+.pick button i{position:absolute;left:50%;bottom:7px;width:16px;height:3px;border-radius:2px;transform:translateX(-50%)}
+.pick button[aria-pressed=true]{background:var(--team);border-color:var(--team);color:var(--team-ink)}
+.pick button[aria-pressed=true] i{background:var(--team-ink)!important}
+.grid{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:900px){.grid.two{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}.grid.two>.grid{align-content:start}}
+/* 下一個口令 */
+.next{background:var(--team);color:var(--team-ink);border-radius:22px;padding:20px 22px 22px;transition:background .3s}
+.next small{font-size:15px;font-weight:700}
+.next h2{margin:2px 0 4px;font-size:clamp(28px,7vw,46px);line-height:1.15;font-weight:900;letter-spacing:.01em}
+.next p{margin:0;font-size:16px;font-weight:500;line-height:1.5}
+.next .count{font-size:clamp(44px,10vw,72px);font-weight:900;line-height:1;margin-top:12px;letter-spacing:-.02em}
+.next .count span{font-size:16px;font-weight:700;letter-spacing:0;margin-left:6px}
+.card{background:var(--card);border-radius:18px;padding:16px 18px}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--dim);font-weight:700;display:flex;justify-content:space-between;gap:8px}
+.card h3 span:last-child{font-weight:500}
+/* 六列狀態 */
+.lies{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:600px){.lies{grid-template-columns:repeat(3,minmax(0,1fr))}}
+[data-lie]{background:var(--bg);border-radius:12px;padding:9px 11px 10px;border-top:3px solid var(--blue);font-size:12px;color:var(--dim);line-height:1.45;min-width:0}
+[data-lie].w{border-top-color:var(--white)}
+[data-lie] .hd{display:flex;justify-content:space-between;align-items:baseline;gap:6px;color:var(--ink)}
+[data-lie] .hd b{font-size:17px}
+[data-lie] .hd em{font-style:normal;font-weight:700}
+[data-lie].w .hd em{color:var(--white)}[data-lie].b .hd em{color:var(--blue)}
+[data-lie] .bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--rule);margin:7px 0 6px}
+[data-lie] .bar i{height:100%}
+[data-lie] .st{display:flex;justify-content:space-between;gap:6px;color:var(--ink);font-weight:700;font-size:13px}
+[data-lie] .st .n{color:var(--dim);font-weight:500;white-space:nowrap}
+[data-lie] .st .done{color:var(--team)}[data-lie] .st .enter{color:var(--team)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:12px}
+.legend span{display:flex;gap:5px;align-items:center}.legend i{width:10px;height:10px;border-radius:3px}
+/* 口令表 */
+ol.cues{list-style:none;margin:0;padding:0}
+.cues li{display:grid;grid-template-columns:58px 1fr;gap:2px 10px;padding:9px 0;border-top:1px solid var(--rule);color:var(--dim);cursor:pointer;border-radius:6px}
+.cues li:first-child{border-top:0}
+.cues li time{font-weight:700;grid-row:span 2;align-self:start;line-height:1.5}
+.cues li .h{font-weight:700;font-size:16px;color:inherit;line-height:1.5}
+.cues li .d{font-size:13px;line-height:1.5}
+.cues li.done .h{text-decoration:line-through;text-decoration-color:var(--rule);text-decoration-thickness:2px}
+.cues li.cur{color:var(--ink)}.cues li.cur time{color:var(--team)}
+.sum{font-size:13px;color:var(--dim);margin:12px 0 0;line-height:1.6}
+.sum b{color:var(--ink)}
+/* 地圖與時間列 */
+canvas{display:block;width:100%;height:440px;border-radius:12px}
+.deck{display:flex;gap:10px;align-items:center;margin-top:14px}
+.deck button.play{width:48px;height:48px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);display:grid;place-items:center;flex:none}
+.deck input{flex:1;min-width:0;accent-color:var(--team)}
+.deck output{min-width:52px;text-align:right;font-weight:700}
+.note{color:var(--dim);font-size:13px;margin:24px 0 0;max-width:72ch}
+@media(max-width:520px){.pick{gap:4px}.pick button{height:46px;font-size:17px;border-radius:10px}canvas{height:300px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+ <div><a class="back" href="index.html">‹ 進場動線 2c</a><h1>2c · 口令卡</h1></div>
+ <p class="who">大隊長用：選一個大隊，整頁換成大隊色；口令依時刻排序，點一條就跳到那一刻。</p>
+</header>
+<div class="pick" id="pick" role="group" aria-label="選擇大隊"></div>
+<div class="grid two">
+ <div class="grid">
+  <section class="next"><small id="nx-k">讀取動線資料…</small><h2 id="nx-h" aria-live="polite"></h2><p id="nx-d"></p><div class="count" id="nx-c"></div></section>
+  <section class="card"><h3><span id="lies-h">六列狀態</span><span id="lies-n"></span></h3><div class="lies" id="lies"></div>
+   <div class="legend"><span><i style="background:#56636a"></i>休息區</span><span><i style="background:var(--dim)"></i>走廊樓梯</span><span><i style="background:var(--team);opacity:.55"></i>集結等待</span><span><i style="background:var(--team)"></i>進場中</span><span><i style="background:var(--ink)"></i>已到位</span></div>
+   <div class="deck"><button class="play" id="play" aria-label="播放"><svg width="14" height="16" viewBox="0 0 14 16" id="ico" aria-hidden="true"><path d="M1 1v14l12-7z" fill="currentColor"/></svg></button><input type="range" id="tl" min="0" step=".1" aria-label="示意時間"><output id="clk" for="tl"></output></div>
+  </section>
+ </div>
+ <div class="grid" style="align-content:start">
+  <section class="card"><h3><span>口令表</span><span id="cue-n"></span></h3><ol class="cues" id="cues"></ol><p class="sum" id="sum"></p></section>
+  <section class="card" style="padding:8px"><canvas id="c" aria-label="本大隊位置圖：只亮本大隊，其他人淡灰"></canvas></section>
+ </div>
+</div>
+<p class="note">時間為動畫示意（mm:ss），不是現場秒數；1 單位 ≈ 7.6 m，步速 1.1 單位/秒。資料來自同一份 <code>data.json</code>。</p>
+</div>
+<script src="core.js"></script>
+<script>
+'use strict';
+const {pos,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
+Dome.nav('captain.html');
+const TEAM=['#e05d63','#d9ae3a','#79c25a','#b688dd','#f0a050','#bfc35a','#e586bd','#c9945e','#4fc2b4'];
+const STATE_ZH={seated:'休息區',walk:'走廊樓梯',wait:'集結等待',enter:'進場中',done:'已到位'};
+const ST=[['seated','#56636a'],['walk','#a3b0ae'],['wait','TEAMA'],['enter','TEAM'],['done','#f1f3ef']];
+const clampK=n=>Math.max(1,Math.min(9,Math.round(Number(n))||1));
+let k=clampK(new URLSearchParams(location.search).get('k')),t=0,playing=false,last=0,dirty=true,ds=null,gs=[],ps=[],lies=[],cues=[];
+$('pick').innerHTML=TEAM.map((c,i)=>`<button type="button" data-k="${i+1}" aria-pressed="${i+1===k}" aria-label="大隊 ${i+1}">${i+1}<i style="background:${c}"></i></button>`).join('');
+$('pick').onclick=e=>{const b=e.target.closest('button');if(b)choose(+b.dataset.k);};
+
+// 口令序列：全部取自 groups／files／persons 既有時刻，依時間排序。
+function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),prev=ds.groups.filter(g=>g.dadui===k-1);
+ const first=lies.reduce((a,f)=>f.tLeave<a.tLeave?f:a),lastP=ps.reduce((a,p)=>p.t.leave>a.t.leave?p:a),lastF=lies.find(f=>f.lie===lastP.lie);
+ const staged=gs.filter(g=>g.assembly!=='FEEDER');
+ const list=[
+  {id:'leave-first',t:first.tLeave,h:'第一位離座',d:`${first.costume}${k} 列 ${first.lie} 先起身：${ds.exitName(first.exit)}，上走廊走 ${ds.laneName(first.lane)}`},
+  {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastF.costume}${k} 列 ${lastF.lie} 最後一位離開 ${lastF.exit} 出口，本大隊休息區清空`},
+  W.assembly==='FEEDER'
+   ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exit).join('、')} 出口依 6口 時刻直接接尾`}
+   :{id:'white',t:W.tAssembly,h:'白衣到齊',d:`${W.key} ${W.population} 人站定 · ${ds.nodeName(W.assembly)}`},
+  {id:'blue',t:B.tAssembly,h:'藍衣到齊',d:`${B.key} ${B.population} 人站定 · ${ds.nodeName(B.assembly)}`},
+  ...(prev.length?[{id:'handover',t:Math.max(...prev.map(g=>g.tGateLast)),h:'6口 交接',d:`大隊 ${k-1} 最後一位過 6口，六路接著換本大隊`}]:[]),
+  {id:'go',t:Math.min(...gs.map(g=>g.tGateFirst)),h:`大隊 ${k} 出發`,d:`六路並排往 6口，北三路白、南三路藍${staged.length?`（集結區 ${fmt(Math.min(...staged.map(g=>g.tEnter)))} 起步）`:''}`},
+  {id:'gate-last',t:Math.max(...gs.map(g=>g.tGateLast)),h:'最後一位過 6口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊，6口 收'},
+  {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];
+ return list.sort((a,b)=>a.t-b.t);}
+
+function lieState(c,n){if(c.done===n)return 'done';if(c.enter||c.done)return 'enter';if(c.wait===n)return 'wait';if(c.walk||c.wait)return 'walk';return 'seated';}
+
+function choose(n){k=clampK(n);document.documentElement.style.setProperty('--team',TEAM[k-1]);
+ $('pick').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.k===k));
+ try{history.replaceState(null,'',`?k=${k}`);}catch(e){}
+ if(!ds)return;
+ document.title=`進場動線 2c · 口令卡 · 大隊 ${k}`;
+ gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
+ lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.lie-b.lie).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));
+ cues=cuesFor();
+ $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${fmt(c.t)} ${c.h}"><time>${fmt(c.t)}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
+ $('cue-n').textContent=`${cues.length} 條 · ${fmt(cues[0].t)}–${fmt(cues[cues.length-1].t)}`;
+ $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
+ $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
+ const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exit).join('/');
+ $('sum').innerHTML=`<b>${W.key}</b> 列 ${cols(W)}（${W.population} 人，出口 ${exits(W)}，${ds.nodeName(W.assembly)}）；<b>${B.key}</b> 列 ${cols(B)}（${B.population} 人，出口 ${exits(B)}，${ds.nodeName(B.assembly)}）。6口 六路由北數：白 A·B·C、藍 A·B·C。`;
+ $('tl').min=Math.max(0,cues[0].t-3);$('tl').max=Math.min(ds.T_END,cues[cues.length-1].t+1);t=+$('tl').min;
+ v.fit(Dome.bounds(ps.flatMap(p=>p.path.map(q=>[q[0],q[1]])),.6),true);dirty=true;}
+
+$('cues').onclick=e=>{const li=e.target.closest('[data-t]');if(li){t=+li.dataset.t;dirty=true;}};
+$('cues').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const li=e.target.closest('[data-t]');if(li){e.preventDefault();t=+li.dataset.t;dirty=true;}}};
+const v=new View($('c'),{pad:10});v.onresize=()=>{dirty=true;};
+
+function draw(){const team=TEAM[k-1],D=ds.D;
+ for(const l of lies){const el=$('lies').querySelector(`[data-lie="${l.lie}"]`),c=counts(t,l.ps),n=l.ps.length,s=lieState(c,n);
+  el.querySelectorAll('.bar i').forEach(i=>{const st=i.dataset.s,col=ST.find(x=>x[0]===st)[1];i.style.width=c[st]/n*100+'%';i.style.background=col==='TEAM'?team:col==='TEAMA'?team+'8c':col;});
+  const sp=el.querySelector('.st .s');sp.textContent=STATE_ZH[s];sp.className='s '+s;el.querySelector('.st .n').textContent=`已到位 ${c.done}/${n}`;}
+ const i=cues.findIndex(c=>c.t>t),nx=cues[i<0?cues.length-1:i];
+ $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令 · ${fmt(nx.t)}`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
+ $('nx-c').innerHTML=i<0?'完成':`${fmt(nx.t-t)}<span>後</span>`;
+ $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
+ $('clk').textContent=fmt(t);$('tl').value=t;
+ const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',corridor:'#2d383b'});
+ c.globalAlpha=.16;for(const p of ps)v.stroke(p.path.flatMap(q=>[q[0],q[1]]),p.costume==='白'?'#f3eee4':'#5a9be8',1);c.globalAlpha=1;
+ const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
+ for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':'#5a9be8');}
+ const mine=new Set(gs.flatMap(g=>['A','B','C'].map(L=>g.lanes[L].exit)));
+ for(const s of D.map.stands)if(mine.has(s.sec))v.text(s.sec,s.labelXY[0],s.labelXY[1],{color:'#f1f3ef',size:11,weight:700,halo:'#11171a'});
+ for(const g of gs){const key=g.assembly==='STAIR'?'STAIR_TOP':g.assembly,nd=D.nodes[key];if(nd)v.text(nd.label,nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}
+ v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',dx:-18});}
+
+function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
+$('play').onclick=()=>{playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();};
+$('tl').oninput=e=>{t=+e.target.value;dirty=true;};
+function frame(n){if(ds){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty){draw();dirty=false;}}requestAnimationFrame(frame);}
+(async()=>{try{ds=await Dome.load();}catch(e){$('nx-k').textContent=e.message;return;}
+ choose(k);draw();dirty=false;window.__dome_ready=true;requestAnimationFrame(frame);})();
+window.__seek=x=>{t=x;dirty=true;};
+</script>
+</body>
+</html>
