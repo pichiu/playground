@@ -25,14 +25,18 @@ function dataset(D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
        west:bounds([...D.map.stands.flatMap(s=>pairs(s.poly)),...pairs(D.map.b2Corridor),...P.map(p=>[p.field.X,p.field.Y])],.5)}};}
 
 function dataUrl(){return new URLSearchParams(location.search).get('data')||'data.json';}
+// ?data= 只為測試失敗路徑而存在：只接受同資料夾下的相對路徑，拒絕絕對網址與 //
+const SAFE_DATA=/^(?!\/)(?![a-z][a-z0-9+.-]*:)(?!.*\/\/)[\w.\-\/]+$/i;
 let cache=null;
 function load(){if(cache)return cache;
-  cache=(async()=>{let r;try{r=await fetch(dataUrl());}catch(e){throw new Error('讀不到動線資料 '+dataUrl());}
-    if(!r.ok)throw new Error(`讀不到動線資料 ${dataUrl()}（HTTP ${r.status}）`);return dataset(await r.json());})();
+  cache=(async()=>{const url=dataUrl();if(!SAFE_DATA.test(url))throw new Error('data 參數只接受相對路徑（例如 data.json）');
+    let r;try{r=await fetch(url);}catch(e){throw new Error('讀不到動線資料 '+url);}
+    if(!r.ok)throw new Error(`讀不到動線資料 ${url}（HTTP ${r.status}）`);return dataset(await r.json());})();
   cache.catch(e=>{cache=null;fail(e);});
   return cache;}
 function fail(err){let b=document.getElementById('dome-err');if(!b){b=document.createElement('p');b.id='dome-err';b.setAttribute('role','alert');b.style.cssText='position:fixed;left:16px;right:16px;bottom:16px;z-index:50;margin:0 auto;max-width:560px;padding:12px 16px;border-radius:10px;background:#3a1d14;color:#fde7dc;font:14px/1.6 "Noto Sans TC",system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25)';document.body.append(b);}
-  b.innerHTML=`${err.message}。這些頁面讀同一份 data.json，需要經由網頁伺服器開啟（GitHub Pages 或 <code>python3 -m http.server</code>）；網路斷線時重新整理即可重試。`;}
+  b.textContent='';const m=document.createElement('b');m.textContent=err.message;const c=document.createElement('code');c.textContent='python3 -m http.server';   // 訊息可能含網址參數：一律當文字，不當 HTML
+  b.append(m,'。這些頁面讀同一份 data.json，需要經由網頁伺服器開啟（GitHub Pages 或 ',c,'）；網路斷線時重新整理即可重試。');}
 
 // 七頁同一條導覽列。mount 未給時放在 body 最前面；console 等滿版頁把它掛在自己的角落。
 const NAV=[['index.html','總覽'],['console.html','指揮台'],['me.html','我的路'],['score.html','總譜'],['handout.html','講義'],['captain.html','口令卡'],['exit.html','出口卡']];

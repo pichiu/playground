@@ -21,3 +21,17 @@ def test_fetch_failure_banner(open_page):   # Review Focus 5：資料讀不到�
     pg, *_ = open_page('index.html?data=missing.json', 1280)
     pg.wait_for_selector('#dome-err', timeout=20000)
     assert 'http.server' in pg.inner_text('#dome-err')
+
+
+def test_data_param_is_not_injected(open_page):   # review：錯誤橫幅不得把 ?data= 當 HTML
+    payload = '%3Cimg%20src%3Dx%20onerror%3D%22window.__pwned%3D1%22%3E'
+    pg, errs, perrs = open_page(f'index.html?data={payload}', 1280)
+    pg.wait_for_selector('#dome-err', timeout=20000)
+    assert pg.evaluate('window.__pwned') is None
+    assert pg.locator('#dome-err img').count() == 0
+
+
+def test_data_param_rejects_absolute_url(open_page):
+    pg, *_ = open_page('index.html?data=https://example.com/x.json', 1280)
+    pg.wait_for_selector('#dome-err', timeout=20000)
+    assert '相對路徑' in pg.inner_text('#dome-err')
