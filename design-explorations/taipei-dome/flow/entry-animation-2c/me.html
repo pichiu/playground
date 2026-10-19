@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>進場動線 2c · 我的路</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+:root{--bg:#f4f1ea;--paper:#fffdf8;--ink:#1d2b33;--dim:#5e6b70;--rule:#e2ddd1;--blue:#1d5fae;--blue-soft:#e3ecf7;--sand:#d9d2c2;--floor:#ebe6da;--go:#c8541f;--ghost:#8c97a0;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11181c;--paper:#182227;--ink:#e8ece8;--dim:#9aa8aa;--rule:#2a363b;--blue:#6aa6ec;--blue-soft:#1d3247;--sand:#3a4648;--floor:#1c272b;--go:#f08a52;--ghost:#6f7d82;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#11181c;--paper:#182227;--ink:#e8ece8;--dim:#9aa8aa;--rule:#2a363b;--blue:#6aa6ec;--blue-soft:#1d3247;--sand:#3a4648;--floor:#1c272b;--go:#f08a52;--ghost:#6f7d82;color-scheme:dark}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--blue);color:var(--paper)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+[hidden]{display:none!important}
+.dome-nav.bar{--line:var(--rule)}
+.wrap{max-width:1080px;margin:auto;padding:16px max(16px,env(safe-area-inset-left)) 40px;overflow-x:hidden}
+.ask{margin:4px 0 18px}
+.ask h1{font-size:28px;line-height:1.25;margin:0 0 14px;font-weight:900;letter-spacing:.02em}
+.id{display:flex;align-items:stretch;gap:8px;min-width:0}
+.id label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;background:var(--paper);border:1.5px solid var(--rule);border-radius:14px;padding:8px 14px}
+.id label:focus-within{border-color:var(--blue)}
+.id small{font-size:13px;color:var(--dim)}
+.id input{border:0;background:none;font-size:34px;font-weight:700;width:100%;min-width:0;padding:0;line-height:1.2;outline:none}
+.id input::placeholder{color:var(--sand);font-weight:500}
+.id .dash{align-self:center;font-size:28px;color:var(--dim)}
+.id button{background:var(--blue);color:var(--paper);border:0;border-radius:14px;padding:0 20px;font-weight:700;font-size:17px;cursor:pointer;flex:none}
+.err{color:var(--go);font-size:14px;min-height:1.6em;margin:6px 0 0}
+.hint{color:var(--dim);font-size:14px;margin:6px 0 0}
+.grid{display:grid;gap:18px}
+@media(min-width:900px){.grid{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}.mapcol{position:sticky;top:16px}}
+.who{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:0 2px 10px;flex-wrap:wrap}
+.who b{font-size:22px}.who span{color:var(--dim);font-size:14px}
+.mapbox{background:var(--paper);border:1px solid var(--rule);border-radius:18px;overflow:hidden}
+canvas{display:block;width:100%;height:min(62vh,520px)}
+.scrub{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--rule)}
+.scrub button{width:44px;height:44px;border-radius:50%;border:0;background:var(--ink);color:var(--paper);display:grid;place-items:center;cursor:pointer;flex:none}
+.scrub input{flex:1;min-width:0;accent-color:var(--blue)}
+.scrub output{font-weight:700;min-width:48px;text-align:right}
+.orient{font-size:13px;color:var(--dim);padding:8px 14px 12px}
+ol.steps{list-style:none;margin:0;padding:0;position:relative}
+ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;width:2px;background:var(--rule)}
+.step{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:6px 0;cursor:pointer;border-radius:14px}
+.step .dot{width:44px;height:44px;border-radius:50%;background:var(--paper);border:2px solid var(--rule);display:grid;place-items:center;font-weight:700;font-size:15px;position:relative;z-index:1}
+.step.past .dot{background:var(--sand);border-color:var(--sand);color:var(--ink)}
+.step.now .dot{background:var(--blue);border-color:var(--blue);color:var(--paper)}
+.step .body{padding:6px 14px 12px;border-radius:14px;min-width:0}
+.step.now .body{background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(20,40,60,.07)}
+.step h2{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.step h2 time{color:var(--blue);font-size:17px;white-space:nowrap}
+.step h2 time small{color:var(--dim);font-weight:400;font-size:12px;margin-right:5px}
+.step p{margin:4px 0 0;color:var(--dim);font-size:15px;overflow-wrap:anywhere}
+.step p strong{color:var(--ink)}
+.step:hover .body{background:var(--paper)}
+.wait{display:inline-block;margin-top:6px;font-size:13px;background:var(--blue-soft);color:var(--blue);border-radius:999px;padding:2px 10px;font-weight:500}
+.buddy{margin-top:18px;background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.buddy div{font-size:14px;color:var(--dim)}.buddy b{display:block;font-size:24px;color:var(--ink)}
+.buddy p{grid-column:1/-1;margin:0;font-size:13px;color:var(--dim)}
+.loading{color:var(--dim);padding:24px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="ask">
+ <h1>你的身分證位置是？</h1>
+ <form class="id" id="f" novalidate>
+  <label><small>列</small><input id="lie" inputmode="numeric" autocomplete="off" placeholder="1–54" aria-label="列"></label>
+  <span class="dash" aria-hidden="true">–</span>
+  <label><small>排</small><input id="pai" inputmode="numeric" autocomplete="off" placeholder="1–34" aria-label="排"></label>
+  <button type="submit">查</button>
+ </form>
+ <p class="err" id="notfound" role="status" hidden></p>
+ <p class="hint" id="hint">輸入身分證上的列與排，或用網址 <code>me.html?id=列-排</code>。</p>
+</section>
+<div class="grid" id="main" hidden>
+ <div class="mapcol">
+  <div class="who"><b id="who"></b><span id="meta"></span></div>
+  <div class="mapbox">
+   <canvas id="c" aria-label="你的動線地圖，甲舞台朝上"></canvas>
+   <div class="scrub"><button id="play" type="button" aria-label="播放我的路"><svg width="14" height="16" viewBox="0 0 14 16" id="ico" aria-hidden="true"><path d="M1 1v14l12-7z" fill="currentColor"/></svg></button><input type="range" id="tl" min="0" max="1" step=".01" aria-label="我的時間軸"><output id="clk">00:00</output></div>
+   <div class="orient" id="orient"></div>
+  </div>
+ </div>
+ <div>
+  <ol class="steps" id="steps"><li class="loading">讀取動線資料…</li></ol>
+  <div class="buddy" id="buddy"></div>
+ </div>
+</div>
+</div>
+<script src="core.js"></script>
+<script>
+'use strict';
+const {pos,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+Dome.nav('me.html');
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go','ghost'])C[n]=css(n);};readC();
+let v=null,ds=null,me=null,t=0,playing=false,last=0,dirty=true,steps=[],maps=null;
+const NOTFOUND='西一＋桃竹只有第 1–54 列，每列最多 34 位';
+const SIDE={N:'北',S:'南'};
+const seatOf=p=>`${p.rest.sec} 區 ${p.rest.pai} 排 ${p.rest.no} 號`;
+// 全形數字轉半形、去空白；列與排都只接受 1–3 位數字。
+const norm=s=>String(s??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/\s+/g,'');
+function parseId(lie,pai){lie=norm(lie);pai=norm(pai);if(!/^[0-9]{1,3}$/.test(lie)||!/^[0-9]{1,3}$/.test(pai))return null;return [+lie,+pai];}
+// 同一路樓梯序、6口 同一路序號 → 人，兩張表只建一次。
+function indexes(d){if(maps)return maps;const lane=new Map,gate=new Map;for(const p of d.P){lane.set(p.lane+'|'+p.laneIdx,p);gate.set(p.gateLane+'|'+p.gateIdx,p);}return maps={lane,gate};}
+// 幾何：第一個落在 B1 走廊 0.35 單位內的路徑點 = 走到走廊；路徑最接近樓梯口 0.3 單位內的時刻 = 過樓梯口。
+function distSeg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy||1;const k=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l));return Math.hypot(ax+dx*k-px,ay+dy*k-py);}
+function nearPoly(x,y,flat,r){for(let i=0;i+3<flat.length;i+=2)if(distSeg(x,y,flat[i],flat[i+1],flat[i+2],flat[i+3])<r)return true;return false;}
+function tAtVertex(p,test,from){for(const q of p.path)if(q[2]>=from&&test(q[0],q[1]))return q[2];return null;}
+function tNearPoint(p,X,Y,r,from){const a=p.path;for(let i=0;i+1<a.length;i++){const u=a[i],w=a[i+1];if(w[2]<from)continue;const dx=w[0]-u[0],dy=w[1]-u[1],l=dx*dx+dy*dy;const k=l?Math.max(0,Math.min(1,((X-u[0])*dx+(Y-u[1])*dy)/l)):0;if(Math.hypot(u[0]+dx*k-X,u[1]+dy*k-Y)<r){const tt=u[2]+(w[2]-u[2])*k;if(tt>=from)return tt;}}return null;}
+function pathIn(p,a,b){const pts=p.path.filter(q=>q[2]>a&&q[2]<b).map(q=>[q[0],q[1]]);const s=pos(p,a),e=pos(p,b);return [[s[0],s[1]],...pts,[e[0],e[1]]];}
+
+function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
+ const i=order[p.exitSeq]===p.id?p.exitSeq:order.indexOf(p.id),prev=i>0?order[i-1]:null,next=i>=0&&i<order.length-1?order[i+1]:null;
+ const ahead=indexes(d).lane.get(p.lane+'|'+(p.laneIdx-1));
+ const feeder=p.assembly==='FEEDER',holdB1=p.assembly==='P6';
+ const tExit=tAtVertex(p,(x,y)=>nearPoly(x,y,D.map.b1Corridor,.35),s.leave+.01)??s.leave+Math.hypot(p.rest.X-ex.entry[0],p.rest.Y-ex.entry[1])/(D.meta.speedUnitPerSec||1.1);
+ const ST=D.nodes.STAIR_TOP,tStair=tNearPoint(p,ST.X,ST.Y,.3,tExit);
+ const tWalkEnd=feeder?s.enter:holdB1?s.assembly:Math.min(tStair??s.assembly,s.assembly);
+ const aheadTxt=!ahead?'你是這一路的第一位':ahead.exit===p.exit?`跟在 <strong>${ahead.id}</strong> 後面`:`<strong>${ahead.id}</strong>（${ahead.exit} 出口）在你前面接上`;
+ const seat=[p.rest.X,p.rest.Y];
+ return [
+  {k:'起',h:'離座',t:s.leave,show:s.leave,tl:'',pts:[seat,...pathIn(p,s.leave,s.leave+2)],pad:2,
+   d:`從 <strong>${seatOf(p)}</strong> 起身。你是 <strong>${p.exit} 出口第 ${i+1} 位</strong>（共 ${ex.used} 位）；${prev?`前一位 <strong>${prev}</strong>`:'<strong>你是第一位</strong>'}，${next?`後一位 <strong>${next}</strong>`:'<strong>你是最後一位</strong>'}。`},
+  {k:'出',h:'出口',t:s.leave+.8,show:tExit,tl:'到走廊',pts:pathIn(p,s.leave,tExit+1),pad:1.4,
+   d:`往<strong>${SIDE[ex.side]||''}側</strong>走道出去，上 <strong>${ex.stairLabel}</strong>，到 B1 走廊。`},
+  {k:'走',h:'走廊',t:tExit,show:tWalkEnd,tl:feeder?'下樓':holdB1?'停下':'過樓梯口',pts:pathIn(p,tExit,tWalkEnd),pad:1.6,
+   d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。${feeder?'走到樓梯口直接下 B2':holdB1?'走到白 3 候隊位置停下，不下樓':p.assembly==='STAIR'?'過樓梯口，在樓梯上站定':'過樓梯口下 B2'}。`},
+  feeder
+   ?{k:'集',h:'集結',t:s.enter,show:s.enter,tl:'下樓',pts:pathIn(p,s.enter-4,s.enter+4),pad:1.6,
+     d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到 6口</strong>，不進集結區。`}
+   :{k:'集',h:'集結',t:s.assembly,show:s.assembly,tl:'站定',pts:pathIn(p,s.assembly-6,s.assembly+.1),pad:1.6,w:s.enter-s.assembly,
+     d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。`},
+  {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過 6口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
+   d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>6口 第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過 6口。`},
+  {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
+   d:`過 6口 後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
+ ];}
+
+function build(){$('main').hidden=false;$('hint').hidden=true;
+ if(!v){v=new View($('c'),{rotate:true,pad:28});v.onresize=()=>{dirty=true;};}
+ $('who').textContent=me.id;$('meta').textContent=`大隊 ${me.dadui} · ${me.costume}衣 · ${me.a} · ${me.exit} 出口 · ${me.lane} 路`;
+ steps=stepsFor(ds,me);
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${x.tl?`<small>${x.tl}</small>`:''}${fmt(x.show)}</time></h2><p>${x.d}</p>${x.w?`<span class="wait">要等 ${fmt(x.w)}（示意時間）</span>`:''}</div></li>`).join('');
+ const {gate}=indexes(ds),ahead=gate.get(me.gateLane+'|'+(me.gateIdx-1)),behind=gate.get(me.gateLane+'|'+(me.gateIdx+1));
+ $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時 6口 第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
+ $('orient').textContent='甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';
+ const lo=me.t.leave-4,hi=me.t.arrive+2;$('tl').min=lo;$('tl').max=hi;t=lo;playing=false;setIco();focusStep(-1);}
+function focusStep(i){const pts=i<0?me.path.map(q=>[q[0],q[1]]):steps[i].pts;v.fit(bounds(pts,i<0?.8:steps[i].pad));dirty=true;}
+$('steps').onclick=e=>{const li=e.target.closest('.step');if(!li||!me)return;const i=+li.dataset.i;playing=false;setIco();t=steps[i].t;focusStep(i);};
+$('steps').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){const li=e.target.closest('.step');if(li){e.preventDefault();li.click();}}};
+
+function showNotFound(extra){const nf=$('notfound');nf.textContent=NOTFOUND+(extra?'；'+extra:'');nf.hidden=false;}
+function lookup(lieRaw,paiRaw){const id=parseId(lieRaw,paiRaw),p=id?ds.byId.get(id[0]+'-'+id[1]):null;
+ if(!p){let extra='';if(id){const ps=ds.P.filter(q=>q.lie===id[0]).map(q=>q.pai);if(ps.length)extra=`第 ${id[0]} 列是排 ${Math.min(...ps)}–${Math.max(...ps)}`;}
+  showNotFound(extra);return false;}
+ $('notfound').hidden=true;$('lie').value=p.lie;$('pai').value=p.pai;me=p;build();
+ try{history.replaceState(null,'','?id='+p.id);}catch(e){}
+ return true;}
+// 網址 ?id=列-排 只收半形數字；格式不對就提示，並把能辨認的數字填進輸入格，按「查」即可。
+function fromUrl(raw){const m=/^([0-9]{1,3})-([0-9]{1,3})$/.exec(raw.trim());if(m){lookup(m[1],m[2]);return;}
+ const parts=norm(raw).split(/[-－–—]/);if(parts.length===2){$('lie').value=parts[0];$('pai').value=parts[1];}
+ showNotFound('網址請寫成 ?id=列-排（半形數字，例如 ?id=1-28）');}
+$('f').onsubmit=e=>{e.preventDefault();if(ds)lookup($('lie').value,$('pai').value);};
+function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';}
+$('play').onclick=()=>{if(!me)return;playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();if(playing)focusStep(-1);};
+$('tl').oninput=e=>{t=+e.target.value;dirty=true;};
+
+function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.sand,wallW:1.5,band:C.sand,bandA:.35,lane:C.sand,laneA:.3,stand:C.sand});
+ for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:12});
+ for(const l of D.map.labels)if(l.s==='甲舞台')v.text(l.s,l.X,l.Y,{color:C.dim,size:13,weight:700});
+ const r=Math.max(2.5,.04*v.s);
+ for(const q of P)if(q.lie===me.lie&&q!==me){const x=pos(q,t);v.dot(x[0],x[1],r,null,C.blue,1.2);}
+ const pts=me.path,past=pts.filter(q=>q[2]<=t).flatMap(q=>[q[0],q[1]]),fut=pts.filter(q=>q[2]>t).flatMap(q=>[q[0],q[1]]),now=pos(me,t);
+ v.stroke([...fut.length?[now[0],now[1]]:[],...fut],C.go,2.5,[2,5]);v.stroke([...past,now[0],now[1]],C.go,3.5);
+ v.dot(me.field.X,me.field.Y,7,null,C.go,2);
+ v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
+ v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
+ const nd=D.nodes[me.assembly==='STAIR'?'STAIR_TOP':me.assembly];
+ if(nd)v.text(ds.nodeName(me.assembly).replace(/（.*）$/,''),nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
+ $('clk').textContent=fmt(t);$('tl').value=t;
+ const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
+function frame(n){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*4);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v&&v.step(n))dirty=true;if(dirty&&me&&v){draw();dirty=false;}requestAnimationFrame(frame);}
+
+(async()=>{try{ds=await Dome.load();}catch(e){$('steps').innerHTML='';return;}
+ const q=new URLSearchParams(location.search);
+ if(q.has('id'))fromUrl(q.get('id')||'');
+ requestAnimationFrame(function first(n){frame(n);window.__dome_ready=true;});})();
+window.__seek=x=>{if(me){t=me.t.leave+x*(me.t.arrive-me.t.leave);dirty=true;}};
+</script>
+</body>
+</html>
