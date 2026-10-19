@@ -77,7 +77,11 @@ canvas{display:block;width:100%;height:100%}
 .track.has-labels{margin-left:44px}
 .cmp-mode .legend{display:none}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim)}
-@media(max-width:860px){.focus,.legend{display:none}.title p{display:none}.clock{top:auto;bottom:24px;right:16px;max-width:150px}.clock b{font-size:34px}.clock span{display:block}.title h1{font-size:20px}.flows{width:180px;left:16px}.deck{padding:10px 16px;grid-template-columns:1fr}.title{left:16px}.maps.cmp{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.pane+.pane{border-left:0;border-top:1px solid var(--line)}.cmp-mode .flows{display:none}.cmp-mode .clock{bottom:auto;top:14px}.cmp-mode .clock b{font-size:28px}.cmp-mode .clock .phase,.cmp-mode .title h1{display:none}.pane h2{bottom:8px;font-size:13px}}
+@media(max-width:860px){.focus,.legend{display:none}.title p{display:none}.clock{top:auto;bottom:24px;right:16px;max-width:150px}.clock b{font-size:34px}.clock span{display:block}.title h1{font-size:20px}.flows{width:180px;left:16px}.deck{padding:10px 16px;grid-template-columns:1fr}.title{left:16px}.maps.cmp{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.pane+.pane{border-left:0;border-top:1px solid var(--line)}.cmp-mode .flows{display:none}.cmp-mode .clock{bottom:auto;top:14px}.cmp-mode .clock b{font-size:28px}.cmp-mode .clock .phase,.cmp-mode .title h1{display:none}.pane h2{bottom:8px;font-size:13px}.cmp-mode .maps{padding-top:62px}.cmp-mode .pane{display:flex;flex-direction:column}.cmp-mode .pane canvas{flex:1 1 0;height:auto;min-height:0}.cmp-mode .pane h2{position:static;transform:none;align-self:center;margin:2px 0 6px;font-size:12px;padding:2px 12px}.cmp-mode .clock b{font-size:24px}.cmp-mode .clock>span:last-child{display:none}}
+/* 手機橫放：高度只剩三百多 px，兩圖上下疊會被壓扁，改為左右並排 */
+@media(max-width:860px) and (orientation:landscape){.maps.cmp{grid-template-columns:1fr 1fr;grid-template-rows:1fr}.pane+.pane{border-top:0;border-left:1px solid var(--line)}}
+/* 矮螢幕（手機橫放）：播放列收成一行，標題／圖例／流量柱收起，高度留給地圖；頂端只留返回、版本切換與時間 */
+@media(max-height:500px){.deck{grid-template-columns:auto 1fr;padding:6px 16px;gap:12px}.play{width:40px;height:40px}.speed button{padding:4px 8px}.title h1,.title p,.legend,.flows,.focus{display:none}.maps{padding-top:50px}.clock{top:10px;bottom:auto;right:16px;max-width:none}.clock b{font-size:24px}.clock span{display:inline}.clock>span:last-child{display:none}.pane h2{bottom:6px;font-size:12px}}
 </style>
 </head>
 <body>
