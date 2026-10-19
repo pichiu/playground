@@ -34,5 +34,5 @@ def test_no_dangling_links(root):   # 掃 taipei-dome 下所有 html 的相對 h
 def test_git_grep_clean(root):
     repo = root.parents[3]   # playground/
     assert (repo / '.git').exists()
-    r = subprocess.run(['git', 'grep', '-n', 'entry-animation-v2', '--', 'design-explorations'], capture_output=True, text=True, cwd=repo)
+    r = subprocess.run(['git', 'grep', '-n', 'entry-animation-v2', '--', 'design-explorations', ':!*/tests/*'], capture_output=True, text=True, cwd=repo)   # 排除本測試自己
     assert r.returncode == 1 and r.stdout == '', r.stdout[:500]
