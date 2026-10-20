@@ -37,7 +37,12 @@ def test_build_no_avoid(root, tmp_path):
     assert set(D) >= {'meta', 'phases', 'nodes', 'map', 'restSeats', 'exits', 'lanes', 'groups', 'files', 'persons', 'others', 'stairSlots', 'zones'}
     assert len(D['exits']) == 7 and len(D['groups']) == 18 and len(D['files']) == 54 and D['meta']['population'] == 1609
     assert sum(1 for s in D['restSeats'] if s['who']) == 1609 and D['meta']['tEnd'] == max(p['t']['arrive'] for p in P.values())
-    assert [k['key'] for k in D['phases']] == ['seated', 'descend', 'hold', 'enter']
+    assert [k['key'] for k in D['phases']] == ['seated', 'descend', 'enter']
+    assert all(a['t1'] == b['t0'] for a, b in zip(D['phases'], D['phases'][1:]))
+    # 兩個時鐘重疊：大隊 1 不等全部集結完就出發，樓梯在白3 與白4 之間不留大空檔
+    assert D['meta']['tGateStart'] < max(p['t']['assembly'] for p in staged)
+    G = {g['key']: g for g in D['groups']}
+    assert G['白4']['tStairFirst'] - G['白3']['tStairLast'] < 10
     rows = list(csv.DictReader(open(tmp_path / 'seats.csv', encoding='utf-8')))
     assert len(rows) == 1609 and list(rows[0]) == COLUMNS
     assert rows[0]['位置編碼'] == '1-1' and rows[0]['出口'] == '140'

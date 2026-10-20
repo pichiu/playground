@@ -125,6 +125,8 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastF.costume}${k} 列 ${lastF.lie} 最後一位離開 ${lastF.exit} 出口，本大隊休息區清空`},
   W.assembly==='FEEDER'
    ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exit).join('、')} 出口依西一入口時刻直接接尾`}
+   :W.tAssembly>W.tEnter   // 隊頭站定就出發：最後一位到時隊頭已經在走（白1、白2）
+   ?{id:'white',t:W.tAssembly,h:'白衣最後一位到',d:`${W.key} 邊到邊走：隊頭 ${fmt(W.tEnter)} 已起步，最後一位 ${fmt(W.tAssembly)} 到 ${ds.nodeName(W.assembly)}`}
    :{id:'white',t:W.tAssembly,h:'白衣到齊',d:`${W.key} ${W.population} 人站定 · ${ds.nodeName(W.assembly)}`},
   {id:'blue',t:B.tAssembly,h:'藍衣到齊',d:`${B.key} ${B.population} 人站定 · ${ds.nodeName(B.assembly)}`},
   ...(prev.length?[{id:'handover',t:Math.max(...prev.map(g=>g.tGateLast)),h:'西一入口交接',d:`大隊 ${k-1} 最後一位過西一入口，六路接著換本大隊`}]:[]),
