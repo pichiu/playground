@@ -20,7 +20,7 @@ function delta(v){const r=Math.round(v);if(!r)return '±0';const a=Math.abs(r);r
 function dataset(v,D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
   const wait=p=>p.t.enter-p.t.assembly;
   return {v,...VERSIONS[v],D,P,byId,T_END:D.meta.tEnd,wait,
-    nodeName(key){if(key==='STAIR')return '樓梯與 B2 平台';const n=D.nodes[key];return /^\d$/.test(n.label)?`集結點 ${n.label}（${n.floor}）`:`集結區 ${n.label}（${n.floor}）`;},
+    nodeName(key){if(key==='STAIR')return '樓梯與 B2 平台';if(key==='FEEDER')return '不集結，接尾下樓';const n=D.nodes[key];return /^\d$/.test(n.label)?`集結點 ${n.label}（${n.floor}）`:`集結區 ${n.label}（${n.floor}）`;},
     B:{all:bounds([...pairs(D.map.wall),...D.map.stands.flatMap(s=>pairs(s.poly))],.4),
        field:bounds(P.map(p=>[p.field.X,p.field.Y])),
        west:bounds([...D.map.stands.flatMap(s=>pairs(s.poly)),...pairs(D.map.b2Corridor),...P.map(p=>[p.field.X,p.field.Y])],.5)}};}

@@ -1,7 +1,7 @@
 """Task 15：取代舊版、首頁一張卡、全站連結、追蹤檔可重現。
 
 例外：`flow/entry-animation-v2/` 的連結已外傳（GitHub Pages），所以暫時保留，首頁與 2c 的頁面都不連到它；
-樓梯與西一入口的圖面已和 2c 同步。PR 正式合併、確認可改後再清（刪資料夾、把 test_v2_kept_for_shared_link 改回「不存在」）。
+v2 的頁面外觀不動，人員的時間、路徑與出口編排已改用 2c 的資料（entry-animation-v2/build/from2c.py）。PR 正式合併、確認可改後再清（刪資料夾、把 test_v2_kept_for_shared_link 改回「不存在」）。
 """
 import hashlib
 import re
@@ -28,6 +28,17 @@ def test_v2_kept_for_shared_link(root):
     assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists() and (v2 / 'redesign' / 'src' / 'v1.html').exists()
     h = (v2 / 'index.html').read_text(encoding='utf-8')
     assert '"stairTreads"' in h and '西一入口（4 扇門）' in h and '6口' not in h
+
+
+def test_v2_data_follows_2c(root):
+    """v2 頁面外觀不動、資料跟 2c：每個人的時間與路徑都要等於 2c 的 data.json（改 2c 後跑 entry-animation-v2/build/from2c.py）。"""
+    import json
+    h = (root.parent / 'entry-animation-v2' / 'index.html').read_text(encoding='utf-8')
+    line = next(l for l in h.split('\n') if l.startswith('const DATA = '))
+    v2 = {p['id']: p for p in json.loads(line[len('const DATA = '):].rstrip(';'))['persons']}
+    c = {p['id']: p for p in json.loads((root / 'data.json').read_text(encoding='utf-8'))['persons']}
+    assert v2.keys() == c.keys()
+    assert all(v2[i]['t'] == c[i]['t'] and v2[i]['path'] == c[i]['path'] for i in c)
 
 
 def test_hub_single_card(root):

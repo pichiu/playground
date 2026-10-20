@@ -120,7 +120,7 @@ function pathIn(p,a,b){return p.path.filter(q=>q[2]>=a-.01&&q[2]<=b+.01).map(q=>
 function stepsFor(d,p){const s=p.t,ahead=slotMap(d).get(`${p.dadui}|${p.laneIdx}|${p.gateIdx-1}`),fl=p.assembly==='STAIR'?'B2':d.D.nodes[p.assembly].floor;
  return [
   {k:'起',t:s.leave,to:s.assembly,h:'離座',d:`從 <strong>${seatOf(p)}</strong>起身，往<strong>${side[p.exitSide]}側走道</strong>出去（第${'一二三四'[p.exitWave-1]}出）。`},
-  {k:'走',t:s.leave+.5,to:s.assembly,h:'走到集結',d:`走<strong>${chainName[p.chain]}那條</strong>（鏈 ${p.chain}），一路不換道${fl==='B2'?`；下樓梯靠${['北','中間','南'][p.walkLane]}側`:'；留在 B1'}。`},
+  {k:'走',t:s.leave+.5,to:s.assembly,h:'走到集結',d:`走<strong>${chainName[p.chain]}那條</strong>（${p.chain} 路），一路不換道${fl==='B2'?`；下樓梯靠${['北','中間','南'][p.walkLane]}側`:'；留在 B1'}。`},
   {k:'集',t:s.assembly,to:s.enter,h:'集結',d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列。`,w:s.enter-s.assembly},
   {k:'進',t:s.enter,to:s.gate+4,h:'跟大隊進場',d:`大隊 ${p.dadui} 出發。${fl==='B1'?'先下樓梯，':''}從 <strong>西一入口</strong> 走六路的<strong>第 ${p.laneIdx+1} 路</strong>${ahead?`，跟緊 <strong>${ahead.id}</strong>`:'，你是這一路的第一位'}。`},
   {k:'到',t:s.arrive,to:s.arrive,h:'到位',d:`沿牆到西南角，排 1 外側通道往北，轉進<strong>第 ${p.lie} 列</strong>，走到<strong>排 ${p.pai}</strong> 停下。`},

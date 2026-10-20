@@ -13,6 +13,16 @@ python3 page.py ../redesign/src/v1.html new.json ../index.html
 python3 excel.py <解壓目錄> plan.json new.json 休息區座位_藍衣B2集結版_2026-10-18.xlsx
 ```
 
+### 資料改用 2c（from2c.py）
+
+v2 頁面（`../index.html`、`../redesign/`）的外觀與互動不動，`DATA` 改由 2c 的 `../../entry-animation/data.json` 轉出：
+
+```bash
+python3 from2c.py ../../entry-animation/data.json ../index.html   # 只換 index.html 裡 const DATA = …; 那一行
+```
+
+欄位對照：2c 的「出口 × 路」→ v2 的「區塊 × 鏈」（`chain`←lane、`block`←exit、`exitWave`←該路第幾個出口 1–3、`walkLane`／`corrLane`←樓梯路、`laneIdx`←西一入口六路）；白 4 以後不集結，在 `nodes` 補一個 `FEEDER`。`wave01`、`qi` 沿用頁面既有值。2c 重算後要再跑一次，`test_v2_data_follows_2c` 會檢查。下方 build.py／page.py 是舊版 v2 的排法，現在不再用來產生頁面資料。
+
 ### 樓梯 L 形與西一入口
 
 `stair.py` 是 2c（`../../entry-animation/build/routes.py`）樓梯／入口圖面的複本（v2 之後會刪，所以不跨資料夾 import；改尺寸時兩邊一起改）：樓梯照企劃圖 6白 的綠色 L 形，直段是樓梯（順著 B1 走廊往南直下），
