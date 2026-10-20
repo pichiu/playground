@@ -43,6 +43,9 @@ def test_build_no_avoid(root, tmp_path):
     assert D['meta']['tGateStart'] < max(p['t']['assembly'] for p in staged)
     G = {g['key']: g for g in D['groups']}
     assert G['白4']['tStairFirst'] - G['白3']['tStairLast'] < 10
+    for L in 'ABC':                                      # 每一路：接尾者過樓梯口仍在最後一位集結者之後
+        last = max(p['t']['stairPlan'] for p in staged if p['lane'] == L)
+        assert min(p['t']['enter'] for p in w4 if p['lane'] == L) >= last + 0.4 - 1e-6, L
     rows = list(csv.DictReader(open(tmp_path / 'seats.csv', encoding='utf-8')))
     assert len(rows) == 1609 and list(rows[0]) == COLUMNS
     assert rows[0]['位置編碼'] == '1-1' and rows[0]['出口'] == '140'

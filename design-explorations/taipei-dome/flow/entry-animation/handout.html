@@ -96,7 +96,7 @@ function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g
   {key:'descend',t:b9.tStairFirst+8,h:'藍9 下樓、三路成形',d:`${['A','B','C'].map(L=>b9.lanes[L].exit).join('、')} 各供一路（A·B·C）；近的供內側路、遠的供外側路。`},
   {key:'blue-b2',t:ph.enter.t0,h:'藍衣 B2 到位、大隊 1 出發',d:'藍 8·9／6·7／4·5／2·3 兩隊一區，藍1 與白1 同在集結區 1；隊頭站定就出發，不等全部集結完。'},
   {key:'enter',t:G['白2'].tStairFirst+6,h:'大隊 1 進場、樓梯不停',d:'西一入口六路，北三路白、南三路藍，每路不斷拍；同一時間白2 繼續下樓，在樓梯上短暫停下。'},
-  {key:'feed',t:G['白4'].tLeave,h:'白3 下樓、白4 由出口接尾',d:'白3 在 B1 樓梯口前只停幾秒就下樓；白4 以後依西一入口時刻倒推離座，直接下樓接尾，不集結。'},
+  {key:'feed',t:G['白4'].tLeave,h:'白4 由出口接尾',d:'白3 在 B1 只停了幾秒，此刻已下樓隨大隊 3 進場；白4 以後依西一入口時刻倒推離座，直接下樓接尾，不集結。'},
   {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
 let jobs=[];
 function build(ds){const D=ds.D,M=D.meta,frames=$('frames');

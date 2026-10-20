@@ -113,14 +113,17 @@ def schedule(G, people, R=None, shift=None):
         S = T_S0 + relS[p['id']]
         leave = S - r['d_top'] / V
         out[p['id']] = dict(leave=leave, assembly=leave + r['L_arr'] / V, stairPlan=S)
-    # 2. 西一入口時鐘（進場階段）：六路在大隊交界對齊。與樓梯時鐘重疊：不等全部集結完，每人只要自己站定 STAND_MIN 就能起步，
-    #    大隊 1 在藍1、白1 隊頭站定後就出發，樓梯不停、白2 以後接續下樓（不重疊時樓梯在白3 與白4 之間空 36 秒）
+    # 2. 西一入口時鐘（進場階段）：六路在大隊交界對齊。與樓梯時鐘重疊：不等全部集結完，每人只要自己站定 STAND_MIN 就能起步；
+    #    接尾者（白4 以後）在樓梯口仍排在同一路最後一位集結者之後 HEADWAY
     relG, t_dadui = aligned_clock(people, 'gateLane', 'gateIdx', 'dadui', lambda it: STAGGER * it['gateLane'], group_gap=DADUI_GAP)
     need = []
     for p in staged:
         need.append(out[p['id']]['assembly'] + STAND_MIN + R[p['id']]['L_dep'] / V - relG[p['id']])
+    last_stair = {L: max(out[p['id']]['stairPlan'] for p in staged if p['lane'] == L) for L in LANE_K}
     for p in feeders:
-        need.append(T0 + R[p['id']]['L_arr'] / V - relG[p['id']])
+        r = R[p['id']]
+        need.append(T0 + r['L_arr'] / V - relG[p['id']])
+        need.append(last_stair[p['lane']] + HEADWAY + (r['L_arr'] - r['d_top']) / V - relG[p['id']])
     T_G0 = max(need)
     for p in people:
         r = R[p['id']]
@@ -250,7 +253,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
                 tStairStart=round(clocks['tStairStart'], 3), tGateStart=round(clocks['tGateStart'], 3),
                 rules=RULES, assumptions=ASSUMPTIONS, checks=checks or {})
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
-              dict(key='descend', label='藍9→藍1 下 B2 集結，白1 進集結區 1', t0=T0, t1=first_enter),
+              dict(key='descend', label='藍9→藍1 下 B2 集結，白1 開始進集結區 1', t0=T0, t1=first_enter),
               dict(key='enter', label='大隊 1→9 由西一入口六路進場；樓梯不停，白2 樓梯、白3 B1 短暫候隊，白4 以後由出口接尾', t0=first_enter, t1=t_end)]
     return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map()), restSeats=rest, exits=exits, lanes=planj['lanes'],
                 groups=groups, files=files, persons=persons, others=base['others'],

@@ -10,7 +10,7 @@ def test_captain_feeder_cohort(open_page):   # 白4 以後：白衣不集結，�
     assert pg.locator('[data-lie]').count() == 6 and no_hscroll(pg)
 
 
-def test_captain_staged_cohort(open_page):   # 白1–白3：藍衣「到齊」、有西一入口交接；白2 隊頭站定就起步，所以是「白衣最後一位到」
+def test_captain_staged_cohort(open_page):   # 白1–白3 隊頭站定就起步（邊到邊走），所以是「白衣最後一位到」；藍衣早已站定是「藍衣到齊」；有西一入口交接
     pg, errs, perrs = open_page('captain.html?k=2', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     body = pg.inner_text('body')
