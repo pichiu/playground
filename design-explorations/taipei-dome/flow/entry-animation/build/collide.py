@@ -2,7 +2,8 @@
 
 兩項都必須是 0:
 1. 穿過站定者:走動中的人與已在集結區站定的人(含同一列)距離 < R。
-2. 走路互撞:兩個都在走的人距離 < R(走向集結區、離開集結區到西一入口、場內就位,全程)。
+2. 走路互撞:兩個都在走的人距離 < R(走向集結區、遞補往前、離開集結區到西一入口、場內就位,全程)。
+遞補往前(p['adv'] 的 [起, 止, 區])那段算走動,不算站定。
 
 每個取樣區間內兩人的相對位置視為線性變化,取區間內的最近距離,
 所以在直線段內不會漏掉區間中間的擦身而過;區間內有轉角時誤差約 速度×dt/2(dt=0.01 時約 0.006)。
@@ -24,12 +25,18 @@ def collisions(persons, t_end, dt=0.01, r=0.03, t_start=6.0):
     tt = lambda k: np.array([p['t'][k] for p in P])
     leave, assembly, enter, arrive = tt('leave'), tt('assembly'), tt('enter'), tt('arrive')
     lie = np.array([p['lie'] for p in P])
+    K = max((len(p.get('adv', [])) for p in P), default=0)
+    adv0, adv1 = np.full((len(P), K), np.inf), np.full((len(P), K), -np.inf)       # 遞補往前的區間(沒有的留 inf/-inf，永不成立)
+    for i, p in enumerate(P):
+        for k, (a, b, _) in enumerate(p.get('adv', [])):
+            adv0[i, k], adv1[i, k] = a, b
     cell = r + 2 * vmax * dt                     # 一個區間內兩人最多能靠近的距離,格子取這麼大才不漏
     stand_hit, walk_hit = {}, {}
     for k in range(len(T) - 1):
         t = T[k]
-        st = np.nonzero((assembly <= t) & (t < enter - 0.05))[0]
-        mv = np.nonzero(((leave + 0.05 < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < arrive - 0.05)))[0]
+        advancing = ((adv0 + 0.05 < t) & (t < adv1 - 0.05)).any(axis=1)
+        st = np.nonzero((assembly <= t) & (t < enter - 0.05) & ~advancing)[0]
+        mv = np.nonzero(((leave + 0.05 < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < arrive - 0.05)) | advancing)[0]
         if not len(mv): continue
         grid = collections.defaultdict(list)
         for i in mv: grid[(int(X[i, k] // cell), int(Y[i, k] // cell))].append(('m', i))

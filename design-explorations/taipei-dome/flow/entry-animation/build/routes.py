@@ -16,6 +16,7 @@ STAIR_HALF_W = 0.2                       # 樓梯／平台半寬（三路 ±0.12
 GATE_W, GATE_DOORS = 0.95, 4                 # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
 GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
+CHAIN = sorted(plan.LIFO_ZONES)          # 死巷四個集結區 P2…P5，由西一入口側（隊頭）往死巷深處；前面的大隊進場後，後面的整塊遞補往前一區
 ZONES = {
     'P1':    dict(label='1',      floor='B2', kind='FIFO', corr='B2',    head=4.15,  step=-0.073),
     'P2':    dict(label='藍 2·3', floor='B2', kind='LIFO', corr='B2',    head=5.0,   step=0.075),
@@ -118,18 +119,37 @@ class Geometry:
         Z = self.ZONES[z]
         return max(0.0, U_SHIFT0 + 0.1 - Z['head']) if Z['kind'] == 'LIFO' else 0.0
 
-    def slot_u(self, person, i):
-        Z = self.ZONES[person['assembly']]
-        back = 0.0 if first_in_zone(person) else self.second_back(person['assembly'])
+    def slot_u(self, person, i, z=None):
+        """z 預設是原本集結的區；遞補往前後落在別的區。只有「原區的先進場者」站區頭，其餘（後進場者、遞補進 P2 的大隊）
+        往後讓出 second_back：後進場者離開時要在 U_SHIFT0–U_SHIFT1 之間橫移到場內線，這一段不能站人。"""
+        z = z or person['assembly']
+        Z = self.ZONES[z]
+        back = 0.0 if (z == person['assembly'] and first_in_zone(person)) else self.second_back(z)
         return Z['head'] + Z['step'] * i + back
 
-    def slot_xy(self, person, i):
-        z = person['assembly']
+    def slot_xy(self, person, i, z=None):
+        z = z or person['assembly']
         if z == 'STAIR':
             j = person['gateLane']
             return self._stair_lane(j).at(self.STAIR_SLOT_U[j][i])
         poly = self.B1 if self.ZONES[z]['corr'] == 'B1' else self.B2
-        return poly.off(self.slot_u(person, i), self.slot_offset(person))
+        return poly.off(self.slot_u(person, i, z), self.slot_offset(person))
+
+    # ---------- 遞補往前 ----------
+    def advance_zones(self, person):
+        """死巷集結區的人，前面的大隊進場後逐區往前遞補：原區之後依序列出每一步的目的區（最後一步是 P2）；其餘為空。"""
+        z = person['assembly']
+        return CHAIN[CHAIN.index(z) - 1::-1] if z in CHAIN and z != CHAIN[0] else []
+
+    def final_zone(self, person):
+        """離開集結區（走向西一入口）時所在的區。"""
+        zs = self.advance_zones(person)
+        return zs[-1] if zs else person['assembly']
+
+    def advance_route(self, person, i, z_from, z_to):
+        """沿自己那條線在 B2 走廊上往隊頭方向走一區（偏移不變，只改 u）。"""
+        o = self.slot_offset(person)
+        return [self.slot_xy(person, i, z_from)] + lane_run(self.B2, self.slot_u(person, i, z_from), self.slot_u(person, i, z_to), o)
 
     # ---------- 路線 ----------
     def _stair_lane(self, j):
@@ -197,15 +217,17 @@ class Geometry:
         if z == 'FEEDER':
             return []
         Z = self.ZONES[z]
-        s0 = self.slot_xy(person, i)
+        zf = self.final_zone(person)
+        s0 = self.slot_xy(person, i, zf)
         if z == 'P1':
             return [s0, self.GATE_PTS[j]]
         if Z['corr'] == 'B2':                           # 死巷回程：偏移鏡射（見 slot_offset），走到自己那條場內線再橫越進場
             o, o_gate = self.slot_offset(person), -0.04 - 0.08 * (5 - j)
+            u = self.slot_u(person, i, zf)
             if abs(o - o_gate) < 1e-9:
-                return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT1, o) + self.gate_join(j, o_gate)
-            assert self.slot_u(person, i) >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
-            return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate)] + self.gate_join(j, o_gate)
+                return [s0] + lane_run(self.B2, u, U_SHIFT1, o) + self.gate_join(j, o_gate)
+            assert u >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
+            return [s0] + lane_run(self.B2, u, U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate)] + self.gate_join(j, o_gate)
         if z == 'STAIR':
             return [s0] + poly_between(self._stair_lane(j), self.STAIR_SLOT_U[j][i], self.STAIR_SLOT_U[j][0])[1:] + self._b2_to_gate(j)
         off = self.LANE_OFF[lane]                       # P6

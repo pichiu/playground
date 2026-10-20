@@ -118,7 +118,7 @@ function drawPane(v,ds){const c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
  // 集結區：名稱旁直接寫此刻等待人數，不畫圈，免得蓋住排隊的人
- const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
+ const wait={};for(const p of P)if(state(p,t)==='wait'){let z=p.assembly;for(const a of p.adv||[])if(t>=a[0])z=a[2];wait[z]=(wait[z]||0)+1;}   // 遞補往前：以此刻站的區計
  for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0;v.text(w?`${n.label}　${w}`:n.label,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT,w=wait.STAIR||0;v.text(w?`樓梯　${w}`:'樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,align:'right',dx:-14});

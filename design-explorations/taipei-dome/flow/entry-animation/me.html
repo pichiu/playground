@@ -99,7 +99,7 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+const {pos,zone,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
 Dome.nav('me.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go','ghost'])C[n]=css(n);};readC();
@@ -119,6 +119,10 @@ function tAtVertex(p,test,from){for(const q of p.path)if(q[2]>=from&&test(q[0],q
 function tNearPoint(p,X,Y,r,from){const a=p.path;for(let i=0;i+1<a.length;i++){const u=a[i],w=a[i+1];if(w[2]<from)continue;const dx=w[0]-u[0],dy=w[1]-u[1],l=dx*dx+dy*dy;const k=l?Math.max(0,Math.min(1,((X-u[0])*dx+(Y-u[1])*dy)/l)):0;if(Math.hypot(u[0]+dx*k-X,u[1]+dy*k-Y)<r){const tt=u[2]+(w[2]-u[2])*k;if(tt>=from)return tt;}}return null;}
 function pathIn(p,a,b){const pts=p.path.filter(q=>q[2]>a&&q[2]<b).map(q=>[q[0],q[1]]);const s=pos(p,a),e=pos(p,b);return [[s[0],s[1]],...pts,[e[0],e[1]]];}
 
+// 死巷集結區：前面的大隊進場後，後面的整塊往前遞補一區（p.adv＝[起,止,目的區]…），最後都站在集結區 2 再出發
+const zoneTxt=z=>z==='P2'?'集結區 2（最靠西一入口）':'集結區 '+z[1];
+function advTxt(d,p){const a=p.adv;if(!a||!a.length)return '';
+ return ` 站定後<strong>不用一直站在原地</strong>：前面的大隊進場後，整塊往前遞補——${a.map(([t0,t1,z])=>`${fmt(t0)} 前進到 <strong>${zoneTxt(z)}</strong>`).join('、')}，${fmt(a[a.length-1][1])} 站定，跟著隊伍走，不用另外找位置。`;}
 function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
  const i=order[p.exitSeq]===p.id?p.exitSeq:order.indexOf(p.id),prev=i>0?order[i-1]:null,next=i>=0&&i<order.length-1?order[i+1]:null;
  const ahead=indexes(d).lane.get(p.lane+'|'+(p.laneIdx-1));
@@ -140,7 +144,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
    ?{k:'集',h:'集結',t:s.enter,show:s.enter,tl:'下樓',pts:pathIn(p,s.enter-4,s.enter+4),pad:1.6,
      d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到西一入口</strong>，不進集結區。`}
    :{k:'集',h:'集結',t:s.assembly,show:s.assembly,tl:'站定',pts:pathIn(p,s.assembly-6,s.assembly+.1),pad:1.6,w:s.enter-s.assembly,
-     d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。`},
+     d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。${advTxt(d,p)}`},
   {k:'進',h:'進場',t:tBottom,show:s.gate,tl:'過西一入口',pts:pathIn(p,tBottom,s.gate+4),pad:1.6,
    d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
@@ -187,8 +191,8 @@ function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
  v.dot(me.field.X,me.field.Y,7,null,C.go,2);
  v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
- const nd=D.nodes[me.assembly==='STAIR'?'STAIR_TOP':me.assembly];
- if(nd)v.text(ds.nodeName(me.assembly).replace(/（.*）$/,''),nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
+ const zn=zone(me,t),nd=D.nodes[zn==='STAIR'?'STAIR_TOP':zn];   // 遞補往前：標記跟著此刻站的區
+ if(nd)v.text(zn===me.assembly?ds.nodeName(zn).replace(/（.*）$/,''):'集結區 '+zn[1],nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
  $('clk').textContent=fmt(t);$('tl').value=t;
  const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});

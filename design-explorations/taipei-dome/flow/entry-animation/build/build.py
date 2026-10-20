@@ -16,6 +16,7 @@ HEADWAY = 0.4           # 同一路相鄰兩人節拍（走廊、樓梯、西一
 STAGGER = 0.17          # 三路／六路錯開
 T0 = 6.73               # 第一人離座
 STAND_MIN = 0.6         # 站定後至少這麼久才起步
+ADV_MARGIN = 0.5        # 前面的大隊最後一人離開集結格位後，後面的整塊才往前遞補
 DADUI_GAP = 0.8         # 西一入口大隊交界的對齊空檔：外側路到各列轉入點的路程比內側短，前一大隊隊尾要先過
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
 LANE_K = {'A': 0, 'B': 1, 'C': 2}
@@ -70,7 +71,10 @@ def prepare(G, people):
             d_top = carr[k]
         else:                                                   # P6：格位在樓梯口之前，算到樓梯口的虛擬距離
             d_top = carr[-1] + (routes.STAIR_U_B1 - G.slot_u(p, i))
-        R[p['id']] = dict(i=i, arr=arr, dep=dep, L_arr=carr[-1], d_top=d_top, k_top=k, L_dep=cum(dep)[-1] if dep else 0.0)
+        zs = G.advance_zones(p)
+        adv = [G.advance_route(p, i, a, b) for a, b in zip([p['assembly']] + zs, zs)]
+        R[p['id']] = dict(i=i, arr=arr, dep=dep, L_arr=carr[-1], d_top=d_top, k_top=k, L_dep=cum(dep)[-1] if dep else 0.0,
+                          adv=[dict(zone=b, route=r, L=cum(r)[-1]) for b, r in zip(zs, adv)])
     return R
 
 
@@ -137,8 +141,36 @@ def schedule(G, people, R=None, shift=None):
     for pid, dt in shift.items():
         for key in out[pid]:
             out[pid][key] += dt
+    add_advances(people, R, out)
     return out, dict(tStairStart=T_S0, tGateStart=T_G0,
                      tDadui={k: round(T_G0 + v, 3) for k, v in t_dadui.items()})
+
+
+def chain_order(people):
+    """死巷集結區的兩條遞補鏈：偶數大隊（藍2、4、6、8）與奇數大隊（藍3、5、7、9）各自由 P2 排到 P5。
+    進場順序 2→3→4→…→9：某一隊進場後，它那條鏈後面的整塊各往前一區（藍2 進場 → 藍4、6、8 前進；藍3 進場 → 藍5、7、9 前進）。"""
+    ds = sorted({p['dadui'] for p in people if p['assembly'] in routes.CHAIN and p['costume'] == '藍'})
+    return [[d for d in ds if d % 2 == par] for par in (0, 1)]
+
+
+def add_advances(people, R, out):
+    """每個遞補步驟：前面那一隊最後一人離開格位 ADV_MARGIN 秒後，整個大隊同時沿自己那條線往前走一區。"""
+    by = collections.defaultdict(list)
+    for p in people:
+        by[(p['costume'], p['dadui'])].append(p)
+    for chain in chain_order(people):
+        for m, d in enumerate(chain):
+            for s, lead_d in enumerate(chain[:m]):           # 第 s+1 步：鏈上前面的 lead_d 隊進場後
+                t0 = max(out[q['id']]['enter'] for q in by[('藍', lead_d)]) + ADV_MARGIN   # 整列同時起步（隊形不拆）：不套用個人的避撞平移
+                for p in by[('藍', d)]:
+                    o, a = out[p['id']], R[p['id']]['adv'][s]
+                    prev = o['adv'][-1][1] if 'adv' in o else o['assembly']
+                    assert t0 >= prev + STAND_MIN, ('遞補太早', p['id'], s, t0, prev)
+                    o.setdefault('adv', []).append([t0, t0 + a['L'] / V, a['zone']])
+    for p in people:
+        adv = out[p['id']].get('adv')
+        if adv:
+            assert adv[-1][1] + STAND_MIN <= out[p['id']]['enter'] + 1e-6, ('來不及遞補到位', p['id'], adv[-1], out[p['id']]['enter'])
 
 
 def person_path(base_person, p, r, t):
@@ -148,7 +180,10 @@ def person_path(base_person, p, r, t):
         path = list(arr)
     else:
         path = list(arr)
-        path.append((arr[-1][0], arr[-1][1], t['enter']))
+        for (t0, _, _), a in zip(t.get('adv', []), r['adv']):         # 前面的大隊進場後，整塊往前一區
+            path.append((path[-1][0], path[-1][1], t0))
+            path += timed(a['route'], t0)[1:]
+        path.append((path[-1][0], path[-1][1], t['enter']))
         path += timed(r['dep'], t['enter'])[1:]
     post = [q for q in base_person['path'] if q[2] > base_person['t']['gate'] + 1e-6]
     tt, last = path[-1][2], path[-1]
@@ -176,10 +211,11 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
                   gate=round(t['gate'], 3), arrive=path[-1][2])
         if 'stairPlan' in t:
             tt['stairPlan'] = round(t['stairPlan'], 3)
+        adv = [[round(a, 3), round(b, 3), z] for a, b, z in t.get('adv', [])]
         persons.append(dict(id=p['id'], lie=p['lie'], pai=p['pai'], dadui=p['dadui'], costume=p['costume'], a=p['a'],
                             field=p['field'], rest=p['rest'], exit=p['exit'], exitSeq=p['exitSeq'], lane=p['lane'],
                             laneIdx=p['laneIdx'], gateLane=p['gateLane'], gateIdx=p['gateIdx'], slot=r['i'],
-                            assembly=p['assembly'], t=tt, path=path))
+                            assembly=p['assembly'], t=tt, **(dict(adv=adv) if adv else {}), path=path))
     P = {p['id']: p for p in persons}
     t_end = max(p['t']['arrive'] for p in persons)
     staged = [p for p in persons if p['assembly'] != 'FEEDER']
