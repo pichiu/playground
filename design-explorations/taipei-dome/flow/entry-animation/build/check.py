@@ -16,7 +16,7 @@ from geo import Poly, pairs
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 5.0                 # 大隊／區塊交界的對齊空檔上限：最長欄差 6 拍 + 1 拍 + 0.8 空檔 + 0.85 錯開 ≈ 4.45
 POPULATION = 1609
-COMPARED = ('collisions', 'nesting', 'assignment', 'seats', 'staging', 'capacity')   # 與 meta.checks 逐項比對的鍵
+COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'seats', 'staging', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
 
 def _gaps(ps, tkey, group_key):
@@ -30,6 +30,51 @@ def _gaps(ps, tkey, group_key):
     return dict(n=len(ps), minGap=round(min(within + boundary), 3) if ps[1:] else None,
                 maxGapWithin=round(max(within), 3) if within else 0.0,
                 maxGapBoundary=round(max(boundary), 3) if boundary else 0.0, orderOk=order_ok)
+
+
+def _seg_cross(p1, p2, p3, p4):
+    """兩線段是否真正相交（端點相觸、共線重疊不算）。"""
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    d1, d2, d3, d4 = cross(p3, p4, p1), cross(p3, p4, p2), cross(p1, p2, p3), cross(p1, p2, p4)
+    return (d1 > 0) != (d2 > 0) and (d3 > 0) != (d4 > 0) and 0 not in (d1, d2, d3, d4)
+
+
+def _poly_cross(a, b):
+    return sum(1 for s1 in zip(a, a[1:]) for s2 in zip(b, b[1:]) if _seg_cross(*s1, *s2))
+
+
+def lane_crossings(data):
+    """同一大隊三路頭一位（slot 0）的路徑折線兩兩不得相交——純幾何、不看時間：兩條隊伍的線交叉，再怎麼錯開都是人穿過人。
+    departure：離開集結區（t.enter）到過 6口 後 3 秒；arrival：進到 B2 走廊起到站定（只看 B2 的集結區）。"""
+    B2 = Poly(pairs(data['map']['b2Corridor']))
+    heads = {(p['costume'], p['dadui'], p['lane']): p for p in data['persons'] if p['slot'] == 0}
+
+    def seg(p, t0, t1):
+        return [(q[0], q[1]) for q in p['path'] if t0 - 1e-6 <= q[2] <= t1 + 1e-6]
+
+    def b2_entry_t(p):
+        return next((q[2] for q in p['path'] if B2.proj(q[:2])[0] >= 0.9 and B2.proj(q[:2])[2] < 0.3), None)
+
+    dep = arr = 0
+    examples = []
+    for c, d in sorted({k[:2] for k in heads}):
+        for a, b in (('A', 'B'), ('A', 'C'), ('B', 'C')):
+            pa, pb = heads.get((c, d, a)), heads.get((c, d, b))
+            if not pa or not pb:
+                continue
+            t0, t1 = min(pa['t']['enter'], pb['t']['enter']), max(pa['t']['gate'], pb['t']['gate']) + 3
+            n = _poly_cross(seg(pa, t0, t1), seg(pb, t0, t1))
+            if n:
+                dep += n
+                examples.append(dict(phase='departure', block=f'{c}{d}', lanes=a + b, who=[pa['id'], pb['id']]))
+            if pa['assembly'] in ('P1', 'P2', 'P3', 'P4', 'P5'):
+                ta, tb = b2_entry_t(pa), b2_entry_t(pb)
+                n = _poly_cross(seg(pa, ta, pa['t']['assembly']), seg(pb, tb, pb['t']['assembly'])) if ta is not None and tb is not None else 0
+                if n:
+                    arr += n
+                    examples.append(dict(phase='arrival', block=f'{c}{d}', lanes=a + b, who=[pa['id'], pb['id']]))
+    return dict(departureCrossings=dep, arrivalCrossings=arr, examples=examples[:4])
 
 
 def check_all(data):
@@ -66,6 +111,8 @@ def check_all(data):
     split = sorted(lie for lie, es in by_col.items() if len(es) > 1)
     out['assignment'] = dict(upstreamViolations=len(upstream), distinctStairViolations=len(stairs_bad), splitColumns=len(split), segments=segments,
                              examples=upstream[:2] + stairs_bad[:2] + [dict(lie=lie, exits=sorted(by_col[lie])) for lie in split[:2]])
+    # 2c. 路徑不交叉：同一大隊三路（回 6口 / 進集結區）
+    out['routes'] = lane_crossings(data)
     # 3. 不斷拍：6口 六路、集結階段樓梯口三路、接尾者樓梯口三路
     gate = {}
     for j in range(6):
@@ -120,6 +167,7 @@ def check_all(data):
         cap[e] = dict(used=used, capacity=capacity, fieldsOk=bool(f.get('used') == used and f.get('capacity') == capacity))
     out['capacity'] = cap
     out['ok'] = bool(not st and not wk and not bad and not upstream and not stairs_bad and not split and cont_ok
+                     and out['routes']['departureCrossings'] == 0 == out['routes']['arrivalCrossings']
                      and len(set(keys)) == len(persons) == POPULATION and illegal == 0 and wrong_sec == 0 and order_bad == 0 and coverage_bad == 0
                      and out['staging']['ok'] and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
     return out
@@ -128,12 +176,13 @@ def check_all(data):
 def main(path):
     data = json.load(open(path, encoding='utf-8'))
     C = check_all(data)
-    A, S = C['assignment'], C['seats']
+    A, S, Rt = C['assignment'], C['seats'], C['routes']
     rows = [
         ('穿過站定者 / 走路互撞', f"{C['collisions']['standing']} / {C['collisions']['walking']}", '0 / 0', C['collisions']['standing'] == 0 == C['collisions']['walking']),
         ('逐序號巢狀違反', f"{C['nesting']['violations']} / {C['nesting']['indices']} 序號", '0', C['nesting']['violations'] == 0),
         ('指派：換口往下游 / 三路同階梯 / 拆欄', f"{A['upstreamViolations']} / {A['distinctStairViolations']} / {A['splitColumns']}（每路 {'、'.join(f'{L} {A['segments'][L]} 段' for L in plan.LANES)}）",
          '0 / 0 / 0', A['upstreamViolations'] == 0 == A['distinctStairViolations'] == A['splitColumns']),
+        ('同一大隊三路路徑交叉（回 6口 / 進集結區）', f"{Rt['departureCrossings']} / {Rt['arrivalCrossings']}", '0 / 0', Rt['departureCrossings'] == 0 == Rt['arrivalCrossings']),
         ('不斷拍（群內拍距 / 交界空檔）', '6口 ' + ', '.join(f"{v['minGap']}–{v['maxGapWithin']}" for v in C['continuity']['gate'].values()), f'{GAP_MIN}–{GAP_MAX}；交界 ≤ {BOUNDARY_MAX}', C['continuity']['ok']),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),

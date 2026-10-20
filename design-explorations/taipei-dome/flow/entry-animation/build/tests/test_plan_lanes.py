@@ -7,8 +7,8 @@ def seqs_of(base):
 
 def test_lane_totals(base):
     seqs = seqs_of(base)
-    assert [len(seqs[L]) for L in 'ABC'] == [541, 537, 531]
-    assert [s['block'] for s in seqs['A'][:20]] == ['藍9'] * 20 and seqs['A'][20]['block'] == '藍8'   # A 路藍9 = 列 52（20 人）
+    assert [len(seqs[L]) for L in 'ABC'] == [534, 537, 538]
+    assert [s['block'] for s in seqs['A'][:18]] == ['藍9'] * 18 and seqs['A'][18]['block'] == '藍8'   # A 路藍9 = 列 54（18 人）
 
 
 def test_block_exits(base):
@@ -44,7 +44,15 @@ def test_within_column_order(base):
 def test_exit_usage(base):
     from collections import Counter
     c = Counter(s['exit'] for L in 'ABC' for s in plan.lane_sequence(base, L))
-    assert c == {'139': 205, '140': 283, '141': 256, '142': 228, '143': 179, '144': 190, '145': 268}
+    assert c == {'139': 199, '140': 282, '141': 256, '142': 234, '143': 179, '144': 191, '145': 268}
+
+
+def test_blue_lane_mapping_by_approach_direction():
+    """A 路（最靠場側）要對到以自己行進方向最先轉進場的那條線：從樓梯側走來（白、藍1）是 6k−5／6k−2，從死巷走回來（藍2–9）是 6k。"""
+    assert [plan.column_of('白4', L) for L in 'ABC'] == [19, 20, 21]
+    assert [plan.column_of('藍1', L) for L in 'ABC'] == [4, 5, 6]
+    assert [plan.column_of('藍2', L) for L in 'ABC'] == [12, 11, 10]
+    assert [plan.column_of('藍9', L) for L in 'ABC'] == [54, 53, 52]
 
 
 def test_lane_idx_and_fields(base):
@@ -52,4 +60,4 @@ def test_lane_idx_and_fields(base):
     assert [s['laneIdx'] for s in A] == list(range(len(A)))
     s = A[0]
     assert set(s) >= {'id', 'lie', 'pai', 'dadui', 'costume', 'block', 'lane', 'laneIdx', 'exit', 'assembly'}
-    assert s['id'] == '52-1' and s['lie'] == 52 and s['costume'] == '藍' and s['dadui'] == 9 and s['assembly'] == 'P5'
+    assert s['id'] == '54-1' and s['lie'] == 54 and s['costume'] == '藍' and s['dadui'] == 9 and s['assembly'] == 'P5'
