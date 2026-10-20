@@ -124,13 +124,15 @@ function buildTrack(){
 function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.meta.t0)return '休息區就座';
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
  const blk=S.blocks.filter(o=>!o.feeder&&t>=o.a).pop();return blk?`${blk.key} 下樓`:`${S.blocks[0].key} 離座`;}
+const zoneNow=(p,t)=>{let z=p.assembly;for(const a of p.adv||[])if(t>=a[0])z=a[2];return z;};
 function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*v.s);
  v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber});
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
  // 集結區：名稱旁直接寫此刻等待人數，不畫圈，免得蓋住排隊的人（P1–P5 在 B2、P6 白3 在 B1、白2 在樓梯）
- const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
- for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0,lab=ZLAB[k]||n.label;v.text(w?`${lab}　${w}`:lab,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
+ // 前面的大隊進場後，後面的整塊往前遞補一區（p.adv＝[起,止,目的區]…），所以人數與名稱都以「此刻站在哪一區」為準；死巷各區有人就寫站著的大隊，空了寫區號
+ const wait={},occ={};for(const p of P)if(state(p,t)==='wait'){const z=zoneNow(p,t);wait[z]=(wait[z]||0)+1;if(/^P[2-5]$/.test(z))(occ[z]||(occ[z]=new Set())).add(p.dadui);}
+ for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0,lab=occ[k]?'藍 '+[...occ[k]].sort((a,b)=>a-b).join('·'):/^P[2-5]$/.test(k)?'集結區 '+k[1]:ZLAB[k]||n.label;v.text(w?`${lab}　${w}`:lab,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT,w=wait.STAIR||0;v.text(w?`樓梯 · 白 2　${w}`:'樓梯 · 白 2',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,align:'right',dx:-14});
  // 休息區淡點、到位實點

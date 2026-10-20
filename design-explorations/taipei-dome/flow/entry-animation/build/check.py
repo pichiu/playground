@@ -16,7 +16,7 @@ from geo import Poly, pairs
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 5.0                 # 大隊／區塊交界的對齊空檔上限：最長欄差 6 拍 + 1 拍 + 0.8 空檔 + 0.85 錯開 ≈ 4.45
 POPULATION = 1609
-COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'seats', 'staging', 'capacity')   # 與 meta.checks 逐項比對的鍵
+COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'seats', 'staging', 'advance', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
 
 def _gaps(ps, tkey, group_key):
@@ -159,6 +159,25 @@ def check_all(data):
     w2 = [p for p in persons if p['assembly'] == 'STAIR']
     in_slots = all(min(math.dist(at_assembly(p), s) for s in slots[str(p['gateLane'])]) < 0.02 for p in w2)
     out['staging'] = dict(white3TailU=round(tail_u, 3), entry140U=entry140, white2InSlots=in_slots, ok=bool(tail_u - 0.1 >= entry140 and in_slots))
+    # 5b. 遞補往前：死巷各區的後面大隊，在前面一隊（同一條鏈）最後一人離開格位之後才動、來得及在自己出發前站定，最後都站在 P2
+    by_blk = collections.defaultdict(list)
+    for p in persons:
+        by_blk[(p['costume'], p['dadui'])].append(p)
+    adv_bad = steps = 0
+    for p in persons:
+        if p['assembly'] not in ('P3', 'P4', 'P5'):
+            continue
+        adv = p.get('adv', [])
+        steps += len(adv)
+        prev = p['t']['assembly']
+        ok = [z for _, _, z in adv] == {'P3': ['P2'], 'P4': ['P3', 'P2'], 'P5': ['P4', 'P3', 'P2']}[p['assembly']]
+        for s, (a, b, _) in enumerate(adv):
+            lead = max(q['t']['enter'] for q in by_blk[('藍', p['dadui'] - 2 * (len(adv) - s))] ) if p['dadui'] - 2 * (len(adv) - s) >= 2 else None
+            ok = ok and lead is not None and a >= lead + 0.3 and a >= prev + 0.6 - 1e-6
+            prev = b
+        ok = ok and bool(adv) and prev + 0.6 <= p['t']['enter'] + 1e-6
+        adv_bad += not ok
+    out['advance'] = dict(steps=steps, violations=adv_bad)
     # 6. 容量：用量由 persons 計、可用席由 restSeats 重算，再與 exits 欄位比對
     cap = {}
     for e in plan.EXITS:
@@ -169,7 +188,7 @@ def check_all(data):
     out['ok'] = bool(not st and not wk and not bad and not upstream and not stairs_bad and not split and cont_ok
                      and out['routes']['departureCrossings'] == 0 == out['routes']['arrivalCrossings']
                      and len(set(keys)) == len(persons) == POPULATION and illegal == 0 and wrong_sec == 0 and order_bad == 0 and coverage_bad == 0
-                     and out['staging']['ok'] and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
+                     and out['staging']['ok'] and adv_bad == 0 and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
     return out
 
 
@@ -187,6 +206,7 @@ def main(path):
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),
         ('白3 隊尾 u − 0.1 ≥ 140 接入點 u；白2 在格位', f"{C['staging']['white3TailU']} vs {C['staging']['entry140U']}；{C['staging']['white2InSlots']}", '成立', C['staging']['ok']),
+        ('遞補往前：步數 / 違反（前一隊離開後才動、來得及站定）', f"{C['advance']['steps']} / {C['advance']['violations']}", '違反 0', C['advance']['violations'] == 0),
         ('出口用量 ≤ 可用席（重算，與 exits 欄位一致）', ', '.join(f"{k} {v['used']}/{v['capacity']}" + ('' if v['fieldsOk'] else '（欄位不符）') for k, v in C['capacity'].items()), '成立',
          all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in C['capacity'].values())),
     ]

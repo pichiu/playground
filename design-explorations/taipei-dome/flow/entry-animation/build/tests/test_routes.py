@@ -32,7 +32,7 @@ def test_routes_start_and_end(base):
             assert math.dist(pts[-1], G.slot_xy(p, 0)) < 1e-6
             dep = G.depart_route(p, 0)
             end = G.gate_join(p['gateLane'], -0.04 - 0.08 * (5 - p['gateLane']))[-1] if p['assembly'] in plan.LIFO_ZONES else G.GATE_PTS[p['gateLane']]
-            assert math.dist(dep[0], G.slot_xy(p, 0)) < 1e-6 and math.dist(dep[-1], end) < 1e-6
+            assert math.dist(dep[0], G.slot_xy(p, 0, G.final_zone(p))) < 1e-6 and math.dist(dep[-1], end) < 1e-6   # 出發點是遞補後的最終格位
 
 
 def test_stair_slots_fit_white2(base):
@@ -79,3 +79,21 @@ def test_dead_end_lanes_mirrored_and_gate_routes_do_not_cross(base):
         # j=3 的回程經過 GATE_PTS[3]（從外側走到線上再橫越），j=5 從線上場側那一點直接進場，不回頭
         assert math.dist(dep['C'][-2], G.GATE_PTS[3]) < 1e-6 and math.dist(dep['C'][-3], G.B2.off(G.B2.proj(G.GATE_PTS[3])[0], -0.2)) < 0.02
         assert math.dist(dep['A'][-2], G.B2.off(G.B2.proj(G.GATE_PTS[5])[0], -0.04)) < 0.02
+
+
+def test_advance_chain_moves_back_groups_forward_one_zone_each_step(base):
+    """死巷遞補：P3 一步到 P2、P4 兩步（P3→P2）、P5 三步；每一步沿自己那條線（偏移不變）往隊頭走，格位 i 不變；最終都在 P2，遞補進 P2 者讓出 U_SHIFT0 以內的橫移空間。"""
+    G = routes.Geometry(base)
+    P = plan.build_plan(base)['people']
+    want = {'P2': [], 'P3': ['P2'], 'P4': ['P3', 'P2'], 'P5': ['P4', 'P3', 'P2']}
+    for z, zs in want.items():
+        p = next(q for q in P if q['assembly'] == z and q['lane'] == 'A')
+        assert G.advance_zones(p) == zs and G.final_zone(p) == (zs[-1] if zs else z)
+        cur = z
+        for nxt in zs:
+            r = G.advance_route(p, 3, cur, nxt)
+            assert math.dist(r[0], G.slot_xy(p, 3, cur)) < 1e-6 and math.dist(r[-1], G.slot_xy(p, 3, nxt)) < 1e-6
+            assert G.slot_u(p, 3, nxt) < G.slot_u(p, 3, cur)
+            cur = nxt
+    for q in (p for p in P if p['assembly'] in ('P3', 'P4', 'P5')):
+        assert G.slot_u(q, 0, 'P2') >= routes.U_SHIFT0
