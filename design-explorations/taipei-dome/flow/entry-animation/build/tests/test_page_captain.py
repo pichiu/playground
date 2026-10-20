@@ -38,3 +38,16 @@ def test_captain_gate_order_follows_data(open_page):   # review：西一入口�
     assert '白 A·B·C、藍 C·B·A' in pg.inner_text('#sum') and 'A 路在最南' in pg.inner_text('#sum') and not perrs
     assert pg.locator('[data-lie]').evaluate_all('els => els.map(e => +e.dataset.lie)') == [19, 20, 21, 24, 23, 22]
     assert pg.locator('[data-lie="24"]').inner_text().find('A 路') >= 0
+
+
+def test_captain_speed_and_labels(open_page):   # 速度預設 ×6、可切換；標籤開關預設關，開了會重畫；手機版時間軸不被擠扁
+    pg, errs, perrs = open_page('captain.html?k=1', 375, 700)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    assert not errs and not perrs, (errs, perrs)
+    assert pg.locator('#speed button[aria-pressed=true]').inner_text() == '×6'
+    pg.click('#speed button[data-s="12"]')
+    assert pg.locator('#speed button[aria-pressed=true]').inner_text() == '×12'
+    assert pg.get_attribute('#lbl', 'aria-pressed') == 'false'
+    pg.click('#lbl')
+    assert pg.get_attribute('#lbl', 'aria-pressed') == 'true'
+    assert pg.evaluate("document.getElementById('tl').getBoundingClientRect().width") > 150 and no_hscroll(pg)

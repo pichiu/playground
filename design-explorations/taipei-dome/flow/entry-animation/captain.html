@@ -70,13 +70,12 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
 .deck button.play{width:48px;height:48px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);display:grid;place-items:center;flex:none}
 .deck input{flex:1;min-width:0;accent-color:var(--team)}
 .deck .speed{display:flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;flex:none}
-.deck .speed button{padding:6px 9px;border:0;background:none;color:var(--dim);font-size:13px;font-weight:700}
-.deck .speed button[aria-pressed=true]{background:var(--rule);color:var(--ink)}
-.deck .tog{flex:none;border:1px solid var(--rule);border-radius:8px;background:none;color:var(--dim);padding:6px 9px;font-size:13px;font-weight:700}
-.deck .tog[aria-pressed=true]{background:var(--rule);color:var(--ink)}
+.deck .speed button,.deck .tog{padding:6px 9px;border:0;background:none;color:var(--dim);font-size:13px;font-weight:700}
+.deck .tog{flex:none;border:1px solid var(--rule);border-radius:8px}
+.deck .speed button[aria-pressed=true],.deck .tog[aria-pressed=true]{background:var(--rule);color:var(--ink)}
 .deck output{min-width:52px;text-align:right;font-weight:700}
 .note{color:var(--dim);font-size:13px;margin:24px 0 0;max-width:72ch}
-@media(max-width:520px){.pick{gap:4px}.pick button{height:46px;font-size:17px;border-radius:10px}canvas{height:300px}}
+@media(max-width:520px){.deck{flex-wrap:wrap}.deck input{order:9;flex:1 0 100%}.deck output{margin-left:auto}.pick{gap:4px}.pick button{height:46px;font-size:17px;border-radius:10px}canvas{height:300px}}
 </style>
 </head>
 <body>
@@ -168,18 +167,17 @@ function draw(){const team=TEAM[k-1],D=ds.D;
  $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
  $('clk').textContent=fmt(t);$('tl').value=t;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1});
-
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
  if(labels){const mine=new Set(gs.flatMap(g=>['A','B','C'].map(L=>g.lanes[L].exit)));
   for(const s of D.map.stands)if(mine.has(s.sec))v.text(s.sec,s.labelXY[0],s.labelXY[1],{color:'#f1f3ef',size:11,weight:700,halo:'#11171a'});
-  for(const g of gs){const key=g.assembly==='STAIR'?'STAIR_TOP':g.assembly,nd=D.nodes[key];if(nd)v.text('集結區',nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}}
+  for(const key of new Set(gs.map(g=>g.assembly==='STAIR'?'STAIR_TOP':g.assembly))){const nd=D.nodes[key];if(nd)v.text('集結區',nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',align:'right',dx:-12});}
 
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
 $('play').onclick=()=>{playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();};
 $('tl').oninput=e=>{t=+e.target.value;dirty=true;};
-function frame(n){if(ds){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*speed);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty){draw();dirty=false;}}requestAnimationFrame(frame);}
+function frame(n){if(ds){if(playing){if(last)t=Math.min(+$('tl').max,t+Math.min(n-last,100)/1000*speed);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty){draw();dirty=false;}}requestAnimationFrame(frame);}
 (async()=>{try{ds=await Dome.load();}catch(e){$('nx-k').textContent=e.message;return;}
  choose(k);draw();dirty=false;window.__dome_ready=true;requestAnimationFrame(frame);})();
 window.__seek=x=>{t=x;dirty=true;};
