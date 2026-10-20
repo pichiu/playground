@@ -62,7 +62,6 @@ h1 span{font-size:.5em;font-weight:500;color:var(--dim);white-space:nowrap}
 .dir{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);padding:0 0 2px 74px;font-weight:700}
 .dir .ex{color:var(--accent)}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap}
-.tg{border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:3px 10px;font-size:12px}
 .tg[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .bs{grid-column:2;min-width:0;overflow-x:auto}
 .show-ids .bsi{min-width:var(--minw)}
@@ -99,7 +98,7 @@ h1 span{font-size:.5em;font-weight:500;color:var(--dim);white-space:nowrap}
 .map h2{margin:0 0 4px;font-size:17px;font-weight:900;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .map h2 small{font-weight:500;font-size:12px;color:var(--dim)}
 .map .tools{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim)}
-.map .tools button{border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:3px 10px;font-size:12px}
+.map .tools button,.tg{border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:3px 10px;font-size:12px}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:6px}
 canvas#seatmap{display:block;cursor:pointer}
 #seat-tip{margin:10px 0 0;font-size:14px;min-height:1.6em;line-height:1.5}
@@ -179,7 +178,7 @@ function choose(key,push=true){if(!ds.exitsByKey[key])key=ds.exits[0].key;render
 
 // ---------- 主區 ----------
 function seatRange(nos){return nos.length?(nos.length===1?`${nos[0]} 號`:`${nos[0]}–${nos[nos.length-1]} 號`):'';}
-function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byId;
+function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byId,flip=!!S.exitRight;   // 出口在座位圖右側（139、144）：色帶左右鏡射，和座位圖同方向
  $('pick').querySelectorAll('[data-exit]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.exit===key)));
  const first=byId.get(e.order[0]),last=byId.get(e.order[e.order.length-1]);
  const empties=e.capacity-e.used;
@@ -208,8 +207,7 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
    if(lp&&lp.k===k&&lp.lane===p.lane){lp.n++;lp.nos.push(r.seats[i]);}else pieces.push({k,lane:p.lane,n:1,nos:[r.seats[i]],p});});
   const used=new Set(r.seats),desc=r.seats.length>1&&r.seats[0]>r.seats[1];
   const empt=(S.usable.get(r.pai)||[]).filter(no=>!used.has(no)).sort((a,b)=>desc?b-a:a-b);
-  // 出口在座位圖右側的區（139、144）：色帶左右鏡射，出口側放右邊，和座位圖同方向
-  const flip=!!S.exitRight,ord=a=>flip?[...a].reverse():a;
+  const ord=a=>flip?[...a].reverse():a;
   const pcs=pieces.map(pc=>`<div class="pc lane-${pc.lane}" style="flex-grow:${pc.n};--n:${pc.n};background-color:${colorOf(pc.p)};color:${inkOf(pc.p)}" title="${pc.k}×${pc.n}，${seatRange(pc.nos)}，走 ${pc.lane} 路"><span class="lb">${pc.k}×${pc.n}</span></div>`);
   if(empt.length)pcs.push(`<div class="pc empty" style="flex-grow:${empt.length};--n:${empt.length}" title="空 ${empt.length}，${seatRange(empt)}"><span class="lb">空 ${empt.length}</span></div>`);
   const band=ord(pcs).join('');
@@ -222,9 +220,8 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
   return `<div class="row" data-row="${r.pai}"><div class="rl"><b>第 ${r.pai} 排</b><small>${r.seats.length} 人${empt.length?`<br>空 ${empt.length}`:''}</small></div><div class="bs" data-flip="${flip?1:0}"><div class="bsi" style="width:${(tot(r)/maxTot*100).toFixed(2)}%;--minw:${idc.length*40}px"><div class="band" aria-hidden="true">${band}</div>${ids}</div></div><p class="cap">${cap.join('<span class="sep">·</span>')}</p></div>`+(hand.get(r.pai)||[]).join('');}).join('');
  const usedPai=new Set(e.rows.map(r=>r.pai)),unused=[...S.usable.keys()].filter(p=>!usedPai.has(p)).sort((a,b)=>b-a);
  const r0=e.rows[0];
- const flipE=!!S.exitRight;
  $('rows').classList.toggle('show-ids',showIds);
- $('rows').innerHTML=`<div class="rhead"><h2>帶隊順序 · 由上排往下</h2><button type="button" class="tg" id="idtg" aria-pressed="${showIds}">顯示每席人員編號</button></div><p class="how">本出口 ${e.used} 人依序從第 ${r0.pai} 排帶起，每排由出口側（${flipE?'畫面右側':'畫面左側'}，與下方座位圖同方向）${r0.seats[0]} 號往 ${r0.seats[r0.seats.length-1]} 號方向；一排走完接下一排。色帶寬度依座位數，每格一席，底線顏色是走哪一路。</p><div class="dir">${flipE?'<span>◀ 中央</span><span class="ex">出口側（先走）▶</span>':'<span class="ex">◀ 出口側（先走）</span><span>中央 ▶</span>'}</div>${rowsHtml}${unused.length?`<p class="unused">第 ${unused.join('、')} 排未使用（${unused.reduce((a,p)=>a+S.usable.get(p).length,0)} 席空）。</p>`:''}`;
+ $('rows').innerHTML=`<div class="rhead"><h2>帶隊順序 · 由上排往下</h2><button type="button" class="tg" id="idtg" aria-pressed="${showIds}">顯示每席人員編號</button></div><p class="how">本出口 ${e.used} 人依序從第 ${r0.pai} 排帶起，每排由出口側（${flip?'畫面右側':'畫面左側'}，與下方座位圖同方向）${r0.seats[0]} 號往 ${r0.seats[r0.seats.length-1]} 號方向；一排走完接下一排。色帶寬度依座位數，每格一席，底線顏色是走哪一路。</p><div class="dir">${flip?'<span>◀ 中央</span><span class="ex">出口側（先走）▶</span>':'<span class="ex">◀ 出口側（先走）</span><span>中央 ▶</span>'}</div>${rowsHtml}${unused.length?`<p class="unused">第 ${unused.join('、')} 排未使用（${unused.reduce((a,p)=>a+S.usable.get(p).length,0)} 席空）。</p>`:''}`;
  $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
 }
 // 色帶小格放不下字時藏起來（說明列仍完整列出）
@@ -270,7 +267,7 @@ cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX
  for(const rec of cells){const dx=Math.max(rec.x-x,0,x-(rec.x+rec.w)),dy=Math.max(rec.y-y,0,y-(rec.y+rec.h)),d=dx*dx+dy*dy;if(d<bd){bd=d;best=rec;}}
  if(best&&bd<=36)showTip(best.s);});
 $('seat-tip').onclick=ev=>{const a=ev.target.closest('[data-go]');if(a){ev.preventDefault();choose(a.dataset.go);}};
-$('rows').addEventListener('click',ev=>{const b=ev.target.closest('#idtg');if(!b)return;showIds=!showIds;b.setAttribute('aria-pressed',String(showIds));$('rows').classList.toggle('show-ids',showIds);try{localStorage.setItem('exit-show-ids',showIds?'1':'0');}catch(e){}if(showIds)alignIds();});
+$('rows').addEventListener('click',ev=>{const b=ev.target.closest('#idtg');if(!b)return;showIds=!showIds;b.setAttribute('aria-pressed',String(showIds));$('rows').classList.toggle('show-ids',showIds);try{localStorage.setItem('exit-show-ids',showIds?'1':'0');}catch(e){}fitLabels();if(showIds)alignIds();});
 $('zoom').onclick=()=>{zoom=!zoom;$('zoom').setAttribute('aria-pressed',String(zoom));$('zoom').textContent=zoom?'縮小':'放大';drawMap();};
 addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{drawMap();fitLabels();},80);});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>drawMap());
