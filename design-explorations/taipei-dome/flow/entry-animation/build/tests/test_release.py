@@ -43,6 +43,10 @@ def test_v2_data_follows_2c(root):
     c = {p['id']: p for p in json.loads((root / 'data.json').read_text(encoding='utf-8'))['persons']}
     assert v2.keys() == c.keys()
     assert all(v2[i]['t'] == c[i]['t'] and v2[i]['path'] == c[i]['path'] for i in c)
+    # 手動對應的欄位：路別 0–2、出口段 1–3、入口六路 0–5，且與 2c 一致
+    assert all(v2[i]['chain'] == c[i]['lane'] and v2[i]['block'] == c[i]['exit'] and v2[i]['laneIdx'] == c[i]['gateLane'] for i in c)
+    assert all(v2[i]['walkLane'] == v2[i]['corrLane'] == 'ABC'.index(c[i]['lane']) for i in c)
+    assert {p['exitWave'] for p in v2.values()} == {1, 2, 3} and {p['laneIdx'] for p in v2.values()} == set(range(6))
 
 
 def test_hub_single_card(root):
