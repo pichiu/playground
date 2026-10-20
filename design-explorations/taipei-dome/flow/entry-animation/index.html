@@ -118,12 +118,13 @@ const {fmt}=Dome,$=id=>document.getElementById(id);
 Dome.nav('index.html');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function checksTable(C){
- const gate=Object.values(C.continuity.gate),st=Object.values(C.continuity.stairPhase1),fd=Object.values(C.continuity.feederStairTop),A=C.assignment||{},S=C.seats;
+ const gate=Object.values(C.continuity.gate),st=Object.values(C.continuity.stairPhase1),fd=Object.values(C.continuity.feederStairTop),A=C.assignment||{},S=C.seats,R=C.routes||{};
  const rng=vs=>`${Math.min(...vs.map(v=>v.minGap))}–${Math.max(...vs.map(v=>v.maxGapWithin))} 秒`,bnd=vs=>Math.max(...vs.map(v=>v.maxGapBoundary));
  const rows=[
   ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>`${e.who.join(' × ')} @ ${fmt(e.t)}`)],
   ['逐序號巢狀（A 的出口 < B < C）',`${C.nesting.violations} / ${C.nesting.indices} 個序號違反`,'0',C.nesting.violations===0,(C.nesting.examples||[]).map(e=>`序號 ${e.idx}：${Object.values(e.exits).join(' / ')}`)],
   ['指派：換口往下游 / 三路落在同一座階梯 / 拆欄',`${A.upstreamViolations} / ${A.distinctStairViolations} / ${A.splitColumns}（每路 ${['A','B','C'].map(L=>(A.segments||{})[L]).join('、')} 段）`,'0 / 0 / 0',A.upstreamViolations===0&&A.distinctStairViolations===0&&A.splitColumns===0,(A.examples||[]).map(e=>e.lie!=null?`列 ${e.lie}：${e.exits.join(' / ')}`:e.stairs?`序號 ${e.idx}：${e.stairs.join(' / ')}`:`${e.lane} 路序號 ${e.idx}：${e.exits.join(' → ')}`)],
+  ['同一大隊三路路徑不交叉（回 6口 / 進集結區）',`${R.departureCrossings} / ${R.arrivalCrossings}`,'0 / 0',R.departureCrossings===0&&R.arrivalCrossings===0,(R.examples||[]).map(e=>`${e.block} ${e.lanes}（${e.phase==='departure'?'回 6口':'進區'}）：${e.who.join(' × ')}`)],
   ['不斷拍：群內拍距 · 交界對齊空檔',`6口 ${rng(gate)}，交界 ≤ ${bnd(gate)} 秒；樓梯口 ${rng(st)}；接尾 ${rng(fd)}`,'0.25–0.55 秒；交界 ≤ 5 秒',C.continuity.ok,[]],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['白3 隊尾在 140 接入點下游；白2 全員在樓梯格位',`隊尾 u ${C.staging.white3TailU} vs 接入 u ${C.staging.entry140U}；${C.staging.white2InSlots?'在格位':'不在格位'}`,'成立',C.staging.ok,[]],

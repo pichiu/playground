@@ -23,7 +23,8 @@ def test_check_all_green(built):
     assert C['assignment']['upstreamViolations'] == 0 == C['assignment']['distinctStairViolations'] == C['assignment']['splitColumns']
     assert C['assignment']['segments'] == {'A': 3, 'B': 3, 'C': 3}
     assert C['seats']['wrongSection'] == 0 == C['seats']['orderCoverage']
-    assert C['capacity']['139'] == dict(used=205, capacity=206, fieldsOk=True)
+    assert C['routes']['departureCrossings'] == 0 == C['routes']['arrivalCrossings']
+    assert C['capacity']['139'] == dict(used=199, capacity=206, fieldsOk=True)
     assert D['meta']['checks']['ok'] is True and D['meta']['checks']['nesting'] == C['nesting'] and D['meta']['checks']['assignment'] == C['assignment']
 
 
@@ -54,7 +55,7 @@ def test_check_recomputes_capacity_not_trusting_fields(built):
     e = next(e for e in D['exits'] if e['key'] == '140')
     e['used'], e['capacity'] = 1, 9999
     C = check.check_all(D)
-    assert C['capacity']['140']['used'] == 283 and C['capacity']['140']['capacity'] == 291   # 由 persons / restSeats 重算
+    assert C['capacity']['140']['used'] == 282 and C['capacity']['140']['capacity'] == 291   # 由 persons / restSeats 重算
     assert C['capacity']['140']['fieldsOk'] is False and C['ok'] is False
 
 
@@ -88,3 +89,17 @@ def test_check_detects_order_list_tampering(built):
     e['order'] = e['order'][:-1]
     C = check.check_all(D)
     assert C['seats']['orderCoverage'] == 1 and C['ok'] is False
+
+
+def test_check_detects_lane_crossing_at_gate(built):
+    # 把藍4 A 路頭一位回 6口 的路段推到走廊外側（−0.30），最後一段斜進自己的場內線就會穿過 B、C 兩路 → 幾何交叉
+    from geo import Poly, pairs
+    _, D = built
+    D = _copy(D)
+    B2 = Poly(pairs(D['map']['b2Corridor']))
+    a = next(p for p in D['persons'] if p['costume'] == '藍' and p['dadui'] == 4 and p['lane'] == 'A' and p['slot'] == 0)
+    for q in a['path']:
+        if a['t']['enter'] <= q[2] < a['t']['gate'] - 0.3:
+            q[0], q[1] = B2.off(B2.proj(q[:2])[0], -0.30)
+    C = check.check_all(D)
+    assert C['routes']['departureCrossings'] >= 2 and C['ok'] is False

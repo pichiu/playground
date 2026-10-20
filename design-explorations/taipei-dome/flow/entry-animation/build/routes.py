@@ -43,10 +43,14 @@ class Geometry:
         for lie_old, j in ((31, 0), (32, 1), (33, 2)):
             ps = sorted([p for p in base['persons'] if p['lie'] == lie_old], key=lambda p: p['gateIdx'])
             self.STAIR_SLOTS[j] = [tuple(next(q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6)[:2]) for p in ps]
-        self.GATE_PTS = {}                                      # 6口 六路收攏點：版本 1 大隊 1 過 6口 的點
+        self.GATE_PTS, self.GATE_DIR = {}, {}                   # 6口 六路收攏點：版本 1 大隊 1 過 6口 的點；GATE_DIR 是該點之後場內線的方向（橫越走廊往場側）
         for p in base['persons']:
-            if p['dadui'] == 1:
-                self.GATE_PTS[p['laneIdx']] = tuple(next(q for q in p['path'] if abs(q[2] - p['t']['gate']) < 1e-6)[:2])
+            if p['dadui'] == 1 and p['laneIdx'] not in self.GATE_PTS:
+                k = next(i for i, q in enumerate(p['path']) if abs(q[2] - p['t']['gate']) < 1e-6)
+                a, b = p['path'][k], p['path'][k + 1]
+                d = math.dist(a[:2], b[:2])
+                self.GATE_PTS[p['laneIdx']] = (a[0], a[1])
+                self.GATE_DIR[p['laneIdx']] = ((b[0] - a[0]) / d, (b[1] - a[1]) / d)
         n_of = {f['lie']: f['n'] for f in base['files']}
         self.ZONE_NMAX = {}
         for block in plan.BLOCKS:
@@ -60,9 +64,9 @@ class Geometry:
         Z = self.ZONES[z]
         if z == 'P1':
             return 0.2 - 0.08 * j
-        if Z['corr'] == 'B2':                          # 死巷：6口 南三路 3,4,5；先進場者站外側
-            k = j - 3
-            return (-0.04 - 0.08 * k) if first_in_zone(person) else (0.2 - 0.08 * k)
+        if Z['corr'] == 'B2':                          # 死巷：從 6口 上游反向走回來，六條場內線的先後對調 → 鏡射：最靠場側（−0.04）給最先轉進場的 j=5
+            m = 5 - j                                  # 先進場者站 −0.04…−0.20、後進場者站 +0.20…+0.04（離開時平行外移到 −0.04…−0.20）
+            return (-0.04 - 0.08 * m) if first_in_zone(person) else (0.2 - 0.08 * m)
         return self.LANE_OFF[person['lane']]           # P6：各路就地停在自己那一路
 
     def second_back(self, z):
@@ -91,6 +95,16 @@ class Geometry:
 
     def _b2_to_gate(self, j):
         return lane_run(self.B2, B2_U_START, 4.2, 0.2 - 0.08 * j) + [self.GATE_PTS[j]]
+
+    def gate_join(self, j, o):
+        """從 B2 走廊偏移 o 併入第 j 路的場內線。場內線從 GATE_PTS[j]（偏移 0.2−0.08j）橫越走廊往場側：
+        o 在它外側（更遠離場）就先走到線上、經過 GATE_PTS 再進場；o 已在場側就從線上那一點直接進場，不回頭。"""
+        d = o - (0.2 - 0.08 * j)
+        g, v = self.GATE_PTS[j], self.GATE_DIR[j]
+        if abs(d) < 1e-9:
+            return [g]
+        join = (g[0] + v[0] * d, g[1] + v[1] * d)
+        return [join, g] if d < 0 else [join]
 
     def arrival_route(self, person, i):
         """座位 → 走道口 → 接入點 → 自己那一路 → 集結格位（白4 以後直達 6口）。"""
@@ -140,12 +154,12 @@ class Geometry:
         s0 = self.slot_xy(person, i)
         if z == 'P1':
             return [s0, self.GATE_PTS[j]]
-        if Z['corr'] == 'B2':
-            o, o_gate = self.slot_offset(person), 0.2 - 0.08 * j
+        if Z['corr'] == 'B2':                           # 死巷回程：偏移鏡射（見 slot_offset），走到自己那條場內線再橫越進場
+            o, o_gate = self.slot_offset(person), -0.04 - 0.08 * (5 - j)
             if abs(o - o_gate) < 1e-9:
-                return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT1, o) + [self.GATE_PTS[j]]
+                return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT1, o) + self.gate_join(j, o_gate)
             assert self.slot_u(person, i) >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
-            return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate), self.GATE_PTS[j]]
+            return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate)] + self.gate_join(j, o_gate)
         if z == 'STAIR':
             return [s0, self.STAIR_SLOTS[j][0]] + self._b2_to_gate(j)
         off = self.LANE_OFF[lane]                       # P6
