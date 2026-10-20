@@ -16,10 +16,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-ra
 .maps{position:relative;min-height:0;display:grid;grid-template-columns:1fr;grid-row:1;grid-column:1}
 .hud{grid-row:1;grid-column:1;position:relative;pointer-events:none;min-height:0}.hud>*{pointer-events:auto}
 .pane{position:relative;min-width:0;min-height:0}
-.pane+.pane{border-left:1px solid var(--line)}
 canvas{display:block;width:100%;height:100%}
-.pane h2{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;margin:0;font-size:15px;font-weight:700;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 14px;white-space:nowrap}
-.pane h2 small{color:var(--dim);font-weight:400;margin-left:6px}
 .title{position:absolute;left:28px;top:22px;z-index:2}
 .title a{color:var(--dim);text-decoration:none;font-size:12px}
 .title a:hover{color:var(--ink)}
@@ -98,14 +95,14 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n)
 const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);
 const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','集結等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
 const frameFor=v=>v.w<760?[-19,-11.6,4,11.6]:[-15.5,-11.6,4,11.6];
-let sets=[],panes=[],t=0,playing=false,speed=6,last=0,dirty=true,T=1,cues=[];
+let ds=null,view=null,t=0,playing=false,speed=6,last=0,dirty=true,T=1,cues=[];
 const pct=x=>x/T*100+'%';
 function stats(ds){const P=ds.P,waves=[1,2,3].map(w=>{const ts=P.filter(p=>p.exitWave===w).map(p=>p.t.leave);return {w,a:Math.min(...ts),b:Math.max(...ts)};});
  const dad=Array.from({length:9},(_,i)=>{const ps=P.filter(p=>p.dadui===i+1);return {k:i+1,a:Math.min(...ps.map(p=>p.t.enter)),b:Math.max(...ps.map(p=>p.t.arrive))};});return {waves,dad};}
-async function init(){const ds=await Dome.fetchData();if(!ds)return;sets=[ds];
+async function init(){ds=await Dome.fetchData();if(!ds)return;
  ds.s=stats(ds);T=ds.T_END;t=Math.min(t,T);
  $('maps').innerHTML=`<div class="pane"><canvas id="cv0" aria-label="動線地圖"></canvas></div>`;
- panes.forEach(v=>v.destroy());panes=[(()=>{const v=new View($('cv0'),{pad:40});v.fit(frameFor(v),true);v.onresize=()=>{v.fit(frameFor(v),true);dirty=true;};return v;})()];
+ if(view)view.destroy();view=new View($('cv0'),{pad:40});view.fit(frameFor(view),true);view.onresize=()=>{view.fit(frameFor(view),true);dirty=true;};
  $('end').textContent=fmt(T);
  // 時間軸：三出 + 九大隊
  const wavesHtml=d=>d.s.waves.map(o=>`<i style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px);opacity:${.45+o.w*.13}"><span>第${'一二三'[o.w-1]}出</span></i>`).join('');
@@ -136,7 +133,7 @@ function drawPane(v,ds){const c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042
   const flush=()=>{c.globalAlpha=st==='wait'?.55:.95;if(seg.length>1)v.stroke(seg.flat(),col,r*1.7);else v.dot(seg[0][0],seg[0][1],r,col);c.globalAlpha=1;};
   for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];if(Math.hypot(a[0]-b[0],a[1]-b[1])>.45){flush();seg=[b];}else seg.push(b);}flush();
   if(st!=='wait')v.dot(pts[0][0],pts[0][1],r*1.5,col,C.map,1);}}
-function ui(){const d=sets[0],cs=counts(t,d.P);
+function ui(){const d=ds,cs=counts(t,d.P);
  for(const [k] of STATES){$('bar0').querySelector(`[data-k=${k}]`).style.width=cs[k]/d.P.length*100+'%';const n=document.querySelector(`[data-n="0-${k}"]`);if(n)n.textContent=cs[k].toLocaleString('zh-TW');}
  $('clock').textContent=fmt(t);$('phase').textContent=phaseName(d);$('head').style.left=pct(t);
  let i=cues.findIndex(c=>c.t>t);if(i<0)i=cues.length;const from=Math.max(0,i-2);$('cues').innerHTML=cues.slice(from,from+5).map((c,j)=>`<li class="${from+j===i-1?'now':''}"><span>${fmt(c.t)}</span><span>${c.s}</span></li>`).join('');}
@@ -147,7 +144,7 @@ $('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.
 const track=$('track');function scrub(e){const r=$('lanes').getBoundingClientRect();t=Math.max(0,Math.min(T,(e.clientX-r.left)/r.width*T));dirty=true;}
 let drag=false;track.onpointerdown=e=>{drag=true;track.setPointerCapture(e.pointerId);scrub(e);};track.onpointermove=e=>drag&&scrub(e);track.onpointerup=track.onpointercancel=()=>drag=false;
 document.onkeydown=e=>{if(e.code==='Space'){e.preventDefault();setPlaying(!playing);}if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T,t+(e.key==='ArrowLeft'?-10:10)));dirty=true;}};
-function frame(now){if(sets.length){if(playing){if(last)t=Math.min(T,t+(now-last)/1000*speed);last=now;dirty=true;if(t>=T)setPlaying(false);}panes.forEach(v=>{if(v.step(now))dirty=true;});if(dirty){panes.forEach((v,i)=>drawPane(v,sets[i]));ui();dirty=false;}}requestAnimationFrame(frame);}
+function frame(now){if(ds&&view){if(playing){if(last)t=Math.min(T,t+(now-last)/1000*speed);last=now;dirty=true;if(t>=T)setPlaying(false);}if(view.step(now))dirty=true;if(dirty){drawPane(view,ds);ui();dirty=false;}}requestAnimationFrame(frame);}
 window.__seek=x=>{t=x;dirty=true;};
 init().then(()=>requestAnimationFrame(frame));
 </script>

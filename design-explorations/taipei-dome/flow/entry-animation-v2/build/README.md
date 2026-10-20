@@ -14,6 +14,6 @@ python3 from2c.py ../../entry-animation/data.json ../index.html
 - `walkLane`／`corrLane`←路別 A/B/C 的 0–2（2c 的 `laneIdx` 是路內序號，不是路別）、`laneIdx`←西一入口六路（2c 的 `gateLane`）
 - 白 4 以後不集結，在 `nodes` 補一個 `FEEDER`
 - `qi`←2c 該列離座順序 `files[].order`；`wave01`（場內編舞分組）沿用頁面既有值
-- `exits`、`lanes`、`groups`、`stairSlots`、`zones` 原樣帶過去，給 `redesign/f-exit.html`
+- `exits`、`lanes`、`groups` 原樣帶過去，給 `redesign/f-exit.html`
 
 舊的 build／page／excel 腳本（由版本 1 資料重算休息區座位）已移除；git 歷史裡還找得到。

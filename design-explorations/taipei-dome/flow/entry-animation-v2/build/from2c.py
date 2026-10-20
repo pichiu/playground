@@ -61,7 +61,7 @@ for f in c['files']:
     F.append(g)
 
 c['meta']['assumptions'] = [s.replace('沿用版本 1 的示意圖面', '沿用原始示意圖面').replace('集結區位置沿用版本 2', '集結區位置沿用企劃手繪平面圖的估計') for s in c['meta']['assumptions']]
-D = {k: c[k] for k in ('meta', 'phases', 'map', 'restSeats', 'others', 'exits', 'lanes', 'groups', 'stairSlots', 'zones')}   # 後五項給 redesign/f-exit.html（出口帶隊卡）
+D = {k: c[k] for k in ('meta', 'phases', 'map', 'restSeats', 'others', 'exits', 'lanes', 'groups')}   # exits／lanes／groups 給 redesign/f-exit.html（出口帶隊卡）
 D['nodes'] = nodes
 D['persons'] = P
 D['files'] = F

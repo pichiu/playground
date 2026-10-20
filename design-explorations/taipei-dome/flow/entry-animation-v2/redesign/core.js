@@ -11,7 +11,6 @@ function pos(p,t){const a=p.path;if(t<=a[0][2])return a[0];if(t>=a[a.length-1][2
 function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)return 'walk';if(t<s.enter)return 'wait';if(t<s.arrive)return 'enter';return 'done';}
 function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
 function fmt(v){const neg=v<0;v=Math.abs(v);return (neg?'−':'')+String(Math.floor(v/60)).padStart(2,'0')+':'+String(Math.floor(v%60)).padStart(2,'0');}
-// 差值：「−0:18」「+1:05」，比較兩版時用
 
 function dataset(D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
   const wait=p=>p.t.enter-p.t.assembly;
@@ -19,18 +18,11 @@ function dataset(D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
   return {D,P,byId,T_END:D.meta.tEnd,wait,groups:D.groups,exits:D.exits,exitsByKey,lanes:D.lanes,
     exitName:key=>exitsByKey[key]?`${key} 出口（${exitsByKey[key].stairLabel}）`:key,laneName:L=>LANE_NAME[L]||L,
     nodeName(key){if(key==='STAIR')return '樓梯與 B2 平台';if(key==='FEEDER')return '不集結，接尾下樓';const n=D.nodes[key];return /^\d$/.test(n.label)?`集結點 ${n.label}（${n.floor}）`:`集結區 ${n.label}（${n.floor}）`;},
-    B:{all:bounds([...pairs(D.map.wall),...D.map.stands.flatMap(s=>pairs(s.poly))],.4),
-       field:bounds(P.map(p=>[p.field.X,p.field.Y])),
-       west:bounds([...D.map.stands.flatMap(s=>pairs(s.poly)),...pairs(D.map.b2Corridor),...P.map(p=>[p.field.X,p.field.Y])],.5)}};}
+    B:{west:bounds([...D.map.stands.flatMap(s=>pairs(s.poly)),...pairs(D.map.b2Corridor),...P.map(p=>[p.field.X,p.field.Y])],.5)}};}
 
-function extract(html){const i=html.indexOf('const DATA = ');if(i<0)return null;const j=html.indexOf('\n',i);return JSON.parse(html.slice(i+13,j).trim().replace(/;$/,''));}
-let cache;
-// 載入失敗時顯示橫幅並回傳 null，頁面維持原狀；失敗不留在快取，下次呼叫會重新抓。
-function load(){if(cache)return cache;
-  cache=(async()=>{const r=await fetch(SRC);if(!r.ok)throw new Error('讀不到動線資料');const D=extract(await r.text());if(!D)throw new Error('讀不到動線資料');return dataset(D);})();
-  cache.catch(()=>{cache=null;});
-  return cache;}
-async function fetchData(){try{return await load();}catch(e){fail(e);return null;}}
+function extract(html){const i=html.indexOf('const DATA = ');if(i<0)return null;const j=html.indexOf('\n',i);return JSON.parse(html.slice(i+13,j-1));}
+// 載入失敗時顯示橫幅並回傳 null，頁面維持原狀。
+async function fetchData(){try{const r=await fetch(SRC);const D=r.ok&&extract(await r.text());if(!D)throw new Error('讀不到動線資料');return dataset(D);}catch(e){fail(e);return null;}}
 function fail(err){let b=document.getElementById('dome-err');if(!b){b=document.createElement('p');b.id='dome-err';b.setAttribute('role','alert');b.style.cssText='position:fixed;left:16px;right:16px;bottom:16px;z-index:50;margin:0 auto;max-width:560px;padding:12px 16px;border-radius:10px;background:#3a1d14;color:#fde7dc;font:14px/1.6 "Noto Sans TC",system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25)';document.body.append(b);}
   b.innerHTML=`${err.message}。這些頁面直接讀 index.html 內嵌的資料，需要經由網頁伺服器開啟（GitHub Pages 或 <code>python3 -m http.server</code>）；網路斷線時重新整理即可重試。`;}
 
@@ -64,5 +56,5 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
-window.Dome={load,fetchData,fail,pos,state,counts,bounds,fmt,View,pairs};
+window.Dome={fetchData,pos,state,counts,bounds,fmt,View};
 })();
