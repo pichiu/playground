@@ -22,12 +22,16 @@ def test_old_versions_gone(root):
 
 
 def test_v2_kept_for_shared_link(root):
-    """外傳連結要能用：v2 頁與 redesign/src/v1.html（版本 1 頁原樣，「版本 1／對照」切換讀它的資料）都還在。
-    v2 不再一字不改：樓梯 L 形與西一入口（4 扇門）已用 v2 自己的 build 重算，和 2c 同一套圖面。"""
+    """外傳連結要能用：v2 單頁與 redesign 六個看法都在；版本 1 已移除（沒有 src/v1.html、沒有版本切換與「對照」）。"""
     v2 = root.parent / 'entry-animation-v2'
-    assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists() and (v2 / 'redesign' / 'src' / 'v1.html').exists()
+    assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists()
+    assert not (v2 / 'redesign' / 'src').exists()
     h = (v2 / 'index.html').read_text(encoding='utf-8')
     assert '"stairTreads"' in h and '西一入口（4 扇門）' in h and '6口' not in h
+    for page in [v2 / 'index.html', *(v2 / 'redesign').glob('*.html'), v2 / 'redesign' / 'core.js']:
+        text = '\n'.join(l for l in page.read_text(encoding='utf-8').split('\n') if not l.startswith('const DATA = '))   # DATA 內的 meta 文字不算
+        bad = [w for w in ('版本 1', 'v=cmp', 'switcher', 'entry-animation/index.html') if w in text]
+        assert not bad, (page.name, bad)
 
 
 def test_v2_data_follows_2c(root):

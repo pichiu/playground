@@ -56,7 +56,7 @@ for f in c['files']:
     g['blocks'] = blocks
     F.append(g)
 
-D = {k: c[k] for k in ('meta', 'phases', 'map', 'restSeats', 'others')}
+D = {k: c[k] for k in ('meta', 'phases', 'map', 'restSeats', 'others', 'exits', 'lanes', 'groups', 'stairSlots', 'zones')}   # 後五項給 redesign/f-exit.html（出口帶隊卡）
 D['nodes'] = nodes
 D['persons'] = P
 D['files'] = F
