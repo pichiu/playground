@@ -16,7 +16,7 @@ from geo import Poly, pairs
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 5.0                 # 大隊／區塊交界的對齊空檔上限：最長欄差 6 拍 + 1 拍 + 0.8 空檔 + 0.85 錯開 ≈ 4.45
 POPULATION = 1609
-COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'seats', 'staging', 'capacity')   # 與 meta.checks 逐項比對的鍵
+COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'seats', 'staging', 'capacity', 'advance')   # 與 meta.checks 逐項比對的鍵
 
 
 def _gaps(ps, tkey, group_key):
@@ -159,6 +159,11 @@ def check_all(data):
     w2 = [p for p in persons if p['assembly'] == 'STAIR']
     in_slots = all(min(math.dist(at_assembly(p), s) for s in slots[str(p['gateLane'])]) < 0.02 for p in w2)
     out['staging'] = dict(white3TailU=round(tail_u, 3), entry140U=entry140, white2InSlots=in_slots, ok=bool(tail_u - 0.1 >= entry140 and in_slots))
+    # 5b. 死巷區塊整塊前進：藍4–9 都在自己離座前挪到最前面一區（P2），前進結束到起步至少留 0.3 秒；P2 不用前進
+    movers = [p for p in persons if 'advStart' in p['t']]
+    late = [p['id'] for p in movers if p['t']['advEnd'] > p['t']['enter'] - 0.3 or p['t']['advStart'] < p['t']['assembly']]
+    need = sum(1 for p in persons if p['costume'] == '藍' and p['dadui'] >= 4)
+    out['advance'] = dict(movers=len(movers), expected=need, late=len(late), examples=late[:3])
     # 6. 容量：用量由 persons 計、可用席由 restSeats 重算，再與 exits 欄位比對
     cap = {}
     for e in plan.EXITS:
@@ -169,7 +174,7 @@ def check_all(data):
     out['ok'] = bool(not st and not wk and not bad and not upstream and not stairs_bad and not split and cont_ok
                      and out['routes']['departureCrossings'] == 0 == out['routes']['arrivalCrossings']
                      and len(set(keys)) == len(persons) == POPULATION and illegal == 0 and wrong_sec == 0 and order_bad == 0 and coverage_bad == 0
-                     and out['staging']['ok'] and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
+                     and out['staging']['ok'] and out['advance']['movers'] == out['advance']['expected'] and not late and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
     return out
 
 
@@ -187,6 +192,7 @@ def main(path):
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),
         ('白3 隊尾 u − 0.1 ≥ 140 接入點 u；白2 在格位', f"{C['staging']['white3TailU']} vs {C['staging']['entry140U']}；{C['staging']['white2InSlots']}", '成立', C['staging']['ok']),
+        ('死巷區塊前進（藍4–9 整塊挪到 P2）：人數 / 來不及', f"{C['advance']['movers']} / {C['advance']['late']}", f"{C['advance']['expected']} / 0", C['advance']['movers'] == C['advance']['expected'] and C['advance']['late'] == 0),
         ('出口用量 ≤ 可用席（重算，與 exits 欄位一致）', ', '.join(f"{k} {v['used']}/{v['capacity']}" + ('' if v['fieldsOk'] else '（欄位不符）') for k, v in C['capacity'].items()), '成立',
          all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in C['capacity'].values())),
     ]

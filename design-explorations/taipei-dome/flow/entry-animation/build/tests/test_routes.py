@@ -32,7 +32,8 @@ def test_routes_start_and_end(base):
             assert math.dist(pts[-1], G.slot_xy(p, 0)) < 1e-6
             dep = G.depart_route(p, 0)
             end = G.gate_join(p['gateLane'], -0.04 - 0.08 * (5 - p['gateLane']))[-1] if p['assembly'] in plan.LIFO_ZONES else G.GATE_PTS[p['gateLane']]
-            assert math.dist(dep[0], G.slot_xy(p, 0)) < 1e-6 and math.dist(dep[-1], end) < 1e-6
+            final = G.slot_xy(p, 0, 0 if p['assembly'] in plan.LIFO_ZONES else None)   # 死巷區塊離開時已挪到最前面（P2）
+            assert math.dist(dep[0], final) < 1e-6 and math.dist(dep[-1], end) < 1e-6
 
 
 def test_stair_slots_fit_white2(base):

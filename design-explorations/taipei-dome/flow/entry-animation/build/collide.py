@@ -23,13 +23,15 @@ def collisions(persons, t_end, dt=0.01, r=0.03, t_start=6.0):
         if ok.any(): vmax = max(vmax, float((np.hypot(seg[ok, 0], seg[ok, 1]) / seg[ok, 2]).max()))
     tt = lambda k: np.array([p['t'][k] for p in P])
     leave, assembly, enter, arrive = tt('leave'), tt('assembly'), tt('enter'), tt('arrive')
+    advS = np.array([p['t'].get('advStart', np.inf) for p in P]); advE = np.array([p['t'].get('advEnd', -np.inf) for p in P])   # 死巷區塊整塊前進的期間算「走」
     lie = np.array([p['lie'] for p in P])
     cell = r + 2 * vmax * dt                     # 一個區間內兩人最多能靠近的距離,格子取這麼大才不漏
     stand_hit, walk_hit = {}, {}
     for k in range(len(T) - 1):
         t = T[k]
-        st = np.nonzero((assembly <= t) & (t < enter - 0.05))[0]
-        mv = np.nonzero(((leave + 0.05 < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < arrive - 0.05)))[0]
+        adv = (advS - 0.05 <= t) & (t < advE + 0.05)
+        st = np.nonzero((assembly <= t) & (t < enter - 0.05) & ~adv)[0]
+        mv = np.nonzero(((leave + 0.05 < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < arrive - 0.05)) | adv)[0]
         if not len(mv): continue
         grid = collections.defaultdict(list)
         for i in mv: grid[(int(X[i, k] // cell), int(Y[i, k] // cell))].append(('m', i))

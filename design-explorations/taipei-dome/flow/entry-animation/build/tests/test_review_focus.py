@@ -57,3 +57,14 @@ def test_p1_white_blue_clearance(data):   # Review Focus 3：白1 C 路進集結
         for q in p['path']:
             if p['t']['assembly'] - 3 < q[2] < p['t']['assembly']:
                 assert min(math.dist(q[:2], b) for b in blue1) >= 0.05, (p['id'], q)
+
+
+def test_blue_blocks_advance_after_block_ahead_leaves(data):   # 死巷區塊整塊前進：同側前面的大隊全部起步後才動，且在自己起步前到 P2
+    P = data['P']
+    left = {d: max(p['t']['enter'] for p in P.values() if p['costume'] == '藍' and p['dadui'] == d) for d in range(2, 10)}
+    for d in range(4, 10):
+        level = d // 2 - 1
+        for p in (q for q in P.values() if q['costume'] == '藍' and q['dadui'] == d):
+            assert p['t']['advStart'] >= left[d - 2 * level] + 0.5 - 1e-6, p['id']
+            assert p['t']['advEnd'] <= p['t']['enter'] - 0.3, p['id']
+    assert not any('advStart' in p['t'] for p in P.values() if p['costume'] == '白' or p['dadui'] <= 3)

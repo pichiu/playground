@@ -118,18 +118,34 @@ class Geometry:
         Z = self.ZONES[z]
         return max(0.0, U_SHIFT0 + 0.1 - Z['head']) if Z['kind'] == 'LIFO' else 0.0
 
-    def slot_u(self, person, i):
-        Z = self.ZONES[person['assembly']]
-        back = 0.0 if first_in_zone(person) else self.second_back(person['assembly'])
+    def levels(self, person):
+        """死巷集結區的區塊要整塊往前挪幾次：P2 在最前面 0 次，P3 1 次…P5 3 次（前面同側的大隊進場後，後面的整塊跟著前進一區）。"""
+        return int(person['assembly'][1]) - 2 if person['assembly'] in plan.LIFO_ZONES else 0
+
+    def slot_u(self, person, i, level=None):
+        """level=None：抵達時站定的格位；level=n：挪到第 n 區（0 = P2）時的格位。"""
+        if level is None:
+            Z = self.ZONES[person['assembly']]
+            back = 0.0 if first_in_zone(person) else self.second_back(person['assembly'])
+        else:
+            Z = self.ZONES['P%d' % (level + 2)]
+            back = 0.0 if person['dadui'] == 2 else self.second_back('P2') if level == 0 else 0.0   # 挪進 P2 的後來者退到 5.35，避開還在橫移進場線的藍3
         return Z['head'] + Z['step'] * i + back
 
-    def slot_xy(self, person, i):
+    def slot_xy(self, person, i, level=None):
         z = person['assembly']
         if z == 'STAIR':
             j = person['gateLane']
             return self._stair_lane(j).at(self.STAIR_SLOT_U[j][i])
         poly = self.B1 if self.ZONES[z]['corr'] == 'B1' else self.B2
-        return poly.off(self.slot_u(person, i), self.slot_offset(person))
+        return poly.off(self.slot_u(person, i, level), self.slot_offset(person))
+
+    def advance_run(self, person, i, m):
+        """第 m 次前進（從第 L−m+1 區挪到第 L−m 區）的折線，含起點。"""
+        L = self.levels(person)
+        a, b = self.slot_u(person, i, None if m == 1 else L - m + 1), self.slot_u(person, i, L - m)
+        off = self.slot_offset(person)
+        return [self.B2.off(a, off)] + lane_run(self.B2, a, b, off)
 
     # ---------- 路線 ----------
     def _stair_lane(self, j):
@@ -197,15 +213,16 @@ class Geometry:
         if z == 'FEEDER':
             return []
         Z = self.ZONES[z]
-        s0 = self.slot_xy(person, i)
+        s0 = self.slot_xy(person, i, 0 if z in plan.LIFO_ZONES else None)   # 死巷區塊離開時都已挪到最前面（P2）
         if z == 'P1':
             return [s0, self.GATE_PTS[j]]
         if Z['corr'] == 'B2':                           # 死巷回程：偏移鏡射（見 slot_offset），走到自己那條場內線再橫越進場
             o, o_gate = self.slot_offset(person), -0.04 - 0.08 * (5 - j)
+            u0 = self.slot_u(person, i, 0)
             if abs(o - o_gate) < 1e-9:
-                return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT1, o) + self.gate_join(j, o_gate)
-            assert self.slot_u(person, i) >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
-            return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate)] + self.gate_join(j, o_gate)
+                return [s0] + lane_run(self.B2, u0, U_SHIFT1, o) + self.gate_join(j, o_gate)
+            assert u0 >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
+            return [s0] + lane_run(self.B2, u0, U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate)] + self.gate_join(j, o_gate)
         if z == 'STAIR':
             return [s0] + poly_between(self._stair_lane(j), self.STAIR_SLOT_U[j][i], self.STAIR_SLOT_U[j][0])[1:] + self._b2_to_gate(j)
         off = self.LANE_OFF[lane]                       # P6

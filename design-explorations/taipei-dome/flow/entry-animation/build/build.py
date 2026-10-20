@@ -17,6 +17,7 @@ STAGGER = 0.17          # 三路／六路錯開
 T0 = 6.73               # 第一人離座
 STAND_MIN = 0.6         # 站定後至少這麼久才起步
 DADUI_GAP = 0.8         # 西一入口大隊交界的對齊空檔：外側路到各列轉入點的路程比內側短，前一大隊隊尾要先過
+ADV_MARGIN, ADV_WAVE = 0.5, 0.8   # 前面同側的大隊最後一人起步後，後面的整塊再等 0.5 秒才前進；越後面的區塊再晚 0.8 秒起步（像波浪一樣跟上）
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
 LANE_K = {'A': 0, 'B': 1, 'C': 2}
 ZONE_LABEL = {'P1': '集結區 1', 'P2': '藍 2·3', 'P3': '藍 4·5', 'P4': '藍 6·7', 'P5': '藍 8·9',
@@ -141,14 +142,32 @@ def schedule(G, people, R=None, shift=None):
                      tDadui={k: round(T_G0 + v, 3) for k, v in t_dadui.items()})
 
 
-def person_path(base_person, p, r, t):
-    """座位 → 格位（停留）→ 西一入口 → 場內，含時間；場內沿版本 1 幾何等速重計時。"""
+def advance_times(G, people, sched):
+    """死巷區塊（藍2–9）的前進時刻：第 m 次前進等同側前面第 L−m+1 個大隊（d−2(L−m+1)）全部起步之後。
+    回傳 {id: [(t_start, m), …]}。"""
+    left = collections.defaultdict(float)
+    for p in people:
+        if p['assembly'] in plan.LIFO_ZONES:
+            left[p['dadui']] = max(left[p['dadui']], sched[p['id']]['enter'])
+    out = {}
+    for p in people:
+        L = G.levels(p)
+        if L:
+            out[p['id']] = [(left[p['dadui'] - 2 * (L - m + 1)] + ADV_MARGIN + ADV_WAVE * (L - m), m) for m in range(1, L + 1)]
+    return out
+
+
+def person_path(base_person, p, r, t, G=None, adv=None):
+    """座位 → 格位（停留；死巷區塊在前面同側大隊進場後整塊前進）→ 西一入口 → 場內，含時間；場內沿版本 1 幾何等速重計時。"""
     arr = timed(r['arr'], t['leave'])
     if p['assembly'] == 'FEEDER':
         path = list(arr)
     else:
         path = list(arr)
-        path.append((arr[-1][0], arr[-1][1], t['enter']))
+        for t0, m in adv or ():
+            path.append((path[-1][0], path[-1][1], t0))
+            path += timed(G.advance_run(p, r['i'], m), t0)[1:]
+        path.append((path[-1][0], path[-1][1], t['enter']))
         path += timed(r['dep'], t['enter'])[1:]
     post = [q for q in base_person['path'] if q[2] > base_person['t']['gate'] + 1e-6]
     tt, last = path[-1][2], path[-1]
@@ -168,12 +187,18 @@ def person_path(base_person, p, r, t):
 def assemble(base, planj, G, R, sched, clocks, checks=None):
     who = {p['id']: p for p in base['persons']}
     people = planj['people']
+    advs = advance_times(G, people, sched)
     persons = []
     for p in people:
         r, t = R[p['id']], sched[p['id']]
-        path = person_path(who[p['id']], p, r, t)
+        path = person_path(who[p['id']], p, r, t, G, advs.get(p['id']))
         tt = dict(leave=round(t['leave'], 3), assembly=round(t['assembly'], 3), enter=round(t['enter'], 3),
                   gate=round(t['gate'], 3), arrive=path[-1][2])
+        if p['id'] in advs:                                     # 前進的起訖：第一次起步 → 最後一次到位（避撞與檢核用）
+            a0 = advs[p['id']][0][0]
+            hold = next(k for k, q in enumerate(path) if abs(q[2] - t['enter']) < 6e-4 and k > 0 and q[:2] == path[k - 1][:2])
+            a1 = path[hold - 1][2]
+            tt['advStart'], tt['advEnd'] = round(a0, 3), round(a1, 3)
         if 'stairPlan' in t:
             tt['stairPlan'] = round(t['stairPlan'], 3)
         persons.append(dict(id=p['id'], lie=p['lie'], pai=p['pai'], dadui=p['dadui'], costume=p['costume'], a=p['a'],
