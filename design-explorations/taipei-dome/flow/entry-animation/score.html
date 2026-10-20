@@ -81,7 +81,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={},readC=()=>{for(const n of ['bg','card','ink','dim','rule','faint','walk','wait','enter','hi','blue','white'])C[n]=css(n);};readC();
 const KEY=`<span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--wait)"></i>集結等待</span><span><i style="background:var(--enter)"></i>進場中</span>`;
-const PHASE_SHORT={seated:'就座',descend:'下樓集結',hold:'等待進場',enter:'進場'};
+const PHASE_SHORT={seated:'就座',descend:'下樓集結',enter:'進場'};
 let ds=null,rows=[],rowEls=[],view=null,T=1,t=0,hover=-1,lastHover=-2,dirty=true,staticImg=null;
 // 列序 = 樓梯序：依 groups（藍9…藍1、白1…白9），每個區塊內 A、B、C 三欄。
 function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
@@ -113,7 +113,7 @@ function paintStatic(){gx.setTransform(dpr,0,0,dpr,0,0);gx.fillStyle=C.bg;gx.fil
  for(let s=0;s<=T;s+=30){const x=xOf(s);gx.fillStyle=s%60?C.faint:C.rule;gx.fillRect(x,TOP-6,1,H-TOP-16);if(s%60===0){gx.fillStyle=C.dim;gx.textAlign=s===0?'left':'center';gx.fillText(fmt(s),s===0?x-2:x,TOP-16);}}
  rows.forEach((r,i)=>bar(r.ps,yOf(i)+1,RH-2));
  ds.groups.forEach((gr,gi)=>{if(gi===ds.groups.length-1)return;const y1=groupSpan(gi)[1];gx.fillStyle=C.rule;gx.fillRect(0,y1+GAP/2,W,1);});
- // phases 分界（descend／hold／enter 起點）與上方標籤；太窄放不下字的只畫線，名稱在譜下方的清單
+ // phases 分界（descend／enter 起點）與上方標籤；太窄放不下字的只畫線，名稱在譜下方的清單
  gx.font='700 11px "Noto Sans TC",system-ui';gx.textAlign='left';
  for(const ph of ds.D.phases){const x0=xOf(ph.t0),x1=xOf(ph.t1),name=PHASE_SHORT[ph.key]||ph.label;
   if(ph.t0>0){gx.setLineDash([3,3]);gx.strokeStyle=C.dim;gx.lineWidth=1;gx.beginPath();gx.moveTo(Math.round(x0)+.5,TOP-30);gx.lineTo(Math.round(x0)+.5,H-20);gx.stroke();gx.setLineDash([]);}
@@ -152,7 +152,7 @@ function paintRead(){const rr=hover>=0?rows[hover]:null,list=rr?rr.ps:ds.P,cs=co
  $('read').innerHTML=`<h2><span>${title}</span><output>${fmt(t)}</output></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
 (async()=>{try{ds=await Dome.load();}catch(e){$('summary').textContent=e.message;return;}
  rows=rowsFor(ds);T=ds.T_END;H=yOf(rows.length-1)+RH+BOT;
- const hold=ds.D.phases.find(p=>p.key==='hold');t=Math.min(T,hold?hold.t0:T/2);
+ t=Math.min(T,ds.D.phases.find(p=>p.key==='enter').t0);
  $('summary').innerHTML=summaryText(ds);$('keys').innerHTML=KEY;
  $('phases').innerHTML=ds.D.phases.map(ph=>`<li><b>${esc(PHASE_SHORT[ph.key]||ph.key)}</b><span class="t">${fmt(ph.t0)}–${fmt(ph.t1)}</span><span class="d">${esc(ph.label)}</span></li>`).join('');
  buildLabels();

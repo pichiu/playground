@@ -87,16 +87,16 @@ const C={};for(const n of ['paper','ink','dim','rule','blue','floor','rust'])C[n
 const FRAME=[-15.0,-11.0,0.3,11.6];
 // 與 core.js 的 View 相同，只把像素密度固定：螢幕 2×、列印 3×，1,609 個小點印出來才不糊。
 class SheetView extends View{resize(){const r=this.c.getBoundingClientRect();this.w=r.width;this.h=r.height;this.dpr=matchMedia('print').matches?3:2;this.c.width=Math.round(this.w*this.dpr);this.c.height=Math.round(this.h*this.dpr);this.fit(this.b,true);}}
-const RULE='七個出口 139–145 供三路下樓：任何時刻近的出口供內側路、遠的供外側路，所以走廊不交叉；藍衣依 藍9→藍1 先下 B2 集結，白1 進集結區 1、白2 在樓梯、白3 在 B1 候隊；進場依大隊 1→9 由西一入口六路不斷拍，白4 以後依西一入口時刻倒推離座、直接接尾。';
-// 六個時刻取自 phases 與 groups；group 以 key 找（藍9、白1、白3、白4）。
+const RULE='七個出口 139–145 供三路下樓：任何時刻近的出口供內側路、遠的供外側路，所以走廊不交叉；藍衣依 藍9→藍1 先下 B2 集結，白1 進集結區 1；大隊 1 隊頭站定就出發、不等全部集結完，樓梯同時不停，白2 在樓梯、白3 在 B1 短暫候隊；進場依大隊 1→9 由西一入口六路不斷拍，白4 以後依西一入口時刻倒推離座、直接接尾。';
+// 六個時刻取自 phases 與 groups；group 以 key 找（藍9、白2、白4）。
 function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p])),b9=G['藍9'];
  return [
   // 就座階段的結束瞬間就是第一人離座的瞬間；畫面取它前一毫秒，讓「全員就座」真的是 1,609 人都在座位上。
   {key:'seated',t:ph.seated.t1,tc:ph.seated.t1-1e-3,h:'全員就座',d:'七個出口由上排往下坐，先走的坐上面。'},
   {key:'descend',t:b9.tStairFirst+8,h:'藍9 下樓、三路成形',d:`${['A','B','C'].map(L=>b9.lanes[L].exit).join('、')} 各供一路（A·B·C）；近的供內側路、遠的供外側路。`},
-  {key:'blue-b2',t:G['白1'].tAssembly,h:'藍衣 B2 到位、白1 進集結區 1',d:'藍 8·9／6·7／4·5／2·3 兩隊一區，藍1 與白1 同在集結區 1。'},
-  {key:'white-hold',t:G['白3'].tAssembly,h:'白2 樓梯、白3 B1 候隊',d:'白2 在樓梯，白3 在 B1 樓梯口前排隊，等進場開始。'},
-  {key:'enter',t:G['白4'].tLeave,h:'大隊 1 進場、白4 由出口接尾',d:'西一入口六路，北三路白、南三路藍，每路不斷拍；白4 以後依西一入口時刻倒推離座，直接下樓接尾。'},
+  {key:'blue-b2',t:ph.enter.t0,h:'藍衣 B2 到位、大隊 1 出發',d:'藍 8·9／6·7／4·5／2·3 兩隊一區，藍1 與白1 同在集結區 1；隊頭站定就出發，不等全部集結完。'},
+  {key:'enter',t:G['白2'].tStairFirst+6,h:'大隊 1 進場、樓梯不停',d:'西一入口六路，北三路白、南三路藍，每路不斷拍；同一時間白2 繼續下樓，在樓梯上短暫停下。'},
+  {key:'feed',t:G['白4'].tLeave,h:'白4 由出口接尾',d:'白3 在 B1 只停了幾秒，此刻已下樓隨大隊 3 進場；白4 以後依西一入口時刻倒推離座，直接下樓接尾，不集結。'},
   {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
 let jobs=[];
 function build(ds){const D=ds.D,M=D.meta,frames=$('frames');

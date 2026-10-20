@@ -16,7 +16,6 @@ HEADWAY = 0.4           # 同一路相鄰兩人節拍（走廊、樓梯、西一
 STAGGER = 0.17          # 三路／六路錯開
 T0 = 6.73               # 第一人離座
 STAND_MIN = 0.6         # 站定後至少這麼久才起步
-HOLD_MARGIN = 1.0       # 集結階段最後一人站定 → 最早可開始進場
 DADUI_GAP = 0.8         # 西一入口大隊交界的對齊空檔：外側路到各列轉入點的路程比內側短，前一大隊隊尾要先過
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
 LANE_K = {'A': 0, 'B': 1, 'C': 2}
@@ -114,14 +113,17 @@ def schedule(G, people, R=None, shift=None):
         S = T_S0 + relS[p['id']]
         leave = S - r['d_top'] / V
         out[p['id']] = dict(leave=leave, assembly=leave + r['L_arr'] / V, stairPlan=S)
-    last_assembly = max(v['assembly'] for v in out.values())
-    # 2. 西一入口時鐘（進場階段）：六路在大隊交界對齊
+    # 2. 西一入口時鐘（進場階段）：六路在大隊交界對齊。與樓梯時鐘重疊：不等全部集結完，每人只要自己站定 STAND_MIN 就能起步；
+    #    接尾者（白4 以後）在樓梯口仍排在同一路最後一位集結者之後 HEADWAY
     relG, t_dadui = aligned_clock(people, 'gateLane', 'gateIdx', 'dadui', lambda it: STAGGER * it['gateLane'], group_gap=DADUI_GAP)
-    need = [last_assembly + HOLD_MARGIN]
+    need = []
     for p in staged:
         need.append(out[p['id']]['assembly'] + STAND_MIN + R[p['id']]['L_dep'] / V - relG[p['id']])
+    last_stair = {L: max(out[p['id']]['stairPlan'] for p in staged if p['lane'] == L) for L in LANE_K}
     for p in feeders:
-        need.append(T0 + R[p['id']]['L_arr'] / V - relG[p['id']])
+        r = R[p['id']]
+        need.append(T0 + r['L_arr'] / V - relG[p['id']])
+        need.append(last_stair[p['lane']] + HEADWAY + (r['L_arr'] - r['d_top']) / V - relG[p['id']])
     T_G0 = max(need)
     for p in people:
         r = R[p['id']]
@@ -135,7 +137,7 @@ def schedule(G, people, R=None, shift=None):
     for pid, dt in shift.items():
         for key in out[pid]:
             out[pid][key] += dt
-    return out, dict(tStairStart=T_S0, tGateStart=T_G0, lastAssembly=last_assembly,
+    return out, dict(tStairStart=T_S0, tGateStart=T_G0,
                      tDadui={k: round(T_G0 + v, 3) for k, v in t_dadui.items()})
 
 
@@ -181,7 +183,6 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     P = {p['id']: p for p in persons}
     t_end = max(p['t']['arrive'] for p in persons)
     staged = [p for p in persons if p['assembly'] != 'FEEDER']
-    last_assembly = max(p['t']['assembly'] for p in staged)
     first_enter = min(p['t']['enter'] for p in staged)
     # exits
     exits = []
@@ -252,9 +253,8 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
                 tStairStart=round(clocks['tStairStart'], 3), tGateStart=round(clocks['tGateStart'], 3),
                 rules=RULES, assumptions=ASSUMPTIONS, checks=checks or {})
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
-              dict(key='descend', label='藍9→藍1 下 B2 集結，白1 進集結區 1、白2 樓梯、白3 B1 候隊', t0=T0, t1=last_assembly),
-              dict(key='hold', label='等待進場', t0=last_assembly, t1=first_enter),
-              dict(key='enter', label='大隊 1→9 由西一入口六路進場，白4 以後由出口接尾', t0=first_enter, t1=t_end)]
+              dict(key='descend', label='藍9→藍1 下 B2 集結，白1 開始進集結區 1', t0=T0, t1=first_enter),
+              dict(key='enter', label='大隊 1→9 由西一入口六路進場；樓梯不停，白2 樓梯、白3 B1 短暫候隊，白4 以後由出口接尾', t0=first_enter, t1=t_end)]
     return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map()), restSeats=rest, exits=exits, lanes=planj['lanes'],
                 groups=groups, files=files, persons=persons, others=base['others'],
                 stairSlots={str(j): [list(q) for q in G.STAIR_SLOTS[j]] for j in range(3)}, zones=zones)
@@ -265,8 +265,8 @@ RULES = [
     '七個出口：139、140、141、142、143、144、145，雙側可走的區只走靠樓梯那一側；任何時刻供 A 路的出口最近、供 C 路的最遠，所以走廊上不交叉',
     'A 路：139（藍9–藍3）→140（藍2–白7）→141（白8–9）；B 路：141（藍9–藍3）→142（藍2–白3）→143（白4–9）；C 路：142（藍9–7）→144（藍6–1）→145（白1–9）',
     '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面；每欄只來自一個出口',
-    '藍衣全部先下 B2 集結（藍 8·9／6·7／4·5／2·3，藍1 與白1 同在集結區 1）；白2 在樓梯、白3 在 B1 候隊；白4 以後依西一入口時刻倒推離座，直接接尾下樓',
-    '進場依大隊 1→9，西一入口六路（北三路白、南三路藍）每路連續不斷拍；西一入口之後沿原場內路徑',
+    '藍衣全部先下 B2 集結（藍 8·9／6·7／4·5／2·3，藍1 與白1 同在集結區 1）；白2 在樓梯、白3 在 B1 短暫候隊（數秒）；白4 以後依西一入口時刻倒推離座，直接接尾下樓',
+    '進場依大隊 1→9，西一入口六路（北三路白、南三路藍）每路連續不斷拍；不等全部集結完：大隊 1 在藍1、白1 隊頭站定後就出發，樓梯同時不停、白2 以後接續下樓；西一入口之後沿原場內路徑',
 ]
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；同一路相鄰兩人 0.4 秒、三路／六路錯開 0.17 秒、站定後 0.6 秒才起步；皆為動畫節奏，不是現場秒數',

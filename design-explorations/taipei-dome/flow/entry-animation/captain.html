@@ -117,6 +117,10 @@ $('lbl').onclick=()=>{labels=!labels;$('lbl').setAttribute('aria-pressed',labels
 $('pick').onclick=e=>{const b=e.target.closest('button');if(b)choose(+b.dataset.k);};
 
 // 口令序列：全部取自 groups／files／persons 既有時刻，依時間排序。
+// 集結隊伍：隊頭站定就起步，最後一位到時隊頭可能已經在走（邊到邊走），白衣、藍衣同一條規則
+const stagedCue=(g,id,who)=>g.tAssembly>g.tEnter
+ ?{id,t:g.tAssembly,h:`${who}最後一位到`,d:`${g.key} 邊到邊走：隊頭 ${fmt(g.tEnter)} 已起步，最後一位 ${fmt(g.tAssembly)} 到 ${ds.nodeName(g.assembly)}`}
+ :{id,t:g.tAssembly,h:`${who}到齊`,d:`${g.key} ${g.population} 人站定 · ${ds.nodeName(g.assembly)}`};
 function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),prev=ds.groups.filter(g=>g.dadui===k-1);
  const first=lies.reduce((a,f)=>f.tLeave<a.tLeave?f:a),lastP=ps.reduce((a,p)=>p.t.leave>a.t.leave?p:a),lastF=lies.find(f=>f.lie===lastP.lie);
  const staged=gs.filter(g=>g.assembly!=='FEEDER');
@@ -125,8 +129,8 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastF.costume}${k} 列 ${lastF.lie} 最後一位離開 ${lastF.exit} 出口，本大隊休息區清空`},
   W.assembly==='FEEDER'
    ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exit).join('、')} 出口依西一入口時刻直接接尾`}
-   :{id:'white',t:W.tAssembly,h:'白衣到齊',d:`${W.key} ${W.population} 人站定 · ${ds.nodeName(W.assembly)}`},
-  {id:'blue',t:B.tAssembly,h:'藍衣到齊',d:`${B.key} ${B.population} 人站定 · ${ds.nodeName(B.assembly)}`},
+   :stagedCue(W,'white','白衣'),
+  stagedCue(B,'blue','藍衣'),
   ...(prev.length?[{id:'handover',t:Math.max(...prev.map(g=>g.tGateLast)),h:'西一入口交接',d:`大隊 ${k-1} 最後一位過西一入口，六路接著換本大隊`}]:[]),
   {id:'go',t:Math.min(...gs.map(g=>g.tGateFirst)),h:`大隊 ${k} 出發`,d:`六路並排往西一入口，北三路白、南三路藍${staged.length?`（集結區 ${fmt(Math.min(...staged.map(g=>g.tEnter)))} 起步）`:''}`},
   {id:'gate-last',t:Math.max(...gs.map(g=>g.tGateLast)),h:'最後一位過西一入口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊，西一入口收'},

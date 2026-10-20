@@ -17,9 +17,9 @@ def test_console(open_page):
     assert pg.get_attribute('[data-lane="B"]', 'aria-pressed') == 'true'
     pg.click('[data-lane="B"]')
     assert pg.get_attribute('[data-lane="B"]', 'aria-pressed') == 'false'
-    # 導覽列掛在標題區，目前頁為指揮台
+    # 導覽列固定在最上方（body 直屬），目前頁為指揮台
     assert pg.locator('nav.dome-nav a[aria-current="page"]').inner_text() == '指揮台'
-    assert pg.locator('.title nav.dome-nav a').count() == 7
+    assert pg.locator('body > nav.dome-nav a').count() == 7
     # 時間一律 mm:ss；示意事件含大隊進場
     pg.evaluate('window.__seek(200)')
     pg.wait_for_function('document.getElementById("clock").textContent === "03:20"', timeout=5000)
