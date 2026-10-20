@@ -134,14 +134,15 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  if(!ds)return;
  document.title=`進場動線 2c · 口令卡 · 大隊 ${k}`;
  gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
- lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.lie-b.lie).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));
+ lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.costume===b.costume?'ABC'.indexOf(a.lane)-'ABC'.indexOf(b.lane):(a.costume==='白'?-1:1)).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 白 A·B·C、藍 A·B·C（藍2–9 的 A 路是列 6k，不是列號最小的）
  cues=cuesFor();
  $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${fmt(c.t)} ${c.h}"><time>${fmt(c.t)}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
  $('cue-n').textContent=`${cues.length} 條 · ${fmt(cues[0].t)}–${fmt(cues[cues.length-1].t)}`;
  $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
  const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exit).join('/');
- $('sum').innerHTML=`<b>${W.key}</b> 列 ${cols(W)}（${W.population} 人，出口 ${exits(W)}，${ds.nodeName(W.assembly)}）；<b>${B.key}</b> 列 ${cols(B)}（${B.population} 人，出口 ${exits(B)}，${ds.nodeName(B.assembly)}）。6口 六路由北數：白 A·B·C、藍 A·B·C。`;
+ const byNorth=g=>['A','B','C'].sort((x,y)=>((g.lanes[x].lie-1)%6)-((g.lanes[y].lie-1)%6)).join('·');   // 6口 路 j=(列−1) mod 6 由北數；藍2–9 從死巷走回來，A 路在最南
+ $('sum').innerHTML=`<b>${W.key}</b> 列 ${cols(W)}（${W.population} 人，出口 ${exits(W)}，${ds.nodeName(W.assembly)}）；<b>${B.key}</b> 列 ${cols(B)}（${B.population} 人，出口 ${exits(B)}，${ds.nodeName(B.assembly)}）。6口 六路由北數：白 ${byNorth(W)}、藍 ${byNorth(B)}${byNorth(B)==='A·B·C'?'':'（藍衣從上游走回來，A 路在最南）'}。`;
  $('tl').min=Math.max(0,cues[0].t-3);$('tl').max=Math.min(ds.T_END,cues[cues.length-1].t+1);t=+$('tl').min;
  v.fit(Dome.bounds(ps.flatMap(p=>p.path.map(q=>[q[0],q[1]])),.6),true);dirty=true;}
 

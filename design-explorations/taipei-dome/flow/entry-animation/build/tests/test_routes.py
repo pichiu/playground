@@ -69,12 +69,13 @@ def test_dead_end_lanes_mirrored_and_gate_routes_do_not_cross(base):
         offs = {L: round(G.slot_offset(heads[L]), 3) for L in 'ABC'}
         assert offs == ({'A': -0.04, 'B': -0.12, 'C': -0.2} if first else {'A': 0.2, 'B': 0.12, 'C': 0.04}), (blk, offs)
         assert [heads[L]['gateLane'] for L in 'ABC'] == [5, 4, 3]
-        dep = {L: G.depart_route(heads[L], 0) for L in 'ABC'}
+        # 回程折線止於進場線上；修正前的交叉發生在進場線橫越走廊那一段，所以沿 GATE_DIR 延伸 1 單位再比
+        dep = {L: G.depart_route(heads[L], 0) + [tuple(g + v for g, v in zip(G.GATE_PTS[heads[L]['gateLane']], G.GATE_DIR[heads[L]['gateLane']]))] for L in 'ABC'}
         arr = {L: G.arrival_route(heads[L], 0) for L in 'ABC'}
         for a, b in (('A', 'B'), ('A', 'C'), ('B', 'C')):
             assert not _cross(dep[a], dep[b]), (blk, a, b, '回 6口 交叉')
             k = min(len(arr[a]), len(arr[b]))
             assert not _cross(arr[a][-k // 2:], arr[b][-k // 2:]), (blk, a, b, '進區交叉')
         # j=3 的回程經過 GATE_PTS[3]（從外側走到線上再橫越），j=5 從線上場側那一點直接進場，不回頭
-        assert math.dist(dep['C'][-1], G.GATE_PTS[3]) < 1e-6 and math.dist(dep['C'][-2], G.B2.off(G.B2.proj(G.GATE_PTS[3])[0], -0.2)) < 0.02
-        assert math.dist(dep['A'][-1], G.B2.off(G.B2.proj(G.GATE_PTS[5])[0], -0.04)) < 0.02
+        assert math.dist(dep['C'][-2], G.GATE_PTS[3]) < 1e-6 and math.dist(dep['C'][-3], G.B2.off(G.B2.proj(G.GATE_PTS[3])[0], -0.2)) < 0.02
+        assert math.dist(dep['A'][-2], G.B2.off(G.B2.proj(G.GATE_PTS[5])[0], -0.04)) < 0.02
