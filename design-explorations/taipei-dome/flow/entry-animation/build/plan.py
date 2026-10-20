@@ -9,7 +9,9 @@ import sys
 # ---------- 樓梯序與路別（spec §3.1） ----------
 BLOCKS = [f'藍{k}' for k in range(9, 0, -1)] + [f'白{k}' for k in range(1, 10)]
 LANES = 'ABC'
-LANE_COL = {'白': {'A': -5, 'B': -4, 'C': -3}, '藍': {'A': -2, 'B': -1, 'C': 0}}   # 列 = 6k + 偏移；藍 A=6k−2 讓內側路對到內側格位（不折返、不交叉）
+# 列 = 6k + 偏移。A 路最靠看台側＝B2 上最靠場側，到西一入口必須對到「以自己的行進方向最先轉進場」的那條線（六條場內線沿走廊排開）：
+# 從樓梯側走向西一入口的（白衣、藍1 在 P1）是 j=0/3 → 列 6k−5／6k−2；從死巷反向走回西一入口的（藍2–9）是 j=5 → 列 6k，否則三路在西一入口前左右對調。
+LANE_COL = {'白': {'A': -5, 'B': -4, 'C': -3}, '藍': {'A': -2, 'B': -1, 'C': 0}, '藍LIFO': {'A': 0, 'B': -1, 'C': -2}}
 
 # ---------- 出口（spec §3.2） ----------
 EXITS = ['139', '140', '141', '142', '143', '144', '145']
@@ -39,7 +41,8 @@ def block_parts(block):
 
 def column_of(block, lane):
     costume, k = block_parts(block)
-    return 6 * k + LANE_COL[costume][lane]
+    key = '藍LIFO' if (costume == '藍' and ZONE_OF[block] in LIFO_ZONES) else costume
+    return 6 * k + LANE_COL[key][lane]
 
 
 def exit_of(block, lane):

@@ -26,3 +26,15 @@ def test_captain_first_cohort_no_handover(open_page):   # 大隊 1 沒有前一�
     ts = pg.locator('[data-cue]').evaluate_all('els => els.map(e => +e.dataset.t)')
     assert len(ts) >= 6 and ts == sorted(ts)
     assert pg.locator('nav.dome-nav a[aria-current=page]').inner_text() == '口令卡'
+
+
+def test_captain_gate_order_follows_data(open_page):   # review：西一入口六路順序要由資料算，藍2–9 的 A 路在最南；六列卡片依 白 A·B·C、藍 A·B·C 排
+    pg, errs, perrs = open_page('captain.html?k=1', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    assert '白 A·B·C、藍 A·B·C' in pg.inner_text('#sum') and not perrs
+    assert pg.locator('[data-lie]').evaluate_all('els => els.map(e => +e.dataset.lie)') == [1, 2, 3, 4, 5, 6]
+    pg, errs, perrs = open_page('captain.html?k=4', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    assert '白 A·B·C、藍 C·B·A' in pg.inner_text('#sum') and 'A 路在最南' in pg.inner_text('#sum') and not perrs
+    assert pg.locator('[data-lie]').evaluate_all('els => els.map(e => +e.dataset.lie)') == [19, 20, 21, 24, 23, 22]
+    assert pg.locator('[data-lie="24"]').inner_text().find('A 路') >= 0
