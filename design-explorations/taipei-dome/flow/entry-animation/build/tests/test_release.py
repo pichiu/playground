@@ -1,13 +1,12 @@
 """Task 15：取代舊版、首頁一張卡、全站連結、追蹤檔可重現。
 
-例外：`flow/entry-animation-v2/` 的連結已外傳（GitHub Pages），所以暫時原樣保留，首頁與 2c 的頁面都不連到它；
-PR 正式合併、確認可改後再清（刪資料夾、把 test_v2_kept_verbatim_for_shared_link 改回「不存在」）。
+例外：`flow/entry-animation-v2/` 的連結已外傳（GitHub Pages），所以暫時保留，首頁與 2c 的頁面都不連到它；
+樓梯與西一入口的圖面已和 2c 同步。PR 正式合併、確認可改後再清（刪資料夾、把 test_v2_kept_for_shared_link 改回「不存在」）。
 """
 import hashlib
 import re
 import subprocess
 
-PRE_REMOVAL = 'd634d19^'   # 刪舊版那個 commit 的前一個：暫存的 v2 資料夾以它為準
 V2 = 'design-explorations/taipei-dome/flow/entry-animation-v2'
 
 
@@ -22,15 +21,13 @@ def test_old_versions_gone(root):
     assert (root / 'README.md').exists() and (root / 'build' / 'README.md').exists()
 
 
-def test_v2_kept_verbatim_for_shared_link(root):
-    """外傳連結要能用：v2 資料夾與刪除前一模一樣；另加 redesign/src/v1.html（版本 1 頁原樣），它的「版本 1／對照」切換才讀得到資料。"""
-    repo = root.parents[3]
+def test_v2_kept_for_shared_link(root):
+    """外傳連結要能用：v2 頁與 redesign/src/v1.html（版本 1 頁原樣，「版本 1／對照」切換讀它的資料）都還在。
+    v2 不再一字不改：樓梯 L 形與西一入口（4 扇門）已用 v2 自己的 build 重算，和 2c 同一套圖面。"""
     v2 = root.parent / 'entry-animation-v2'
-    assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists()
-    r = _git(repo, 'diff', '--quiet', PRE_REMOVAL, '--', V2, f':!{V2}/redesign/src/*')
-    assert r.returncode == 0, r.stderr.decode()[:500]
-    want = _git(repo, 'show', f'{PRE_REMOVAL}:design-explorations/taipei-dome/flow/entry-animation/index.html').stdout
-    assert want and (v2 / 'redesign' / 'src' / 'v1.html').read_bytes() == want
+    assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists() and (v2 / 'redesign' / 'src' / 'v1.html').exists()
+    h = (v2 / 'index.html').read_text(encoding='utf-8')
+    assert '"stairTreads"' in h and '西一入口（4 扇門）' in h and '6口' not in h
 
 
 def test_hub_single_card(root):

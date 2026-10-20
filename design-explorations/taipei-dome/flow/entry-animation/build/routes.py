@@ -1,14 +1,20 @@
 """2c 集結區與路線幾何（spec §3.5），自版本 2 build.py 移植。
 
-改動只有：走廊、樓梯、B2 一律三路（LANE_OFF）；P6 改為白3 候隊；白4 以後直達 6口；刪除 P7–P9。
+改動只有：走廊、樓梯、B2 一律三路（LANE_OFF）；P6 改為白3 候隊；白4 以後直達西一入口；刪除 P7–P9；
+樓梯改畫成企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台（往東接 B2 走廊）。
 """
 import math
 from geo import Poly, pairs
 import plan
 
 STAIR_U_B1, B2_U_START = 13.15, 1.0      # 樓梯口在 B1 走廊折線的 u；B2 走廊起點 u
-U_SHIFT0, U_SHIFT1 = 5.25, 4.95          # B2 死巷後進場的大隊平行外移到 6口 三路的區間
+U_SHIFT0, U_SHIFT1 = 5.25, 4.95          # B2 死巷後進場的大隊平行外移到西一入口三路的區間
 LANE_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
+STAIR_RUN = 0.62                         # 樓梯直段長（約 4.7 m），由 B1 走廊樓梯口往南直下
+LANDING_X, LANDING_END_X = -11.80, -11.31  # B2 平台：路線走到 x −11.80 轉進 B2 走廊；底色帶接到 B2 走廊外緣
+STAIR_HALF_W = 0.2                       # 樓梯／平台半寬（三路 ±0.12 加身寬）
+GATE_W, GATE_DOORS, GATE_CAP = 0.95, 4, 12   # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
+GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
 ZONES = {
     'P1':    dict(label='1',      floor='B2', kind='FIFO', corr='B2',    head=4.15,  step=-0.073),
@@ -26,8 +32,40 @@ def lane_run(poly, u0, u1, off, step=0.35):
     return [poly.off(u0 + (u1 - u0) * k / n, off) for k in range(1, n + 1)]
 
 
+def miter(pts, o):
+    """折線往左法向（畫面 y 向下）平移 o，轉角取斜接點，讓每一路在轉角各自走自己的折線、不互相擠進。"""
+    def nrm(a, b):
+        d = math.dist(a, b) or 1e-9
+        return ((b[1] - a[1]) / d, -(b[0] - a[0]) / d)
+    out = []
+    for k, q in enumerate(pts):
+        n1 = nrm(pts[k - 1], q) if k else None
+        n2 = nrm(q, pts[k + 1]) if k < len(pts) - 1 else None
+        if n1 and n2:
+            c = 1 + n1[0] * n2[0] + n1[1] * n2[1]
+            n = ((n1[0] + n2[0]) / c, (n1[1] + n2[1]) / c)
+        else:
+            n = n1 or n2
+        out.append((q[0] + n[0] * o, q[1] + n[1] * o))
+    return out
+
+
+def poly_between(poly, u0, u1):
+    """折線上 u0→u1 的點（含中間的轉角頂點）。"""
+    inner = [q for q, c in zip(poly.p, poly.cum) if min(u0, u1) < c < max(u0, u1)]
+    return [poly.at(u0)] + (inner if u1 >= u0 else inner[::-1]) + [poly.at(u1)]
+
+
+def trim_corridors(B1, B2, u_top, y_landing):
+    """圖面用的走廊線：B1 畫到樓梯口為止、B2 從平台那一排開始，不再畫成穿過樓梯的樣子（路線幾何仍用完整折線，u 不變）。"""
+    u2 = B2.proj((B2.at(0)[0], y_landing))[0]
+    b1 = [q for q, c in zip(B1.p, B1.cum) if c < u_top] + [B1.at(u_top)]
+    b2 = [B2.at(u2)] + [q for q, c in zip(B2.p, B2.cum) if c > u2]
+    return dict(b1Corridor=[round(v, 3) for q in b1 for v in q], b2Corridor=[round(v, 3) for q in b2 for v in q])
+
+
 def first_in_zone(person):
-    """同區兩個大隊：先進場者站往 6口 不必穿越的一側。偶數大隊、大隊 1、白3（單獨一區）為先。"""
+    """同區兩個大隊：先進場者站往西一入口不必穿越的一側。偶數大隊、大隊 1、白3（單獨一區）為先。"""
     d = person['dadui']
     return d == 1 or d % 2 == 0 or (d == 3 and person['costume'] == '白')
 
@@ -36,18 +74,26 @@ class Geometry:
     def __init__(self, base):
         self.D = base
         M = base['map']
-        self.B1, self.B2, self.ST = Poly(pairs(M['b1Corridor'])), Poly(pairs(M['b2Corridor'])), Poly(pairs(M['stair']))
+        self.B1, self.B2 = Poly(pairs(M['b1Corridor'])), Poly(pairs(M['b2Corridor']))
+        top = self.B1.at(STAIR_U_B1)
+        bot = (top[0], top[1] + STAIR_RUN)
+        self.STAIR_PTS = [top, bot, (LANDING_X, bot[1])]       # 樓梯口 → 樓梯底（B2）→ 平台東端
+        self.ST = Poly(self.STAIR_PTS)
         self.ZONES = {k: dict(v) for k, v in ZONES.items()}
         self.LANE_OFF = dict(LANE_OFF)
-        self.STAIR_SLOTS = {}                                   # 白2 樓梯格位：沿用版本 1 的 6白（列 31–33）
-        for lie_old, j in ((31, 0), (32, 1), (33, 2)):
-            ps = sorted([p for p in base['persons'] if p['lie'] == lie_old], key=lambda p: p['gateIdx'])
-            self.STAIR_SLOTS[j] = [tuple(next(q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6)[:2]) for p in ps]
-        self.GATE_PTS = {}                                      # 6口 六路收攏點：版本 1 大隊 1 過 6口 的點
+        self.ST_LANE = {o: Poly(miter(self.STAIR_PTS, o)) for o in self.LANE_OFF.values()}   # 樓梯三路各自的折線
+        n_of = {f['lie']: f['n'] for f in base['files']}
+        n_stair = max(n_of[plan.column_of(b, L)] for b in plan.BLOCKS if plan.ZONE_OF[b] == 'STAIR' for L in plan.LANES)
+        self.STAIR_SLOTS, self.STAIR_SLOT_U = {}, {}            # 白2 樓梯格位：頭在平台東端（B2），沿自己那一路往回排到樓梯上
+        for j, L in enumerate(plan.LANES):
+            lp = self.ST_LANE[self.LANE_OFF[L]]
+            step = (lp.L - 0.08) / (n_stair - 1)
+            self.STAIR_SLOT_U[j] = [lp.L - 0.03 - step * k for k in range(n_stair)]
+            self.STAIR_SLOTS[j] = [lp.at(u) for u in self.STAIR_SLOT_U[j]]
+        self.GATE_PTS = {}                                      # 西一入口六路收攏點：版本 1 大隊 1 過西一入口的點
         for p in base['persons']:
             if p['dadui'] == 1:
                 self.GATE_PTS[p['laneIdx']] = tuple(next(q for q in p['path'] if abs(q[2] - p['t']['gate']) < 1e-6)[:2])
-        n_of = {f['lie']: f['n'] for f in base['files']}
         self.ZONE_NMAX = {}
         for block in plan.BLOCKS:
             z = plan.ZONE_OF[block]
@@ -60,7 +106,7 @@ class Geometry:
         Z = self.ZONES[z]
         if z == 'P1':
             return 0.2 - 0.08 * j
-        if Z['corr'] == 'B2':                          # 死巷：6口 南三路 3,4,5；先進場者站外側
+        if Z['corr'] == 'B2':                          # 死巷：西一入口南三路 3,4,5；先進場者站外側
             k = j - 3
             return (-0.04 - 0.08 * k) if first_in_zone(person) else (0.2 - 0.08 * k)
         return self.LANE_OFF[person['lane']]           # P6：各路就地停在自己那一路
@@ -77,23 +123,27 @@ class Geometry:
     def slot_xy(self, person, i):
         z = person['assembly']
         if z == 'STAIR':
-            pts = self.STAIR_SLOTS[person['gateLane']]
-            if i < len(pts):
-                return pts[i]
-            a, b = pts[-2], pts[-1]
-            return (b[0] + (b[0] - a[0]) * (i - len(pts) + 1), b[1] + (b[1] - a[1]) * (i - len(pts) + 1))
+            j = person['gateLane']
+            return self._stair_lane(j).at(self._stair_u(i, j))
         poly = self.B1 if self.ZONES[z]['corr'] == 'B1' else self.B2
         return poly.off(self.slot_u(person, i), self.slot_offset(person))
 
+    def _stair_u(self, i, j):
+        return self.STAIR_SLOT_U[j][i]
+
     # ---------- 路線 ----------
+    def _stair_lane(self, j):
+        return self.ST_LANE[self.LANE_OFF[plan.LANES[j]]]
+
     def _down_stair(self, off):
-        return [self.B1.off(STAIR_U_B1, off), self.ST.off(0.05, off), self.ST.off(self.ST.L - 0.05, off)]
+        lp = self.ST_LANE[off]
+        return [self.B1.off(STAIR_U_B1, off)] + poly_between(lp, 0.05, lp.L - 0.05)
 
     def _b2_to_gate(self, j):
         return lane_run(self.B2, B2_U_START, 4.2, 0.2 - 0.08 * j) + [self.GATE_PTS[j]]
 
     def arrival_route(self, person, i):
-        """座位 → 走道口 → 接入點 → 自己那一路 → 集結格位（白4 以後直達 6口）。"""
+        """座位 → 走道口 → 接入點 → 自己那一路 → 集結格位（白4 以後直達西一入口）。"""
         z, j, lane = person['assembly'], person['gateLane'], person['lane']
         Z = self.ZONES.get(z)
         off = self.LANE_OFF[lane]
@@ -125,14 +175,14 @@ class Geometry:
         elif z == 'STAIR':
             pts += lane_run(self.B1, u_in, STAIR_U_B1 - 0.35, off)
             pts.append(self.B1.off(STAIR_U_B1, off))
-            pts.append(self.STAIR_SLOTS[j][-1])
+            pts += poly_between(self._stair_lane(j), 0.0, self._stair_u(i, j))[:-1]   # 沿自己那一路下樓梯、轉平台，走到格位
         else:                                          # P6：沿自己那一路走到格位
             pts += lane_run(self.B1, u_in, self.slot_u(person, i), off)
         pts.append(self.slot_xy(person, i))
         return pts
 
     def depart_route(self, person, i):
-        """集結格位 → 6口（白4 以後沒有這一段）。"""
+        """集結格位 → 西一入口（白4 以後沒有這一段）。"""
         z, j, lane = person['assembly'], person['gateLane'], person['lane']
         if z == 'FEEDER':
             return []
@@ -147,7 +197,7 @@ class Geometry:
             assert self.slot_u(person, i) >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
             return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate), self.GATE_PTS[j]]
         if z == 'STAIR':
-            return [s0, self.STAIR_SLOTS[j][0]] + self._b2_to_gate(j)
+            return [s0] + poly_between(self._stair_lane(j), self._stair_u(i, j), self.STAIR_SLOT_U[j][0])[1:] + self._b2_to_gate(j)
         off = self.LANE_OFF[lane]                       # P6
         return [s0] + lane_run(self.B1, self.slot_u(person, i), STAIR_U_B1 - 0.25, off) + self._down_stair(off) + self._b2_to_gate(j)
 
@@ -158,6 +208,36 @@ class Geometry:
             if any(math.dist(q, t) < 1e-6 for t in tops):
                 return k
         return None
+
+    # ---------- 圖面 ----------
+    def stair_map(self):
+        """樓梯 L 形的圖面：stair 是路線中線，stairBand 是底色帶（平台接到 B2 走廊外緣），stairTreads 是直段的踏階線。"""
+        top, bot, _ = self.STAIR_PTS
+        band = [top, bot, (LANDING_END_X, bot[1])]
+        ring = miter(band, STAIR_HALF_W) + miter(band, -STAIR_HALF_W)[::-1]
+        n = 8
+        treads = [[round(top[0] - STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3), round(top[0] + STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3)]
+                  for k in range(1, n)]
+        flat = lambda pts: [round(v, 3) for q in pts for v in q]
+        return dict(stair=flat(self.STAIR_PTS), stairBand=flat(ring), stairRun=flat([top, bot]), stairTreads=treads,
+                    **trim_corridors(self.B1, self.B2, STAIR_U_B1, bot[1]))
+
+    def gate_map(self):
+        """西一入口：中線沿用版本 1 的 gateIn（B2 走廊 → 場內），帶寬 = 4 扇門可 12 人並排；門畫在場內端，橫跨通行方向。"""
+        a, b = pairs(self.D['map']['gateIn'])
+        d = math.dist(a, b)
+        tx, ty = (b[0] - a[0]) / d, (b[1] - a[1]) / d
+        nx, ny = ty, -tx
+        h = GATE_W / 2
+        band = [(a[0] + nx * h, a[1] + ny * h), (b[0] + nx * h, b[1] + ny * h), (b[0] - nx * h, b[1] - ny * h), (a[0] - nx * h, a[1] - ny * h)]
+        gap = 0.04
+        w = (GATE_W - gap * (GATE_DOORS - 1)) / GATE_DOORS
+        doors = []
+        for k in range(GATE_DOORS):
+            s0 = -h + k * (w + gap)
+            doors.append([round(v, 3) for v in (b[0] + nx * s0, b[1] + ny * s0, b[0] + nx * (s0 + w), b[1] + ny * (s0 + w))])
+        return dict(line=[round(v, 3) for v in (*a, *b)], width=GATE_W, doors=doors, cap=GATE_CAP, label=GATE_LABEL,
+                    band=[round(v, 3) for q in band for v in q])
 
     # ---------- 區域 ----------
     def region(self, z):

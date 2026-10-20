@@ -12,12 +12,12 @@ import plan
 import routes
 
 V = 1.1                 # 單位/秒
-HEADWAY = 0.4           # 同一路相鄰兩人節拍（走廊、樓梯、6口 皆同）
+HEADWAY = 0.4           # 同一路相鄰兩人節拍（走廊、樓梯、西一入口皆同）
 STAGGER = 0.17          # 三路／六路錯開
 T0 = 6.73               # 第一人離座
 STAND_MIN = 0.6         # 站定後至少這麼久才起步
 HOLD_MARGIN = 1.0       # 集結階段最後一人站定 → 最早可開始進場
-DADUI_GAP = 0.8         # 6口 大隊交界的對齊空檔：外側路到各列轉入點的路程比內側短，前一大隊隊尾要先過
+DADUI_GAP = 0.8         # 西一入口大隊交界的對齊空檔：外側路到各列轉入點的路程比內側短，前一大隊隊尾要先過
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
 LANE_K = {'A': 0, 'B': 1, 'C': 2}
 ZONE_LABEL = {'P1': '集結區 1', 'P2': '藍 2·3', 'P3': '藍 4·5', 'P4': '藍 6·7', 'P5': '藍 8·9',
@@ -44,7 +44,7 @@ def timed(pts, t0):
 
 
 def slot_indices(people):
-    """欄內格位序 i：同列依排大→小（排大的先過 6口）。"""
+    """欄內格位序 i：同列依排大→小（排大的先過西一入口）。"""
     by_lie = collections.defaultdict(list)
     for p in people:
         by_lie[p['lie']].append(p)
@@ -115,7 +115,7 @@ def schedule(G, people, R=None, shift=None):
         leave = S - r['d_top'] / V
         out[p['id']] = dict(leave=leave, assembly=leave + r['L_arr'] / V, stairPlan=S)
     last_assembly = max(v['assembly'] for v in out.values())
-    # 2. 6口 時鐘（進場階段）：六路在大隊交界對齊
+    # 2. 西一入口時鐘（進場階段）：六路在大隊交界對齊
     relG, t_dadui = aligned_clock(people, 'gateLane', 'gateIdx', 'dadui', lambda it: STAGGER * it['gateLane'], group_gap=DADUI_GAP)
     need = [last_assembly + HOLD_MARGIN]
     for p in staged:
@@ -140,7 +140,7 @@ def schedule(G, people, R=None, shift=None):
 
 
 def person_path(base_person, p, r, t):
-    """座位 → 格位（停留）→ 6口 → 場內，含時間；場內沿版本 1 幾何等速重計時。"""
+    """座位 → 格位（停留）→ 西一入口 → 場內，含時間；場內沿版本 1 幾何等速重計時。"""
     arr = timed(r['arr'], t['leave'])
     if p['assembly'] == 'FEEDER':
         path = list(arr)
@@ -231,8 +231,13 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
             if Z['kind'] == 'LIFO' or Z['corr'] == 'B1':
                 x, y = (G.B1 if Z['corr'] == 'B1' else G.B2).at(Z['head'])
                 n['X'], n['Y'] = round(x, 3), round(y, 3)
+        if k in ('STAIR_TOP', 'STAIR_BOT'):                     # 樓梯直段的頂與底（L 形轉角）
+            q = G.STAIR_PTS[0 if k == 'STAIR_TOP' else 1]
+            n['X'], n['Y'] = round(q[0], 3), round(q[1], 3)
         if k == 'STAIR_TOP':
             n['label'] = '樓梯(B1) · 白 2'
+        if k == 'GATE6':
+            n['label'] = routes.GATE_LABEL
         nodes[k] = n
     who_seat = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
     rest = [dict(s, who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
@@ -247,8 +252,8 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
               dict(key='descend', label='藍9→藍1 下 B2 集結，白1 進集結區 1、白2 樓梯、白3 B1 候隊', t0=T0, t1=last_assembly),
               dict(key='hold', label='等待進場', t0=last_assembly, t1=first_enter),
-              dict(key='enter', label='大隊 1→9 由 6口 六路進場，白4 以後由出口接尾', t0=first_enter, t1=t_end)]
-    return dict(meta=meta, phases=phases, nodes=nodes, map=base['map'], restSeats=rest, exits=exits, lanes=planj['lanes'],
+              dict(key='enter', label='大隊 1→9 由西一入口六路進場，白4 以後由出口接尾', t0=first_enter, t1=t_end)]
+    return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map()), restSeats=rest, exits=exits, lanes=planj['lanes'],
                 groups=groups, files=files, persons=persons, others=base['others'],
                 stairSlots={str(j): [list(q) for q in G.STAIR_SLOTS[j]] for j in range(3)}, zones=zones)
 
@@ -258,19 +263,20 @@ RULES = [
     '七個出口：139、140、141、142、143、144、145，雙側可走的區只走靠樓梯那一側；任何時刻供 A 路的出口最近、供 C 路的最遠，所以走廊上不交叉',
     'A 路：139（藍9–藍3）→140（藍2–白7）→141（白8–9）；B 路：141（藍9–藍3）→142（藍2–白3）→143（白4–9）；C 路：142（藍9–7）→144（藍6–1）→145（白1–9）',
     '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面；每欄只來自一個出口',
-    '藍衣全部先下 B2 集結（藍 8·9／6·7／4·5／2·3，藍1 與白1 同在集結區 1）；白2 在樓梯、白3 在 B1 候隊；白4 以後依 6口 時刻倒推離座，直接接尾下樓',
-    '進場依大隊 1→9，6口 六路（北三路白、南三路藍）每路連續不斷拍；6口 之後沿原場內路徑',
+    '藍衣全部先下 B2 集結（藍 8·9／6·7／4·5／2·3，藍1 與白1 同在集結區 1）；白2 在樓梯、白3 在 B1 候隊；白4 以後依西一入口時刻倒推離座，直接接尾下樓',
+    '進場依大隊 1→9，西一入口六路（北三路白、南三路藍）每路連續不斷拍；西一入口之後沿原場內路徑',
 ]
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；同一路相鄰兩人 0.4 秒、三路／六路錯開 0.17 秒、站定後 0.6 秒才起步；皆為動畫節奏，不是現場秒數',
-    '座位、看台幾何、走道口、6口 與場內路徑沿用版本 1 的示意圖面；集結區位置沿用版本 2；139 的 1–5 號不用',
+    '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；集結區位置沿用版本 2；139 的 1–5 號不用',
+    '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
     '碰撞檢查為圖面點距（0.03 單位），不是人體寬度或通道容量認證',
 ]
 
 
 def write_seats_csv(data, path):
     cols = ['位置編碼', '衣色', '大隊', '演繹列', '演繹位置', '休息區', '休息排', '座號', '出口', '出口帶隊序',
-            '樓梯路', '樓梯序號', '欄內順序', '集結區', '6口路', '6口序號']
+            '樓梯路', '樓梯序號', '欄內順序', '集結區', '西一入口路', '西一入口序號']
     with open(path, 'w', newline='', encoding='utf-8') as f:
         w = csv.writer(f, lineterminator='\n')
         w.writerow(cols)
@@ -338,7 +344,7 @@ def main(argv):
             data['meta']['checks']['ok'] = False
     json.dump(data, open(out_path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     write_seats_csv(data, csv_path)
-    print('全長', data['meta']['tEnd'], '秒；樓梯時鐘起點', data['meta']['tStairStart'], '；6口 時鐘起點', data['meta']['tGateStart'],
+    print('全長', data['meta']['tEnd'], '秒；樓梯時鐘起點', data['meta']['tStairStart'], '；西一入口時鐘起點', data['meta']['tGateStart'],
           '；檢核', '通過' if data['meta']['checks'].get('ok') else ('未跑' if no_avoid else '未通過'))
 
 

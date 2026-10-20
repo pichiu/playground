@@ -79,15 +79,15 @@ const MOMENTS={
  1:ds=>[
   {t:wave(ds,1)+20,h:'第一出離座',d:'139–145 區的前段人先動，先出來的是大隊 5。三條鏈各走一路，走廊上同時最多三條隊伍。'},
   {t:wave(ds,2)+25,h:'集結點開始成形',d:'大隊 1–5 下樓梯到 B2 集結點 1–5；6–9 在 B1 西側走廊，大隊 6 白衣在樓梯與平台。'},
-  {t:dStart(ds,1)-1,h:'大隊 1 準備進場',d:'集結點 1 的六列已湊齊三白三藍，頭朝 6口。'},
-  {t:dStart(ds,3)+8,h:'6口 六路並排',d:'大隊依 1→9 依序進；沿牆到西南角，再沿排 1 外側通道北上。'},
+  {t:dStart(ds,1)-1,h:'大隊 1 準備進場',d:'集結點 1 的六列已湊齊三白三藍，頭朝西一入口。'},
+  {t:dStart(ds,3)+8,h:'西一入口六路並排',d:'大隊依 1→9 依序進；沿牆到西南角，再沿排 1 外側通道北上。'},
   {t:dStart(ds,6)+10,h:'B 組下樓',d:'大隊 6 白衣三列先下樓梯，藍衣跟著；場內隊形已填過半。'},
   {t:ds.T_END,h:'全員到位',d:'1,609 人全部站在身分證位置。'}],
  2:ds=>[
   {t:wave(ds,1)+20,h:'第一出離座',d:'先出來的是大隊 8、9 的藍衣，直接下樓梯，走到 B2 最遠的集結區。'},
   {t:wave(ds,2)+25,h:'藍衣下 B2、白衣留 B1',d:'藍衣在 B2 兩隊一區（藍 2·3／4·5／6·7／8·9）；白衣留在 B1，白 2 在樓梯。'},
-  {t:dStart(ds,1)-1,h:'大隊 1 準備進場',d:'集結區 1 的三白三藍湊齊，頭朝 6口。'},
-  {t:dStart(ds,3)+8,h:'6口 會合成六路',d:'白衣從 B1 下樓、藍衣從 B2 過來，每個大隊在 6口 會合成六路。'},
+  {t:dStart(ds,1)-1,h:'大隊 1 準備進場',d:'集結區 1 的三白三藍湊齊，頭朝西一入口。'},
+  {t:dStart(ds,3)+8,h:'西一入口會合成六路',d:'白衣從 B1 下樓、藍衣從 B2 過來，每個大隊在西一入口會合成六路。'},
   {t:dStart(ds,6)+10,h:'後段大隊會合',d:'藍衣早已在 B2 等候，白衣下樓後才會合；場內隊形已填過半。'},
   {t:ds.T_END,h:'全員到位',d:'1,609 人全部站在身分證位置。'}],
 };
@@ -108,12 +108,12 @@ async function setVersion(m){const got=await Dome.fetchSets(m);if(!got)return;se
  for(const j of jobs){j.v=new View(j.cv,{pad:6});j.v.onresize=()=>paint(j);}
  await document.fonts.ready;jobs.forEach(paint);}
 function paint({v,ds,t}){v.fit(FRAME,true);const c=v.begin(C.paper),D=ds.D,r=Math.max(.9,.04*v.s);
- v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule});
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule,gate:C.ink,gateA:.08});
  c.globalAlpha=.7;c.lineCap='round';
  for(const p of ds.P){const st=state(p,t);if(st!=='walk'&&st!=='enter')continue;const pts=p.path.filter(q=>q[2]>t-8&&q[2]<t).flatMap(q=>[q[0],q[1]]),a=pos(p,Math.max(0,t-8)),b=pos(p,t);v.stroke([a[0],a[1],...pts,b[0],b[1]],C.rust,.6);}
  c.globalAlpha=1;
  for(const p of ds.P){const q=pos(p,t);if(p.costume==='白')v.dot(q[0],q[1],r,C.paper,C.ink,.7);else v.dot(q[0],q[1],r,C.blue);}
- v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:11,weight:700,halo:C.paper,dx:-16,font:'"Noto Serif TC",serif'});
+ v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:11,weight:700,halo:C.paper,dx:-16,font:'"Noto Serif TC",serif'});
  v.text('甲舞台',-6.3,0,{color:C.dim,size:11,font:'"Noto Serif TC",serif'});}
 Dome.switcher($('vs'),Dome.mode(),setVersion);setVersion(Dome.mode());
 window.__seek=()=>{};

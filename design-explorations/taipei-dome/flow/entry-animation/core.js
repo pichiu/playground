@@ -68,10 +68,12 @@ class View{
     if(pal.fieldLine)for(const l of m.base.field)this.stroke(l,pal.fieldLine,.8);
     if(pal.stage)for(const l of m.base.stage)this.stroke(l,pal.stage,.6);
     if(pal.wall)this.stroke(m.wall,pal.wall,pal.wallW||1.2,[],true);
-    if(pal.band){for(const b of [m.b1Band,m.b2Band,m.stairBand])this.fill(b,pal.band,pal.bandA??.18);for(const b of [m.walkBand,m.laneBand])this.fill(b,pal.lane||pal.band,pal.laneA??.14);}
+    if(pal.band){for(const b of [m.b1Band,m.b2Band,m.stairBand])this.fill(b,pal.band,pal.bandA??.18);for(const b of [m.walkBand,m.laneBand])this.fill(b,pal.lane||pal.band,pal.laneA??.14);
+      this.ctx.globalAlpha=Math.min(1,(pal.bandA??.18)*3);for(const l of m.stairTreads||[])this.stroke(l,pal.band,1);this.ctx.globalAlpha=1;}   // 樓梯直段畫踏階線，橫段（B2 平台）不畫
     if(pal.corridor){this.stroke(m.b1Corridor,pal.corridor,1,[3,3]);this.stroke(m.b2Corridor,pal.corridor,1,[3,3]);this.stroke(m.stair,pal.corridor,2);}
     if(pal.stand)for(const s of m.stands)this.stroke(s.poly,pal.stand,.8,[],true),pal.standFill&&this.fill(s.poly,pal.standFill,pal.standFillA??1);
-    if(pal.gate)this.stroke(m.gateIn,pal.gate,Math.max(3,.3*this.s));
+    // 西一入口：帶寬 = 4 扇門可 12 人並排；門畫在場內端
+    if(pal.gate&&m.gate){this.fill(m.gate.band,pal.gate,pal.gateA??.22);for(const d of m.gate.doors)this.stroke(d,pal.gate,Math.max(2.5,.05*this.s));}
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }

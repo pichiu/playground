@@ -97,9 +97,9 @@ function cuesFor(d){const ps=d.P.filter(p=>p.dadui===k),prev=d.P.filter(p=>p.dad
   {id:'l0',t:minT(ps,'leave'),h:'第一位離座',d:'休息區開始有人起身'},
   {id:'l1',t:maxT(ps,'leave'),h:'最後一位離座',d:'休息區清空，殿後幹部跟上'},
   ...spots.map(s=>{const g=ps.filter(p=>p.assembly===s),c=[...new Set(g.map(p=>p.costume))];return {id:'a-'+c.join(''),t:maxT(g,'assembly'),h:one?'六列到齊':`${c.join('')}衣到齊`,d:`${d.nodeName(s)} ${one?'三白三藍':'三列'}湊齊`};}),
-  ...(prev.length?[{id:'p',t:maxT(prev,'gate'),h:`大隊 ${k-1} 最後一位過 6口`,d:'6口 交接給本大隊'}]:[]),
-  {id:'go',t:minT(ps,'enter'),h:`大隊 ${k} 出發`,d:one?'六列並排往 6口，左右順序不變':'白衣、藍衣各自出發，在 6口 會合成六路'},
-  {id:'g1',t:maxT(ps,'gate'),h:'最後一位過 6口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊'},
+  ...(prev.length?[{id:'p',t:maxT(prev,'gate'),h:`大隊 ${k-1} 最後一位過西一入口`,d:'西一入口交接給本大隊'}]:[]),
+  {id:'go',t:minT(ps,'enter'),h:`大隊 ${k} 出發`,d:one?'六列並排往西一入口，左右順序不變':'白衣、藍衣各自出發，在西一入口會合成六路'},
+  {id:'g1',t:maxT(ps,'gate'),h:'最後一位過西一入口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊'},
   {id:'ok',t:maxT(ps,'arrive'),h:'全隊到位',d:'回報到位'},
  ].sort((a,b)=>a.t-b.t);}
 function choose(n){k=n;document.documentElement.style.setProperty('--team',TEAM[k-1]);$('pick').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.k===k));
@@ -125,10 +125,10 @@ function draw(){const team=TEAM[k-1],ps=ds.P.filter(p=>p.dadui===k),D=ds.D;
  $('nx-c').innerHTML=i<0?'完成':`${fmt(nx.t-t)}<span>後</span>`;
  $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
  $('clk').textContent=fmt(t);$('tl').value=t;
- const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b'});
+ const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.25;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
- v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',dx:-18});}
+ v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',align:'right',dx:-12});}
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
 $('play').onclick=()=>{playing=!playing;if(playing&&t>=+$('tl').max)t=+$('tl').min;last=0;setIco();};
 $('tl').oninput=e=>{t=+e.target.value;dirty=true;};

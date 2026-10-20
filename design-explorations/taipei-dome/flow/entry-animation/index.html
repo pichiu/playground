@@ -73,7 +73,7 @@ td.n{text-align:right;white-space:nowrap}
 <div class="wrap">
 <a class="back" href="../../index.html">‹ Taipei Dome · 大巨蛋活動 App</a>
 <h1>進場動線 2c</h1>
-<p class="lede">西一＋桃竹 1,609 人，從 139–145 區休息區出發，走 B1 走廊、三路下樓、集結，再由 6口 六路進場到身分證位置。這一版用一條規則排休息區座位：<b>近的出口供內側路、遠的出口供外側路</b>，任何時刻都是，所以走廊不交叉。</p>
+<p class="lede">西一＋桃竹 1,609 人，從 139–145 區休息區出發，走 B1 走廊、三路下樓、集結，再由西一入口六路進場到身分證位置。這一版用一條規則排休息區座位：<b>近的出口供內側路、遠的出口供外側路</b>，任何時刻都是，所以走廊不交叉。</p>
 <div class="kpi" id="kpi"></div>
 
 <h2>規則</h2>
@@ -102,7 +102,7 @@ td.n{text-align:right;white-space:nowrap}
  <a class="card" href="me.html"><b>B · 我的路</b><span class="who">每一位菩薩 · 手機</span><p>輸入列、排，六步：起、出、走、集、進、到。你是本出口第幾位、前後是誰。</p></a>
  <a class="card" href="score.html"><b>C · 總譜</b><span class="who">企劃 · 筆電</span><p>54 列 × 時間攤開，綠是走、橘是等、藍是進場；白2 樓梯候隊與藍衣集結等待落在誰身上一眼看得到。</p></a>
  <a class="card" href="handout.html"><b>D · 講義</b><span class="who">幹部 · 印 A3</span><p>六個關鍵時刻的小圖與說明。</p></a>
- <a class="card" href="captain.html"><b>E · 口令卡</b><span class="who">大隊長 · 手機</span><p>選大隊：第一位離座、白衣／藍衣到齊、6口 交接、出發、全隊到位。</p></a>
+ <a class="card" href="captain.html"><b>E · 口令卡</b><span class="who">大隊長 · 手機</span><p>選大隊：第一位離座、白衣／藍衣到齊、西一入口交接、出發、全隊到位。</p></a>
  <a class="card" href="exit.html"><b>F · 出口帶隊卡</b><span class="who">休息區出口幹部 · 手機或列印</span><p>選出口：由上排往下的帶隊順序、每段走哪一路、什麼時候換口接尾；底下是整張休息區座位圖。</p></a>
 </div>
 
@@ -124,7 +124,7 @@ function checksTable(C){
   ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>`${e.who.join(' × ')} @ ${fmt(e.t)}`)],
   ['逐序號巢狀（A 的出口 < B < C）',`${C.nesting.violations} / ${C.nesting.indices} 個序號違反`,'0',C.nesting.violations===0,(C.nesting.examples||[]).map(e=>`序號 ${e.idx}：${Object.values(e.exits).join(' / ')}`)],
   ['指派：換口往下游 / 三路落在同一座階梯 / 拆欄',`${A.upstreamViolations} / ${A.distinctStairViolations} / ${A.splitColumns}（每路 ${['A','B','C'].map(L=>(A.segments||{})[L]).join('、')} 段）`,'0 / 0 / 0',A.upstreamViolations===0&&A.distinctStairViolations===0&&A.splitColumns===0,(A.examples||[]).map(e=>e.lie!=null?`列 ${e.lie}：${e.exits.join(' / ')}`:e.stairs?`序號 ${e.idx}：${e.stairs.join(' / ')}`:`${e.lane} 路序號 ${e.idx}：${e.exits.join(' → ')}`)],
-  ['不斷拍：群內拍距 · 交界對齊空檔',`6口 ${rng(gate)}，交界 ≤ ${bnd(gate)} 秒；樓梯口 ${rng(st)}；接尾 ${rng(fd)}`,'0.25–0.55 秒；交界 ≤ 5 秒',C.continuity.ok,[]],
+  ['不斷拍：群內拍距 · 交界對齊空檔',`西一入口 ${rng(gate)}，交界 ≤ ${bnd(gate)} 秒；樓梯口 ${rng(st)}；接尾 ${rng(fd)}`,'0.25–0.55 秒；交界 ≤ 5 秒',C.continuity.ok,[]],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['白3 隊尾在 140 接入點下游；白2 全員在樓梯格位',`隊尾 u ${C.staging.white3TailU} vs 接入 u ${C.staging.entry140U}；${C.staging.white2InSlots?'在格位':'不在格位'}`,'成立',C.staging.ok,[]],
   ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];

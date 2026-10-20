@@ -35,6 +35,12 @@ python3 page.py ../../entry-animation/index.html new.json ../index.html
 
 重跑後 `const DATA = …` 那一行應與原本完全相同；page.py 的每個 `rep` 都斷言只命中一次，模板改到那些字串時會直接報錯，照新模板更新對應的 `rep` 即可。
 
+### 樓梯 L 形與西一入口
+
+`stair.py` 與 2c（`../../entry-animation/build/routes.py`）同一套圖面：樓梯照企劃圖 6白 的綠色 L 形，直段是樓梯（順著 B1 走廊往南直下），
+橫段是樓梯下的 B2 平台（往東接 B2 走廊），三路各自一條斜接折線；6口 改名「西一入口（4 扇門）」，帶寬可 12 人並排。
+第 1 步的 `old.json` 就是 `../../entry-animation/build/base.json`；第 4 步的模板是 `../redesign/src/v1.html`（版本 1 頁原樣）。
+
 ## 檔案分工
 
 - **git**：產生腳本，以及座位表 `../休息區座位_藍衣B2集結版.csv`（每人的集結區與休息座位，一人一列）。

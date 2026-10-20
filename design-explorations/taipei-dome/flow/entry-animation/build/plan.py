@@ -164,7 +164,7 @@ def entry_point(base, exit_key):
 
 
 def assign_seats(base, seqs):
-    """三路合併 → 每出口依樓梯序號成一條 FIFO → 由上排往下配座；補齊 6口 路與序號、場內定位。"""
+    """三路合併 → 每出口依樓梯序號成一條 FIFO → 由上排往下配座；補齊西一入口路與序號、場內定位。"""
     who = _people_index(base)
     people = [dict(s) for L in LANES for s in seqs[L]]
     by_exit = collections.defaultdict(list)

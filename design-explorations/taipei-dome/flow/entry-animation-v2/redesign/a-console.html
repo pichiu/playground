@@ -84,7 +84,7 @@ canvas{display:block;width:100%;height:100%}
 <div class="stage" id="stage">
  <div class="maps" id="maps"><div class="loading" id="loading">讀取動線資料…</div></div>
  <div class="hud">
- <div class="title"><a href="index.html">‹ 版本 2 新設計</a><h1>入經藏 · 西一＋桃竹 進場</h1><p>1,609 人 · 9 大隊 · 休息區 → 集結 → 6口 → 身分證位置</p><div id="vs"></div></div>
+ <div class="title"><a href="index.html">‹ 版本 2 新設計</a><h1>入經藏 · 西一＋桃竹 進場</h1><p>1,609 人 · 9 大隊 · 休息區 → 集結 → 西一入口 → 身分證位置</p><div id="vs"></div></div>
  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span> <span>／ 全長 <span id="end"></span></span></div>
  <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集結區排隊中</span><span><b class="num">196</b>集結區旁數字＝在那裡等的人數</span></div>
  <div class="flows" id="flows"></div>
@@ -125,7 +125,7 @@ async function setVersion(m){$('loading')&&($('loading').hidden=false);
  const dadHtml=d=>d.s.dad.map(o=>`<i style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)"><span>${o.k}</span></i>`).join('');
  $('lanes').innerHTML=cmp?sets.map(d=>lane('d v'+d.v,dadHtml(d),d.label)).join(''):lane('w',wavesHtml(sets[0]))+lane('d',dadHtml(sets[0]));
  $('track').classList.toggle('has-labels',cmp);
- const d0=sets[0];cues=[{t:0,s:'全員休息區就座'},...d0.s.waves.map(o=>({t:o.a,s:`第${'一二三四'[o.w-1]}出 離座`})),...d0.s.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由 6口 進場`})),{t:d0.T_END,s:'全員到位'}].sort((a,b)=>a.t-b.t);
+ const d0=sets[0];cues=[{t:0,s:'全員休息區就座'},...d0.s.waves.map(o=>({t:o.a,s:`第${'一二三四'[o.w-1]}出 離座`})),...d0.s.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:d0.T_END,s:'全員到位'}].sort((a,b)=>a.t-b.t);
  $('flows').innerHTML=sets.map((d,i)=>`<div class="flow">${cmp?`<small>${d.label}</small>`:''}<div class="flow-bar" id="bar${i}">${STATES.map(([k,,c])=>`<i data-k="${k}" style="background:${c}"></i>`).join('')}</div>${i===sets.length-1?`<dl id="dl"></dl>`:''}</div>`).join('');
  $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:${c}"></dt><dd class="l">${l}</dd>${cmp?`<dd class="n" data-n="0-${k}"></dd>`:''}<dd class="n" data-n="${sets.length-1}-${k}"></dd>`).join('');
  $('loading')&&$('loading').remove();dirty=true;}
@@ -138,7 +138,7 @@ function drawPane(v,ds){const c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042
  const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
  for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0;v.text(w?`${n.label}　${w}`:n.label,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT,w=wait.STAIR||0;v.text(w?`樓梯　${w}`:'樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
- v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,dx:-22});
+ v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,align:'right',dx:-14});
  // 休息區淡點、到位實點
  for(const p of P){const st=state(p,t);if(st!=='seated'&&st!=='done')continue;const q=pos(p,t);c.globalAlpha=st==='seated'?.3:1;v.dot(q[0],q[1],st==='seated'?r*.7:r,p.costume==='白'?C.white:C.blue);}c.globalAlpha=1;
  // 隊伍線：同一列、同一階段（走／等／進場）的人依前後順序連成一條；彼此距離拉開就斷開。排隊中畫淡，行進中在線頭加點標出前方
