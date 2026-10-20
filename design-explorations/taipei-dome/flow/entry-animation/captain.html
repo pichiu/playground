@@ -173,7 +173,7 @@ function draw(){const team=TEAM[k-1],D=ds.D;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
  if(labels){const mine=new Set(gs.flatMap(g=>['A','B','C'].map(L=>g.lanes[L].exit)));
   for(const s of D.map.stands)if(mine.has(s.sec))v.text(s.sec,s.labelXY[0],s.labelXY[1],{color:'#f1f3ef',size:11,weight:700,halo:'#11171a'});
-  for(const g of gs){const key=g.assembly==='STAIR'?'STAIR_TOP':g.assembly,nd=D.nodes[key];if(nd)v.text(nd.label,nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}}
+  for(const g of gs){const key=g.assembly==='STAIR'?'STAIR_TOP':g.assembly,nd=D.nodes[key];if(nd)v.text('集結區',nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',align:'right',dx:-12});}
 
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
