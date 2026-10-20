@@ -119,6 +119,10 @@ function tAtVertex(p,test,from){for(const q of p.path)if(q[2]>=from&&test(q[0],q
 function tNearPoint(p,X,Y,r,from){const a=p.path;for(let i=0;i+1<a.length;i++){const u=a[i],w=a[i+1];if(w[2]<from)continue;const dx=w[0]-u[0],dy=w[1]-u[1],l=dx*dx+dy*dy;const k=l?Math.max(0,Math.min(1,((X-u[0])*dx+(Y-u[1])*dy)/l)):0;if(Math.hypot(u[0]+dx*k-X,u[1]+dy*k-Y)<r){const tt=u[2]+(w[2]-u[2])*k;if(tt>=from)return tt;}}return null;}
 function pathIn(p,a,b){const pts=p.path.filter(q=>q[2]>a&&q[2]<b).map(q=>[q[0],q[1]]);const s=pos(p,a),e=pos(p,b);return [[s[0],s[1]],...pts,[e[0],e[1]]];}
 
+// 死巷集結區：前面的大隊進場後，後面的整塊往前遞補一區（p.adv＝[起,止,目的區]…），最後都站在集結區 2 再出發
+const zoneTxt=z=>z==='P2'?'集結區 2（最靠西一入口）':'集結區 '+z[1];
+function advTxt(d,p){const a=p.adv;if(!a||!a.length)return '';
+ return ` 站定後<strong>不用一直站在原地</strong>：前面的大隊進場後，整塊往前遞補——${a.map(([t0,t1,z])=>`${fmt(t0)} 前進到 <strong>${zoneTxt(z)}</strong>`).join('、')}，${fmt(a[a.length-1][1])} 站定，跟著隊伍走，不用另外找位置。`;}
 function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
  const i=order[p.exitSeq]===p.id?p.exitSeq:order.indexOf(p.id),prev=i>0?order[i-1]:null,next=i>=0&&i<order.length-1?order[i+1]:null;
  const ahead=indexes(d).lane.get(p.lane+'|'+(p.laneIdx-1));
@@ -140,7 +144,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
    ?{k:'集',h:'集結',t:s.enter,show:s.enter,tl:'下樓',pts:pathIn(p,s.enter-4,s.enter+4),pad:1.6,
      d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到西一入口</strong>，不進集結區。`}
    :{k:'集',h:'集結',t:s.assembly,show:s.assembly,tl:'站定',pts:pathIn(p,s.assembly-6,s.assembly+.1),pad:1.6,w:s.enter-s.assembly,
-     d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。`},
+     d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。${advTxt(d,p)}`},
   {k:'進',h:'進場',t:tBottom,show:s.gate,tl:'過西一入口',pts:pathIn(p,tBottom,s.gate+4),pad:1.6,
    d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
