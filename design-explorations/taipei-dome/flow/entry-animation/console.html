@@ -88,7 +88,7 @@ canvas{display:block;width:100%;height:100%}
   </div>
   <div class="track" id="track" role="slider" aria-label="示意進度軸" aria-valuemin="0" aria-valuenow="0" tabindex="0">
    <div class="lane s" data-track="stair"><b>樓梯序</b></div>
-   <div class="lane g" data-track="gate"><b>6口</b></div>
+   <div class="lane g" data-track="gate"><b>西一入口</b></div>
    <div class="head" id="head"></div>
   </div>
  </div>
@@ -106,14 +106,14 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 let ds=null,S=null,view=null,t=0,T=1,playing=false,speed=1,last=0,dirty=true,cues=[];
 const hl=new Set();   // 目前高亮的路別（可多選）
 const pct=x=>x/T*100+'%';
-// 時間軸兩軌：樓梯序 18 區塊（白4 以後是離座接尾到樓梯口）、6口 九大隊（取該大隊兩個區塊的最早／最晚）
+// 時間軸兩軌：樓梯序 18 區塊（白4 以後是離座接尾到樓梯口）、西一入口九大隊（取該大隊兩個區塊的最早／最晚）
 function stats(ds){
  const blocks=ds.groups.map(g=>{const feeder=g.assembly==='FEEDER';return {key:g.key,costume:g.costume,dadui:g.dadui,feeder,n:g.population,a:feeder?g.tLeave:g.tStairFirst,b:feeder?g.tEnter:g.tStairLast};});
  const dad=Array.from({length:9},(_,i)=>{const gs=ds.groups.filter(g=>g.dadui===i+1);return {k:i+1,n:gs.reduce((s,g)=>s+g.population,0),a:Math.min(...gs.map(g=>g.tGateFirst)),b:Math.max(...gs.map(g=>g.tGateLast))};});
  return {blocks,dad};}
 function buildTrack(){
  document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.blocks.map(o=>`<i data-block="${o.key}" class="${o.costume}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="${o.key}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)}${o.feeder?' 離座接尾至樓梯口':' 通過樓梯口'}"><span>${o.key}</span></i>`).join(''));
- document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)} 通過 6口"><span>${o.k}</span></i>`).join(''));}
+ document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)} 通過西一入口"><span>${o.k}</span></i>`).join(''));}
 function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.meta.t0)return '休息區就座';
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
  const blk=S.blocks.filter(o=>!o.feeder&&t>=o.a).pop();return blk?`${blk.key} 下樓`:`${S.blocks[0].key} 離座`;}
@@ -125,7 +125,7 @@ function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*
  const wait={};for(const p of P)if(state(p,t)==='wait')wait[p.assembly]=(wait[p.assembly]||0)+1;
  for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0,lab=ZLAB[k]||n.label;v.text(w?`${lab}　${w}`:lab,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT,w=wait.STAIR||0;v.text(w?`樓梯 · 白 2　${w}`:'樓梯 · 白 2',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
- v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,dx:-22});
+ v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,align:'right',dx:-14});
  // 休息區淡點、到位實點
  for(const p of P){const st=state(p,t);if(st!=='seated'&&st!=='done')continue;const q=pos(p,t);c.globalAlpha=st==='seated'?.3:1;v.dot(q[0],q[1],st==='seated'?r*.7:r,p.costume==='白'?C.white:C.blue);}c.globalAlpha=1;
  // 隊伍線：同一列、同一階段（走／等／進場）的人依前後順序連成一條；彼此距離拉開就斷開。排隊中畫淡，行進中在線頭加點標出前方。
@@ -165,7 +165,7 @@ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
  refit();view.onresize=()=>{refit();dirty=true;};
  $('end').textContent=fmt(T);track.setAttribute('aria-valuemax',Math.round(T));
  buildTrack();
- cues=[{t:0,s:'全員就座'},...S.blocks.map(o=>({t:o.a,s:`${o.key} ${o.feeder?'接尾':'下樓'}`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由 6口 進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
+ cues=[{t:0,s:'全員就座'},...S.blocks.map(o=>({t:o.a,s:`${o.key} ${o.feeder?'接尾':'下樓'}`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
  $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:${c}"></i>`).join('');
  $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:${c}"></dt><dd class="l">${l}</dd><dd class="n" data-n="${k}">0</dd>`).join('');
  $('loading').remove();

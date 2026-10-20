@@ -6,6 +6,7 @@ import csv, json, math, sys, collections
 import numpy as np
 from geo import Poly, pairs
 from collide import collisions
+import stair
 
 OLD, OUT, PLAN = sys.argv[1:4]
 SEATS_CSV = sys.argv[4] if len(sys.argv) > 4 else None
@@ -16,7 +17,7 @@ GAP_ROW = 1.5                             # 同鏈前一列最後一人離座 �
 T0 = 6.73                                 # 第一人離座
 GATE_GAP, LANE_STAGGER, DADUI_GAP = 0.4, 0.17, 2.5
 M = D['map']
-B1 = Poly(pairs(M['b1Corridor'])); B2 = Poly(pairs(M['b2Corridor'])); ST = Poly(pairs(M['stair']))
+B1 = Poly(pairs(M['b1Corridor'])); B2 = Poly(pairs(M['b2Corridor']))
 LIE_N = {f['lie']: f['n'] for f in D['files']}
 
 def dadui_of(lie): return (lie - 1) // 6 + 1
@@ -54,21 +55,23 @@ def slot_offset(lie):
     k = j                              # 白:6口 北三路 0,1,2;B1 + 為看台側,接樓梯北路
     return (0.2 - 0.08 * k) if first else (-0.04 - 0.08 * k)
 
-# 樓梯集結(白 2):沿用舊版 6白 在樓梯上的格位
-STAIR_SLOTS = {}
-for lie_old, j in ((31, 0), (32, 1), (33, 2)):
-    ps = sorted([p for p in D['persons'] if p['lie'] == lie_old], key=lambda p: p['gateIdx'])
-    pts = []
-    for p in ps:
-        pts.append([q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6][0][:2])
-    STAIR_SLOTS[j] = pts
+# 樓梯(L 形:直段樓梯順著 B1 走廊往南直下,橫段 B2 平台往東接 B2 走廊),每一路各自一條斜接折線
+STAIR_U_B1, B2_U_START = 13.15, 1.0
+STAIR_PTS = stair.stair_pts(B1, STAIR_U_B1)
+ST = Poly(STAIR_PTS)
+STAIR_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
+ST_LANE = stair.lane_polys(STAIR_PTS, STAIR_OFF.values())
+def stair_lane(j): return ST_LANE[STAIR_OFF['ABC'[j]]]
+# 樓梯集結(白 2):頭在平台東端(B2),沿自己那一路往回排到樓梯上
+N_STAIR = max(LIE_N[l] for l in range(1, 55) if zone_of(l) == 'STAIR')
+STAIR_SLOT_U = {}
+for j in range(3):
+    lp = stair_lane(j); step = (lp.L - 0.08) / (N_STAIR - 1)
+    STAIR_SLOT_U[j] = [lp.L - 0.03 - step * k for k in range(N_STAIR)]
 def slot_xy(lie, i):
     z = zone_of(lie); Z = ZONES[z]
     if z == 'STAIR':
-        pts = STAIR_SLOTS[lane_of(lie)]
-        if i < len(pts): return tuple(pts[i])
-        a, b = pts[-2], pts[-1]
-        return (b[0] + (b[0] - a[0]) * (i - len(pts) + 1), b[1] + (b[1] - a[1]) * (i - len(pts) + 1))
+        return stair_lane(lane_of(lie)).at(STAIR_SLOT_U[lane_of(lie)][i])
     poly = B1 if Z['corr'] == 'B1' else B2
     return poly.off(slot_u(lie, i), slot_offset(lie))
 U_SHIFT0, U_SHIFT1 = 5.25, 4.95   # B2 藍衣區後進場的大隊在 u 5.25→4.95 平行外移到 6口 那三路
@@ -84,8 +87,6 @@ def slot_u(lie, i):
 # ---------- 路線 ----------
 CHAIN_OFF = {('A', '藍'): 0.2, ('A', '白'): 0.12, ('B', '藍'): 0.04, ('B', '白'): -0.04, ('C', '藍'): -0.12, ('C', '白'): -0.2}
 CORR_LANE = {k: round((0.2 - v) / 0.08) for k, v in CHAIN_OFF.items()}
-STAIR_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
-STAIR_U_B1, B2_U_START = 13.15, 1.0
 GATE_PTS = {}
 for p in D['persons']:
     if p['dadui'] == 1:
@@ -102,11 +103,12 @@ def white_route(j, u_from, off_from):
     if u_from is not None:
         pts += lane_run(B1, u_from, STAIR_U_B1 - 0.25, off_from)
         pts.append(B1.off(STAIR_U_B1, 0.2 - 0.08 * j))
-    pts += [ST.off(0.05, so), ST.off(ST.L - 0.05, so)]
-    o = 0.2 - 0.08 * j
-    pts += lane_run(B2, B2_U_START, 4.2, o)
-    pts.append(tuple(GATE_PTS[j]))
-    return pts
+    lp = stair_lane(j)
+    pts += stair.poly_between(lp, 0.05, lp.L - 0.05)
+    return pts + b2_to_gate(j)
+
+def b2_to_gate(j):
+    return lane_run(B2, B2_U_START, 4.2, 0.2 - 0.08 * j) + [tuple(GATE_PTS[j])]
 
 # ---------- 休息區鏈 ----------
 BLOCK_MOVE = {'141L': ('A', 'B', '140L')}   # 區塊: (原鏈, 新鏈, 接在哪個區塊之後)
@@ -236,7 +238,8 @@ def arrival_route(pid, lie, i):
         legs.append(('B1', u_in, STAIR_U_B1))
         pts += lane_run(B1, u_in, STAIR_U_B1 - 0.25, off)
         so = STAIR_OFF[ch]
-        pts += [B1.off(STAIR_U_B1, off), ST.off(0.05, so), ST.off(ST.L - 0.05, so)]
+        lp = ST_LANE[so]
+        pts += [B1.off(STAIR_U_B1, off)] + stair.poly_between(lp, 0.05, lp.L - 0.05)
         legs.append(('STAIR', 0, 1))
         if Z['kind'] == 'FIFO':                     # 大隊 1:從尾端(樓梯側)進,沿自己那路往前
             ut = 1.45
@@ -255,7 +258,7 @@ def arrival_route(pid, lie, i):
         pts += lane_run(B1, u_in, STAIR_U_B1 - 0.35, off)
         j = lane_of(lie)
         pts.append(B1.off(STAIR_U_B1, 0.2 - 0.08 * j))
-        pts.append(STAIR_SLOTS[j][-1])
+        pts += stair.poly_between(stair_lane(j), 0.0, STAIR_SLOT_U[j][i])[:-1]   # 沿自己那一路下樓梯、轉平台,走到格位
     else:                                           # B1 白:在區尾外換路,沿自己那路往樓梯方向
         tail = Z['head'] + Z['step'] * 35
         ut = max(tail - 0.15, 0.3)
@@ -472,8 +475,7 @@ def depart_route(pid):
         assert slot_u(lie, i) >= U_SHIFT0, (lie, i)
         return [s0] + lane_run(B2, slot_u(lie, i), U_SHIFT0, o) + [B2.off(U_SHIFT1, o_gate), tuple(GATE_PTS[j])]
     if z == 'STAIR':
-        pts = STAIR_SLOTS[j]
-        return [s0] + [tuple(pts[0])] + white_route(j, None, None)[2:]
+        return [s0] + stair.poly_between(stair_lane(j), STAIR_SLOT_U[j][i], STAIR_SLOT_U[j][0])[1:] + b2_to_gate(j)
     return [s0] + white_route(j, slot_u(lie, i), slot_offset(lie))
 
 DEP = {pid: depart_route(pid) for pid in PERSON}
@@ -577,6 +579,9 @@ for k, Z in ZONES.items():
         if Z['kind'] == 'LIFO' or Z['corr'] == 'B1':      # 本版重訂區頭的區(B2 藍衣、B1 白衣):標記移到區頭
             x, y = (B1 if Z['corr'] == 'B1' else B2).at(Z['head']); nodes[k]['X'], nodes[k]['Y'] = round(x, 3), round(y, 3)
 nodes['STAIR_TOP']['label'] = '樓梯(B1)'
+for k, q in (('STAIR_TOP', STAIR_PTS[0]), ('STAIR_BOT', STAIR_PTS[1])):   # 樓梯直段的頂與底(L 形轉角)
+    nodes[k]['X'], nodes[k]['Y'] = round(q[0], 3), round(q[1], 3)
+nodes['GATE6']['label'] = stair.GATE_LABEL
 rest = []
 who = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
 for s in D['restSeats']:
@@ -592,7 +597,7 @@ out = dict(meta=meta,
                    dict(key='exit', label='三條鏈各走一路拉出(藍衣與大隊 1 先、白衣後)', t0=6.0, t1=round(last_leave, 2)),
                    dict(key='assemble', label='藍衣下 B2、白衣留 B1 集結', t0=6.0, t1=round(last_as, 2)),
                    dict(key='enter', label='大隊 1→9 由 6口 六路進場 → 排 1 外側通道 → 身分證隊形', t0=round(T_DADUI[1], 2), t1=round(TEND, 2))],
-           nodes=nodes, map=D['map'], restSeats=rest, files=files, persons=persons, others=D['others'])
+           nodes=nodes, map=dict(D['map'], **stair.stair_map(STAIR_PTS), **stair.trim_corridors(B1, B2, STAIR_U_B1, STAIR_PTS[1][1]), gate=stair.gate_map(M['gateIn'])), restSeats=rest, files=files, persons=persons, others=D['others'])
 json.dump(out, open(OUT, 'w'), ensure_ascii=False, separators=(',', ':'))
 plan = dict(assign=ASSIGN, chainRows=CHAIN_ROWS, cap=CAP, tDadui=T_DADUI, tEnd=TEND,
             seats={pid: dict(sec=s['sec'], pai=s['pai'], no=s['no'], chain=s['chain'], qi=s['qi'], block=s['block'],

@@ -83,11 +83,11 @@ Dome.nav('handout.html');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['paper','ink','dim','rule','blue','floor','rust'])C[n]=css(n);
-// 北朝上。框住休息區 139–145、B1 走廊、樓梯、B2 集結區、6口 與西班的場內位置；左緣留給出口與候隊區的字。
+// 北朝上。框住休息區 139–145、B1 走廊、樓梯、B2 集結區、西一入口與西班的場內位置；左緣留給出口與候隊區的字。
 const FRAME=[-15.0,-11.0,0.3,11.6];
 // 與 core.js 的 View 相同，只把像素密度固定：螢幕 2×、列印 3×，1,609 個小點印出來才不糊。
 class SheetView extends View{resize(){const r=this.c.getBoundingClientRect();this.w=r.width;this.h=r.height;this.dpr=matchMedia('print').matches?3:2;this.c.width=Math.round(this.w*this.dpr);this.c.height=Math.round(this.h*this.dpr);this.fit(this.b,true);}}
-const RULE='七個出口 139–145 供三路下樓：任何時刻近的出口供內側路、遠的供外側路，所以走廊不交叉；藍衣依 藍9→藍1 先下 B2 集結，白1 進集結區 1、白2 在樓梯、白3 在 B1 候隊；進場依大隊 1→9 由 6口 六路不斷拍，白4 以後依 6口 時刻倒推離座、直接接尾。';
+const RULE='七個出口 139–145 供三路下樓：任何時刻近的出口供內側路、遠的供外側路，所以走廊不交叉；藍衣依 藍9→藍1 先下 B2 集結，白1 進集結區 1、白2 在樓梯、白3 在 B1 候隊；進場依大隊 1→9 由西一入口六路不斷拍，白4 以後依西一入口時刻倒推離座、直接接尾。';
 // 六個時刻取自 phases 與 groups；group 以 key 找（藍9、白1、白3、白4）。
 function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p])),b9=G['藍9'];
  return [
@@ -96,7 +96,7 @@ function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g
   {key:'descend',t:b9.tStairFirst+8,h:'藍9 下樓、三路成形',d:`${['A','B','C'].map(L=>b9.lanes[L].exit).join('、')} 各供一路（A·B·C）；近的供內側路、遠的供外側路。`},
   {key:'blue-b2',t:G['白1'].tAssembly,h:'藍衣 B2 到位、白1 進集結區 1',d:'藍 8·9／6·7／4·5／2·3 兩隊一區，藍1 與白1 同在集結區 1。'},
   {key:'white-hold',t:G['白3'].tAssembly,h:'白2 樓梯、白3 B1 候隊',d:'白2 在樓梯，白3 在 B1 樓梯口前排隊，等進場開始。'},
-  {key:'enter',t:G['白4'].tLeave,h:'大隊 1 進場、白4 由出口接尾',d:'6口 六路，北三路白、南三路藍，每路不斷拍；白4 以後依 6口 時刻倒推離座，直接下樓接尾。'},
+  {key:'enter',t:G['白4'].tLeave,h:'大隊 1 進場、白4 由出口接尾',d:'西一入口六路，北三路白、南三路藍，每路不斷拍；白4 以後依西一入口時刻倒推離座，直接下樓接尾。'},
   {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
 let jobs=[];
 function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
@@ -116,13 +116,13 @@ function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
   frames.append(fig);jobs.push({cv,ds,t:tc});});
  for(const j of jobs){j.v=new SheetView(j.cv,{pad:6});j.v.onresize=()=>paint(j);}}
 function paint({v,ds,t}){v.fit(FRAME,true);const c=v.begin(C.paper),D=ds.D,r=Math.max(.9,.04*v.s);
- v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule});
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule,gate:C.ink,gateA:.08});
  c.globalAlpha=.7;c.lineCap='round';
  for(const p of ds.P){const st=state(p,t);if(st!=='walk'&&st!=='enter')continue;const pts=p.path.filter(q=>q[2]>t-8&&q[2]<t).flatMap(q=>[q[0],q[1]]),a=pos(p,Math.max(0,t-8)),b=pos(p,t);v.stroke([a[0],a[1],...pts,b[0],b[1]],C.rust,.6);}
  c.globalAlpha=1;
  for(const p of ds.P){const q=pos(p,t);if(p.costume==='白')v.dot(q[0],q[1],r,C.paper,C.ink,.7);else v.dot(q[0],q[1],r,C.blue);}
  labels(v,D);}
-// 地名：七個出口（休息區號）、樓梯、集結區、6口、甲舞台。字都壓白邊，放在隊伍外側。
+// 地名：七個出口（休息區號）、樓梯、集結區、西一入口、甲舞台。字都壓白邊，放在隊伍外側。
 function labels(v,D){const N=D.nodes,lab=(s,x,y,o={})=>v.text(s,x,y,{color:C.dim,size:9,weight:700,halo:C.paper,...o});
  for(const s of D.map.stands)lab(s.sec,s.labelXY[0],s.labelXY[1],{align:'right',dx:-2});
  // 139、白 3 候隊、樓梯口由北到南疊在走廊左側：139 用看台自己的標籤點，白 3 齊 P6 區頭，樓梯壓低到樓梯口下方。
@@ -130,7 +130,7 @@ function labels(v,D){const N=D.nodes,lab=(s,x,y,o={})=>v.text(s,x,y,{color:C.dim
  lab('樓梯',N.STAIR_TOP.X,N.STAIR_TOP.Y,{align:'right',dx:-6,dy:8});
  lab('集結區 1',N.P1.X,N.P1.Y,{align:'right',dx:-8});
  for(const k of ['P2','P3','P4','P5']){const n=N[k],d=Math.hypot(n.X,n.Y),ox=n.X/d,oy=n.Y/d;lab(n.label,n.X+ox*.75,n.Y+oy*.75,{align:k==='P5'?'center':'right'});}
- lab('6口',N.GATE6_IN.X,N.GATE6_IN.Y,{color:C.ink,align:'left',dx:6,font:'"Noto Serif TC",serif'});
+ lab(N.GATE6.label,N.GATE6_IN.X,N.GATE6_IN.Y,{color:C.ink,align:'left',dx:6,font:'"Noto Serif TC",serif'});
  v.text('甲舞台',-6.3,0,{color:C.dim,size:11,font:'"Noto Serif TC",serif'});}
 function repaint(){for(const j of jobs){j.v.resize();paint(j);}}
 addEventListener('beforeprint',repaint);addEventListener('afterprint',repaint);

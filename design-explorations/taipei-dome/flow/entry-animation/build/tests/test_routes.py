@@ -61,7 +61,7 @@ def _cross(a, b):
 
 
 def test_dead_end_lanes_mirrored_and_gate_routes_do_not_cross(base):
-    """藍2–9 從死巷反向走回 6口：最靠場側（−0.04）的是最先轉進場的 j=5（A 路），三路的回程與進區路徑兩兩不交叉。"""
+    """藍2–9 從死巷反向走回西一入口：最靠場側（−0.04）的是最先轉進場的 j=5（A 路），三路的回程與進區路徑兩兩不交叉。"""
     G = routes.Geometry(base)
     P = plan.build_plan(base)['people']
     for blk, first in (('藍4', True), ('藍5', False), ('藍2', True), ('藍9', False)):
@@ -73,7 +73,7 @@ def test_dead_end_lanes_mirrored_and_gate_routes_do_not_cross(base):
         dep = {L: G.depart_route(heads[L], 0) + [tuple(g + v for g, v in zip(G.GATE_PTS[heads[L]['gateLane']], G.GATE_DIR[heads[L]['gateLane']]))] for L in 'ABC'}
         arr = {L: G.arrival_route(heads[L], 0) for L in 'ABC'}
         for a, b in (('A', 'B'), ('A', 'C'), ('B', 'C')):
-            assert not _cross(dep[a], dep[b]), (blk, a, b, '回 6口 交叉')
+            assert not _cross(dep[a], dep[b]), (blk, a, b, '回西一入口交叉')
             k = min(len(arr[a]), len(arr[b]))
             assert not _cross(arr[a][-k // 2:], arr[b][-k // 2:]), (blk, a, b, '進區交叉')
         # j=3 的回程經過 GATE_PTS[3]（從外側走到線上再橫越），j=5 從線上場側那一點直接進場，不回頭

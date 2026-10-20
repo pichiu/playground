@@ -107,7 +107,7 @@ const seatOf=p=>`${p.rest.sec} 區 ${p.rest.pai} 排 ${p.rest.no} 號`;
 // 全形數字轉半形、去空白；列與排都只接受 1–3 位數字。
 const norm=s=>String(s??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/\s+/g,'');
 function parseId(lie,pai){lie=norm(lie);pai=norm(pai);if(!/^[0-9]{1,3}$/.test(lie)||!/^[0-9]{1,3}$/.test(pai))return null;return [+lie,+pai];}
-// 同一路樓梯序、6口 同一路序號 → 人，兩張表只建一次。
+// 同一路樓梯序、西一入口同一路序號 → 人，兩張表只建一次。
 function indexes(d){if(maps)return maps;const lane=new Map,gate=new Map;for(const p of d.P){lane.set(p.lane+'|'+p.laneIdx,p);gate.set(p.gateLane+'|'+p.gateIdx,p);}return maps={lane,gate};}
 // 幾何：第一個落在 B1 走廊 0.35 單位內的路徑點 = 走到走廊；路徑最接近樓梯口 0.3 單位內的時刻 = 過樓梯口。
 function distSeg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy||1;const k=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l));return Math.hypot(ax+dx*k-px,ay+dy*k-py);}
@@ -135,13 +135,13 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
    d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。${feeder?'走到樓梯口直接下 B2':holdB1?'走到白 3 候隊位置停下，不下樓':p.assembly==='STAIR'?'過樓梯口，在樓梯上站定':'過樓梯口下 B2'}。`},
   feeder
    ?{k:'集',h:'集結',t:s.enter,show:s.enter,tl:'下樓',pts:pathIn(p,s.enter-4,s.enter+4),pad:1.6,
-     d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到 6口</strong>，不進集結區。`}
+     d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到西一入口</strong>，不進集結區。`}
    :{k:'集',h:'集結',t:s.assembly,show:s.assembly,tl:'站定',pts:pathIn(p,s.assembly-6,s.assembly+.1),pad:1.6,w:s.enter-s.assembly,
      d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。`},
-  {k:'進',h:'進場',t:tBottom,show:s.gate,tl:'過 6口',pts:pathIn(p,tBottom,s.gate+4),pad:1.6,
-   d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>6口 第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過 6口。`},
+  {k:'進',h:'進場',t:tBottom,show:s.gate,tl:'過西一入口',pts:pathIn(p,tBottom,s.gate+4),pad:1.6,
+   d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
-   d:`過 6口 後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
+   d:`過西一入口後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
  ];}
 
 function build(){$('main').hidden=false;$('hint').hidden=true;
@@ -150,7 +150,7 @@ function build(){$('main').hidden=false;$('hint').hidden=true;
  steps=stepsFor(ds,me);
  $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${x.tl?`<small>${x.tl}</small>`:''}${fmt(x.show)}</time></h2><p>${x.d}</p>${x.w?`<span class="wait">要等 ${fmt(x.w)}（示意時間）</span>`:''}</div></li>`).join('');
  const {gate}=indexes(ds),ahead=gate.get(me.gateLane+'|'+(me.gateIdx-1)),behind=gate.get(me.gateLane+'|'+(me.gateIdx+1));
- $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時 6口 第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
+ $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時西一入口第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
  $('orient').textContent='甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';
  const lo=me.t.leave-4,hi=me.t.arrive+2;$('tl').min=lo;$('tl').max=hi;t=lo;playing=false;setIco();focusStep(-1);}
 function focusStep(i){const pts=i<0?me.path.map(q=>[q[0],q[1]]):steps[i].pts;v.fit(bounds(pts,i<0?.8:steps[i].pad));dirty=true;}
@@ -174,7 +174,7 @@ $('play').onclick=()=>{if(!me)return;playing=!playing;if(playing&&t>=+$('tl').ma
 $('tl').oninput=e=>{t=+e.target.value;dirty=true;};
 
 function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
- v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.sand,wallW:1.5,band:C.sand,bandA:.35,lane:C.sand,laneA:.3,stand:C.sand});
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.sand,wallW:1.5,band:C.sand,bandA:.35,lane:C.sand,laneA:.3,stand:C.sand,gate:C.dim,gateA:.18});
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:12});
  for(const l of D.map.labels)if(l.s==='甲舞台')v.text(l.s,l.X,l.Y,{color:C.dim,size:13,weight:700});
  const r=Math.max(2.5,.04*v.s);
@@ -183,7 +183,7 @@ function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
  v.stroke([...fut.length?[now[0],now[1]]:[],...fut],C.go,2.5,[2,5]);v.stroke([...past,now[0],now[1]],C.go,3.5);
  v.dot(me.field.X,me.field.Y,7,null,C.go,2);
  v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
- v.text('6口',D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
+ v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
  const nd=D.nodes[me.assembly==='STAIR'?'STAIR_TOP':me.assembly];
  if(nd)v.text(ds.nodeName(me.assembly).replace(/（.*）$/,''),nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
  $('clk').textContent=fmt(t);$('tl').value=t;

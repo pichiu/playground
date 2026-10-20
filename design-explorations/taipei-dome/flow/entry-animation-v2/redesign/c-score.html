@@ -111,7 +111,7 @@ g.onpointerup=g.onpointercancel=()=>{drag=false;start=null;};
 function move(e){const r=g.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(!drag&&start&&start[2]==='touch'){const dx=Math.abs(e.clientX-start[0]),dy=Math.abs(e.clientY-start[1]);if(dx>8&&dx>dy){drag=true;g.setPointerCapture(e.pointerId);}}if(drag)t=tOf(x);hover=rowAt(y);dirty=true;}
 g.onpointermove=move;g.onpointerleave=()=>{hover=-1;dirty=true;};
 document.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T,t+(e.key==='ArrowLeft'?-5:5)));dirty=true;}};
-function paintMap(v,ds){const c=v.begin(C.card);v.base(ds.D.map,{floor:C.faint,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,lane:C.walk,laneA:.08,stand:C.rule});
+function paintMap(v,ds){const c=v.begin(C.card);v.base(ds.D.map,{floor:C.faint,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,lane:C.walk,laneA:.08,stand:C.rule,gate:C.dim,gateA:.14});
  const sel=hover>=0?rows[hover].lie:null,r=Math.max(1,.04*v.s);
  for(const p of ds.P){const st=state(p,t),q=pos(p,t),on=sel===null||p.lie===sel;c.globalAlpha=on?1:.15;
   const col=st==='walk'?C.walk:st==='wait'?C.wait:st==='enter'?C.enter:st==='done'?C.ink:C.rule;v.dot(q[0],q[1],sel!==null&&on?r*1.6:r,col);}

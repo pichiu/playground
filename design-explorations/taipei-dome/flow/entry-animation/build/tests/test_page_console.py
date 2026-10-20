@@ -23,7 +23,7 @@ def test_console(open_page):
     # 時間一律 mm:ss；示意事件含大隊進場
     pg.evaluate('window.__seek(200)')
     pg.wait_for_function('document.getElementById("clock").textContent === "03:20"', timeout=5000)
-    assert '大隊 1 由 6口 進場' in pg.inner_text('#cues') or pg.locator('#cues li').count() > 0
+    assert '大隊 1 由西一入口進場' in pg.inner_text('#cues') or pg.locator('#cues li').count() > 0
     assert not errs and not perrs, (errs, perrs)
 
 

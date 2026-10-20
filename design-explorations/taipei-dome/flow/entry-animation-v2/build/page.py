@@ -44,8 +44,17 @@ rep('<span>休息區（照箭頭方向離座）→ 走廊三路／樓梯三路 �
 rep("${p.zu==='B'&&p.costume==='藍'?'（跟在白衣三列之後下樓）':''}", "${p.zu==='B1'?'（白衣三列由樓梯下來，在 6口 與 B2 的藍衣三列會合）':p.dadui>1?'（藍衣三列由南往北，在 6口 與樓梯下來的白衣三列會合）':''}")
 rep("function assemblyName(p){if(p.assembly==='STAIR')return '樓梯與 B2 平台';const n=DATA.nodes[p.assembly];return `${n.label} 集結點 · ${n.floor}`;}",
     "function assemblyName(p){if(p.assembly==='STAIR')return '白 2 集結區 · 樓梯';if(p.assembly==='P1')return '集結區 1 · B2';const n=DATA.nodes[p.assembly];return `${n.label} 集結區 · ${n.floor}`;}")
-rep("label(c,width<500&&zoom<2?'樓梯':'樓梯 B1 → B2',stair.X,stair.Y+.15,colors.ink,11,'right',true);",
-    "label(c,width<500&&zoom<2?'樓梯 · 白 2':'樓梯 B1 → B2 · 集結 白 2',stair.X,stair.Y+.15,colors.ink,11,'right',true);")
+rep("const stair=DATA.nodes.STAIR_TOP;label(c,width<500&&zoom<2?'樓梯':'樓梯 B1 → B2',stair.X,stair.Y+.15,colors.ink,11,'right',true);",
+    "const stair=DATA.nodes.STAIR_TOP,sb=DATA.nodes.STAIR_BOT;label(c,width<500&&zoom<2?'樓梯 · 白 2':'樓梯 B1 → B2 · 集結 白 2',stair.X+.3,(stair.Y+sb.Y)/2-.05,colors.ink,11,'left',true);")   # 樓梯直段東側，不出畫面左緣
 rep("$('source').textContent=`資料來源：${DATA.meta.title}。建置日期 ${DATA.meta.built}；原始動線與座位資料 anim-data.json。",
     "$('source').textContent=`資料來源：${DATA.meta.title}。建置日期 ${DATA.meta.built}；座位與場地幾何沿用原版，休息區座位依本版重排（excel：休息區座位_藍衣B2集結版_2026-10-18.xlsx）。")
+rep(" bg.save();bg.globalAlpha=.55;line(bg,DATA.map.gateIn,colors.accent,Math.max(3,.38*s));bg.restore();",
+    " if(DATA.map.stairTreads){bg.save();bg.globalAlpha=.8;for(const l of DATA.map.stairTreads)line(bg,l,colors.b1,1);bg.restore();}\n"   # 樓梯直段畫踏階線，橫段（B2 平台）不畫
+    " {const g=DATA.map.gate;bg.save();bg.globalAlpha=.3;line(bg,g.band,colors.accent,.6,[],true,colors.accent);bg.globalAlpha=.9;for(const d of g.doors)line(bg,d,colors.accent,Math.max(2.5,.05*s));bg.restore();}")   # 西一入口：帶寬 = 4 扇門可 12 人並排，門畫在場內端
+rep("{const n=DATA.nodes.GATE6;dot(c,n.X,n.Y,3,colors.accent);label(c,n.label,n.X+1,n.Y+.85,colors.accent,11,'left',true);}",
+    "{const n=DATA.nodes.GATE6,f=DATA.nodes.GATE6_IN;dot(c,n.X,n.Y,3,colors.accent);label(c,n.label,f.X+.3,f.Y-.6,colors.accent,11,'left',true);}")   # 名稱放場內端外側，不壓集結區的字
+# 門的名稱：6口 → 西一入口（含 DATA 內的文字）
+h = h.replace('6口', '西一入口')
+h = re.sub(r'(?<=[\u4e00-\u9fff）、，；：。]) 西一入口', '西一入口', h)
+h = re.sub(r'西一入口 (?=[\u4e00-\u9fff（，。；、])', '西一入口', h)
 open(out, 'w').write(h)

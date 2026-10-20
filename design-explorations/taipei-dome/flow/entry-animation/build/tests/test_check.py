@@ -92,7 +92,7 @@ def test_check_detects_order_list_tampering(built):
 
 
 def test_check_detects_lane_crossing_at_gate(built):
-    # 把藍4 A 路頭一位回 6口 的路段推到走廊外側（−0.30），最後一段斜進自己的場內線就會穿過 B、C 兩路 → 幾何交叉
+    # 把藍4 A 路頭一位回西一入口的路段推到走廊外側（−0.30），最後一段斜進自己的場內線就會穿過 B、C 兩路 → 幾何交叉
     from geo import Poly, pairs
     _, D = built
     D = _copy(D)

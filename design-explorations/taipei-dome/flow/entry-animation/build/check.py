@@ -46,7 +46,7 @@ def _poly_cross(a, b):
 
 def lane_crossings(data):
     """同一大隊三路頭一位（slot 0）的路徑折線兩兩不得相交——純幾何、不看時間：兩條隊伍的線交叉，再怎麼錯開都是人穿過人。
-    departure：離開集結區（t.enter）到過 6口 後 3 秒；arrival：進到 B2 走廊起到站定（只看 B2 的集結區）。"""
+    departure：離開集結區（t.enter）到過西一入口後 3 秒；arrival：進到 B2 走廊起到站定（只看 B2 的集結區）。"""
     B2 = Poly(pairs(data['map']['b2Corridor']))
     heads = {(p['costume'], p['dadui'], p['lane']): p for p in data['persons'] if p['slot'] == 0}
 
@@ -111,9 +111,9 @@ def check_all(data):
     split = sorted(lie for lie, es in by_col.items() if len(es) > 1)
     out['assignment'] = dict(upstreamViolations=len(upstream), distinctStairViolations=len(stairs_bad), splitColumns=len(split), segments=segments,
                              examples=upstream[:2] + stairs_bad[:2] + [dict(lie=lie, exits=sorted(by_col[lie])) for lie in split[:2]])
-    # 2c. 路徑不交叉：同一大隊三路（回 6口 / 進集結區）
+    # 2c. 路徑不交叉：同一大隊三路（回西一入口 / 進集結區）
     out['routes'] = lane_crossings(data)
-    # 3. 不斷拍：6口 六路、集結階段樓梯口三路、接尾者樓梯口三路
+    # 3. 不斷拍：西一入口六路、集結階段樓梯口三路、接尾者樓梯口三路
     gate = {}
     for j in range(6):
         ps = sorted((p for p in persons if p['gateLane'] == j), key=lambda p: p['gateIdx'])
@@ -182,8 +182,8 @@ def main(path):
         ('逐序號巢狀違反', f"{C['nesting']['violations']} / {C['nesting']['indices']} 序號", '0', C['nesting']['violations'] == 0),
         ('指派：換口往下游 / 三路同階梯 / 拆欄', f"{A['upstreamViolations']} / {A['distinctStairViolations']} / {A['splitColumns']}（每路 {'、'.join(f'{L} {A['segments'][L]} 段' for L in plan.LANES)}）",
          '0 / 0 / 0', A['upstreamViolations'] == 0 == A['distinctStairViolations'] == A['splitColumns']),
-        ('同一大隊三路路徑交叉（回 6口 / 進集結區）', f"{Rt['departureCrossings']} / {Rt['arrivalCrossings']}", '0 / 0', Rt['departureCrossings'] == 0 == Rt['arrivalCrossings']),
-        ('不斷拍（群內拍距 / 交界空檔）', '6口 ' + ', '.join(f"{v['minGap']}–{v['maxGapWithin']}" for v in C['continuity']['gate'].values()), f'{GAP_MIN}–{GAP_MAX}；交界 ≤ {BOUNDARY_MAX}', C['continuity']['ok']),
+        ('同一大隊三路路徑交叉（回西一入口 / 進集結區）', f"{Rt['departureCrossings']} / {Rt['arrivalCrossings']}", '0 / 0', Rt['departureCrossings'] == 0 == Rt['arrivalCrossings']),
+        ('不斷拍（群內拍距 / 交界空檔）', '西一入口 ' + ', '.join(f"{v['minGap']}–{v['maxGapWithin']}" for v in C['continuity']['gate'].values()), f'{GAP_MIN}–{GAP_MAX}；交界 ≤ {BOUNDARY_MAX}', C['continuity']['ok']),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),
         ('白3 隊尾 u − 0.1 ≥ 140 接入點 u；白2 在格位', f"{C['staging']['white3TailU']} vs {C['staging']['entry140U']}；{C['staging']['white2InSlots']}", '成立', C['staging']['ok']),
