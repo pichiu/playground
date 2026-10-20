@@ -1,2 +1,1 @@
-# excel 由 build/excel.py 產生，只放 Google Drive 發放，不進 git(見 build/README.md)
 *.xlsx

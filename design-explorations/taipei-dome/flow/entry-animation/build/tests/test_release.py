@@ -1,7 +1,7 @@
 """Task 15：取代舊版、首頁一張卡、全站連結、追蹤檔可重現。
 
 例外：`flow/entry-animation-v2/` 的連結已外傳（GitHub Pages），所以暫時保留，首頁與 2c 的頁面都不連到它；
-樓梯與西一入口的圖面已和 2c 同步。PR 正式合併、確認可改後再清（刪資料夾、把 test_v2_kept_for_shared_link 改回「不存在」）。
+v2 的頁面外觀不動，人員的時間、路徑與出口編排已改用 2c 的資料（entry-animation-v2/build/from2c.py）。PR 正式合併、確認可改後再清（刪資料夾、把 test_v2_kept_for_shared_link 改回「不存在」）。
 """
 import hashlib
 import re
@@ -22,12 +22,31 @@ def test_old_versions_gone(root):
 
 
 def test_v2_kept_for_shared_link(root):
-    """外傳連結要能用：v2 頁與 redesign/src/v1.html（版本 1 頁原樣，「版本 1／對照」切換讀它的資料）都還在。
-    v2 不再一字不改：樓梯 L 形與西一入口（4 扇門）已用 v2 自己的 build 重算，和 2c 同一套圖面。"""
+    """外傳連結要能用：v2 單頁與 redesign 六個看法都在；版本 1 已移除（沒有 src/v1.html、沒有版本切換與「對照」）。"""
     v2 = root.parent / 'entry-animation-v2'
-    assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists() and (v2 / 'redesign' / 'src' / 'v1.html').exists()
+    assert (v2 / 'index.html').exists() and (v2 / 'redesign' / 'index.html').exists()
+    assert not (v2 / 'redesign' / 'src').exists()
     h = (v2 / 'index.html').read_text(encoding='utf-8')
     assert '"stairTreads"' in h and '西一入口（4 扇門）' in h and '6口' not in h
+    for page in [v2 / 'index.html', *(v2 / 'redesign').glob('*.html'), v2 / 'redesign' / 'core.js']:
+        text = '\n'.join(l for l in page.read_text(encoding='utf-8').split('\n') if not l.startswith('const DATA = '))   # DATA 內的 meta 文字不算
+        bad = [w for w in ('版本 1', 'v=cmp', 'switcher', 'entry-animation/index.html') if w in text]
+        assert not bad, (page.name, bad)
+
+
+def test_v2_data_follows_2c(root):
+    """v2 頁面外觀不動、資料跟 2c：每個人的時間與路徑都要等於 2c 的 data.json（改 2c 後跑 entry-animation-v2/build/from2c.py）。"""
+    import json
+    h = (root.parent / 'entry-animation-v2' / 'index.html').read_text(encoding='utf-8')
+    line = next(l for l in h.split('\n') if l.startswith('const DATA = '))
+    v2 = {p['id']: p for p in json.loads(line[len('const DATA = '):].rstrip(';'))['persons']}
+    c = {p['id']: p for p in json.loads((root / 'data.json').read_text(encoding='utf-8'))['persons']}
+    assert v2.keys() == c.keys()
+    assert all(v2[i]['t'] == c[i]['t'] and v2[i]['path'] == c[i]['path'] for i in c)
+    # 手動對應的欄位：路別 0–2、出口段 1–3、入口六路 0–5，且與 2c 一致
+    assert all(v2[i]['chain'] == c[i]['lane'] and v2[i]['block'] == c[i]['exit'] and v2[i]['laneIdx'] == c[i]['gateLane'] for i in c)
+    assert all(v2[i]['walkLane'] == v2[i]['corrLane'] == 'ABC'.index(c[i]['lane']) for i in c)
+    assert {p['exitWave'] for p in v2.values()} == {1, 2, 3} and {p['laneIdx'] for p in v2.values()} == set(range(6))
 
 
 def test_hub_single_card(root):
