@@ -18,11 +18,11 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-ra
 .maps{position:relative;min-height:0;grid-row:1;grid-column:1}
 .hud{grid-row:1;grid-column:1;position:relative;pointer-events:none;min-height:0}.hud>*{pointer-events:auto}
 canvas{display:block;width:100%;height:100%}
-/* 標題區：標題、副標、導覽列、圖例疊在左上角 */
 /* 頁籤與其他頁一樣固定在最上方，舞台從它下面開始 */
 :root{--navh:42px}
 body>.dome-nav.bar{position:fixed;top:0;left:0;right:0;height:var(--navh);z-index:5;background:var(--bg);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 body>.dome-nav.bar a{white-space:nowrap}
+/* 標題區：標題、副標、圖例疊在左上角 */
 .title{position:absolute;left:28px;top:22px;z-index:2;max-width:min(460px,calc(100% - 44px))}
 .title h1{margin:0;font-size:26px;font-weight:900;letter-spacing:.04em;line-height:1.2}
 .title p{margin:2px 0 6px;color:var(--dim);font-size:13px}
