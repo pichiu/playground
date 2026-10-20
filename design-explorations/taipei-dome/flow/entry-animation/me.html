@@ -99,7 +99,7 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+const {pos,zone,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
 Dome.nav('me.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go','ghost'])C[n]=css(n);};readC();
@@ -191,8 +191,8 @@ function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
  v.dot(me.field.X,me.field.Y,7,null,C.go,2);
  v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
- const zn=(me.adv||[]).reduce((z,a)=>t>=a[0]?a[2]:z,me.assembly),nd=D.nodes[zn==='STAIR'?'STAIR_TOP':zn];   // 遞補往前：標記跟著此刻站的區
- if(nd)v.text(ds.nodeName(zn).replace(/（.*）$/,''),nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
+ const zn=zone(me,t),nd=D.nodes[zn==='STAIR'?'STAIR_TOP':zn];   // 遞補往前：標記跟著此刻站的區
+ if(nd)v.text(zn===me.assembly?ds.nodeName(zn).replace(/（.*）$/,''):'集結區 '+zn[1],nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
  $('clk').textContent=fmt(t);$('tl').value=t;
  const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});

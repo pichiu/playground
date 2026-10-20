@@ -160,16 +160,13 @@ def add_advances(people, R, out):
         by[(p['costume'], p['dadui'])].append(p)
     for chain in chain_order(people):
         for m, d in enumerate(chain):
-            for s in range(1, m + 1):                        # 第 s 步：前面第 s 隊（鏈上第 s−1 隊）進場後
-                lead = max(out[q['id']]['enter'] for q in by[('藍', chain[s - 1])])
+            for s, lead_d in enumerate(chain[:m]):           # 第 s+1 步：鏈上前面的 lead_d 隊進場後
+                t0 = max(out[q['id']]['enter'] for q in by[('藍', lead_d)]) + ADV_MARGIN   # 整列同時起步（隊形不拆）：不套用個人的避撞平移
                 for p in by[('藍', d)]:
-                    r = R[p['id']]
-                    a = r['adv'][s - 1]
-                    t0 = lead + ADV_MARGIN                              # 整列同時起步（隊形不拆）：不套用個人的避撞平移
-                    prev = out[p['id']]['adv'][-1][1] if out[p['id']].get('adv') else out[p['id']]['assembly']
+                    o, a = out[p['id']], R[p['id']]['adv'][s]
+                    prev = o['adv'][-1][1] if 'adv' in o else o['assembly']
                     assert t0 >= prev + STAND_MIN, ('遞補太早', p['id'], s, t0, prev)
-                    t1 = t0 + a['L'] / V
-                    out[p['id']].setdefault('adv', []).append([t0, t1, a['zone']])
+                    o.setdefault('adv', []).append([t0, t0 + a['L'] / V, a['zone']])
     for p in people:
         adv = out[p['id']].get('adv')
         if adv:

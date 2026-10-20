@@ -162,7 +162,6 @@ function draw(){if(following&&selected){const p=position(selected,t),s=scale();p
  if(selected){const now=position(selected,t),past=selected.path.filter(q=>q[2]<=t).flatMap(q=>[q[0],q[1]]),future=selected.path.filter(q=>q[2]>t).flatMap(q=>[q[0],q[1]]);ctx.globalAlpha=.85;line(ctx,[...past,now[0],now[1]],colors.highlight,2);line(ctx,[now[0],now[1],...future],colors.highlight,2,[5,4]);ctx.globalAlpha=1;}
  // 集結區壅塞圈：半徑∝此刻在該區等待的人數；畫在人底下，不遮人。
  const crowd={};for(let i=0;i<persons.length;i++){const p=persons[i];if(visible[i]&&t>=p.t.assembly&&t<p.t.enter){let z=p.assembly;for(const a of p.adv||[])if(t>=a[0])z=a[2];crowd[z]=(crowd[z]||0)+1;}}   // 遞補往前：以此刻站的區計
-
  for(const [key,w] of Object.entries(crowd)){const n=DATA.nodes[key]||DATA.nodes.STAIR_BOT,q=screen(n.X,n.Y),rr=6+Math.sqrt(w)*1.9;ctx.beginPath();ctx.arc(q[0],q[1],rr,0,Math.PI*2);ctx.globalAlpha=.1;ctx.fillStyle=colors.highlight;ctx.fill();ctx.globalAlpha=.85;ctx.strokeStyle=colors.highlight;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;labelPx(ctx,String(w),q[0]+rr*.72,q[1]-rr*.72,colors.highlight,11,'left',true,false);}
  // 同樣式人員合併路徑，減少每幀 Canvas 狀態切換；位置仍取原始 path。
  const groups=new Map();

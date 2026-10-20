@@ -16,7 +16,7 @@ STAIR_HALF_W = 0.2                       # 樓梯／平台半寬（三路 ±0.12
 GATE_W, GATE_DOORS = 0.95, 4                 # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
 GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
-CHAIN = ['P2', 'P3', 'P4', 'P5']         # 死巷四個集結區，由西一入口側（隊頭）往死巷深處；前面的大隊進場後，後面的整塊遞補往前一區
+CHAIN = sorted(plan.LIFO_ZONES)          # 死巷四個集結區 P2…P5，由西一入口側（隊頭）往死巷深處；前面的大隊進場後，後面的整塊遞補往前一區
 ZONES = {
     'P1':    dict(label='1',      floor='B2', kind='FIFO', corr='B2',    head=4.15,  step=-0.073),
     'P2':    dict(label='藍 2·3', floor='B2', kind='LIFO', corr='B2',    head=5.0,   step=0.075),

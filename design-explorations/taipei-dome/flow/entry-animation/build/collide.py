@@ -25,7 +25,7 @@ def collisions(persons, t_end, dt=0.01, r=0.03, t_start=6.0):
     tt = lambda k: np.array([p['t'][k] for p in P])
     leave, assembly, enter, arrive = tt('leave'), tt('assembly'), tt('enter'), tt('arrive')
     lie = np.array([p['lie'] for p in P])
-    K = max([len(p.get('adv', [])) for p in P] + [0])
+    K = max((len(p.get('adv', [])) for p in P), default=0)
     adv0, adv1 = np.full((len(P), K), np.inf), np.full((len(P), K), -np.inf)       # 遞補往前的區間(沒有的留 inf/-inf，永不成立)
     for i, p in enumerate(P):
         for k, (a, b, _) in enumerate(p.get('adv', [])):
@@ -34,7 +34,7 @@ def collisions(persons, t_end, dt=0.01, r=0.03, t_start=6.0):
     stand_hit, walk_hit = {}, {}
     for k in range(len(T) - 1):
         t = T[k]
-        advancing = ((adv0 + 0.05 < t) & (t < adv1 - 0.05)).any(axis=1) if K else np.zeros(len(P), dtype=bool)
+        advancing = ((adv0 + 0.05 < t) & (t < adv1 - 0.05)).any(axis=1)
         st = np.nonzero((assembly <= t) & (t < enter - 0.05) & ~advancing)[0]
         mv = np.nonzero(((leave + 0.05 < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < arrive - 0.05)) | advancing)[0]
         if not len(mv): continue

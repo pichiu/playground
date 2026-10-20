@@ -10,12 +10,14 @@ import math
 import sys
 
 import plan
+import routes
 from collide import collisions
 from geo import Poly, pairs
 
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 5.0                 # 大隊／區塊交界的對齊空檔上限：最長欄差 6 拍 + 1 拍 + 0.8 空檔 + 0.85 錯開 ≈ 4.45
 POPULATION = 1609
+ADV_LEAD_MIN, STAND_MIN = 0.3, 0.6  # 遞補檢核：獨立於 build 的下限（build 實際用 ADV_MARGIN 0.5 / STAND_MIN 0.6），故意放寬，build 改小也不致讓檢核跟著放水
 COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'seats', 'staging', 'advance', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
 
@@ -165,17 +167,17 @@ def check_all(data):
         by_blk[(p['costume'], p['dadui'])].append(p)
     adv_bad = steps = 0
     for p in persons:
-        if p['assembly'] not in ('P3', 'P4', 'P5'):
+        if p['assembly'] not in routes.CHAIN[1:]:
             continue
         adv = p.get('adv', [])
         steps += len(adv)
         prev = p['t']['assembly']
-        ok = [z for _, _, z in adv] == {'P3': ['P2'], 'P4': ['P3', 'P2'], 'P5': ['P4', 'P3', 'P2']}[p['assembly']]
+        ok = [z for _, _, z in adv] == routes.CHAIN[routes.CHAIN.index(p['assembly']) - 1::-1]
         for s, (a, b, _) in enumerate(adv):
-            lead = max(q['t']['enter'] for q in by_blk[('藍', p['dadui'] - 2 * (len(adv) - s))] ) if p['dadui'] - 2 * (len(adv) - s) >= 2 else None
-            ok = ok and lead is not None and a >= lead + 0.3 and a >= prev + 0.6 - 1e-6
+            lead_d = p['dadui'] - 2 * (len(adv) - s)               # 同一條鏈（同奇偶）上前面第 len(adv)−s 隊
+            ok = ok and lead_d >= 2 and a >= max(q['t']['enter'] for q in by_blk[('藍', lead_d)]) + ADV_LEAD_MIN and a >= prev + STAND_MIN - 1e-6
             prev = b
-        ok = ok and bool(adv) and prev + 0.6 <= p['t']['enter'] + 1e-6
+        ok = ok and bool(adv) and prev + STAND_MIN <= p['t']['enter'] + 1e-6
         adv_bad += not ok
     out['advance'] = dict(steps=steps, violations=adv_bad)
     # 6. 容量：用量由 persons 計、可用席由 restSeats 重算，再與 exits 欄位比對
