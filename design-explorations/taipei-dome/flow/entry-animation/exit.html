@@ -64,10 +64,12 @@ h1 span{font-size:.5em;font-weight:500;color:var(--dim);white-space:nowrap}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap}
 .tg{border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:3px 10px;font-size:12px}
 .tg[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.ids{display:none;grid-column:2;overflow-x:auto;min-width:0}
+.bs{grid-column:2;min-width:0;overflow-x:auto}
+.show-ids .bsi{min-width:var(--minw)}
+.bs[data-flip="1"] .bsi{margin-left:auto}
+.ids{display:none}
 .show-ids .ids{display:block}
 .idg{display:grid;gap:1px}
-.ids[data-flip="1"] .idg{margin-left:auto}
 .idc{text-align:center;line-height:1.25;padding:2px 0;border-top:3px solid var(--lane,transparent);min-width:0}
 .idc small{display:block;color:var(--dim);font-size:9.5px}
 .idc b{font-size:10.5px;font-weight:600;white-space:nowrap}
@@ -213,11 +215,11 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
   const band=ord(pcs).join('');
   const idc=r.ids.map((id,i)=>`<div class="idc lane-${byId.get(id).lane}"><small>${r.seats[i]}</small><b>${esc(id)}</b></div>`);
   empt.forEach(no=>idc.push(`<div class="idc e"><small>${no}</small>空</div>`));
-  const ids=`<div class="ids" data-flip="${flip?1:0}"><div class="idg" style="grid-template-columns:repeat(${idc.length},minmax(0,1fr));width:${(tot(r)/maxTot*100).toFixed(2)}%;min-width:${idc.length*40}px">${ord(idc).join('')}</div></div>`;
+  const ids=`<div class="ids"><div class="idg" style="grid-template-columns:repeat(${idc.length},minmax(0,1fr))">${ord(idc).join('')}</div></div>`;
   const cap=[];let lastLane=null;
   for(const pc of pieces){if(pc.lane!==lastLane){cap.push(`<i class="lt lane-${pc.lane}">走 ${pc.lane} 路</i>`);lastLane=pc.lane;}cap.push(`${pc.k}×${pc.n}<small>（${seatRange(pc.nos)}）</small>`);}
   if(empt.length)cap.push(`<span class="emp">空 ${empt.length}</span><small>（${seatRange(empt)}）</small>`);
-  return `<div class="row" data-row="${r.pai}"><div class="rl"><b>第 ${r.pai} 排</b><small>${r.seats.length} 人${empt.length?`<br>空 ${empt.length}`:''}</small></div><div class="band" style="width:${(tot(r)/maxTot*100).toFixed(2)}%${flip?';margin-left:auto':''}" aria-hidden="true">${band}</div>${ids}<p class="cap">${cap.join('<span class="sep">·</span>')}</p></div>`+(hand.get(r.pai)||[]).join('');}).join('');
+  return `<div class="row" data-row="${r.pai}"><div class="rl"><b>第 ${r.pai} 排</b><small>${r.seats.length} 人${empt.length?`<br>空 ${empt.length}`:''}</small></div><div class="bs" data-flip="${flip?1:0}"><div class="bsi" style="width:${(tot(r)/maxTot*100).toFixed(2)}%;--minw:${idc.length*40}px"><div class="band" aria-hidden="true">${band}</div>${ids}</div></div><p class="cap">${cap.join('<span class="sep">·</span>')}</p></div>`+(hand.get(r.pai)||[]).join('');}).join('');
  const usedPai=new Set(e.rows.map(r=>r.pai)),unused=[...S.usable.keys()].filter(p=>!usedPai.has(p)).sort((a,b)=>b-a);
  const r0=e.rows[0];
  const flipE=!!S.exitRight;
@@ -226,7 +228,7 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
 }
 // 色帶小格放不下字時藏起來（說明列仍完整列出）
-function alignIds(){for(const w of $('rows').querySelectorAll('.ids[data-flip="1"]'))w.scrollLeft=w.scrollWidth;}   // 窄螢幕要橫向捲時，鏡射的排先停在出口側（右端）
+function alignIds(){for(const w of $('rows').querySelectorAll('.bs[data-flip="1"]'))w.scrollLeft=w.scrollWidth;}   // 窄螢幕要橫向捲時，鏡射的排先停在出口側（右端）
 function fitLabels(){for(const pc of $('rows').querySelectorAll('.pc')){const lb=pc.firstElementChild;pc.classList.remove('tight');if(lb.offsetWidth>pc.clientWidth-2)pc.classList.add('tight');}}
 
 // ---------- 座位圖 ----------
