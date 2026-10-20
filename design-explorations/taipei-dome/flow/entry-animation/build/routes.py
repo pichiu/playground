@@ -13,7 +13,7 @@ LANE_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
 STAIR_RUN = 0.62                         # 樓梯直段長（約 4.7 m），由 B1 走廊樓梯口往南直下
 LANDING_X, LANDING_END_X = -11.80, -11.31  # B2 平台：路線走到 x −11.80 轉進 B2 走廊；底色帶接到 B2 走廊外緣
 STAIR_HALF_W = 0.2                       # 樓梯／平台半寬（三路 ±0.12 加身寬）
-GATE_W, GATE_DOORS, GATE_CAP = 0.95, 4, 12   # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
+GATE_W, GATE_DOORS = 0.95, 4                 # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
 GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
 ZONES = {
@@ -78,7 +78,6 @@ class Geometry:
         top = self.B1.at(STAIR_U_B1)
         bot = (top[0], top[1] + STAIR_RUN)
         self.STAIR_PTS = [top, bot, (LANDING_X, bot[1])]       # 樓梯口 → 樓梯底（B2）→ 平台東端
-        self.ST = Poly(self.STAIR_PTS)
         self.ZONES = {k: dict(v) for k, v in ZONES.items()}
         self.LANE_OFF = dict(LANE_OFF)
         self.ST_LANE = {o: Poly(miter(self.STAIR_PTS, o)) for o in self.LANE_OFF.values()}   # 樓梯三路各自的折線
@@ -128,12 +127,9 @@ class Geometry:
         z = person['assembly']
         if z == 'STAIR':
             j = person['gateLane']
-            return self._stair_lane(j).at(self._stair_u(i, j))
+            return self._stair_lane(j).at(self.STAIR_SLOT_U[j][i])
         poly = self.B1 if self.ZONES[z]['corr'] == 'B1' else self.B2
         return poly.off(self.slot_u(person, i), self.slot_offset(person))
-
-    def _stair_u(self, i, j):
-        return self.STAIR_SLOT_U[j][i]
 
     # ---------- 路線 ----------
     def _stair_lane(self, j):
@@ -189,7 +185,7 @@ class Geometry:
         elif z == 'STAIR':
             pts += lane_run(self.B1, u_in, STAIR_U_B1 - 0.35, off)
             pts.append(self.B1.off(STAIR_U_B1, off))
-            pts += poly_between(self._stair_lane(j), 0.0, self._stair_u(i, j))[:-1]   # 沿自己那一路下樓梯、轉平台，走到格位
+            pts += poly_between(self._stair_lane(j), 0.0, self.STAIR_SLOT_U[j][i])[:-1]   # 沿自己那一路下樓梯、轉平台，走到格位
         else:                                          # P6：沿自己那一路走到格位
             pts += lane_run(self.B1, u_in, self.slot_u(person, i), off)
         pts.append(self.slot_xy(person, i))
@@ -211,7 +207,7 @@ class Geometry:
             assert self.slot_u(person, i) >= U_SHIFT0, (person['id'], i)   # 後進場者整排往外平移的空間
             return [s0] + lane_run(self.B2, self.slot_u(person, i), U_SHIFT0, o) + [self.B2.off(U_SHIFT1, o_gate)] + self.gate_join(j, o_gate)
         if z == 'STAIR':
-            return [s0] + poly_between(self._stair_lane(j), self._stair_u(i, j), self.STAIR_SLOT_U[j][0])[1:] + self._b2_to_gate(j)
+            return [s0] + poly_between(self._stair_lane(j), self.STAIR_SLOT_U[j][i], self.STAIR_SLOT_U[j][0])[1:] + self._b2_to_gate(j)
         off = self.LANE_OFF[lane]                       # P6
         return [s0] + lane_run(self.B1, self.slot_u(person, i), STAIR_U_B1 - 0.25, off) + self._down_stair(off) + self._b2_to_gate(j)
 
@@ -233,7 +229,7 @@ class Geometry:
         treads = [[round(top[0] - STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3), round(top[0] + STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3)]
                   for k in range(1, n)]
         flat = lambda pts: [round(v, 3) for q in pts for v in q]
-        return dict(stair=flat(self.STAIR_PTS), stairBand=flat(ring), stairRun=flat([top, bot]), stairTreads=treads,
+        return dict(stair=flat(self.STAIR_PTS), stairBand=flat(ring), stairTreads=treads,
                     **trim_corridors(self.B1, self.B2, STAIR_U_B1, bot[1]))
 
     def gate_map(self):
@@ -250,8 +246,7 @@ class Geometry:
         for k in range(GATE_DOORS):
             s0 = -h + k * (w + gap)
             doors.append([round(v, 3) for v in (b[0] + nx * s0, b[1] + ny * s0, b[0] + nx * (s0 + w), b[1] + ny * (s0 + w))])
-        return dict(line=[round(v, 3) for v in (*a, *b)], width=GATE_W, doors=doors, cap=GATE_CAP, label=GATE_LABEL,
-                    band=[round(v, 3) for q in band for v in q])
+        return dict(doors=doors, band=[round(v, 3) for q in band for v in q])
 
     # ---------- 區域 ----------
     def region(self, z):

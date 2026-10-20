@@ -9,7 +9,7 @@ from geo import Poly, pairs
 STAIR_RUN = 0.62                         # 樓梯直段長（約 4.7 m），由 B1 走廊樓梯口往南直下
 LANDING_X, LANDING_END_X = -11.80, -11.31  # B2 平台：路線走到 x −11.80 轉進 B2 走廊；底色帶接到 B2 走廊外緣
 STAIR_HALF_W = 0.2
-GATE_W, GATE_DOORS, GATE_CAP = 0.95, 4, 12
+GATE_W, GATE_DOORS = 0.95, 4                 # 4 扇門，可 12 人並排（約 7.2 m）
 GATE_LABEL = '西一入口（4 扇門）'
 
 
@@ -63,7 +63,7 @@ def stair_map(pts):
     treads = [[round(top[0] - STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3), round(top[0] + STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3)]
               for k in range(1, n)]
     flat = lambda q: [round(v, 3) for p in q for v in p]
-    return dict(stair=flat(pts), stairBand=flat(ring), stairRun=flat([top, bot]), stairTreads=treads)
+    return dict(stair=flat(pts), stairBand=flat(ring), stairTreads=treads)
 
 
 def gate_map(gate_in):
@@ -79,5 +79,4 @@ def gate_map(gate_in):
     for k in range(GATE_DOORS):
         s0 = -h + k * (w + gap)
         doors.append([round(v, 3) for v in (b[0] + nx * s0, b[1] + ny * s0, b[0] + nx * (s0 + w), b[1] + ny * (s0 + w))])
-    return dict(line=[round(v, 3) for v in (*a, *b)], width=GATE_W, doors=doors, cap=GATE_CAP, label=GATE_LABEL,
-                band=[round(v, 3) for q in band for v in q])
+    return dict(doors=doors, band=[round(v, 3) for q in band for v in q])

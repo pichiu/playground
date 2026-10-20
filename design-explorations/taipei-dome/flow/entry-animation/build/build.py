@@ -238,6 +238,8 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
             n['label'] = '樓梯(B1) · 白 2'
         if k == 'GATE6':
             n['label'] = routes.GATE_LABEL
+        if k == 'GATE6_IN':
+            n['label'] = '西一入口(場內)'
         nodes[k] = n
     who_seat = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
     rest = [dict(s, who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]

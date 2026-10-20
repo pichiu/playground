@@ -59,8 +59,9 @@ def slot_offset(lie):
 STAIR_U_B1, B2_U_START = 13.15, 1.0
 STAIR_PTS = stair.stair_pts(B1, STAIR_U_B1)
 ST = Poly(STAIR_PTS)
-ST_LANE = stair.lane_polys(STAIR_PTS, (0.12, 0.0, -0.12))
-def stair_lane(j): return ST_LANE[round(0.12 - 0.12 * j, 2) + 0.0]
+STAIR_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
+ST_LANE = stair.lane_polys(STAIR_PTS, STAIR_OFF.values())
+def stair_lane(j): return ST_LANE[STAIR_OFF['ABC'[j]]]
 # 樓梯集結(白 2):頭在平台東端(B2),沿自己那一路往回排到樓梯上
 N_STAIR = max(LIE_N[l] for l in range(1, 55) if zone_of(l) == 'STAIR')
 STAIR_SLOT_U = {}
@@ -86,7 +87,6 @@ def slot_u(lie, i):
 # ---------- 路線 ----------
 CHAIN_OFF = {('A', '藍'): 0.2, ('A', '白'): 0.12, ('B', '藍'): 0.04, ('B', '白'): -0.04, ('C', '藍'): -0.12, ('C', '白'): -0.2}
 CORR_LANE = {k: round((0.2 - v) / 0.08) for k, v in CHAIN_OFF.items()}
-STAIR_OFF = {'A': 0.12, 'B': 0.0, 'C': -0.12}
 GATE_PTS = {}
 for p in D['persons']:
     if p['dadui'] == 1:
