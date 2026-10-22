@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>進場動線 2c · 指揮台</title>
+<title>進場動線版本 3 · 指揮台</title>
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
@@ -62,7 +62,7 @@ body>.dome-nav.bar a{white-space:nowrap}
 .lane>b{position:absolute;right:100%;margin-right:8px;font-weight:500;white-space:nowrap;line-height:16px}
 .lane i{position:absolute;top:0;height:100%;border-radius:3px;font-style:normal;overflow:hidden;container-type:inline-size;box-shadow:0 0 0 1px var(--bg)}
 .lane i span{position:absolute;left:3px;top:0;line-height:16px;font-weight:700;white-space:nowrap}
-.lane i.藍{background:var(--blue);color:#0b1420}.lane i.白{background:var(--white);color:#1b2629}
+.lane i.dd{background:linear-gradient(var(--white) 0 50%,var(--blue) 50% 100%);color:#1b2629}
 .lane.g i{background:var(--gate);color:var(--ink)}
 @container (max-width:25px){.lane.s i span{display:none}}
 @container (max-width:13px){.lane.g i span{display:none}}
@@ -78,10 +78,10 @@ body>.dome-nav.bar a{white-space:nowrap}
 </head>
 <body>
 <div class="stage" id="stage">
- <div class="maps"><canvas id="cv" aria-label="2c 全場動線地圖"></canvas><div class="loading" id="loading">讀取動線資料…</div></div>
+ <div class="maps"><canvas id="cv" aria-label="版本 3 全場動線地圖"></canvas><div class="loading" id="loading">讀取動線資料…</div></div>
  <div class="hud">
-  <div class="title" id="title"><h1>2c · 指揮台</h1><p>1,609 人 · 七出口三路接續 · 示意時間非現場秒數</p>
-   <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集結區排隊中</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span><span><b class="num">196</b>集結區旁數字＝此刻在那裡等的人數</span></div>
+  <div class="title" id="title"><h1>版本 3 · 指揮台</h1><p>1,609 人 · 白藍兩路直進、不集結 · 示意時間非現場秒數</p>
+   <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
   </div>
   <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span> <span>／ 示意全程 <span id="end"></span></span></div>
   <div class="flows"><div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div></div>
@@ -94,7 +94,7 @@ body>.dome-nav.bar a{white-space:nowrap}
    <div class="seg lanes" id="lanes" role="group" aria-label="高亮路別"></div>
   </div>
   <div class="track" id="track" role="slider" aria-label="示意進度軸" aria-valuemin="0" aria-valuenow="0" tabindex="0">
-   <div class="lane s" data-track="stair"><b>樓梯序</b></div>
+   <div class="lane s" data-track="stair"><b>樓梯</b></div>
    <div class="lane g" data-track="gate"><b>西一入口</b></div>
    <div class="head" id="head"></div>
   </div>
@@ -103,41 +103,38 @@ body>.dome-nav.bar a{white-space:nowrap}
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,state,zone,counts,fmt,View,LANE_NAME}=Dome,$=id=>document.getElementById(id);
+const {pos,state,counts,fmt,View,LANE_NAME}=Dome,$=id=>document.getElementById(id);
 Dome.nav('console.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);
-const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','集結等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
-const ZLAB={P1:'藍 1·白 1'};   // P1 是藍1 與白1 並排的集結區，其餘用 nodes 的標籤
+const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','停下等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let ds=null,S=null,view=null,t=0,T=1,playing=false,speed=1,last=0,dirty=true,cues=[];
 const hl=new Set();   // 目前高亮的路別（可多選）
 const pct=x=>x/T*100+'%';
-// 時間軸兩軌：樓梯序 18 區塊（白4 以後是離座接尾到樓梯口）、西一入口九大隊（取該大隊兩個區塊的最早／最晚）
+// 時間軸兩軌：樓梯九大隊（白藍兩路同時，取兩路最早／最晚通過樓梯口）、西一入口九大隊
 function stats(ds){
- const blocks=ds.groups.map(g=>{const feeder=g.assembly==='FEEDER';return {key:g.key,costume:g.costume,dadui:g.dadui,feeder,n:g.population,a:feeder?g.tLeave:g.tStairFirst,b:feeder?g.tEnter:g.tStairLast};});
- const dad=Array.from({length:9},(_,i)=>{const gs=ds.groups.filter(g=>g.dadui===i+1);return {k:i+1,n:gs.reduce((s,g)=>s+g.population,0),a:Math.min(...gs.map(g=>g.tGateFirst)),b:Math.max(...gs.map(g=>g.tGateLast))};});
- return {blocks,dad};}
+ const span=(gs,a,b)=>({n:gs.reduce((s,g)=>s+g.population,0),a:Math.min(...gs.map(g=>g[a])),b:Math.max(...gs.map(g=>g[b]))});
+ const of=k=>ds.groups.filter(g=>g.dadui===k);
+ const stair=Array.from({length:9},(_,i)=>({k:i+1,...span(of(i+1),'tStairFirst','tStairLast')}));
+ const dad=Array.from({length:9},(_,i)=>({k:i+1,...span(of(i+1),'tGateFirst','tGateLast')}));
+ return {stair,dad};}
 function buildTrack(){
- document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.blocks.map(o=>`<i data-block="${o.key}" class="${o.costume}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="${o.key}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)}${o.feeder?' 離座接尾至樓梯口':' 通過樓梯口'}"><span>${o.key}</span></i>`).join(''));
+ document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.stair.map(o=>`<i data-dadui="${o.k}" class="dd" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人（白藍兩路），${fmt(o.a)}–${fmt(o.b)} 通過樓梯口"><span>${o.k}</span></i>`).join(''));
  document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)} 通過西一入口"><span>${o.k}</span></i>`).join(''));}
 function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.meta.t0)return '休息區就座';
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
- const blk=S.blocks.filter(o=>!o.feeder&&t>=o.a).pop();return blk?`${blk.key} 下樓`:`${S.blocks[0].key} 離座`;}
+ return t>=S.stair[0].a?'大隊 1 下樓':'大隊 1 離座';}
 function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*v.s);
  v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber});
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
- // 集結區：名稱旁直接寫此刻等待人數，不畫圈，免得蓋住排隊的人（P1–P5 在 B2、P6 白3 在 B1、白2 在樓梯）
- // 前面的大隊進場後，後面的整塊往前遞補一區（p.adv＝[起,止,目的區]…），所以人數與名稱都以「此刻站在哪一區」為準；死巷各區有人就寫站著的大隊，空了寫區號
- const wait={},occ={};for(const p of P)if(state(p,t)==='wait'){const z=zone(p,t);wait[z]=(wait[z]||0)+1;if(/^P[2-5]$/.test(z))(occ[z]||(occ[z]=new Set())).add(p.dadui);}
- for(const [k,n] of Object.entries(D.nodes)){if(!/^P\d$/.test(k))continue;const w=wait[k]||0,lab=occ[k]?'藍 '+[...occ[k]].sort((a,b)=>a-b).join('·'):/^P[2-5]$/.test(k)?'集結區 '+k[1]:ZLAB[k]||n.label;v.text(w?`${lab}　${w}`:lab,n.X,n.Y,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:n.floor==='B1'?-14:-12,dy:n.floor==='B1'?0:10});}
- {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT,w=wait.STAIR||0;v.text(w?`樓梯 · 白 2　${w}`:'樓梯 · 白 2',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:w?C.amber:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
+ {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT;v.text('樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,align:'right',dx:-14});
  // 休息區淡點、到位實點
  for(const p of P){const st=state(p,t);if(st!=='seated'&&st!=='done')continue;const q=pos(p,t);c.globalAlpha=st==='seated'?.3:1;v.dot(q[0],q[1],st==='seated'?r*.7:r,p.costume==='白'?C.white:C.blue);}c.globalAlpha=1;
  // 隊伍線：同一列、同一階段（走／等／進場）的人依前後順序連成一條；彼此距離拉開就斷開。排隊中畫淡，行進中在線頭加點標出前方。
- // 一列只走一路，所以按下路別時整條正在走（走廊／樓梯、進場中）的線改橘色，其餘壓淡。
+ // 一列只走一路（白衣 A、藍衣 B），所以按下路別時整條正在走的線改橘色，其餘壓淡。
  const rows=new Map();for(const p of P){const st=state(p,t);if(st==='seated'||st==='done')continue;const key=p.lie+'|'+st;(rows.get(key)||rows.set(key,[]).get(key)).push(p);}
  c.lineCap='round';c.lineJoin='round';const any=hl.size>0;
  for(const [key,ps] of rows){const st=key.split('|')[1],hot=any&&st!=='wait'&&hl.has(ps[0].lane),col=hot?C.amber:ps[0].costume==='白'?C.white:C.blue;
@@ -156,7 +153,7 @@ function setPlaying(on){playing=on;if(on&&t>=T)t=0;$('play').setAttribute('aria-
 $('play').onclick=()=>setPlaying(!playing);
 $('speed').innerHTML=[.5,1,2,5].map(s=>`<button data-s="${s}" aria-pressed="${s===speed}">×${s}</button>`).join('');
 $('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.dataset.s;$('speed').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));};
-$('lanes').innerHTML=['A','B','C'].map(L=>`<button data-lane="${L}" aria-pressed="false" title="${LANE_NAME[L]}">${L} 路</button>`).join('');
+$('lanes').innerHTML=['A','B'].map(L=>`<button data-lane="${L}" aria-pressed="false" title="${LANE_NAME[L]}">${L} 路</button>`).join('');
 $('lanes').onclick=e=>{const b=e.target.closest('[data-lane]');if(!b)return;const L=b.dataset.lane,on=!hl.has(L);hl[on?'add':'delete'](L);b.setAttribute('aria-pressed',on);dirty=true;};
 const track=$('track');function scrub(e){const r=track.getBoundingClientRect();t=Math.max(0,Math.min(T,(e.clientX-r.left)/r.width*T));dirty=true;}
 let drag=false;track.onpointerdown=e=>{drag=true;track.setPointerCapture(e.pointerId);scrub(e);};track.onpointermove=e=>drag&&scrub(e);track.onpointerup=track.onpointercancel=()=>drag=false;
@@ -173,7 +170,7 @@ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
  refit();view.onresize=()=>{refit();dirty=true;};
  $('end').textContent=fmt(T);track.setAttribute('aria-valuemax',Math.round(T));
  buildTrack();
- cues=[{t:0,s:'全員就座'},...S.blocks.map(o=>({t:o.a,s:`${o.key} ${o.feeder?'接尾':'下樓'}`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
+ cues=[{t:0,s:'全員就座'},...S.stair.map(o=>({t:o.a,s:`大隊 ${o.k} 兩路下樓梯`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
  $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:${c}"></i>`).join('');
  $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:${c}"></dt><dd class="l">${l}</dd><dd class="n" data-n="${k}">0</dd>`).join('');
  $('loading').remove();
