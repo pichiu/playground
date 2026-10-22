@@ -1,27 +1,28 @@
-// 2c 七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
+// 版本 3 七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
 (function(){
 'use strict';
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
 function bounds(pts,pad=.6){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const [x,y] of pts){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y;}return [a-pad,b-pad,c+pad,d+pad];}
 function pos(p,t){const a=p.path;if(t<=a[0][2])return a[0];if(t>=a[a.length-1][2])return a[a.length-1];let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}const u=a[lo],v=a[hi],f=(t-u[2])/(v[2]-u[2]||1);return [u[0]+(v[0]-u[0])*f,u[1]+(v[1]-u[1])*f];}
-// seated → walk(去集結／接尾) → wait(集結等待) → enter(進場中) → done
+// seated → walk(離座到樓梯口) → wait(版本 3 沒有) → enter(下樓到場內) → done
 function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)return 'walk';if(t<s.enter)return 'wait';if(t<s.arrive)return 'enter';return 'done';}
 // 遞補往前：此刻站在哪一區（p.adv＝[起,止,目的區]…；沒有遞補的人就是原本集結的區）
 function zone(p,t){let z=p.assembly;for(const a of p.adv||[])if(t>=a[0])z=a[2];return z;}
 function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
 function fmt(v){const neg=v<0;v=Math.abs(v);return (neg?'−':'')+String(Math.floor(v/60)).padStart(2,'0')+':'+String(Math.floor(v%60)).padStart(2,'0');}
-const LANE_NAME={A:'A 路（靠看台）',B:'B 路（中間）',C:'C 路（外側）'};
-const ZONE_NAME={P1:'集結區 1（B2）',P2:'藍 2·3（B2）',P3:'藍 4·5（B2）',P4:'藍 6·7（B2）',P5:'藍 8·9（B2）',STAIR:'樓梯（白 2）',P6:'白 3（B1 候隊）',FEEDER:'不集結，直接接尾下樓'};
+const LANE_NAME={A:'A 路（白衣・靠看台）',B:'B 路（藍衣・外側）'};
+const ZONE_NAME={FEEDER:'不集結，直接進場'};
 
 function dataset(D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
   const groups=D.groups,groupKey=p=>p.costume+p.dadui,gmap=new Map(groups.map(g=>[g.key,g]));
-  const exitsByKey=Object.fromEntries(D.exits.map(e=>[e.key,e]));
+  const exitsByKey=Object.fromEntries(D.exits.map(e=>[e.key,e])),fileByLie=new Map(D.files.map(f=>[f.lie,f]));
   return {D,P,byId,T_END:D.meta.tEnd,groups,blocks:groups,exits:D.exits,exitsByKey,lanes:D.lanes,files:D.files,
     wait:p=>p.t.enter-p.t.assembly,
     groupOf:p=>gmap.get(groupKey(p)),
     nodeName:key=>ZONE_NAME[key]||(D.nodes[key]?`${D.nodes[key].label}（${D.nodes[key].floor}）`:key),
     exitName:key=>exitsByKey[key]?`${key} 出口（${exitsByKey[key].stairLabel}）`:key,
     laneName:L=>LANE_NAME[L]||L,
+    exitsOfFile:lie=>(fileByLie.get(lie)||{exits:[]}).exits,   // 一列可能分坐兩個出口（出口坐滿就換）
     B:{all:bounds([...pairs(D.map.wall),...D.map.stands.flatMap(s=>pairs(s.poly))],.4),
        field:bounds(P.map(p=>[p.field.X,p.field.Y])),
        west:bounds([...D.map.stands.flatMap(s=>pairs(s.poly)),...pairs(D.map.b2Corridor),...P.map(p=>[p.field.X,p.field.Y])],.5)}};}
@@ -45,7 +46,7 @@ const NAV=[['index.html','總覽'],['console.html','指揮台'],['me.html','我�
 function nav(current,mount){if(!document.getElementById('dome-nav-style')){const s=document.createElement('style');s.id='dome-nav-style';
   s.textContent='.dome-nav{display:flex;flex-wrap:wrap;gap:2px 4px;align-items:center;font:13px/1.4 "Noto Sans TC",system-ui,sans-serif}.dome-nav a{color:var(--dim,#8fa29f);text-decoration:none;padding:4px 8px;border-radius:6px}.dome-nav a:hover{color:var(--ink,#e9efe9)}.dome-nav a[aria-current=page]{color:var(--ink,#e9efe9);font-weight:700;background:var(--line,var(--rule,rgba(128,128,128,.18)))}.dome-nav.bar{padding:8px max(12px,env(safe-area-inset-left));border-bottom:1px solid var(--line,var(--rule,#22302f))}@media print{.dome-nav{display:none}}';
   document.head.append(s);}
-  const el=document.createElement('nav');el.className='dome-nav'+(mount?'':' bar');el.setAttribute('aria-label','進場動線 2c 各頁');
+  const el=document.createElement('nav');el.className='dome-nav'+(mount?'':' bar');el.setAttribute('aria-label','進場動線版本 3 各頁');
   el.innerHTML=NAV.map(([h,l])=>`<a href="${h}"${h===current?' aria-current="page"':''}>${l}</a>`).join('');
   if(mount)mount.append(el);else document.body.prepend(el);return el;}
 
