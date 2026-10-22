@@ -8,7 +8,9 @@ import collections
 import json
 import sys
 
+import build
 import plan
+import routes
 from collide import collisions
 from geo import Poly, pairs
 
@@ -16,9 +18,10 @@ GAP_MIN, GAP_MAX = 0.25, 0.55      # 樓梯口節拍容許 0.4 ± 0.15（避撞�
 BOUNDARY_MAX = 7.0                 # 大隊交界：兩路同一大隊人數差到 12 人，短的那路空 0.4×12 + 0.4 + 0.8 ≈ 6.0 秒（spec §4）
 GATE_GAP_MAX = 0.55                # 西一入口每條線：門前集合後同 2c，0.4 秒一位 ± 避撞平移
 BEAT, DADUI_GAP, RULE_SLACK = 0.4, 0.8, 0.4   # 交界規則值 = 0.4 ×（兩路該大隊人數差）+ 0.4 + 0.8，容許錯開與避撞平移 0.4（spec §4）
-QUEUE_HEAD, QUEUE_STEP, LINE_STAGGER, ENTRY_HEADWAY = 4.2, 0.075, 0.17, 0.4   # 門前集合：隊頭切齊 B2 u 4.2、每位往後 0.075；六條線錯開 0.17、每線 0.4 秒一位
+GATE_BOUNDARY_MAX = 40.0           # 西一入口兩個大隊之間的空檔上限：下一大隊在門前集合約三分之二才出發，實際約 30 秒
 SHIFT_TOL = 0.16                   # 避撞平移上限 0.15
-WAIT_SLACK = 0.05                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
+WAIT_SLACK = 0.05
+WAIT_MIN = 0.01                    # 等不到這麼久就不算停（建置時也不留停留點）                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 POPULATION = 1609
 COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'waits', 'doorQueue', 'seats', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
@@ -156,7 +159,7 @@ def check_all(data):
                 gap = b['t']['stair'] - a['t']['stair']
                 if gap > rule + RULE_SLACK + 1e-6:
                     rule_bad.append(dict(lane=L, dadui=d, gap=round(gap, 3), rule=round(rule, 3)))
-    cont_ok = not rule_bad and all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GAP_MAX and v['maxGapBoundary'] <= BOUNDARY_MAX for v in stair.values()) and \
+    cont_ok = not rule_bad and all(v['maxGapBoundary'] <= GATE_BOUNDARY_MAX for v in gate.values()) and all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GAP_MAX and v['maxGapBoundary'] <= BOUNDARY_MAX for v in stair.values()) and \
         all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GATE_GAP_MAX for v in gate.values())
     out['continuity'] = dict(stair=stair, gate=gate, boundaryRuleViolations=len(rule_bad), boundaryExamples=rule_bad[:3], ok=cont_ok)
     # 3b. 只在門前自己的位置等：離座到門前、門前到到位全程等速（時間 = 路程 / 步速）；
@@ -167,47 +170,46 @@ def check_all(data):
     def extra(a):
         length = sum(((q[0] - r[0]) ** 2 + (q[1] - r[1]) ** 2) ** 0.5 for r, q in zip(a, a[1:]))
         return (a[-1][2] - a[0][2]) - length / V if len(a) > 1 else 0.0
-    # 圖面的 B2 線是從樓梯平台截起的，u 與建置用的整條折線差一個常數：以「u + 0.075·slot」的中位數當隊頭那條線
-    spots = {}
-    for p in persons:
-        if p['t']['enter'] - p['t']['assembly'] >= 0.01:
-            q = next((q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6), None)
-            if q:
-                spots[p['id']] = B2.proj(q[:2])
-    heads = sorted(u + QUEUE_STEP * next(x['slot'] for x in persons if x['id'] == pid) for pid, (u, _, _) in spots.items()) if spots else [0.0]
-    head_u = heads[len(heads) // 2]
+    # 圖面的 B2 線是從樓梯平台截起的，u 與建置用的整條折線差一個常數：以「u + 0.075·slot」的中位數當隊頭那條線。
+    # 門前位置是路線上的頂點（不論有沒有等），時刻就是 t.assembly
+    def spot_of(p):
+        q = min(p['path'], key=lambda q: abs(q[2] - p['t']['assembly']))
+        return q if abs(q[2] - p['t']['assembly']) < 2e-3 else None
+    spots = {p['id']: (p, spot_of(p)) for p in persons}
+    heads = sorted(B2.proj(q[:2])[0] + routes.QUEUE_STEP * p['slot'] for p, q in spots.values() if q)
+    head_u = heads[len(heads) // 2] if heads else 0.0
+
+    def spot_ok(p):
+        q = spots[p['id']][1]
+        if q is None:
+            return False
+        u, o, _ = B2.proj(q[:2])
+        return abs(u - (head_u - routes.QUEUE_STEP * p['slot'])) <= 0.01 and abs(o - routes.line_off(p['gateLane'])) <= 0.01
     wait_bad, waits = [], []
     for p in persons:
         t, a = p['t'], p['path']
         ka = next((i for i, q in enumerate(a) if abs(q[2] - t['assembly']) < 1e-6), None)
         ke = next((i for i, q in enumerate(a) if abs(q[2] - t['enter']) < 1e-6), None)
         w = t['enter'] - t['assembly']
-        bad = p.get('adv') or w < -1e-9 or abs(a[0][2] - t['leave']) > 1e-6 or abs(a[-1][2] - t['arrive']) > 1e-6
-        if not bad and w >= 0.01:
+        bad = p.get('adv') or w < -1e-9 or abs(a[0][2] - t['leave']) > 1e-6 or abs(a[-1][2] - t['arrive']) > 1e-6 or not spot_ok(p)
+        if not bad and w >= WAIT_MIN:
             bad = ka is None or ke is None or ke != ka + 1 or a[ka][:2] != a[ke][:2]
-            if not bad:
-                u, o, _ = B2.proj(a[ka][:2])
-                bad = abs(u - (head_u - QUEUE_STEP * p['slot'])) > 0.01 or abs(o - (0.2 - 0.08 * p['gateLane'])) > 0.01
         if not bad:
-            pre, post = (a[:ka + 1], a[ke:]) if w >= 0.01 else (a, [])
+            pre, post = (a[:ka + 1], a[ke:]) if w >= WAIT_MIN else (a, [])
             bad = extra(pre) > WAIT_SLACK or extra(post) > WAIT_SLACK
         if bad:
             wait_bad.append(p['id'])
         waits.append(max(0.0, w))
     out['waits'] = dict(violations=len(wait_bad), examples=wait_bad[:3], maxWait=round(max(waits), 3),
-                        waiting=sum(1 for w in waits if w >= 0.01))
+                        waiting=sum(1 for w in waits if w >= WAIT_MIN))
     # 3c. 門前切齊、大隊一起進場：同一大隊 G = T_k + 0.4·slot + 0.17·j（容許避撞平移）；隊頭都站在 u 4.2
     q_bad = []
     for d in sorted({p['dadui'] for p in persons}):
         ps = [p for p in persons if p['dadui'] == d]
-        base_t = sorted(p['t']['gate'] - ENTRY_HEADWAY * p['slot'] - LINE_STAGGER * p['gateLane'] for p in ps)
+        base_t = sorted(p['t']['gate'] - build.ENTRY_HEADWAY * p['slot'] - build.STAGGER * p['gateLane'] for p in ps)
         T = base_t[len(base_t) // 2]
-        off = [p['id'] for p in ps if abs(p['t']['gate'] - ENTRY_HEADWAY * p['slot'] - LINE_STAGGER * p['gateLane'] - T) > SHIFT_TOL]
-        heads = [p for p in ps if p['slot'] == 0 and p['t']['enter'] - p['t']['assembly'] >= 0.01]
-        for h in heads:
-            q = next((q for q in h['path'] if abs(q[2] - h['t']['assembly']) < 1e-6), None)
-            if q is None or abs(B2.proj(q[:2])[0] - head_u) > 0.01:
-                off.append(h['id'])
+        off = [p['id'] for p in ps if abs(p['t']['gate'] - build.ENTRY_HEADWAY * p['slot'] - build.STAGGER * p['gateLane'] - T) > SHIFT_TOL]
+        off += [p['id'] for p in ps if p['slot'] == 0 and not spot_ok(p)]     # 六條線的隊頭都站在同一條線上（切齊），不論有沒有等
         if off:
             q_bad.append(dict(dadui=d, who=off[:4]))
     out['doorQueue'] = dict(dadui=len({p['dadui'] for p in persons}), violations=len(q_bad), examples=q_bad[:3])

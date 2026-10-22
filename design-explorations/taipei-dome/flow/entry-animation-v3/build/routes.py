@@ -15,6 +15,12 @@ GATE_W, GATE_DOORS = 0.95, 4                 # 西一入口：4 扇門，可 12 
 GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
 QUEUE_HEAD, QUEUE_STEP = 4.2, 0.075      # 門前集合：六條線的隊頭切齊在 B2 u 4.2（收攏點前一點），往後每位 0.075（同 2c 集結格位間距）
+QUEUE_MIN_U = 1.4                        # 門前位置的下限：B2 側移完成（第一個 lane_run 點 ≈ 1.36）之後
+
+
+def line_off(j):
+    """西一入口第 j 條線在 B2 的偏移：j 0 最靠場側。"""
+    return 0.2 - 0.08 * j
 
 
 def lane_run(poly, u0, u1, off, step=0.35):
@@ -78,31 +84,35 @@ class Geometry:
         return [self.B1.off(STAIR_U_B1, off)] + poly_between(lp, 0.05, lp.L - 0.05)
 
     def _b2_to_gate(self, j):
-        return lane_run(self.B2, B2_U_START, 4.2, 0.2 - 0.08 * j) + [self.GATE_PTS[j]]
+        return lane_run(self.B2, B2_U_START, QUEUE_HEAD, line_off(j)) + [self.GATE_PTS[j]]
 
     def queue_u(self, person):
-        """門前集合的位置：自己那條線上、隊頭往後第 slot 位。"""
-        return QUEUE_HEAD - QUEUE_STEP * person['slot']
+        """門前集合的位置：自己那條線上、隊頭往後第 slot 位；排到側移完成之前（樓梯平台）就是隊伍太長。"""
+        u = QUEUE_HEAD - QUEUE_STEP * person['slot']
+        if u < QUEUE_MIN_U:
+            raise ValueError(f"門前第 {person['slot'] + 1} 位排到 u {u:.2f}，已在樓梯平台後面（下限 {QUEUE_MIN_U}）")
+        return u
 
-    def queue_routes(self, person):
-        """(到門前位置的路線, 門前位置到收攏點的路線)：前者從座位起、沿兩路下樓、側移到自己那條線後停在 queue_u。"""
-        j, uq = person['gateLane'], self.queue_u(person)
-        full = self.arrival_route(person)
-        b2 = self._b2_to_gate(j)
-        pre, lane = full[:len(full) - len(b2)], b2[:-1]
-        o = 0.2 - 0.08 * j
-        spot = self.B2.off(uq, o)
-        to = pre + [q for q in lane if self.B2.proj(q)[0] < uq - 1e-6] + [spot]
-        frm = [spot] + [q for q in lane if self.B2.proj(q)[0] > uq + 1e-6] + [b2[-1]]
-        return to, frm
-
-    def arrival_route(self, person):
-        """座位 → 走道口 → 接入點 → 自己那一路 → 樓梯 → B2 側移到第 j 條線 → 西一入口收攏點。"""
+    def _pre_b2(self, person):
+        """座位 → 走道口 → 接入點 → 自己那一路 → 樓梯（到平台端）。"""
         off = self.LANE_OFF[person['lane']]
         pts = [(person['rest']['X'], person['rest']['Y'])] + [tuple(q) for q in person['approach']]   # 座位 → 走道口 → … → 走廊邊
         u_in = self.B1.proj(pts[-1])[0] + JOIN_AHEAD                                                # 斜向前方併入自己那一路
         pts.append(self.B1.off(u_in, off))
-        return pts + lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off) + self._b2_to_gate(person['gateLane'])
+        return pts + lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off)
+
+    def queue_routes(self, person):
+        """(到門前位置的路線, 門前位置到收攏點的路線)：前者從座位起、沿兩路下樓、側移到自己那條線後停在 queue_u。"""
+        j, uq = person['gateLane'], self.queue_u(person)
+        b2 = self._b2_to_gate(j)
+        spot = self.B2.off(uq, line_off(j))
+        to = self._pre_b2(person) + [q for q in b2[:-1] if self.B2.proj(q)[0] < uq - 1e-6] + [spot]
+        frm = [spot] + [q for q in b2[:-1] if self.B2.proj(q)[0] > uq + 1e-6] + [b2[-1]]
+        return to, frm
+
+    def arrival_route(self, person):
+        """不停的整條路：座位 → … → 樓梯 → B2 側移到第 j 條線 → 西一入口收攏點。"""
+        return self._pre_b2(person) + self._b2_to_gate(person['gateLane'])
 
     def stair_top_index(self, pts):
         """路線中樓梯口那個點的序號（沒有經過樓梯口回 None）。"""

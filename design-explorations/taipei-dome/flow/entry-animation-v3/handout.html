@@ -91,15 +91,18 @@ const RULE='白衣一路（靠看台）、藍衣一路（外側），照大隊 1
 // 六個時刻取自 phases、groups 與 lanes（換口那一位的離座時刻）。
 function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p]));
  // 白衣第一次換口、藍衣最後一次換口；段數由資料決定（座位改了換口點會移動），沒有換口就取該路第一段
- const swap=(L,k)=>{const sg=ds.lanes[L].segments,i=Math.max(0,Math.min(k<0?sg.length+k:k,sg.length-1)),s=sg[i],prev=sg[Math.max(0,i-1)],p=ds.P.find(q=>q.lane===L&&q.laneIdx===s.fromIdx);return {s,prev,p};};
+ const swap=(L,k)=>{const sg=ds.lanes[L].segments,i=Math.max(0,Math.min(k<0?sg.length+k:k,sg.length-1)),s=sg[i],prev=sg[Math.max(0,i-1)],p=ds.P.find(q=>q.lane===L&&q.laneIdx===s.fromIdx);return {s,prev,p,single:sg.length<2};};
+ const swapM=(key,X,who,tail)=>X.single
+  ?{key,t:X.p.t.leave,h:`${who}不換口（全程 ${X.s.exit}）`,d:`${who}全部從 ${X.s.exit} 出口出來，這一路不換口。`}
+  :{key,t:X.p.t.leave,h:`${who}換口 ${X.prev.exit}→${X.s.exit}`,d:`${X.prev.exit} 坐滿：大隊 ${X.s.from.dadui} ${who}從列 ${X.s.from.lie} 第 ${X.s.from.pai} 排起改由 ${X.s.exit} 出口接上，${tail}`};
  const A=swap('A',1),B=swap('B',-1);
  return [
   // 就座階段的結束瞬間就是第一人離座的瞬間；畫面取它前一毫秒，讓「全員就座」真的是 1,609 人都在座位上。
   {key:'seated',t:ph.seated.t1,tc:ph.seated.t1-1e-3,h:'全員就座',d:'七個出口由上排往下坐，先走的坐上面。'},
   {key:'form',t:(G['白1'].tStairFirst+D.meta.tGateStart)/2,h:'大隊 1 兩路成形',d:`白衣從 ${G['白1'].exits[0].exit} 出口、藍衣從 ${G['藍1'].exits[0].exit} 出口，各自三列交錯成一路；白衣靠看台側、藍衣外側。`},
-  {key:'gate',t:D.meta.tGateStart,h:'大隊 1 門前集合後進場',d:'下樓後白衣散到北三路、藍衣散到南三路，在門前切齊排隊；約三分之二到齊就六路一起進場（0.4 秒一位），樓梯同時不停。'},
-  {key:'swapA',t:A.p.t.leave,h:`白衣換口 ${A.prev.exit}→${A.s.exit}`,d:`${A.prev.exit} 坐滿：大隊 ${A.s.from.dadui} 白衣從列 ${A.s.from.lie} 第 ${A.s.from.pai} 排起改由 ${A.s.exit} 出口接上，隊伍不斷。`},
-  {key:'swapB',t:B.p.t.leave,h:`藍衣換口 ${B.prev.exit}→${B.s.exit}`,d:`${B.prev.exit} 坐滿：大隊 ${B.s.from.dadui} 藍衣從列 ${B.s.from.lie} 第 ${B.s.from.pai} 排起改由 ${B.s.exit} 出口接上，走最外側。`},
+  {key:'gate',t:ph.enter.t0,h:'大隊 1 門前集合後進場',d:'下樓後白衣散到北三路、藍衣散到南三路，在門前切齊排隊；約三分之二到齊就六路一起進場（0.4 秒一位），樓梯同時不停。'},
+  swapM('swapA',A,'白衣','隊伍不斷。'),
+  swapM('swapB',B,'藍衣','走最外側。'),
   {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
 let jobs=[];
 function build(ds){const D=ds.D,M=D.meta,frames=$('frames');

@@ -175,3 +175,29 @@ def test_check_door_queue_tamper(built):                # 門前切齊：把某�
             q[0] += 0.2
     C = check.check_all(D)
     assert C['doorQueue']['violations'] >= 1 and C['ok'] is False
+
+
+def test_check_bounds_gate_gap_between_dadui(built):    # review：西一入口兩個大隊之間不能空太久
+    _, D = built
+    D = _copy(D)
+    for p in D['persons']:
+        if p['dadui'] >= 5:
+            for k in ('enter', 'gate'):
+                p['t'][k] += 120
+    C = check.check_all(D)
+    assert C['continuity']['ok'] is False and C['ok'] is False
+
+
+def test_check_positions_heads_without_wait(built):     # review：不用等的隊頭也要檢查站位
+    _, D = built
+    D = _copy(D)
+    p = next(q for q in D['persons'] if q['slot'] == 0 and q['t']['enter'] - q['t']['assembly'] < 0.01) if any(
+        q['slot'] == 0 and q['t']['enter'] - q['t']['assembly'] < 0.01 for q in D['persons']) else None
+    if p is None:
+        p = next(q for q in D['persons'] if q['slot'] == 0)
+        p['t']['enter'] = p['t']['assembly']
+        p['path'] = [q for q in p['path'] if not (q[2] > p['t']['assembly'] + 1e-6 and abs(q[2] - p['t']['enter']) < 1e-6)]
+    q = next(q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6)
+    q[0] += 0.2
+    C = check.check_all(D)
+    assert C['doorQueue']['violations'] >= 1 and C['ok'] is False

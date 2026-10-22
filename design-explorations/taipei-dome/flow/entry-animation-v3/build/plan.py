@@ -127,13 +127,14 @@ def assign_exits(base, seqs):
     shared = set(EXIT_ORDER['A']) & set(EXIT_ORDER['B'])
     need_a = len(seqs['A']) - sum(cap[e] for e in EXIT_ORDER['A'] if e not in shared)
     left = {L: {e: cap[e] for e in EXIT_ORDER[L]} for L in LANES}
-    for e in shared:
-        left['A'][e], left['B'][e] = max(0, need_a), cap[e] - max(0, need_a)
+    for e in shared:                                   # A 路要的超過 142 全部可用席時，A 先拿滿、在下面報 A 路缺額
+        left['A'][e] = min(max(0, need_a), cap[e])
+        left['B'][e] = cap[e] - left['A'][e]
     for L in LANES:
         order = EXIT_ORDER[L]
         oi = 0
         for p in seqs[L]:
-            while oi < len(order) and left[L][order[oi]] == 0:
+            while oi < len(order) and left[L][order[oi]] <= 0:
                 oi += 1
             if oi == len(order):
                 short = len(seqs[L]) - p['laneIdx']

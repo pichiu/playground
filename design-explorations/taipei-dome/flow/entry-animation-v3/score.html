@@ -87,7 +87,7 @@ let ds=null,rows=[],rowEls=[],view=null,T=1,t=0,hover=-1,lastHover=-2,dirty=true
 function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
  ds.groups.forEach((g,gi)=>{for(const lie of g.columns){const ps=ds.P.filter(p=>p.lie===lie).sort((a,b)=>a.t.leave-b.t.leave);
   out.push({lie,exit:ds.exitsOfFile(lie).join('/'),lane:g.lane,g,gi,ps,file:byLie.get(lie)});}});return out;}
-// 摘要：沒有人停下來等；寫出從離座到到位最長的一列。
+// 摘要：寫出在門前等最久的人。
 function summaryText(ds){const w=ds.P.reduce((a,p)=>(p.t.enter-p.t.assembly)>(a.t.enter-a.t.assembly)?p:a);
  return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在西一入口前排隊等</b>、藍是進場。每個大隊約三分之二的人到門前就一起進場，所以每列前段的人等得最久、最後幾位幾乎不用等。最久是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）${fmt(w.t.enter-w.t.assembly)}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
 // 版面
@@ -106,7 +106,8 @@ function layout(){if(!rows.length)return;const w=g.getBoundingClientRect().width
  scrollable=scroller.scrollWidth>scroller.clientWidth+1;g.style.touchAction=scrollable?'auto':'pan-y';paintStatic();}
 function bar(ps,y,h){const n=ps.length;ps.forEach((p,j)=>{const yy=y+j/n*(h-1),s=p.t;
   gx.globalAlpha=1;gx.fillStyle=C.walk;gx.fillRect(xOf(s.leave),yy,Math.max(1,xOf(s.assembly)-xOf(s.leave)),1);
-  if(s.enter>s.assembly){gx.globalAlpha=.75;gx.fillStyle=C.wait;gx.fillRect(xOf(s.assembly),yy,Math.max(1,xOf(s.enter)-xOf(s.assembly)),1);}
+  if(s.enter-s.assembly>=.01){   // 與 check.py 的 WAIT_MIN 一致
+gx.globalAlpha=.75;gx.fillStyle=C.wait;gx.fillRect(xOf(s.assembly),yy,Math.max(1,xOf(s.enter)-xOf(s.assembly)),1);}
   gx.globalAlpha=1;gx.fillStyle=C.enter;gx.fillRect(xOf(s.enter),yy,Math.max(1,xOf(s.arrive)-xOf(s.enter)),1);});gx.globalAlpha=1;}
 function paintStatic(){gx.setTransform(dpr,0,0,dpr,0,0);gx.fillStyle=C.bg;gx.fillRect(0,0,W,H);
  gx.font='500 11px "Noto Sans TC",system-ui';gx.textBaseline='middle';

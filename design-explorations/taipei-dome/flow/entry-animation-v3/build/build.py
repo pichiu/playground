@@ -15,7 +15,6 @@ V = 1.1                 # 單位/秒
 HEADWAY = 0.4           # 同一路相鄰兩人節拍
 STAGGER = 0.17          # 兩路錯開
 T0 = 6.73               # 第一人離座
-STAND_MIN = 0.6         # 沿用 2c 常數（版本 3 沒有站定）
 DADUI_GAP = 0.8         # 大隊交界的對齊空檔：前一大隊隊尾先過西一入口線的轉入點
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
 ENTRY_HEADWAY = 0.4     # 西一入口每條線相鄰兩人：門前集合一部分人後，大隊以這個節奏連續進場
@@ -84,7 +83,7 @@ def schedule(G, people, R=None, shift=None):
     shift：個人整條時間線的平移秒數（避撞用）。"""
     R = R or prepare(G, people)
     shift = shift or {}
-    rel, t_dadui = aligned_clock(people, 'lane', 'dadIdx', 'dadui', lambda it: STAGGER * LANE_K[it['lane']], group_gap=DADUI_GAP)
+    rel, _ = aligned_clock(people, 'lane', 'dadIdx', 'dadui', lambda it: STAGGER * LANE_K[it['lane']], group_gap=DADUI_GAP)
     T_S0 = max(T0 + R[p['id']]['d_top'] / V - rel[p['id']] for p in people)
     stair = {p['id']: T_S0 + rel[p['id']] for p in people}
     arrive_q = {p['id']: stair[p['id']] + (R[p['id']]['L_to'] - R[p['id']]['d_top']) / V for p in people}
@@ -106,7 +105,7 @@ def schedule(G, people, R=None, shift=None):
         for key in out[pid]:
             out[pid][key] += dt
     return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()),
-                     tDadui={k: round(v, 3) for k, v in T_gate.items()})
+                     tGateDadui={k: round(v, 3) for k, v in T_gate.items()})
 
 
 def person_path(base_person, r, t):

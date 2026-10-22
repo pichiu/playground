@@ -55,3 +55,10 @@ def test_tracked_outputs_match_pipeline(root, pipeline):
     tmp, _ = pipeline
     for name in ['data.json', 'seats.csv']:
         assert hashlib.sha256((tmp / name).read_bytes()).hexdigest() == hashlib.sha256((root / name).read_bytes()).hexdigest(), name
+
+
+def test_hub_v3_card_copy_current(root):                 # review：首頁卡不得留著不集結版本的說法
+    h = (root.parents[1] / 'index.html').read_text(encoding='utf-8')
+    i = h.index('flow/entry-animation-v3/index.html')
+    card = h[i:h.index('</a>', i)]
+    assert '沒有人停下來等' not in card and '18 秒' not in card and '門前' in card

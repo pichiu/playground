@@ -136,7 +136,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
   {k:'走',h:'走廊與樓梯',t:tExit,show:s.stair,tl:'過樓梯口',pts:pathIn(p,tExit,s.stair+1),pad:1.6,
    d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。這一路是三列交錯排隊，前一位常是別列的人，照順序跟著就好。到樓梯口<strong>不停</strong>，直接下 B2。`},
   {k:'集',h:'門前集合',t:s.assembly,show:s.assembly,tl:'站好',pts:pathIn(p,s.assembly-4,s.assembly+.1),pad:1.4,w:s.enter-s.assembly,
-   d:`下樓後走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數；${p.lane==='A'?'白衣在北三路':'藍衣在南三路'}），站在這一路<strong>第 ${p.slot+1} 位</strong>——六條線的第一位在門前切齊，後面一位接一位排好。${s.enter-s.assembly>=.05?`${fmt(s.assembly)} 站好，等 <strong>${fmt(s.enter-s.assembly)}</strong>，大隊 ${p.dadui} 一起出發。`:'你到的時候隊伍正好在走，不用停，直接跟上。'}`},
+   d:`下樓後走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數；${p.lane==='A'?'白衣在北三路':'藍衣在南三路'}），站在這一路<strong>第 ${p.slot+1} 位</strong>——六條線的第一位在門前切齊，後面一位接一位排好。${s.enter-s.assembly>=.01?`${fmt(s.assembly)} 站好，等 <strong>${fmt(s.enter-s.assembly)}</strong>，大隊 ${p.dadui} 一起出發。`:'你到的時候隊伍正好在走，不用停，直接跟上。'}`},
   {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過西一入口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
    d:`大隊 ${p.dadui} 六路一起進場，每一路 0.4 秒一位；你 ${fmt(s.enter)} 起步，${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
@@ -147,7 +147,7 @@ function build(){$('main').hidden=false;$('hint').hidden=true;
  if(!v){v=new View($('c'),{rotate:true,pad:28});v.onresize=()=>{dirty=true;};}
  $('who').textContent=me.id;$('seat').textContent=seatOf(me);$('meta').textContent=`大隊 ${me.dadui} · ${me.costume}衣 · ${me.a} · ${me.exit} 出口 · ${me.lane} 路`;
  steps=stepsFor(ds,me);
- $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${x.tl?`<small>${x.tl}</small>`:''}${fmt(x.show)}</time></h2><p>${x.d}</p>${x.w>=.05?`<span class="wait">門前等 ${fmt(x.w)}（示意時間）</span>`:''}</div></li>`).join('');
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${x.tl?`<small>${x.tl}</small>`:''}${fmt(x.show)}</time></h2><p>${x.d}</p>${x.w>=.01?`<span class="wait">門前等 ${fmt(x.w)}（示意時間）</span>`:''}</div></li>`).join('');
  const {gate}=indexes(ds),ahead=gate.get(me.gateLane+'|'+(me.gateIdx-1)),behind=gate.get(me.gateLane+'|'+(me.gateIdx+1));
  $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時西一入口第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
  $('orient').textContent='甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';

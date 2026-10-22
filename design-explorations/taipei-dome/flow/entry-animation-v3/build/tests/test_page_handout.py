@@ -52,3 +52,21 @@ def test_handout_survives_fewer_segments(open_page, root):   # final review：�
         assert '139→140' in pg.inner_text('figure[data-key="swapA"]') and '142→145' in pg.inner_text('figure[data-key="swapB"]')
     finally:
         tmp.unlink()
+
+
+def test_handout_single_segment_and_go_time(open_page, root):   # review：只有一段時不能寫假換口；出發時刻用門前起步
+    D = json.loads((root / 'data.json').read_text(encoding='utf-8'))
+    go = min(p['t']['enter'] for p in D['persons'])
+    pg, *_ = open_page('handout.html', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    assert _fmt(go) in pg.inner_text('figure[data-key="gate"] time')
+    D['lanes']['A']['segments'] = D['lanes']['A']['segments'][:1]
+    tmp = root / 'tmp-handout-test2.json'
+    tmp.write_text(json.dumps(D, ensure_ascii=False), encoding='utf-8')
+    try:
+        pg, errs, perrs = open_page('handout.html?data=tmp-handout-test2.json', 1280)
+        pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+        t = pg.inner_text('figure[data-key="swapA"]')
+        assert '139→139' not in t and '不換口' in t and not perrs
+    finally:
+        tmp.unlink()

@@ -63,3 +63,15 @@ def test_seatmap_tip_on_click(open_page, root):
     tip = pg.inner_text('#seat-tip')
     assert f"141 區 {p['rest']['pai']} 排 {p['rest']['no']} 號" in tip and p['id'] in tip and '走 A 路' in tip
     assert not errs and not perrs, (errs, perrs)
+
+
+def test_exit_capacity_matches_data(open_page, root):    # review：出口卡的空席數要和 data 的 capacity − used 一致
+    D = _data(root)
+    pg, *_ = open_page('exit.html?e=145', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    n = pg.evaluate("[...document.querySelectorAll('.pc.empty')].reduce((a,e)=>a+(+e.style.getPropertyValue('--n')),0)")
+    import re
+    un = pg.locator('.unused')
+    n += int(re.search(r'（(\d+) 席空）', un.inner_text()).group(1)) if un.count() else 0
+    e = next(e for e in D['exits'] if e['key'] == '145')
+    assert n == e['capacity'] - e['used']

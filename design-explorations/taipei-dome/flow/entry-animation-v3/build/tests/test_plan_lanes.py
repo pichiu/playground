@@ -54,3 +54,12 @@ def test_split_columns_reported(base):
     assert P['lanes']['A']['segments'][0]['exit'] == '139' and len(P['lanes']['A']['segments']) == 4 == len(P['lanes']['B']['segments'])
     g = [g for g in P['groups'] if len(g['exits']) > 1]
     assert len(g) == 6 and all(sum(e['n'] for e in x['exits']) == x['population'] for x in g)
+
+
+def test_shared_exit_shortfall_is_reported(base):      # review：142 不夠 A 路用時要直接報缺額，不能讓 B 路剩餘席變負數
+    import copy
+    import pytest
+    b = copy.deepcopy(base)
+    b['restSeats'] = [s for s in b['restSeats'] if s['sec'] != '141']   # 沒有 141 → A 路要用超過 142 全部的席
+    with pytest.raises(SystemExit, match='路 A 缺 57 席'):
+        plan.build_plan(b)

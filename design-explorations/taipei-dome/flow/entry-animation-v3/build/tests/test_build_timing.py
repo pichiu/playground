@@ -63,3 +63,16 @@ def test_door_queue_waits_and_no_starving(base):        # 先到的在門前等�
     w = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in people]
     assert min(w) > -1e-9 and 15 < max(w) < 40
     assert sum(1 for x in w if x < 0.05) >= 9           # 每大隊至少有一位不必停
+
+
+def test_every_dadui_has_a_walk_through(base):          # review：每個大隊都有人邊到邊走（T_k 不會晚到全大隊都要等）
+    people, (S, clocks) = _sched(base)
+    for d in range(1, 10):
+        assert any(S[p['id']]['enter'] - S[p['id']]['assembly'] < 0.01 for p in people if p['dadui'] == d), d
+
+
+def test_queue_spot_has_room(base):                      # review：門前位置不能排到樓梯平台後面
+    import pytest
+    G = routes.Geometry(base)
+    with pytest.raises(ValueError):
+        G.queue_u({'slot': 60, 'gateLane': 0})
