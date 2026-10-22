@@ -108,7 +108,7 @@ Dome.nav('console.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);
 const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','門前等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const {esc}=Dome;
 let ds=null,S=null,view=null,t=0,T=1,playing=false,speed=1,last=0,dirty=true,cues=[];
 const hl=new Set();   // 目前高亮的路別（可多選）
 const pct=x=>x/T*100+'%';

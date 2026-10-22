@@ -77,7 +77,7 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 'use strict';
 const {pos,state,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
 Dome.nav('score.html');
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const {esc}=Dome;
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={},readC=()=>{for(const n of ['bg','card','ink','dim','rule','faint','walk','wait','enter','hi','blue','white'])C[n]=css(n);};readC();
 const KEY=`<span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--wait)"></i>門前等待</span><span><i style="background:var(--enter)"></i>進場中</span>`;
@@ -88,8 +88,8 @@ function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
  ds.groups.forEach((g,gi)=>{for(const lie of g.columns){const ps=ds.P.filter(p=>p.lie===lie).sort((a,b)=>a.t.leave-b.t.leave);
   out.push({lie,exit:ds.exitsOfFile(lie).join('/'),lane:g.lane,g,gi,ps,file:byLie.get(lie)});}});return out;}
 // 摘要：寫出在門前等最久的人。
-function summaryText(ds){const w=ds.P.reduce((a,p)=>(p.t.enter-p.t.assembly)>(a.t.enter-a.t.assembly)?p:a);
- return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在西一入口前排隊等</b>、藍是進場。每個大隊約三分之二的人到門前就一起進場，所以每列前段的人等得最久、最後幾位幾乎不用等。最久是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）${fmt(w.t.enter-w.t.assembly)}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
+function summaryText(ds){const w=ds.P.reduce((a,p)=>ds.wait(p)>ds.wait(a)?p:a);
+ return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在西一入口前排隊等</b>、藍是進場。每個大隊約三分之二的人到門前就一起進場，所以每列前段的人等得最久、最後幾位幾乎不用等。最久是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）${fmt(ds.wait(w))}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
 // 版面
 const g=$('g'),gx=g.getContext('2d'),labels=$('labels'),scroller=$('scroller');
 let W=0,H=0,dpr=1,scrollable=false;const PL=8,R=10,TOP=48,RH=13,GAP=8,BOT=32;
@@ -98,7 +98,7 @@ const xOf=v=>PL+v/T*(W-PL-R),tOf=x=>Math.max(0,Math.min(T,(x-PL)/(W-PL-R)*T));
 function groupSpan(gi){const idx=rows.map((r,i)=>r.gi===gi?i:-1).filter(i=>i>=0);return [yOf(idx[0]),yOf(idx[idx.length-1])+RH];}
 function buildLabels(){labels.style.height=H+'px';let html='';
  ds.groups.forEach((gr,gi)=>{const [y0,y1]=groupSpan(gi);html+=`<div class="grp ${gr.costume}" style="top:${y0}px;height:${y1-y0}px" title="${esc(`${gr.key}：${gr.population} 人，${fmt(gr.tStairFirst)}–${fmt(gr.tStairLast)} 通過樓梯口，不集結`)}">${esc(gr.key)}</div>`;});
- rows.forEach((r,i)=>{const f=r.file,tt=`列 ${r.lie}：${r.g.key}，${r.ps.length} 人。${r.exit} 出口 → ${ds.laneName(r.lane)} → 西一入口第 ${(r.lie-1)%6+1} 路。離座 ${fmt(f.tLeave)}，到位 ${fmt(f.tArrive)}`;
+ rows.forEach((r,i)=>{const f=r.file,tt=`列 ${r.lie}：${r.g.key}，${r.ps.length} 人。${r.exit} 出口 → ${ds.laneName(r.lane)} → 西一入口第 ${r.ps[0].gateLane+1} 路。離座 ${fmt(f.tLeave)}，到位 ${fmt(f.tArrive)}`;
   html+=`<div data-row data-lie="${r.lie}" data-i="${i}" style="top:${yOf(i)}px;height:${RH}px" title="${esc(tt)}">列 ${r.lie} · ${esc(r.exit)}·${r.lane}</div>`;});
  labels.innerHTML=html;rowEls=[...labels.querySelectorAll('[data-row]')];}
 function layout(){if(!rows.length)return;const w=g.getBoundingClientRect().width;if(!w)return;W=w;dpr=Math.min(2,devicePixelRatio||1);

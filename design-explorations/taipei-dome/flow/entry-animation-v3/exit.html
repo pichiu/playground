@@ -8,7 +8,7 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
 <style>
-:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--on-accent:#fff;--grid:#e6e5de;--dead:#9a9f9c;--laneA:#e0a73a;--laneB:#7fa5c7;--laneC:#9b8ad1;--tick:rgba(255,255,255,.5);color-scheme:light}
+:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--on-accent:#fff;--grid:#e6e5de;--dead:#9a9f9c;--laneA:#e0a73a;--laneB:#7fa5c7;--tick:rgba(255,255,255,.5);color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--tick:rgba(0,0,0,.35);color-scheme:dark}}
 :root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--tick:rgba(0,0,0,.35);color-scheme:dark}
 *{box-sizing:border-box}
@@ -86,7 +86,7 @@ h1 span{font-size:.5em;font-weight:500;color:var(--dim);white-space:nowrap}
 .cap .sep{opacity:.5;margin:0 2px}
 .cap .emp{font-weight:700}
 .lt{display:inline-block;font-weight:700;padding:0 6px;border-radius:5px;background:var(--lane-bg);color:var(--ink);font-style:normal;margin-right:3px}
-.lane-A{--lane:var(--laneA);--lane-bg:rgba(224,167,58,.22)}.lane-B{--lane:var(--laneB);--lane-bg:rgba(127,165,199,.24)}.lane-C{--lane:var(--laneC);--lane-bg:rgba(155,138,209,.24)}
+.lane-A{--lane:var(--laneA);--lane-bg:rgba(224,167,58,.22)}.lane-B{--lane:var(--laneB);--lane-bg:rgba(127,165,199,.24)}
 .hand{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px dashed var(--rule);align-items:start}
 .hand .t{font-weight:900;font-size:15px;line-height:1.3;color:var(--ink)}
 .hand .t small{display:block;font-weight:500;font-size:11px;color:var(--dim)}
@@ -151,7 +151,7 @@ canvas#seatmap{display:block;cursor:pointer}
 'use strict';
 const {fmt}=Dome,$=id=>document.getElementById(id);
 Dome.nav('exit.html');
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const {esc}=Dome;
 // 大隊色：藍衣藍色系、白衣淡暖色，大隊 1→9 由淺到深；色帶上一律寫「{區塊}×{人數}」，顏色只是輔助。
 const BLUE=['#d3e3f8','#b2cdf1','#8fb4e9','#6c9ae0','#3a6bbd','#2c5aa8','#244b92','#1d3d7a','#162f62'];
 const WARM=['#fbf4e3','#f4e8c6','#ecd9a7','#e2c98a','#d6b86f','#c7a65a','#b59348','#86672a','#6d5320'];

@@ -4,7 +4,8 @@
 沒有集結區、格位、死巷、遞補。兩路偏移 A +0.12（白衣、靠看台）、B −0.12（藍衣、外側）。
 """
 import math
-from geo import Poly, pairs
+from geo import Poly, flat, pairs
+import plan
 
 STAIR_U_B1, B2_U_START = 13.15, 1.0      # 樓梯口在 B1 走廊折線的 u；B2 走廊起點 u
 LANE_OFF = {'A': 0.12, 'B': -0.12}
@@ -57,7 +58,7 @@ def trim_corridors(B1, B2, u_top, y_landing):
     u2 = B2.proj((B2.at(0)[0], y_landing))[0]
     b1 = [q for q, c in zip(B1.p, B1.cum) if c < u_top] + [B1.at(u_top)]
     b2 = [B2.at(u2)] + [q for q, c in zip(B2.p, B2.cum) if c > u2]
-    return dict(b1Corridor=[round(v, 3) for q in b1 for v in q], b2Corridor=[round(v, 3) for q in b2 for v in q])
+    return dict(b1Corridor=flat(b1), b2Corridor=flat(b2))
 
 
 class Geometry:
@@ -68,7 +69,7 @@ class Geometry:
         top = self.B1.at(STAIR_U_B1)
         bot = (top[0], top[1] + STAIR_RUN)
         self.STAIR_PTS = [top, bot, (LANDING_X, bot[1])]       # 樓梯口 → 樓梯底（B2）→ 平台東端
-        self.LANE_OFF = dict(LANE_OFF)
+        self.LANE_OFF = LANE_OFF
         self.ST_LANE = {o: Poly(miter(self.STAIR_PTS, o)) for o in self.LANE_OFF.values()}   # 樓梯兩路各自的折線
         self.GATE_PTS, self.GATE_DIR = {}, {}                   # 西一入口六路收攏點：版本 1 大隊 1 過西一入口的點；GATE_DIR 是該點之後場內線的方向
         for p in base['persons']:
@@ -127,9 +128,9 @@ class Geometry:
         """下樓後到門前的六條線：從樓梯平台（A／B 路各自的端點）側移到第 j 條線，沿 B2 走到西一入口收攏點。j 0–2 白、3–5 藍。"""
         out = []
         for j in range(6):
-            lp = self.ST_LANE[self.LANE_OFF['A' if j < 3 else 'B']]
+            lp = self.ST_LANE[self.LANE_OFF[next(L for L in plan.LANES if j in plan.LANE_J[L])]]
             pts = [lp.at(lp.L - 0.05)] + self._b2_to_gate(j)
-            out.append([round(v, 3) for q in pts for v in q])
+            out.append(flat(pts))
         return out
 
     def stair_map(self):
@@ -140,7 +141,6 @@ class Geometry:
         n = 8
         treads = [[round(top[0] - STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3), round(top[0] + STAIR_HALF_W, 3), round(top[1] + STAIR_RUN * k / n, 3)]
                   for k in range(1, n)]
-        flat = lambda pts: [round(v, 3) for q in pts for v in q]
         return dict(stair=flat(self.STAIR_PTS), stairBand=flat(ring), stairTreads=treads,
                     **trim_corridors(self.B1, self.B2, STAIR_U_B1, bot[1]))
 
@@ -158,4 +158,4 @@ class Geometry:
         for k in range(GATE_DOORS):
             s0 = -h + k * (w + gap)
             doors.append([round(v, 3) for v in (b[0] + nx * s0, b[1] + ny * s0, b[0] + nx * (s0 + w), b[1] + ny * (s0 + w))])
-        return dict(doors=doors, band=[round(v, 3) for q in band for v in q])
+        return dict(doors=doors, band=flat(band))

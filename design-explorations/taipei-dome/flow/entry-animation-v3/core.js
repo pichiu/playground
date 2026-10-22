@@ -7,17 +7,17 @@ function pos(p,t){const a=p.path;if(t<=a[0][2])return a[0];if(t>=a[a.length-1][2
 // seated → walk(離座、下樓、走到門前) → wait(門前集合) → enter(進場中) → done
 function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)return 'walk';if(t<s.enter)return 'wait';if(t<s.arrive)return 'enter';return 'done';}
 function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
+// 文字一律經過 esc 才放進 innerHTML
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function fmt(v){const neg=v<0;v=Math.abs(v);return (neg?'−':'')+String(Math.floor(v/60)).padStart(2,'0')+':'+String(Math.floor(v%60)).padStart(2,'0');}
 const LANE_NAME={A:'A 路（白衣・靠看台）',B:'B 路（藍衣・外側）'};
-const ZONE_NAME={DOOR:'門前集合（B2）'};
 
 function dataset(D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
   const groups=D.groups,groupKey=p=>p.costume+p.dadui,gmap=new Map(groups.map(g=>[g.key,g]));
   const exitsByKey=Object.fromEntries(D.exits.map(e=>[e.key,e])),fileByLie=new Map(D.files.map(f=>[f.lie,f]));
-  return {D,P,byId,T_END:D.meta.tEnd,groups,blocks:groups,exits:D.exits,exitsByKey,lanes:D.lanes,files:D.files,
+  return {D,P,byId,T_END:D.meta.tEnd,groups,exits:D.exits,exitsByKey,lanes:D.lanes,files:D.files,
     wait:p=>p.t.enter-p.t.assembly,
     groupOf:p=>gmap.get(groupKey(p)),
-    nodeName:key=>ZONE_NAME[key]||(D.nodes[key]?`${D.nodes[key].label}（${D.nodes[key].floor}）`:key),
     exitName:key=>exitsByKey[key]?`${key} 出口（${exitsByKey[key].stairLabel}）`:key,
     laneName:L=>LANE_NAME[L]||L,
     exitsOfFile:lie=>(fileByLie.get(lie)||{exits:[]}).exits,   // 一列可能分坐兩個出口（出口坐滿就換）
@@ -80,5 +80,5 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
-window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,fmt,View,pairs,LANE_NAME,ZONE_NAME};
+window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,fmt,esc,View,pairs,LANE_NAME};
 })();

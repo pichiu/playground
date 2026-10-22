@@ -131,7 +131,7 @@
 - `exits[]`：同 2c；`segments[{lane, n, firstId, lastId, fromRow, toRow, tFirstLeave, tLastLeave, from, to}]`（`from/to` 同 `lanes`）。
 - `files[]`：同 2c（`lane` 為 A/B；`exit` 改為 `exits[]`，因為可能兩個）。
 - `nodes`：去掉 P1–P6；`STAIR_TOP` 標籤「樓梯(B1)」。
-- `zones = {}`、`stairSlots = {}`（保留鍵，避免舊程式碼讀不到而炸）。
+- 不輸出 2c 的 `zones`、`stairSlots`（版本 3 頁面不讀；10/22 整理時拿掉）。
 - `seats.csv` 欄位同 2c，「集結區」欄一律「不集結，直接進場」。
 
 ## 6. 頁面

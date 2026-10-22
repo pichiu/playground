@@ -109,7 +109,7 @@ td.n{text-align:right;white-space:nowrap}
 'use strict';
 const {fmt}=Dome,$=id=>document.getElementById(id);
 Dome.nav('index.html');
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const {esc}=Dome;
 const where=w=>`大隊 ${w.dadui} 列 ${w.lie} 第 ${w.pai} 排`;
 function checksTable(C){
  const A=C.assignment,S=C.seats,R=C.routes,Cn=C.continuity,st=Object.values(Cn.stair),gt=Object.values(Cn.gate);

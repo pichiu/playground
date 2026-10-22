@@ -17,11 +17,11 @@ from geo import Poly, pairs
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 樓梯口節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 7.0                 # 大隊交界：兩路同一大隊人數差到 12 人，短的那路空 0.4×12 + 0.4 + 0.8 ≈ 6.0 秒（spec §4）
 GATE_GAP_MAX = 0.55                # 西一入口每條線：門前集合後同 2c，0.4 秒一位 ± 避撞平移
-BEAT, DADUI_GAP, RULE_SLACK = 0.4, 0.8, 0.4   # 交界規則值 = 0.4 ×（兩路該大隊人數差）+ 0.4 + 0.8，容許錯開與避撞平移 0.4（spec §4）
+RULE_SLACK = 0.4                   # 交界規則值 = 節拍 ×（兩路該大隊人數差）+ 節拍 + 大隊空檔（build.HEADWAY、build.DADUI_GAP），容許錯開與避撞平移 0.4（spec §4）
 GATE_BOUNDARY_MAX = 40.0           # 西一入口兩個大隊之間的空檔上限：下一大隊在門前集合約三分之二才出發，實際約 30 秒
 SHIFT_TOL = 0.16                   # 避撞平移上限 0.15
-WAIT_SLACK = 0.05
-WAIT_MIN = 0.01                    # 等不到這麼久就不算停（建置時也不留停留點）                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
+WAIT_SLACK = 0.05                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
+WAIT_MIN = build.WAIT_MIN           # 等不到這麼久就不算停（建置時也不留停留點）
 POPULATION = 1609
 COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'waits', 'doorQueue', 'seats', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
@@ -100,25 +100,17 @@ def lane_crossings(data):
     return dict(crossings=n, examples=examples[:4])
 
 
-def check_all(data):
+def check_all(data, coll=None):
+    """coll：已算好的 (穿過站定者, 走路互撞)，build.py 從避撞最後一輪帶進來；沒給就重算。"""
     persons = data['persons']
     out = {}
     # 1. 碰撞
-    st, wk = collisions(persons, data['meta']['tEnd'])
+    st, wk = coll if coll is not None else collisions(persons, data['meta']['tEnd'])
     out['collisions'] = dict(standing=len(st), walking=len(wk),
                              examples=[dict(kind='standing', who=[k, v[1]], t=v[0]) for k, v in list(st.items())[:3]] +
                                       [dict(kind='walking', who=list(k), t=t) for k, t in list(wk.items())[:3]])
     # 2. 依時間的巢狀：兩路依通過樓梯口時刻合併，兩路都開始後 A 的出口比 B 近、且不在同一座階梯
-    cur, bad, same = {}, [], []
-    for p in sorted(persons, key=lambda p: (p['t']['stair'], p['lane'])):
-        cur[p['lane']] = p['exit']
-        if len(cur) < len(plan.LANES):
-            continue
-        a, b = cur['A'], cur['B']
-        if plan.EXIT_RANK[a] >= plan.EXIT_RANK[b]:
-            bad.append(dict(id=p['id'], exits=[a, b]))
-        elif plan.STAIR_OF[a] == plan.STAIR_OF[b]:
-            same.append(dict(id=p['id'], stairs=[plan.STAIR_OF[a], plan.STAIR_OF[b]]))
+    bad, same = plan.nesting_violations(persons, key=lambda p: (p['t']['stair'], p['lane']))
     out['nesting'] = dict(violations=len(bad), sameStair=len(same), examples=(bad + same)[:3])
     # 2b. 指派：每路換口只往上游；換口前那個出口已用滿（兩路合計）；分坐兩出口的列數只列出、不算違反
     seqs = {L: sorted((p for p in persons if p['lane'] == L), key=lambda p: p['laneIdx']) for L in plan.LANES}
@@ -155,7 +147,7 @@ def check_all(data):
         for a, b in zip(seqs[L], seqs[L][1:]):
             if a['dadui'] != b['dadui']:
                 d = a['dadui']
-                rule = BEAT * (max(n_ld[(M, d)] for M in plan.LANES) - n_ld[(L, d)]) + BEAT + DADUI_GAP
+                rule = build.HEADWAY * (max(n_ld[(M, d)] for M in plan.LANES) - n_ld[(L, d)]) + build.HEADWAY + build.DADUI_GAP
                 gap = b['t']['stair'] - a['t']['stair']
                 if gap > rule + RULE_SLACK + 1e-6:
                     rule_bad.append(dict(lane=L, dadui=d, gap=round(gap, 3), rule=round(rule, 3)))
@@ -168,8 +160,7 @@ def check_all(data):
     B2 = Poly(pairs(data['map']['b2Corridor']))
 
     def extra(a):
-        length = sum(((q[0] - r[0]) ** 2 + (q[1] - r[1]) ** 2) ** 0.5 for r, q in zip(a, a[1:]))
-        return (a[-1][2] - a[0][2]) - length / V if len(a) > 1 else 0.0
+        return (a[-1][2] - a[0][2]) - build.cum([q[:2] for q in a])[-1] / V if len(a) > 1 else 0.0
     # 圖面的 B2 線是從樓梯平台截起的，u 與建置用的整條折線差一個常數：以「u + 0.075·slot」的中位數當隊頭那條線。
     # 門前位置是路線上的頂點（不論有沒有等），時刻就是 t.assembly
     def spot_of(p):
@@ -215,8 +206,8 @@ def check_all(data):
     out['doorQueue'] = dict(dadui=len({p['dadui'] for p in persons}), violations=len(q_bad), examples=q_bad[:3])
     # 4. 座位：唯一、合法、休息區＝出口的區、每出口由上排往下且由出口側往中央、exits.order 名單就是該出口全員（依 exitSeq）
     keys = [(p['rest']['sec'], p['rest']['pai'], p['rest']['no']) for p in persons]
-    kinds = {(s['sec'], s['pai'], s['no']): s['kind'] for s in data['restSeats']}
-    illegal = sum(1 for k in keys if kinds.get(k) in plan.UNUSED_KINDS or kinds.get(k) is None or (k[0] == '139' and k[2] <= 5))
+    seat_of = {(s['sec'], s['pai'], s['no']): s for s in data['restSeats']}
+    illegal = sum(1 for k in keys if k not in seat_of or not plan.seat_usable(seat_of[k]))
     wrong_sec = sum(1 for p in persons if p['rest']['sec'] != plan.EXIT_DEF[p['exit']]['sec'])
     listed = {e['key']: e for e in data['exits']}
     order_bad = coverage_bad = 0

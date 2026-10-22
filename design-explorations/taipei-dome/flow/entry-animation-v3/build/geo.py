@@ -26,3 +26,4 @@ class Poly:
                 best=(dd,u,(q[0]-x)*nx+(q[1]-y)*ny)
         return best[1],best[2],best[0]   # u, signed offset, dist
 def pairs(flat): return [(flat[i],flat[i+1]) for i in range(0,len(flat),2)]
+def flat(pts, nd=3): return [round(v, nd) for q in pts for v in q]

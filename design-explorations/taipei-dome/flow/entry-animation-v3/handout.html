@@ -80,7 +80,7 @@ figcaption .mv b{color:var(--ink);font-weight:500}
 'use strict';
 const {pos,state,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
 Dome.nav('handout.html');
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const {esc}=Dome;
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['paper','ink','dim','rule','blue','floor','rust'])C[n]=css(n);
 // 北朝上。框住休息區 139–145、B1 走廊、樓梯、B2、西一入口與西班的場內位置；左緣留給出口的字。

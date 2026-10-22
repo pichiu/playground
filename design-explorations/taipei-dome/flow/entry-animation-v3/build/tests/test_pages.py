@@ -49,7 +49,7 @@ def test_core_names(open_page):
     pg, *_ = open_page('index.html', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert pg.evaluate('Object.keys(Dome.LANE_NAME)') == ['A', 'B']
-    assert pg.evaluate('Object.keys(Dome.ZONE_NAME)') == ['DOOR'] and pg.evaluate('Dome.ZONE_NAME.DOOR') == '門前集合（B2）'
+    assert pg.evaluate('Dome.esc("<a>")') == '&lt;a&gt;'
     assert pg.get_attribute('nav.dome-nav', 'aria-label') == '進場動線版本 3 各頁'
 
 

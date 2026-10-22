@@ -3,6 +3,7 @@
 用法: python3 plan.py base.json plan.json
 """
 import collections
+import itertools
 import json
 import sys
 
@@ -47,16 +48,16 @@ def stair_key(p):
 
 # ---------- 出口定義與座位（spec §3.2、§3.4） ----------
 EXIT_DEF = {
-    '139': dict(sec='139', side='N', v1block='139',  fill='desc', stairLabel='139｜140 階梯南半'),
-    '140': dict(sec='140', side='S', v1block='140L', fill='asc',  stairLabel='139｜140 階梯北半'),
-    '141': dict(sec='141', side='S', v1block='141L', fill='asc',  stairLabel='140｜141 階梯'),
-    '142': dict(sec='142', side='S', v1block='142L', fill='asc',  stairLabel='141｜142 階梯'),
-    '143': dict(sec='143', side='S', v1block='143',  fill='asc',  stairLabel='142｜143 階梯'),
-    '144': dict(sec='144', side='N', v1block='144M', fill='desc', stairLabel='144｜145 階梯南半'),
-    '145': dict(sec='145', side='S', v1block='145',  fill='asc',  stairLabel='144｜145 階梯北半'),
+    '139': dict(sec='139', stair='139｜140', side='N', v1block='139',  fill='desc', stairLabel='139｜140 階梯南半'),
+    '140': dict(sec='140', stair='139｜140', side='S', v1block='140L', fill='asc',  stairLabel='139｜140 階梯北半'),
+    '141': dict(sec='141', stair='140｜141', side='S', v1block='141L', fill='asc',  stairLabel='140｜141 階梯'),
+    '142': dict(sec='142', stair='141｜142', side='S', v1block='142L', fill='asc',  stairLabel='141｜142 階梯'),
+    '143': dict(sec='143', stair='142｜143', side='S', v1block='143',  fill='asc',  stairLabel='142｜143 階梯'),
+    '144': dict(sec='144', stair='144｜145', side='N', v1block='144M', fill='desc', stairLabel='144｜145 階梯南半'),
+    '145': dict(sec='145', stair='144｜145', side='S', v1block='145',  fill='asc',  stairLabel='144｜145 階梯北半'),
 }
 UNUSED_KINDS = {'blocked', 'work'}
-STAIR_OF = {e: d['stairLabel'].split(' ')[0] for e, d in EXIT_DEF.items()}   # 出口所在的階梯：139/140 同一座、144/145 同一座
+STAIR_OF = {e: d['stair'] for e, d in EXIT_DEF.items()}   # 出口所在的階梯：139/140 同一座、144/145 同一座
 
 
 def seat_usable(seat):
@@ -109,11 +110,6 @@ def approach(base, exit_key, pai):
     raise KeyError(f'版本 1 沒有 {exit_key} 第 {pai} 排的走道口')
 
 
-def aisle_point(base, exit_key, pai):
-    """該排在出口側的走道口。"""
-    return approach(base, exit_key, pai)[0]
-
-
 def entry_point(base, exit_key):
     """出口接入 B1 走廊的代表點：各排接入點的平均。"""
     pais = sorted({p['rest']['pai'] for p in _v1_block_people(base, exit_key)})
@@ -143,10 +139,10 @@ def assign_exits(base, seqs):
             left[L][order[oi]] -= 1
 
 
-def nesting_violations(people):
-    """依計畫樓梯時刻合併兩路；兩路都已開始後，任何時刻 A 的出口要比 B 近（rank 小），且不在同一座階梯。"""
+def nesting_violations(people, key=stair_key):
+    """依樓梯時刻合併兩路（key：計畫序或實際時刻）；兩路都已開始後，任何時刻 A 的出口要比 B 近（rank 小），且不在同一座階梯。"""
     cur, bad, same = {}, [], []
-    for p in sorted(people, key=stair_key):
+    for p in sorted(people, key=key):
         cur[p['lane']] = p['exit']
         if len(cur) < len(LANES):
             continue
@@ -202,32 +198,20 @@ def build_plan(base):
     for k in range(1, 10):
         for L in LANES:
             members = [p for p in seqs[L] if p['dadui'] == k]
-            exits = []
-            for p in members:
-                if not exits or exits[-1]['exit'] != p['exit']:
-                    exits.append(dict(exit=p['exit'], n=0))
-                exits[-1]['n'] += 1
+            exits = [dict(exit=e, n=len(list(g))) for e, g in itertools.groupby(members, key=lambda p: p['exit'])]
             groups.append(dict(key=LANE_COSTUME[L] + str(k), costume=LANE_COSTUME[L], dadui=k, lane=L, population=len(members),
                                columns=[6 * k - 5 + j for j in LANE_J[L]], exits=exits))
     lanes_out = {}
     for L in LANES:
-        segs = []
-        for p in seqs[L]:
-            if not segs or segs[-1]['exit'] != p['exit']:
-                segs.append(dict(exit=p['exit'], fromIdx=p['laneIdx'], from_=p))
-            segs[-1]['toIdx'], segs[-1]['to_'] = p['laneIdx'], p
-        lanes_out[L] = dict(total=len(seqs[L]), segments=[dict(exit=s['exit'], fromIdx=s['fromIdx'], toIdx=s['toIdx'], n=s['toIdx'] - s['fromIdx'] + 1,
-                                                               **{'from': _where(s['from_']), 'to': _where(s['to_'])}) for s in segs])
+        segs = [list(g) for _, g in itertools.groupby(seqs[L], key=lambda p: p['exit'])]
+        lanes_out[L] = dict(total=len(seqs[L]), segments=[dict(exit=g[0]['exit'], fromIdx=g[0]['laneIdx'], toIdx=g[-1]['laneIdx'], n=len(g),
+                                                               **{'from': _where(g[0]), 'to': _where(g[-1])}) for g in segs])
     exits = {}
     for e in EXITS:
         d = EXIT_DEF[e]
         group = sorted((p for p in people if p['exit'] == e), key=lambda p: p['exitSeq'])
-        rows = []
-        for p in group:
-            if not rows or rows[-1]['pai'] != p['rest']['pai']:
-                rows.append(dict(pai=p['rest']['pai'], seats=[], ids=[]))
-            rows[-1]['seats'].append(p['rest']['no'])
-            rows[-1]['ids'].append(p['id'])
+        rows = [dict(pai=pai, seats=[p['rest']['no'] for p in g], ids=[p['id'] for p in g])
+                for pai, g in ((pai, list(g)) for pai, g in itertools.groupby(group, key=lambda p: p['rest']['pai']))]
         exits[e] = dict(sec=d['sec'], side=d['side'], stairLabel=d['stairLabel'], entry=list(entry_point(base, e)),
                         rank=EXIT_RANK[e], capacity=len(usable_seats(base, e)), used=len(group), rows=rows,
                         order=[p['id'] for p in group])

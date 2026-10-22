@@ -18,6 +18,7 @@ T0 = 6.73               # 第一人離座
 DADUI_GAP = 0.8         # 大隊交界的對齊空檔：前一大隊隊尾先過西一入口線的轉入點
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
 ENTRY_HEADWAY = 0.4     # 西一入口每條線相鄰兩人：門前集合一部分人後，大隊以這個節奏連續進場
+WAIT_MIN = 0.01         # 在門前等不到這麼久就不算停，路徑上不留停留點（check.py 同一個值）
 LANE_K = {'A': 0, 'B': 1}
 DIRECT_LABEL = '門前集合（B2）'
 
@@ -104,8 +105,7 @@ def schedule(G, people, R=None, shift=None):
     for pid, dt in shift.items():
         for key in out[pid]:
             out[pid][key] += dt
-    return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()),
-                     tGateDadui={k: round(v, 3) for k, v in T_gate.items()})
+    return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()))
 
 
 def person_path(base_person, r, t):
@@ -122,7 +122,7 @@ def person_path(base_person, r, t):
     rounded = [[round(x, 3), round(y, 3), round(z, 3)] for x, y, z in path]
     clean = [rounded[0]]
     for q in rounded[1:]:
-        if q[:2] == clean[-1][:2] and q[2] - clean[-1][2] < 0.01:   # 沒等（或等不到 0.01 秒）就不留停留點
+        if q[:2] == clean[-1][:2] and q[2] - clean[-1][2] < WAIT_MIN:   # 沒等（或等不到 WAIT_MIN）就不留停留點
             continue
         clean.append(q)
     return clean
@@ -212,7 +212,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
               dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，在門前集合', t0=T0, t1=t_go),
               dict(key='enter', label='大隊 1→9 依序：門前集合約三分之二後六路進場（0.4 秒一位）；樓梯不停', t0=t_go, t1=t_end)]
     return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=G.gate_lanes_map()), restSeats=rest, exits=exits,
-                lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'], stairSlots={}, zones={})
+                lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])
 
 
 RULES = [
@@ -245,22 +245,19 @@ def write_seats_csv(data, path):
 
 
 def avoid(base, planj, G, R, sched, clocks):
-    """碰撞避讓（spec §3.6）：每輪對每對碰撞，把西一入口較晚的那位整條時間線延後 SHIFT_STEP，同一人累計不超過 SHIFT_MAX。"""
+    """碰撞避讓（spec §3.6）：每輪對每對碰撞，把西一入口較晚的那位整條時間線延後 SHIFT_STEP，同一人累計不超過 SHIFT_MAX。
+    回傳最後的 sched、clocks、組好的 data 與它的碰撞結果（main 直接沿用，不再重組、重算）。"""
     from collide import collisions
     people = planj['people']
     shift = collections.defaultdict(float)
-    for rnd in range(AVOID_ROUNDS):
+    for rnd in range(AVOID_ROUNDS + 1):
         data = assemble(base, planj, G, R, sched, clocks)
         st, wk = collisions(data['persons'], data['meta']['tEnd'])
         print('  避撞第', rnd, '輪：穿過站定者', len(st), '互撞', len(wk), file=sys.stderr)
-        if not st and not wk:
-            return sched, clocks, []
+        if (not st and not wk) or rnd == AVOID_ROUNDS:
+            break
         P = {p['id']: p for p in data['persons']}
-        later = set()
-        for (a, b) in wk:
-            later.add(a if P[a]['t']['gate'] > P[b]['t']['gate'] else b)
-        for a in st:
-            later.add(a)
+        later = {a if P[a]['t']['gate'] > P[b]['t']['gate'] else b for (a, b) in wk} | set(st)
         moved = False
         for pid in later:
             if shift[pid] + SHIFT_STEP <= SHIFT_MAX + 1e-9:
@@ -269,11 +266,7 @@ def avoid(base, planj, G, R, sched, clocks):
         if not moved:
             break
         sched, clocks = schedule(G, people, R, shift)
-    data = assemble(base, planj, G, R, sched, clocks)
-    st, wk = collisions(data['persons'], data['meta']['tEnd'])
-    unresolved = [dict(kind='standing', who=[k, v[1]], t=v[0]) for k, v in st.items()]
-    unresolved += [dict(kind='walking', who=list(k), t=t) for k, t in wk.items()]
-    return sched, clocks, unresolved
+    return sched, clocks, data, (st, wk)
 
 
 def main(argv):
@@ -288,16 +281,12 @@ def main(argv):
     people = planj['people']
     R = prepare(G, people)
     sched, clocks = schedule(G, people, R)
-    unresolved = []
-    if not no_avoid:
-        sched, clocks, unresolved = avoid(base, planj, G, R, sched, clocks)
-    data = assemble(base, planj, G, R, sched, clocks)
-    if not no_avoid:
+    if no_avoid:
+        data = assemble(base, planj, G, R, sched, clocks)
+    else:
         import check
-        data['meta']['checks'] = check.check_all(data)
-        if unresolved:
-            data['meta']['checks']['collisions']['unresolved'] = unresolved
-            data['meta']['checks']['ok'] = False
+        sched, clocks, data, coll = avoid(base, planj, G, R, sched, clocks)
+        data['meta']['checks'] = check.check_all(data, coll)          # 碰撞已在 avoid 最後一輪算過；check.py CLI 會再獨立重算
     json.dump(data, open(out_path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     write_seats_csv(data, csv_path)
     print('全長', data['meta']['tEnd'], '秒；樓梯時鐘起點', data['meta']['tStairStart'], '；第一位過西一入口', data['meta']['tGateStart'],
