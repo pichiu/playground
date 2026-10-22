@@ -28,7 +28,7 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 /* 譜：左欄列標籤（HTML，橫向捲動時釘住），右邊畫布；窄螢幕在這個容器內橫向捲，頁面不捲 */
 .scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .sheet{display:flex;min-width:max(100%,640px)}
-.labels{position:sticky;left:0;z-index:1;flex:0 0 122px;background:var(--bg);box-shadow:6px 0 8px -8px rgba(0,0,0,.25)}
+.labels{position:sticky;left:0;z-index:1;flex:0 0 132px;background:var(--bg);box-shadow:6px 0 8px -8px rgba(0,0,0,.25)}
 .labels [data-row]{position:absolute;left:34px;right:6px;display:flex;align-items:center;justify-content:flex-end;font-size:11px;line-height:1;white-space:nowrap;color:var(--dim);border-radius:3px;padding:0 4px;cursor:default}
 .labels [data-row].on{color:var(--hi);font-weight:700;background:var(--faint)}
 .labels .grp{position:absolute;left:0;width:30px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border-left:3px solid;padding-left:1px;letter-spacing:.02em}
@@ -99,7 +99,7 @@ function groupSpan(gi){const idx=rows.map((r,i)=>r.gi===gi?i:-1).filter(i=>i>=0)
 function buildLabels(){labels.style.height=H+'px';let html='';
  ds.groups.forEach((gr,gi)=>{const [y0,y1]=groupSpan(gi);html+=`<div class="grp ${gr.costume}" style="top:${y0}px;height:${y1-y0}px" title="${esc(`${gr.key}：${gr.population} 人，${fmt(gr.tStairFirst)}–${fmt(gr.tStairLast)} 通過樓梯口，不集結`)}">${esc(gr.key)}</div>`;});
  rows.forEach((r,i)=>{const f=r.file,tt=`列 ${r.lie}：${r.g.key}，${r.ps.length} 人。${r.exit} 出口 → ${ds.laneName(r.lane)} → 西一入口第 ${r.ps[0].gateLane+1} 路。離座 ${fmt(f.tLeave)}，到位 ${fmt(f.tArrive)}`;
-  html+=`<div data-row data-lie="${r.lie}" data-i="${i}" style="top:${yOf(i)}px;height:${RH}px" title="${esc(tt)}">列 ${r.lie} · ${esc(r.exit)}·${r.lane}</div>`;});
+  html+=`<div data-row data-lie="${r.lie}" data-i="${i}" style="top:${yOf(i)}px;height:${RH}px" title="${esc(tt)}">列 ${r.lie} · ${esc(r.exit)}</div>`;});
  labels.innerHTML=html;rowEls=[...labels.querySelectorAll('[data-row]')];}
 function layout(){if(!rows.length)return;const w=g.getBoundingClientRect().width;if(!w)return;W=w;dpr=Math.min(2,devicePixelRatio||1);
  g.style.height=H+'px';g.width=Math.round(W*dpr);g.height=Math.round(H*dpr);

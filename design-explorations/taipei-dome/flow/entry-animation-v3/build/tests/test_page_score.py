@@ -18,3 +18,13 @@ def test_score_mobile(open_page):
     pg, errs, perrs = open_page('score.html', 375, 700)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert no_hscroll(pg) and not perrs
+
+
+def test_score_row_labels_do_not_overlap_group_labels(open_page):   # 分坐兩出口的列標籤較長，不可蓋到左側大隊標籤
+    pg, *_ = open_page('score.html', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    hit = pg.evaluate("""(()=>{const g=[...document.querySelectorAll('#labels .grp')].map(e=>e.getBoundingClientRect());
+      return [...document.querySelectorAll('[data-row]')].filter(e=>{const r=e.getBoundingClientRect();
+        const rg=document.createRange();rg.selectNodeContents(e);const left=rg.getBoundingClientRect().left;
+        return g.some(b=>b.top<r.bottom&&b.bottom>r.top&&left<b.right-1);}).length;})()""")
+    assert hit == 0
