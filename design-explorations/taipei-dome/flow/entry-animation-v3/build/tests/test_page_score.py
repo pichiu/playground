@@ -10,7 +10,7 @@ def test_score(open_page):
     assert rows.count() == 54
     assert [rows.nth(i).get_attribute('data-lie') for i in range(7)] == ['1', '2', '3', '4', '5', '6', '7']   # 樓梯序：大隊 1 白三列、藍三列，再大隊 2
     s = pg.inner_text('#summary')
-    assert '沒有人' in s and '集結' not in s
+    assert '門前' in s and '最久' in s
     assert '集結' not in pg.inner_text('body') and '2c' not in pg.inner_text('h1')
 
 

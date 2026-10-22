@@ -14,6 +14,7 @@ STAIR_HALF_W = 0.2                       # 樓梯／平台半寬
 GATE_W, GATE_DOORS = 0.95, 4                 # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
 GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
+QUEUE_HEAD, QUEUE_STEP = 4.2, 0.075      # 門前集合：六條線的隊頭切齊在 B2 u 4.2（收攏點前一點），往後每位 0.075（同 2c 集結格位間距）
 
 
 def lane_run(poly, u0, u1, off, step=0.35):
@@ -78,6 +79,22 @@ class Geometry:
 
     def _b2_to_gate(self, j):
         return lane_run(self.B2, B2_U_START, 4.2, 0.2 - 0.08 * j) + [self.GATE_PTS[j]]
+
+    def queue_u(self, person):
+        """門前集合的位置：自己那條線上、隊頭往後第 slot 位。"""
+        return QUEUE_HEAD - QUEUE_STEP * person['slot']
+
+    def queue_routes(self, person):
+        """(到門前位置的路線, 門前位置到收攏點的路線)：前者從座位起、沿兩路下樓、側移到自己那條線後停在 queue_u。"""
+        j, uq = person['gateLane'], self.queue_u(person)
+        full = self.arrival_route(person)
+        b2 = self._b2_to_gate(j)
+        pre, lane = full[:len(full) - len(b2)], b2[:-1]
+        o = 0.2 - 0.08 * j
+        spot = self.B2.off(uq, o)
+        to = pre + [q for q in lane if self.B2.proj(q)[0] < uq - 1e-6] + [spot]
+        frm = [spot] + [q for q in lane if self.B2.proj(q)[0] > uq + 1e-6] + [b2[-1]]
+        return to, frm
 
     def arrival_route(self, person):
         """座位 → 走道口 → 接入點 → 自己那一路 → 樓梯 → B2 側移到第 j 條線 → 西一入口收攏點。"""

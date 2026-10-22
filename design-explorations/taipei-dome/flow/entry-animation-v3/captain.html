@@ -89,7 +89,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
  <div class="grid">
   <section class="next"><small id="nx-k">讀取動線資料…</small><h2 id="nx-h" aria-live="polite"></h2><p id="nx-d"></p><div class="count" id="nx-c"></div></section>
   <section class="card"><h3><span id="lies-h">六列狀態</span><span id="lies-n"></span></h3><div class="lies" id="lies"></div>
-   <div class="legend"><span><i style="background:#56636a"></i>休息區</span><span><i style="background:var(--dim)"></i>走廊樓梯</span><span><i style="background:var(--team)"></i>進場中</span><span><i style="background:var(--ink)"></i>已到位</span></div>
+   <div class="legend"><span><i style="background:#56636a"></i>休息區</span><span><i style="background:var(--dim)"></i>走廊樓梯</span><span><i style="background:var(--team);opacity:.55"></i>門前等待</span><span><i style="background:var(--team)"></i>進場中</span><span><i style="background:var(--ink)"></i>已到位</span></div>
    <div class="deck"><button class="play" id="play" aria-label="播放"><svg width="14" height="16" viewBox="0 0 14 16" id="ico" aria-hidden="true"><path d="M1 1v14l12-7z" fill="currentColor"/></svg></button><input type="range" id="tl" min="0" step=".1" aria-label="示意時間"><div class="speed" id="speed" role="group" aria-label="播放速度"></div><button type="button" class="tog" id="lbl" aria-pressed="false">標籤</button><output id="clk" for="tl"></output></div>
   </section>
  </div>
@@ -106,7 +106,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
 const {pos,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
 Dome.nav('captain.html');
 const TEAM=['#e05d63','#d9ae3a','#79c25a','#b688dd','#f0a050','#bfc35a','#e586bd','#c9945e','#4fc2b4'];
-const STATE_ZH={seated:'休息區',walk:'走廊樓梯',wait:'停下等待',enter:'進場中',done:'已到位'};
+const STATE_ZH={seated:'休息區',walk:'走廊樓梯',wait:'門前等待',enter:'進場中',done:'已到位'};
 const ST=[['seated','#56636a'],['walk','#a3b0ae'],['wait','TEAMA'],['enter','TEAM'],['done','#f1f3ef']];
 const clampK=n=>Math.max(1,Math.min(9,Math.round(Number(n))||1));
 let labels=false,speed=6,k=clampK(new URLSearchParams(location.search).get('k')),t=0,playing=false,last=0,dirty=true,ds=null,gs=[],ps=[],lies=[],cues=[];
@@ -128,7 +128,8 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'blue-first',t:first('藍').t.leave,h:'藍衣第一位離座',d:`${who(first('藍'))} 先起身，走 ${ds.laneName('B')}`},
   {id:'white-last',t:last('白').t.leave,h:'白衣最後一位離座',d:`${who(last('白'))}；白衣從 ${exitsTxt(W)} 出口出完`},
   {id:'blue-last',t:last('藍').t.leave,h:'藍衣最後一位離座',d:`${who(last('藍'))}；藍衣從 ${exitsTxt(B)} 出口出完`},
-  {id:'gate-first',t:g0.t.gate,h:'第一位過西一入口',d:`大隊 ${k} 不集結，下樓後直接六路進場：北三路白、南三路藍`},
+  {id:'go',t:Math.min(...ps.map(p=>p.t.enter)),h:'門前出發',d:`六條線在西一入口前切齊，約三分之二的人到齊，大隊 ${k} 六路一起進場（每路 0.4 秒一位）；還在下樓的幾位邊到邊走跟上`},
+  {id:'gate-first',t:g0.t.gate,h:'第一位過西一入口',d:'北三路白、南三路藍'},
   {id:'gate-last',t:g1.t.gate,h:'最後一位過西一入口',d:k<9?`大隊 ${k+1} 接著進場`:'最後一個大隊，西一入口收'},
   {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];
  return list.sort((a,b)=>a.t-b.t);}
@@ -149,7 +150,7 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
  const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·');
  const ex=g=>g.exits.length>1?`從 ${g.exits.map(e=>`${e.exit}（${e.n} 人）`).join('、')} <b>兩個出口</b>出來（前一個出口坐滿就換，同一列可能分坐兩處）`:`從 ${g.exits[0].exit} 出口出來`;
- $('sum').innerHTML=`<b>白衣</b> 列 ${cols(W)}（${W.population} 人，A 路）${ex(W)}；<b>藍衣</b> 列 ${cols(B)}（${B.population} 人，B 路）${ex(B)}。不集結，下樓後西一入口六路由北數就是列 ${[...W.columns,...B.columns].join('、')}。`;
+ $('sum').innerHTML=`<b>白衣</b> 列 ${cols(W)}（${W.population} 人，A 路）${ex(W)}；<b>藍衣</b> 列 ${cols(B)}（${B.population} 人，B 路）${ex(B)}。下樓後在西一入口前六條線切齊排隊，由北數就是列 ${[...W.columns,...B.columns].join('、')}。`;
  $('tl').min=Math.max(0,cues[0].t-3);$('tl').max=Math.min(ds.T_END,cues[cues.length-1].t+1);t=+$('tl').min;
  v.fit(Dome.bounds(ps.flatMap(p=>p.path.map(q=>[q[0],q[1]])),.6),true);dirty=true;}
 

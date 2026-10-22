@@ -3,17 +3,17 @@ import json
 
 from conftest import no_hscroll
 
-CUES = ['白衣第一位離座', '藍衣第一位離座', '白衣最後一位離座', '藍衣最後一位離座', '第一位過西一入口', '最後一位過西一入口', '全隊到位']
+CUES = ['白衣第一位離座', '藍衣第一位離座', '白衣最後一位離座', '藍衣最後一位離座', '門前出發', '第一位過西一入口', '最後一位過西一入口', '全隊到位']
 
 
-def test_captain_seven_cues(open_page, root):
+def test_captain_eight_cues(open_page, root):
     D = json.loads((root / 'data.json').read_text(encoding='utf-8'))
     pg, errs, perrs = open_page('captain.html?k=1', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert not errs and not perrs, (errs, perrs)
     cues = pg.locator('[data-cue]')
-    assert cues.count() == 7
-    assert sorted(cues.nth(i).locator('.h').inner_text() for i in range(7)) == sorted(CUES)
+    assert cues.count() == 8
+    assert sorted(cues.nth(i).locator('.h').inner_text() for i in range(8)) == sorted(CUES)
     ts = cues.evaluate_all('els => els.map(e => +e.dataset.t)')
     assert ts == sorted(ts)
     ps = [p for p in D['persons'] if p['dadui'] == 1]
@@ -22,7 +22,7 @@ def test_captain_seven_cues(open_page, root):
     got = dict(zip(cues.evaluate_all("els => els.map(e => e.querySelector('.h').textContent)"), ts))
     assert all(abs(got[k] - v) < 1e-6 for k, v in want.items())
     body = pg.inner_text('body')
-    assert not any(w in body for w in ('集結區', '集結等待', '2c', 'C 路'))
+    assert not any(w in body for w in ('集結區', '集結等待', '2c', 'C 路', '遞補'))
     assert pg.locator('[data-lie]').evaluate_all('els => els.map(e => +e.dataset.lie)') == [1, 2, 3, 4, 5, 6]
     assert pg.locator('nav.dome-nav a[aria-current=page]').inner_text() == '口令卡'
 

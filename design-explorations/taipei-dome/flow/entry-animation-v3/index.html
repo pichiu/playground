@@ -74,7 +74,7 @@ td.n{text-align:right;white-space:nowrap}
 <div class="wrap">
 <a class="back" href="../../index.html">‹ Taipei Dome · 大巨蛋活動 App</a>
 <h1>進場動線 版本 3：兩路直進</h1>
-<p class="lede">西一＋桃竹 1,609 人，從 139–145 區休息區出發。<b>白衣一路、藍衣一路</b>，照大隊 1→9 直接走 B1 走廊、下樓梯，到 B2 各自散成三條，由西一入口六路進場。不集結、不候隊，每個人離座後一路走到場內。出口坐滿就換下一個。和現行版本對照：<a href="../entry-animation/index.html">2c 總覽</a>。</p>
+<p class="lede">西一＋桃竹 1,609 人，從 139–145 區休息區出發。<b>白衣一路、藍衣一路</b>，照大隊 1→9 直接走 B1 走廊、下樓梯，到 B2 各自散成三條，在西一入口前六條線切齊排隊；每個大隊約三分之二的人到齊，就六路一起進場（0.4 秒一位）。不進 B2 集結區、不在樓梯或走廊候隊。出口坐滿就換下一個。和現行版本對照：<a href="../entry-animation/index.html">2c 總覽</a>。</p>
 <div class="kpi" id="kpi"></div>
 <h2>規則</h2>
 <ol class="rules" id="rules"></ol>
@@ -94,10 +94,10 @@ td.n{text-align:right;white-space:nowrap}
 <p class="sub">同一份資料，依「給誰看、在哪裡看」拆開。</p>
 <div class="cards">
  <a class="card" href="console.html"><b>A · 指揮台</b><span class="who">企劃 · 投影、彩排檢討</span><p>滿版地圖，每一列是一條隊伍線；時間軸上軌是大隊 1–9 下樓梯（白／藍兩路），下軌是大隊 1–9 進場。</p></a>
- <a class="card" href="me.html"><b>B · 我的路</b><span class="who">每一位菩薩 · 手機</span><p>輸入列、排，五步：起、出、走、進、到。你是本出口第幾位、同一路前後是誰。</p></a>
- <a class="card" href="score.html"><b>C · 總譜</b><span class="who">企劃 · 筆電</span><p>54 列 × 時間攤開，依樓梯序排列；綠是走、藍是進場。版本 3 沒有人停下來等。</p></a>
+ <a class="card" href="me.html"><b>B · 我的路</b><span class="who">每一位菩薩 · 手機</span><p>輸入列、排，六步：起、出、走、集、進、到。你是本出口第幾位、門前排第幾位、要等多久。</p></a>
+ <a class="card" href="score.html"><b>C · 總譜</b><span class="who">企劃 · 筆電</span><p>54 列 × 時間攤開，依樓梯序排列；綠是走、橘是門前等、藍是進場。</p></a>
  <a class="card" href="handout.html"><b>D · 講義</b><span class="who">幹部 · 印 A3</span><p>六個關鍵時刻的小圖與說明。</p></a>
- <a class="card" href="captain.html"><b>E · 口令卡</b><span class="who">大隊長 · 手機</span><p>選大隊：白衣／藍衣第一位與最後一位離座、第一位與最後一位過西一入口、全隊到位。</p></a>
+ <a class="card" href="captain.html"><b>E · 口令卡</b><span class="who">大隊長 · 手機</span><p>選大隊：白衣／藍衣第一位與最後一位離座、門前集合出發、最後一位過西一入口、全隊到位。</p></a>
  <a class="card" href="exit.html"><b>F · 出口帶隊卡</b><span class="who">休息區出口幹部 · 手機或列印</span><p>選出口：由上排往下的帶隊順序、每段是哪一路從哪一位起、什麼時候換口；底下是整張休息區座位圖。</p></a>
 </div>
 <h2>下載</h2>
@@ -120,8 +120,9 @@ function checksTable(C){
   ['換口往下游 / 出口還沒坐滿就換',`${A.upstreamViolations} / ${A.notFullSwitches}（白衣 ${A.segments.A} 段、藍衣 ${A.segments.B} 段）`,'0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0,(A.examples||[]).map(e=>`${e.lane} 路第 ${e.idx+1} 位：${e.exits.join(' → ')}`)],
   ['一列分坐兩個出口（資訊）',`${A.splitColumns} 列：${A.splitLies.join('、')}`,'允許',null,[]],
   ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
-  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.25–0.55、交界 ≤ 7 秒；西一入口 ≥ 0.25、≤ 1.4',Cn.ok,[]],
-  ['沒有人站著等',`${C.noWait.violations}`,'0',C.noWait.violations===0,C.noWait.examples||[]],
+  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.25–0.55、交界 ≤ 7 秒；西一入口 0.25–0.55',Cn.ok,[]],
+  ['只在門前自己的位置等（其餘等速）',`${C.waits.violations}（${C.waits.waiting} 人在門前等，最久 ${fmt(C.waits.maxWait)}）`,'0',C.waits.violations===0,C.waits.examples||[]],
+  ['門前切齊、大隊六路一起進場',`${C.doorQueue.violations} / ${C.doorQueue.dadui} 大隊`,'0',C.doorQueue.violations===0,(C.doorQueue.examples||[]).map(e=>`大隊 ${e.dadui}：${e.who.join('、')}`)],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];
  return `<p class="verdict">${C.ok?'全部通過':'未通過'}</p><div class="scroll"><table><thead><tr><th>項目</th><th>結果</th><th>門檻</th></tr></thead><tbody>${rows.map(([n,v,t,ok,ex])=>`<tr class="${ok===null?'info':ok?'ok':'ng'}"><td>${n}${ex.length?`<div class="ex">${ex.map(esc).join('；')}</div>`:''}</td><td>${esc(v)}</td><td>${t}</td></tr>`).join('')}</tbody></table></div>`;}

@@ -1,4 +1,4 @@
-"""我的路頁（me.html）測試：五步口令卡、找不到時的提示、375px 無橫向捲動。"""
+"""我的路頁（me.html）測試：六步口令卡、找不到時的提示、375px 無橫向捲動。"""
 from conftest import no_hscroll
 
 
@@ -7,9 +7,9 @@ def test_me_card(open_page):
     pg.wait_for_selector('[data-step="到"]', timeout=20000)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert not errs and not perrs, (errs, perrs)
-    assert pg.locator('[data-step]').count() == 5 and '139' in pg.inner_text('[data-step="起"]')
-    assert [pg.locator('[data-step]').nth(i).get_attribute('data-step') for i in range(5)] == ['起', '出', '走', '進', '到']
-    assert '集結' not in pg.inner_text('#steps') and '白衣' in pg.inner_text('[data-step="走"]')
+    assert pg.locator('[data-step]').count() == 6 and '139' in pg.inner_text('[data-step="起"]')
+    assert [pg.locator('[data-step]').nth(i).get_attribute('data-step') for i in range(6)] == ['起', '出', '走', '集', '進', '到']
+    assert '第 1 位' in pg.inner_text('[data-step="集"]') and '白衣' in pg.inner_text('[data-step="走"]')
     assert no_hscroll(pg)
 
 

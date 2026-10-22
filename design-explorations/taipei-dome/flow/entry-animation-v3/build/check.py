@@ -14,12 +14,13 @@ from geo import Poly, pairs
 
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 樓梯口節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 7.0                 # 大隊交界：兩路同一大隊人數差到 12 人，短的那路空 0.4×12 + 0.4 + 0.8 ≈ 6.0 秒（spec §4）
-GATE_GAP_MAX = 1.4                 # 西一入口每條線：三列交錯 1.2 秒 + 避撞平移
+GATE_GAP_MAX = 0.55                # 西一入口每條線：門前集合後同 2c，0.4 秒一位 ± 避撞平移
 BEAT, DADUI_GAP, RULE_SLACK = 0.4, 0.8, 0.4   # 交界規則值 = 0.4 ×（兩路該大隊人數差）+ 0.4 + 0.8，容許錯開與避撞平移 0.4（spec §4）
-RANK_SLOW_MAX, RANK_TOL = 2.0, 0.16   # 門前齊頭：樓梯口到門前這一段最多放慢 2 秒；同一排到門前的時刻差 ≤ 0.16（避撞平移 0.15）
+QUEUE_HEAD, QUEUE_STEP, LINE_STAGGER, ENTRY_HEADWAY = 4.2, 0.075, 0.17, 0.4   # 門前集合：隊頭切齊 B2 u 4.2、每位往後 0.075；六條線錯開 0.17、每線 0.4 秒一位
+SHIFT_TOL = 0.16                   # 避撞平移上限 0.15
 WAIT_SLACK = 0.05                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 POPULATION = 1609
-COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'noWait', 'ranks', 'seats', 'capacity')   # 與 meta.checks 逐項比對的鍵
+COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'waits', 'doorQueue', 'seats', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
 
 def _gaps(ps, tkey, group_key):
@@ -70,13 +71,13 @@ def lane_crossings(data):
                 break
             if not inside:
                 u, _, dist = B2.proj(q[:2])
-                inside = q[2] >= p['t']['enter'] and u >= 0.9 and dist < 0.3
+                inside = q[2] >= p['t']['stair'] and u >= 0.9 and dist < 0.3
             if inside:
                 out.append((q[0], q[1]))
         return out
 
     def b1_part(p):
-        return [(q[0], q[1]) for q in p['path'] if q[2] <= p['t']['enter'] + 1e-6]
+        return [(q[0], q[1]) for q in p['path'] if q[2] <= p['t']['stair'] + 1e-6]
 
     n, examples = 0, []
     for d in range(1, 10):
@@ -106,7 +107,7 @@ def check_all(data):
                                       [dict(kind='walking', who=list(k), t=t) for k, t in list(wk.items())[:3]])
     # 2. 依時間的巢狀：兩路依通過樓梯口時刻合併，兩路都開始後 A 的出口比 B 近、且不在同一座階梯
     cur, bad, same = {}, [], []
-    for p in sorted(persons, key=lambda p: (p['t']['enter'], p['lane'])):
+    for p in sorted(persons, key=lambda p: (p['t']['stair'], p['lane'])):
         cur[p['lane']] = p['exit']
         if len(cur) < len(plan.LANES):
             continue
@@ -140,7 +141,7 @@ def check_all(data):
     # 2c. 路徑不交叉
     out['routes'] = lane_crossings(data)
     # 3. 不斷拍：樓梯口兩路（t.enter）、西一入口六路（t.gate）
-    stair = {L: _gaps(seqs[L], 'enter', 'dadui') for L in plan.LANES}
+    stair = {L: _gaps(seqs[L], 'stair', 'dadui') for L in plan.LANES}
     gate = {}
     for j in range(6):
         ps = sorted((p for p in persons if p['gateLane'] == j), key=lambda p: p['gateIdx'])
@@ -152,44 +153,64 @@ def check_all(data):
             if a['dadui'] != b['dadui']:
                 d = a['dadui']
                 rule = BEAT * (max(n_ld[(M, d)] for M in plan.LANES) - n_ld[(L, d)]) + BEAT + DADUI_GAP
-                gap = b['t']['enter'] - a['t']['enter']
+                gap = b['t']['stair'] - a['t']['stair']
                 if gap > rule + RULE_SLACK + 1e-6:
                     rule_bad.append(dict(lane=L, dadui=d, gap=round(gap, 3), rule=round(rule, 3)))
     cont_ok = not rule_bad and all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GAP_MAX and v['maxGapBoundary'] <= BOUNDARY_MAX for v in stair.values()) and \
         all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GATE_GAP_MAX for v in gate.values())
     out['continuity'] = dict(stair=stair, gate=gate, boundaryRuleViolations=len(rule_bad), boundaryExamples=rule_bad[:3], ok=cont_ok)
-    # 3b. 沒有人站著等：assembly == enter、沒有遞補；路徑上沒有原地停留；
-    #     樓梯口之前、門前之後全程等速（時間 = 路程 / 步速），樓梯口到門前只准放慢、最多 RANK_SLOW_MAX 秒（門前齊頭）
+    # 3b. 只在門前自己的位置等：離座到門前、門前到到位全程等速（時間 = 路程 / 步速）；
+    #     停留只有一段：assembly → enter，站在自己那條線（B2 偏移 0.2 − 0.08j）、隊頭往後第 slot 位（u 4.2 − 0.075·slot）
     V = data['meta']['speedUnitPerSec']
+    B2 = Poly(pairs(data['map']['b2Corridor']))
 
-    def walk(a):
+    def extra(a):
         length = sum(((q[0] - r[0]) ** 2 + (q[1] - r[1]) ** 2) ** 0.5 for r, q in zip(a, a[1:]))
         return (a[-1][2] - a[0][2]) - length / V if len(a) > 1 else 0.0
-    wait_bad = []
+    # 圖面的 B2 線是從樓梯平台截起的，u 與建置用的整條折線差一個常數：以「u + 0.075·slot」的中位數當隊頭那條線
+    spots = {}
+    for p in persons:
+        if p['t']['enter'] - p['t']['assembly'] >= 0.01:
+            q = next((q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6), None)
+            if q:
+                spots[p['id']] = B2.proj(q[:2])
+    heads = sorted(u + QUEUE_STEP * next(x['slot'] for x in persons if x['id'] == pid) for pid, (u, _, _) in spots.items()) if spots else [0.0]
+    head_u = heads[len(heads) // 2]
+    wait_bad, waits = [], []
     for p in persons:
         t, a = p['t'], p['path']
+        ka = next((i for i, q in enumerate(a) if abs(q[2] - t['assembly']) < 1e-6), None)
         ke = next((i for i, q in enumerate(a) if abs(q[2] - t['enter']) < 1e-6), None)
-        kd = next((i for i, q in enumerate(a) if abs(q[2] - t.get('door', -1)) < 1e-6), None)
-        stood = any(q[:2] == r[:2] and r[2] - q[2] > 0.01 for q, r in zip(a, a[1:]))
-        bad = ke is None or kd is None or kd < ke or stood or abs(t['assembly'] - t['enter']) > 1e-9 or p.get('adv') \
-            or abs(a[0][2] - t['leave']) > 1e-6 or abs(a[-1][2] - t['arrive']) > 1e-6
+        w = t['enter'] - t['assembly']
+        bad = p.get('adv') or w < -1e-9 or abs(a[0][2] - t['leave']) > 1e-6 or abs(a[-1][2] - t['arrive']) > 1e-6
+        if not bad and w >= 0.01:
+            bad = ka is None or ke is None or ke != ka + 1 or a[ka][:2] != a[ke][:2]
+            if not bad:
+                u, o, _ = B2.proj(a[ka][:2])
+                bad = abs(u - (head_u - QUEUE_STEP * p['slot'])) > 0.01 or abs(o - (0.2 - 0.08 * p['gateLane'])) > 0.01
         if not bad:
-            bad = walk(a[:ke + 1]) > WAIT_SLACK or walk(a[kd:]) > WAIT_SLACK or not (-WAIT_SLACK <= walk(a[ke:kd + 1]) <= RANK_SLOW_MAX)
+            pre, post = (a[:ka + 1], a[ke:]) if w >= 0.01 else (a, [])
+            bad = extra(pre) > WAIT_SLACK or extra(post) > WAIT_SLACK
         if bad:
             wait_bad.append(p['id'])
-    out['noWait'] = dict(violations=len(wait_bad), examples=wait_bad[:3])
-    # 3c. 門前齊頭：同一排（同大隊、各列同一位次）六人同時到門前那條線，而且在同一條線上（B2 同一個 u）
-    B2 = Poly(pairs(data['map']['b2Corridor']))
-    rank = collections.defaultdict(list)
-    for p in persons:
-        q = next((q for q in p['path'] if abs(q[2] - p['t'].get('door', -1)) < 1e-6), None)
-        rank[(p['dadui'], p['slot'])].append((p['id'], q[2] if q else None, B2.proj(q[:2])[0] if q else None))
-    rank_bad = []
-    for k, ms in rank.items():
-        ts, us = [m[1] for m in ms], [m[2] for m in ms]
-        if None in ts or max(ts) - min(ts) > RANK_TOL or max(us) - min(us) > 0.01:
-            rank_bad.append(dict(dadui=k[0], slot=k[1], who=[m[0] for m in ms][:6]))
-    out['ranks'] = dict(ranks=len(rank), violations=len(rank_bad), examples=rank_bad[:3])
+        waits.append(max(0.0, w))
+    out['waits'] = dict(violations=len(wait_bad), examples=wait_bad[:3], maxWait=round(max(waits), 3),
+                        waiting=sum(1 for w in waits if w >= 0.01))
+    # 3c. 門前切齊、大隊一起進場：同一大隊 G = T_k + 0.4·slot + 0.17·j（容許避撞平移）；隊頭都站在 u 4.2
+    q_bad = []
+    for d in sorted({p['dadui'] for p in persons}):
+        ps = [p for p in persons if p['dadui'] == d]
+        base_t = sorted(p['t']['gate'] - ENTRY_HEADWAY * p['slot'] - LINE_STAGGER * p['gateLane'] for p in ps)
+        T = base_t[len(base_t) // 2]
+        off = [p['id'] for p in ps if abs(p['t']['gate'] - ENTRY_HEADWAY * p['slot'] - LINE_STAGGER * p['gateLane'] - T) > SHIFT_TOL]
+        heads = [p for p in ps if p['slot'] == 0 and p['t']['enter'] - p['t']['assembly'] >= 0.01]
+        for h in heads:
+            q = next((q for q in h['path'] if abs(q[2] - h['t']['assembly']) < 1e-6), None)
+            if q is None or abs(B2.proj(q[:2])[0] - head_u) > 0.01:
+                off.append(h['id'])
+        if off:
+            q_bad.append(dict(dadui=d, who=off[:4]))
+    out['doorQueue'] = dict(dadui=len({p['dadui'] for p in persons}), violations=len(q_bad), examples=q_bad[:3])
     # 4. 座位：唯一、合法、休息區＝出口的區、每出口由上排往下且由出口側往中央、exits.order 名單就是該出口全員（依 exitSeq）
     keys = [(p['rest']['sec'], p['rest']['pai'], p['rest']['no']) for p in persons]
     kinds = {(s['sec'], s['pai'], s['no']): s['kind'] for s in data['restSeats']}
@@ -221,7 +242,7 @@ def check_all(data):
         cap[e] = dict(used=used, capacity=cap_of[e], fieldsOk=bool(f.get('used') == used and f.get('capacity') == cap_of[e]))
     out['capacity'] = cap
     out['ok'] = bool(not st and not wk and not bad and not same and upstream == 0 and not_full == 0 and cont_ok
-                     and out['routes']['crossings'] == 0 and not wait_bad and not rank_bad
+                     and out['routes']['crossings'] == 0 and not wait_bad and not q_bad
                      and len(set(keys)) == len(persons) == POPULATION and illegal == 0 and wrong_sec == 0 and order_bad == 0 and coverage_bad == 0
                      and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
     return out
@@ -240,8 +261,8 @@ def main(path):
         ('路徑交叉（B2 六列 / B1 兩路）', f"{Rt['crossings']}", '0', Rt['crossings'] == 0),
         ('不斷拍', f"樓梯 {rng(Cn['stair'].values())}，交界 ≤ {max(v['maxGapBoundary'] for v in Cn['stair'].values())}（超出規則值 {Cn['boundaryRuleViolations']} 處）；西一入口 {rng(Cn['gate'].values())}",
          f'樓梯 {GAP_MIN}–{GAP_MAX}、交界 ≤ {BOUNDARY_MAX}；西一入口 ≥ {GAP_MIN}、≤ {GATE_GAP_MAX}', Cn['ok']),
-        ('沒有人站著等（只在門前放慢）', f"{C['noWait']['violations']}", '0', C['noWait']['violations'] == 0),
-        ('門前六條線齊頭：同一排同時到門前', f"{C['ranks']['violations']} / {C['ranks']['ranks']} 排", '0', C['ranks']['violations'] == 0),
+        ('只在門前自己的位置等', f"{C['waits']['violations']}（{C['waits']['waiting']} 人等，最久 {C['waits']['maxWait']} 秒）", '0', C['waits']['violations'] == 0),
+        ('門前切齊、大隊六路一起進場（0.4 秒一位、錯開 0.17）', f"{C['doorQueue']['violations']} / {C['doorQueue']['dadui']} 大隊", '0', C['doorQueue']['violations'] == 0),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),
         ('出口用量 ≤ 可用席（重算，與 exits 欄位一致）', ', '.join(f"{k} {v['used']}/{v['capacity']}" + ('' if v['fieldsOk'] else '（欄位不符）') for k, v in C['capacity'].items()), '成立',

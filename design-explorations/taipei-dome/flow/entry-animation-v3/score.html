@@ -80,7 +80,7 @@ Dome.nav('score.html');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={},readC=()=>{for(const n of ['bg','card','ink','dim','rule','faint','walk','wait','enter','hi','blue','white'])C[n]=css(n);};readC();
-const KEY=`<span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--enter)"></i>進場中</span>`;
+const KEY=`<span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--wait)"></i>門前等待</span><span><i style="background:var(--enter)"></i>進場中</span>`;
 const PHASE_SHORT={seated:'就座',descend:'下樓',enter:'進場'};
 let ds=null,rows=[],rowEls=[],view=null,T=1,t=0,hover=-1,lastHover=-2,dirty=true,staticImg=null;
 // 列序 = 樓梯序：依 groups（大隊 1 白、大隊 1 藍、大隊 2 白…），每組三列；一列可能分坐兩個出口。
@@ -88,8 +88,8 @@ function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
  ds.groups.forEach((g,gi)=>{for(const lie of g.columns){const ps=ds.P.filter(p=>p.lie===lie).sort((a,b)=>a.t.leave-b.t.leave);
   out.push({lie,exit:ds.exitsOfFile(lie).join('/'),lane:g.lane,g,gi,ps,file:byLie.get(lie)});}});return out;}
 // 摘要：沒有人停下來等；寫出從離座到到位最長的一列。
-function summaryText(ds){const r=rows.reduce((a,r)=>(r.file.tArrive-r.file.tLeave)>(a.file.tArrive-a.file.tLeave)?r:a);
- return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、藍是下樓到場內。版本 3 <b>沒有人停下來等</b>，所以沒有橘色。每一列從第一位離座到最後一位到位，最長是 <b>列 ${r.lie}（${esc(r.g.key)}）${fmt(r.file.tArrive-r.file.tLeave)}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
+function summaryText(ds){const w=ds.P.reduce((a,p)=>(p.t.enter-p.t.assembly)>(a.t.enter-a.t.assembly)?p:a);
+ return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在西一入口前排隊等</b>、藍是進場。每個大隊約三分之二的人到門前就一起進場，所以每列前段的人等得最久、最後幾位幾乎不用等。最久是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）${fmt(w.t.enter-w.t.assembly)}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
 // 版面
 const g=$('g'),gx=g.getContext('2d'),labels=$('labels'),scroller=$('scroller');
 let W=0,H=0,dpr=1,scrollable=false;const PL=8,R=10,TOP=48,RH=13,GAP=8,BOT=32;
@@ -144,12 +144,12 @@ function paintMap(){const v=view,c=v.begin(C.card);v.base(ds.D.map,{floor:C.fain
  for(const p of ds.P){const st=state(p,t),q=pos(p,t),on=sel===null||p.lie===sel;c.globalAlpha=on?1:.15;
   const col=st==='walk'?C.walk:st==='wait'?C.wait:st==='enter'?C.enter:st==='done'?C.ink:C.rule;v.dot(q[0],q[1],sel!==null&&on?r*1.6:r,col);}
  c.globalAlpha=1;}
-const ROWS=[['seated','休息區'],['walk','走廊／樓梯'],['enter','進場中'],['done','已到位']];
+const ROWS=[['seated','休息區'],['walk','走廊／樓梯'],['wait','門前等待'],['enter','進場中'],['done','已到位']];
 function paintRead(){const rr=hover>=0?rows[hover]:null,list=rr?rr.ps:ds.P,cs=counts(t,list),n=list.length;
  const title=rr?`列 ${rr.lie} · ${esc(rr.g.key)}`:`全體 ${ds.D.meta.population.toLocaleString('zh-TW')} 人`;
- const sub=rr?`<p class="sub">${esc(rr.exit)} 出口 → ${esc(ds.laneName(rr.lane))} → 不集結，直接進場</p>`:'';
+ const sub=rr?`<p class="sub">${esc(rr.exit)} 出口 → ${esc(ds.laneName(rr.lane))} → 門前集合 → 西一入口</p>`:'';
  const waitRow=rr?`<tr><td>離座 → 到位</td><td class="n">${fmt(rr.file.tLeave)} → ${fmt(rr.file.tArrive)}</td></tr>`:'';
- $('read').innerHTML=`<h2><span>${title}</span><output>${fmt(t)}</output></h2>${sub}<div class="bars">${[['walk',C.walk],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
+ $('read').innerHTML=`<h2><span>${title}</span><output>${fmt(t)}</output></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
 (async()=>{try{ds=await Dome.load();}catch(e){$('summary').textContent=e.message;return;}
  rows=rowsFor(ds);T=ds.T_END;H=yOf(rows.length-1)+RH+BOT;
  t=Math.min(T,ds.D.phases.find(p=>p.key==='enter').t0);

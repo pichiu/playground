@@ -4,14 +4,14 @@
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
 function bounds(pts,pad=.6){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const [x,y] of pts){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y;}return [a-pad,b-pad,c+pad,d+pad];}
 function pos(p,t){const a=p.path;if(t<=a[0][2])return a[0];if(t>=a[a.length-1][2])return a[a.length-1];let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}const u=a[lo],v=a[hi],f=(t-u[2])/(v[2]-u[2]||1);return [u[0]+(v[0]-u[0])*f,u[1]+(v[1]-u[1])*f];}
-// seated → walk(離座到樓梯口) → wait(版本 3 沒有) → enter(下樓到場內) → done
+// seated → walk(離座、下樓、走到門前) → wait(門前集合) → enter(進場中) → done
 function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)return 'walk';if(t<s.enter)return 'wait';if(t<s.arrive)return 'enter';return 'done';}
 // 遞補往前：此刻站在哪一區（p.adv＝[起,止,目的區]…；沒有遞補的人就是原本集結的區）
 function zone(p,t){let z=p.assembly;for(const a of p.adv||[])if(t>=a[0])z=a[2];return z;}
 function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
 function fmt(v){const neg=v<0;v=Math.abs(v);return (neg?'−':'')+String(Math.floor(v/60)).padStart(2,'0')+':'+String(Math.floor(v%60)).padStart(2,'0');}
 const LANE_NAME={A:'A 路（白衣・靠看台）',B:'B 路（藍衣・外側）'};
-const ZONE_NAME={FEEDER:'不集結，直接進場'};
+const ZONE_NAME={DOOR:'門前集合（B2）'};
 
 function dataset(D){const P=D.persons,byId=new Map(P.map(p=>[p.id,p]));
   const groups=D.groups,groupKey=p=>p.costume+p.dadui,gmap=new Map(groups.map(g=>[g.key,g]));

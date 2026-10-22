@@ -87,7 +87,7 @@ const C={};for(const n of ['paper','ink','dim','rule','blue','floor','rust'])C[n
 const FRAME=[-15.0,-11.0,0.3,11.6];
 // 與 core.js 的 View 相同，只把像素密度固定：螢幕 2×、列印 3×，1,609 個小點印出來才不糊。
 class SheetView extends View{resize(){const r=this.c.getBoundingClientRect();this.w=r.width;this.h=r.height;this.dpr=matchMedia('print').matches?3:2;this.c.width=Math.round(this.w*this.dpr);this.c.height=Math.round(this.h*this.dpr);this.fit(this.b,true);}}
-const RULE='白衣一路（靠看台）、藍衣一路（外側），照大隊 1→9 直接離座、走 B1、下樓梯，到 B2 白衣散到北三路、藍衣散到南三路，由西一入口六路進場；不集結、不候隊。白衣依序用出口 139→140→141→142，藍衣 142→143→144→145，出口坐滿就換，所以任何時刻白衣的出口比藍衣近，走廊不交叉。';
+const RULE='白衣一路（靠看台）、藍衣一路（外側），照大隊 1→9 直接離座、走 B1、下樓梯，到 B2 白衣散到北三路、藍衣散到南三路，在西一入口前六條線切齊排隊，每個大隊約三分之二到齊就六路一起進場；不進 B2 集結區、不在樓梯候隊。白衣依序用出口 139→140→141→142，藍衣 142→143→144→145，出口坐滿就換，所以任何時刻白衣的出口比藍衣近，走廊不交叉。';
 // 六個時刻取自 phases、groups 與 lanes（換口那一位的離座時刻）。
 function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p]));
  // 白衣第一次換口、藍衣最後一次換口；段數由資料決定（座位改了換口點會移動），沒有換口就取該路第一段
@@ -97,7 +97,7 @@ function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g
   // 就座階段的結束瞬間就是第一人離座的瞬間；畫面取它前一毫秒，讓「全員就座」真的是 1,609 人都在座位上。
   {key:'seated',t:ph.seated.t1,tc:ph.seated.t1-1e-3,h:'全員就座',d:'七個出口由上排往下坐，先走的坐上面。'},
   {key:'form',t:(G['白1'].tStairFirst+D.meta.tGateStart)/2,h:'大隊 1 兩路成形',d:`白衣從 ${G['白1'].exits[0].exit} 出口、藍衣從 ${G['藍1'].exits[0].exit} 出口，各自三列交錯成一路；白衣靠看台側、藍衣外側。`},
-  {key:'gate',t:D.meta.tGateStart,h:'第一位過西一入口',d:'不等任何人集結：下樓後白衣散到北三路、藍衣散到南三路，六路進場；樓梯同時不停。'},
+  {key:'gate',t:D.meta.tGateStart,h:'大隊 1 門前集合後進場',d:'下樓後白衣散到北三路、藍衣散到南三路，在門前切齊排隊；約三分之二到齊就六路一起進場（0.4 秒一位），樓梯同時不停。'},
   {key:'swapA',t:A.p.t.leave,h:`白衣換口 ${A.prev.exit}→${A.s.exit}`,d:`${A.prev.exit} 坐滿：大隊 ${A.s.from.dadui} 白衣從列 ${A.s.from.lie} 第 ${A.s.from.pai} 排起改由 ${A.s.exit} 出口接上，隊伍不斷。`},
   {key:'swapB',t:B.p.t.leave,h:`藍衣換口 ${B.prev.exit}→${B.s.exit}`,d:`${B.prev.exit} 坐滿：大隊 ${B.s.from.dadui} 藍衣從列 ${B.s.from.lie} 第 ${B.s.from.pai} 排起改由 ${B.s.exit} 出口接上，走最外側。`},
   {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
@@ -114,7 +114,7 @@ function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
   const fig=document.createElement('figure');fig.dataset.key=f.key;
   const cv=document.createElement('canvas');cv.setAttribute('role','img');cv.setAttribute('aria-label',`${f.h}，${fmt(f.t)} 的全體位置`);fig.append(cv);
   fig.insertAdjacentHTML('beforeend',`<figcaption><h2><span class="no">${i+1}</span> · ${esc(f.h)} · <time>${fmt(f.t)}</time></h2><p>${esc(f.d)}</p>
-   <dl class="n"><div><dt>休息區</dt><dd>${cs.seated}</dd></div><div><dt>離座在走</dt><dd>${cs.walk}</dd></div><div><dt>進場中</dt><dd>${cs.enter}</dd></div><div><dt>到位</dt><dd>${cs.done}</dd></div></dl>
+   <dl class="n"><div><dt>休息區</dt><dd>${cs.seated}</dd></div><div><dt>離座在走</dt><dd>${cs.walk}</dd></div><div><dt>門前等待</dt><dd>${cs.wait}</dd></div><div><dt>進場中</dt><dd>${cs.enter}</dd></div><div><dt>到位</dt><dd>${cs.done}</dd></div></dl>
    ${walk.size?`<div class="mv">離座在走：<b>${names(walk)}</b></div>`:''}${enter.size?`<div class="mv">進場中：<b>${names(enter)}</b></div>`:''}</figcaption>`);
   frames.append(fig);jobs.push({cv,ds,t:tc});});
  for(const j of jobs){j.v=new SheetView(j.cv,{pad:6});j.v.onresize=()=>paint(j);}}

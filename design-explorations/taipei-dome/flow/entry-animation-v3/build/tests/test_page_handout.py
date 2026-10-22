@@ -23,7 +23,7 @@ def test_handout(open_page, root):
     assert '144' in pg.inner_text('figure[data-key="swapB"]') and '145' in pg.inner_text('figure[data-key="swapB"]')
     assert '全員到位' in pg.inner_text('figure[data-key="done"]')
     body = pg.inner_text('body')
-    assert not any(w in body for w in ('集結區', '白2', '白 2', '2c'))
+    assert not any(w in body for w in ('白2', '白 2', '2c', '遞補', '死巷'))
 
 
 def test_handout_mobile(open_page):

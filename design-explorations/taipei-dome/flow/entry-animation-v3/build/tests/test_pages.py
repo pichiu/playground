@@ -15,7 +15,7 @@ def test_index_overview(open_page):
     assert pg.locator('a[href="../entry-animation/index.html"]').count() == 1
     assert '2c' not in pg.title() and '版本 3' in pg.title()
     body = pg.inner_text('body')
-    assert '139→140' in pg.inner_text('[data-stair-order]') and '集結區' not in body
+    assert '139→140' in pg.inner_text('[data-stair-order]') and '遞補' not in body and '死巷' not in body and '門前' in body
 
 
 def test_index_mobile_no_hscroll(open_page):          # Review Focus 5
@@ -49,7 +49,7 @@ def test_core_names(open_page):
     pg, *_ = open_page('index.html', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert pg.evaluate('Object.keys(Dome.LANE_NAME)') == ['A', 'B']
-    assert pg.evaluate('Object.keys(Dome.ZONE_NAME)') == ['FEEDER'] and pg.evaluate('Dome.ZONE_NAME.FEEDER') == '不集結，直接進場'
+    assert pg.evaluate('Object.keys(Dome.ZONE_NAME)') == ['DOOR'] and pg.evaluate('Dome.ZONE_NAME.DOOR') == '門前集合（B2）'
     assert pg.get_attribute('nav.dome-nav', 'aria-label') == '進場動線版本 3 各頁'
 
 
