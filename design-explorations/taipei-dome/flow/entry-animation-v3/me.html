@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>進場動線 2c · 我的路</title>
+<title>進場動線版本 3 · 我的路</title>
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
@@ -99,7 +99,7 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,zone,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+const {pos,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
 Dome.nav('me.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go','ghost'])C[n]=css(n);};readC();
@@ -119,34 +119,24 @@ function tAtVertex(p,test,from){for(const q of p.path)if(q[2]>=from&&test(q[0],q
 function tNearPoint(p,X,Y,r,from){const a=p.path;for(let i=0;i+1<a.length;i++){const u=a[i],w=a[i+1];if(w[2]<from)continue;const dx=w[0]-u[0],dy=w[1]-u[1],l=dx*dx+dy*dy;const k=l?Math.max(0,Math.min(1,((X-u[0])*dx+(Y-u[1])*dy)/l)):0;if(Math.hypot(u[0]+dx*k-X,u[1]+dy*k-Y)<r){const tt=u[2]+(w[2]-u[2])*k;if(tt>=from)return tt;}}return null;}
 function pathIn(p,a,b){const pts=p.path.filter(q=>q[2]>a&&q[2]<b).map(q=>[q[0],q[1]]);const s=pos(p,a),e=pos(p,b);return [[s[0],s[1]],...pts,[e[0],e[1]]];}
 
-// 死巷集結區：前面的大隊進場後，後面的整塊往前遞補一區（p.adv＝[起,止,目的區]…），最後都站在集結區 2 再出發
-const zoneTxt=z=>z==='P2'?'集結區 2（最靠西一入口）':'集結區 '+z[1];
-function advTxt(d,p){const a=p.adv;if(!a||!a.length)return '';
- return ` 站定後<strong>不用一直站在原地</strong>：前面的大隊進場後，整塊往前遞補——${a.map(([t0,t1,z])=>`${fmt(t0)} 前進到 <strong>${zoneTxt(z)}</strong>`).join('、')}，${fmt(a[a.length-1][1])} 站定，跟著隊伍走，不用另外找位置。`;}
 function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
  const i=order[p.exitSeq]===p.id?p.exitSeq:order.indexOf(p.id),prev=i>0?order[i-1]:null,next=i>=0&&i<order.length-1?order[i+1]:null;
  const ahead=indexes(d).lane.get(p.lane+'|'+(p.laneIdx-1));
- const feeder=p.assembly==='FEEDER',holdB1=p.assembly==='P6';
  const tExit=tAtVertex(p,(x,y)=>nearPoly(x,y,D.map.b1Corridor,.35),s.leave+.01)??s.leave+Math.hypot(p.rest.X-ex.entry[0],p.rest.Y-ex.entry[1])/(D.meta.speedUnitPerSec||1.1);
- const ST=D.nodes.STAIR_TOP,tStair=tNearPoint(p,ST.X,ST.Y,.3,tExit);
- const SB=D.nodes.STAIR_BOT,tBottom=feeder?(tNearPoint(p,SB.X,SB.Y,.3,s.enter)??(s.enter+s.gate)/2):s.enter;   // 接尾者「進」從到樓梯底算起，才和「集」（下樓）分得開
- const tWalkEnd=feeder?s.enter:holdB1?s.assembly:Math.min(tStair??s.assembly,s.assembly);
- const aheadTxt=!ahead?'你是這一路的第一位':ahead.exit===p.exit?`跟在 <strong>${ahead.id}</strong> 後面`:`<strong>${ahead.id}</strong>（${ahead.exit} 出口）在你前面接上`;
+ // 一列可能分坐兩個出口（出口坐滿就換）：提醒同一列的另一半在哪個出口
+ const others=d.exitsOfFile(p.lie).filter(e=>e!==p.exit);
+ const splitTxt=others.length?`（你這一列有一部分人從 <strong>${others.map(e=>e+' 出口').join('、')}</strong> 出來，那是別的出口坐滿換口的結果，照你自己的出口走）`:'';
+ const aheadTxt=!ahead?'你是這一路的第一位':`跟在 <strong>${ahead.id}</strong>${ahead.lie!==p.lie?`（列 ${ahead.lie}）`:''}${ahead.exit!==p.exit?`（${ahead.exit} 出口）`:''} 後面`;
  const seat=[p.rest.X,p.rest.Y];
  return [
   {k:'起',h:'離座',t:s.leave,show:s.leave,tl:'',pts:[seat,...pathIn(p,s.leave,s.leave+2)],pad:2,
-   d:`從 <strong>${seatOf(p)}</strong> 起身。你是 <strong>${p.exit} 出口第 ${i+1} 位</strong>（共 ${ex.used} 位）；${prev?`前一位 <strong>${prev}</strong>`:'<strong>你是第一位</strong>'}，${next?`後一位 <strong>${next}</strong>`:'<strong>你是最後一位</strong>'}。`},
+   d:`從 <strong>${seatOf(p)}</strong> 起身。你是 <strong>${p.exit} 出口第 ${i+1} 位</strong>（共 ${ex.used} 位）；${prev?`前一位 <strong>${prev}</strong>`:'<strong>你是第一位</strong>'}，${next?`後一位 <strong>${next}</strong>`:'<strong>你是最後一位</strong>'}。${splitTxt}`},
   {k:'出',h:'出口',t:s.leave+.8,show:tExit,tl:'到走廊',pts:pathIn(p,s.leave,tExit+1),pad:1.4,
    d:`往<strong>${SIDE[ex.side]||''}側</strong>走道出去，上 <strong>${ex.stairLabel}</strong>，到 B1 走廊。`},
-  {k:'走',h:'走廊',t:tExit,show:tWalkEnd,tl:feeder?'下樓':holdB1?'停下':'過樓梯口',pts:pathIn(p,tExit,tWalkEnd),pad:1.6,
-   d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。${feeder?'走到樓梯口直接下 B2':holdB1?'走到白 3 候隊位置停下，不下樓':p.assembly==='STAIR'?'過樓梯口，在樓梯上站定':'過樓梯口下 B2'}。`},
-  feeder
-   ?{k:'集',h:'集結',t:s.enter,show:s.enter,tl:'下樓',pts:pathIn(p,s.enter-4,s.enter+4),pad:1.6,
-     d:`<strong>不集結：${fmt(s.leave)} 離座後直接下樓到西一入口</strong>，不進集結區。`}
-   :{k:'集',h:'集結',t:s.assembly,show:s.assembly,tl:'站定',pts:pathIn(p,s.assembly-6,s.assembly+.1),pad:1.6,w:s.enter-s.assembly,
-     d:`站進 <strong>${d.nodeName(p.assembly)}</strong> 你這一列，${fmt(s.assembly)} 站定，等 <strong>${fmt(s.enter-s.assembly)}</strong> 再出發。${advTxt(d,p)}`},
-  {k:'進',h:'進場',t:tBottom,show:s.gate,tl:'過西一入口',pts:pathIn(p,tBottom,s.gate+4),pad:1.6,
-   d:`${feeder?'下樓後直接到':`大隊 ${p.dadui} ${fmt(s.enter)} 出發，從`} <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）進場，<strong>大隊 ${p.dadui} 第 ${p.slot+1} 位進列</strong>；${fmt(s.gate)} 過西一入口。`},
+  {k:'走',h:'走廊與樓梯',t:tExit,show:s.enter,tl:'過樓梯口',pts:pathIn(p,tExit,s.enter+1),pad:1.6,
+   d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。這一路是三列交錯排隊，前一位常是別列的人，照順序跟著就好。到樓梯口<strong>不停</strong>，直接下 B2。`},
+  {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過西一入口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
+   d:`下樓後在 B2 走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）${p.lane==='A'?'——白衣在北三路，最先轉進場':'——藍衣在南三路，白衣轉進場後再往前一點'}；你是<strong>大隊 ${p.dadui} 第 ${p.lie} 列第 ${p.slot+1} 位</strong>，${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
    d:`過西一入口後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
  ];}
@@ -155,7 +145,7 @@ function build(){$('main').hidden=false;$('hint').hidden=true;
  if(!v){v=new View($('c'),{rotate:true,pad:28});v.onresize=()=>{dirty=true;};}
  $('who').textContent=me.id;$('seat').textContent=seatOf(me);$('meta').textContent=`大隊 ${me.dadui} · ${me.costume}衣 · ${me.a} · ${me.exit} 出口 · ${me.lane} 路`;
  steps=stepsFor(ds,me);
- $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${x.tl?`<small>${x.tl}</small>`:''}${fmt(x.show)}</time></h2><p>${x.d}</p>${x.w?`<span class="wait">要等 ${fmt(x.w)}（示意時間）</span>`:''}</div></li>`).join('');
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span><time>${x.tl?`<small>${x.tl}</small>`:''}${fmt(x.show)}</time></h2><p>${x.d}</p></div></li>`).join('');
  const {gate}=indexes(ds),ahead=gate.get(me.gateLane+'|'+(me.gateIdx-1)),behind=gate.get(me.gateLane+'|'+(me.gateIdx+1));
  $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時西一入口第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
  $('orient').textContent='甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';
@@ -191,8 +181,6 @@ function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
  v.dot(me.field.X,me.field.Y,7,null,C.go,2);
  v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
- const zn=zone(me,t),nd=D.nodes[zn==='STAIR'?'STAIR_TOP':zn];   // 遞補往前：標記跟著此刻站的區
- if(nd)v.text(zn===me.assembly?ds.nodeName(zn).replace(/（.*）$/,''):'集結區 '+zn[1],nd.X,nd.Y,{color:C.dim,size:12,weight:700,halo:C.paper,dy:14});
  $('clk').textContent=fmt(t);$('tl').value=t;
  const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
