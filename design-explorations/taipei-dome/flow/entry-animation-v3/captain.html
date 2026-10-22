@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>進場動線 2c · 口令卡</title>
+<title>進場動線版本 3 · 口令卡</title>
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
@@ -81,7 +81,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
 <body>
 <div class="wrap">
 <header class="top">
- <div><a class="back" href="index.html">‹ 進場動線 2c</a><h1>2c · 口令卡</h1></div>
+ <div><a class="back" href="index.html">‹ 進場動線版本 3</a><h1>版本 3 · 口令卡</h1></div>
  <p class="who">大隊長用：選一個大隊，整頁換成大隊色；口令依時刻排序，點一條就跳到那一刻。</p>
 </header>
 <div class="pick" id="pick" role="group" aria-label="選擇大隊"></div>
@@ -89,7 +89,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
  <div class="grid">
   <section class="next"><small id="nx-k">讀取動線資料…</small><h2 id="nx-h" aria-live="polite"></h2><p id="nx-d"></p><div class="count" id="nx-c"></div></section>
   <section class="card"><h3><span id="lies-h">六列狀態</span><span id="lies-n"></span></h3><div class="lies" id="lies"></div>
-   <div class="legend"><span><i style="background:#56636a"></i>休息區</span><span><i style="background:var(--dim)"></i>走廊樓梯</span><span><i style="background:var(--team);opacity:.55"></i>集結等待</span><span><i style="background:var(--team)"></i>進場中</span><span><i style="background:var(--ink)"></i>已到位</span></div>
+   <div class="legend"><span><i style="background:#56636a"></i>休息區</span><span><i style="background:var(--dim)"></i>走廊樓梯</span><span><i style="background:var(--team)"></i>進場中</span><span><i style="background:var(--ink)"></i>已到位</span></div>
    <div class="deck"><button class="play" id="play" aria-label="播放"><svg width="14" height="16" viewBox="0 0 14 16" id="ico" aria-hidden="true"><path d="M1 1v14l12-7z" fill="currentColor"/></svg></button><input type="range" id="tl" min="0" step=".1" aria-label="示意時間"><div class="speed" id="speed" role="group" aria-label="播放速度"></div><button type="button" class="tog" id="lbl" aria-pressed="false">標籤</button><output id="clk" for="tl"></output></div>
   </section>
  </div>
@@ -106,7 +106,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
 const {pos,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
 Dome.nav('captain.html');
 const TEAM=['#e05d63','#d9ae3a','#79c25a','#b688dd','#f0a050','#bfc35a','#e586bd','#c9945e','#4fc2b4'];
-const STATE_ZH={seated:'休息區',walk:'走廊樓梯',wait:'集結等待',enter:'進場中',done:'已到位'};
+const STATE_ZH={seated:'休息區',walk:'走廊樓梯',wait:'停下等待',enter:'進場中',done:'已到位'};
 const ST=[['seated','#56636a'],['walk','#a3b0ae'],['wait','TEAMA'],['enter','TEAM'],['done','#f1f3ef']];
 const clampK=n=>Math.max(1,Math.min(9,Math.round(Number(n))||1));
 let labels=false,speed=6,k=clampK(new URLSearchParams(location.search).get('k')),t=0,playing=false,last=0,dirty=true,ds=null,gs=[],ps=[],lies=[],cues=[];
@@ -116,24 +116,20 @@ $('speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;speed=+b.
 $('lbl').onclick=()=>{labels=!labels;$('lbl').setAttribute('aria-pressed',labels);dirty=true;};
 $('pick').onclick=e=>{const b=e.target.closest('button');if(b)choose(+b.dataset.k);};
 
-// 口令序列：全部取自 groups／files／persons 既有時刻，依時間排序。
-// 集結隊伍：隊頭站定就起步，最後一位到時隊頭可能已經在走（邊到邊走），白衣、藍衣同一條規則
-const stagedCue=(g,id,who)=>g.tAssembly>g.tEnter
- ?{id,t:g.tAssembly,h:`${who}最後一位到`,d:`${g.key} 邊到邊走：隊頭 ${fmt(g.tEnter)} 已起步，最後一位 ${fmt(g.tAssembly)} 到 ${ds.nodeName(g.assembly)}`}
- :{id,t:g.tAssembly,h:`${who}到齊`,d:`${g.key} ${g.population} 人站定 · ${ds.nodeName(g.assembly)}`};
-function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),prev=ds.groups.filter(g=>g.dadui===k-1);
- const first=lies.reduce((a,f)=>f.tLeave<a.tLeave?f:a),lastP=ps.reduce((a,p)=>p.t.leave>a.t.leave?p:a),lastF=lies.find(f=>f.lie===lastP.lie);
- const staged=gs.filter(g=>g.assembly!=='FEEDER');
+// 口令序列：全部取自 persons 的時刻，依時間排序。版本 3 不集結：兩路各自從離座一路走到場內。
+const exitsTxt=g=>g.exits.map(e=>e.exit).join('、');
+function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍');
+ const by=c=>ps.filter(p=>p.costume===c),ext=(list,key,f)=>list.reduce((a,p)=>f(p.t[key],a.t[key])?p:a);
+ const first=c=>ext(by(c),'leave',(x,y)=>x<y),last=c=>ext(by(c),'leave',(x,y)=>x>y);
+ const g0=ext(ps,'gate',(x,y)=>x<y),g1=ext(ps,'gate',(x,y)=>x>y);
+ const who=p=>`列 ${p.lie} 第 ${p.pai} 排（${p.exit} 出口）`;
  const list=[
-  {id:'leave-first',t:first.tLeave,h:'第一位離座',d:`${first.costume}${k} 列 ${first.lie} 先起身：${ds.exitName(first.exit)}，上走廊走 ${ds.laneName(first.lane)}`},
-  {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastF.costume}${k} 列 ${lastF.lie} 最後一位離開 ${lastF.exit} 出口，本大隊休息區清空`},
-  W.assembly==='FEEDER'
-   ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exit).join('、')} 出口依西一入口時刻直接接尾`}
-   :stagedCue(W,'white','白衣'),
-  stagedCue(B,'blue','藍衣'),
-  ...(prev.length?[{id:'handover',t:Math.max(...prev.map(g=>g.tGateLast)),h:'西一入口交接',d:`大隊 ${k-1} 最後一位過西一入口，六路接著換本大隊`}]:[]),
-  {id:'go',t:Math.min(...gs.map(g=>g.tGateFirst)),h:`大隊 ${k} 出發`,d:`六路並排往西一入口，北三路白、南三路藍${staged.length?`（集結區 ${fmt(Math.min(...staged.map(g=>g.tEnter)))} 起步）`:''}`},
-  {id:'gate-last',t:Math.max(...gs.map(g=>g.tGateLast)),h:'最後一位過西一入口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊，西一入口收'},
+  {id:'white-first',t:first('白').t.leave,h:'白衣第一位離座',d:`${who(first('白'))} 先起身，走 ${ds.laneName('A')}；三列交錯成一路`},
+  {id:'blue-first',t:first('藍').t.leave,h:'藍衣第一位離座',d:`${who(first('藍'))} 先起身，走 ${ds.laneName('B')}`},
+  {id:'white-last',t:last('白').t.leave,h:'白衣最後一位離座',d:`${who(last('白'))}；白衣從 ${exitsTxt(W)} 出口出完`},
+  {id:'blue-last',t:last('藍').t.leave,h:'藍衣最後一位離座',d:`${who(last('藍'))}；藍衣從 ${exitsTxt(B)} 出口出完`},
+  {id:'gate-first',t:g0.t.gate,h:'第一位過西一入口',d:`大隊 ${k} 不集結，下樓後直接六路進場：北三路白、南三路藍`},
+  {id:'gate-last',t:g1.t.gate,h:'最後一位過西一入口',d:k<9?`大隊 ${k+1} 接著進場`:'最後一個大隊，西一入口收'},
   {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];
  return list.sort((a,b)=>a.t-b.t);}
 
@@ -143,17 +139,17 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  $('pick').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.k===k));
  try{history.replaceState(null,'',`?k=${k}`);}catch(e){}
  if(!ds)return;
- document.title=`進場動線 2c · 口令卡 · 大隊 ${k}`;
+ document.title=`進場動線版本 3 · 口令卡 · 大隊 ${k}`;
  gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
- lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.costume===b.costume?'ABC'.indexOf(a.lane)-'ABC'.indexOf(b.lane):(a.costume==='白'?-1:1)).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 白 A·B·C、藍 A·B·C（藍2–9 的 A 路是列 6k，不是列號最小的）
+ lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.lie-b.lie).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 列 6k−5…6k：前三列白（A 路）、後三列藍（B 路），也就是西一入口由北數
  cues=cuesFor();
  $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${fmt(c.t)} ${c.h}"><time>${fmt(c.t)}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
  $('cue-n').textContent=`${cues.length} 條 · ${fmt(cues[0].t)}–${fmt(cues[cues.length-1].t)}`;
- $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
+ $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exits.join('、')} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
- const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exit).join('/');
- const byNorth=g=>['A','B','C'].sort((x,y)=>((g.lanes[x].lie-1)%6)-((g.lanes[y].lie-1)%6)).join('·');   // 西一入口路 j=(列−1) mod 6 由北數；藍2–9 從死巷走回來，A 路在最南
- $('sum').innerHTML=`<b>${W.key}</b> 列 ${cols(W)}（${W.population} 人，出口 ${exits(W)}，${ds.nodeName(W.assembly)}）；<b>${B.key}</b> 列 ${cols(B)}（${B.population} 人，出口 ${exits(B)}，${ds.nodeName(B.assembly)}）。西一入口六路由北數：白 ${byNorth(W)}、藍 ${byNorth(B)}${byNorth(B)==='A·B·C'?'':'（藍衣從上游走回來，A 路在最南）'}。`;
+ const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·');
+ const ex=g=>g.exits.length>1?`從 ${g.exits.map(e=>`${e.exit}（${e.n} 人）`).join('、')} <b>兩個出口</b>出來（前一個出口坐滿就換，同一列可能分坐兩處）`:`從 ${g.exits[0].exit} 出口出來`;
+ $('sum').innerHTML=`<b>白衣</b> 列 ${cols(W)}（${W.population} 人，A 路）${ex(W)}；<b>藍衣</b> 列 ${cols(B)}（${B.population} 人，B 路）${ex(B)}。不集結，下樓後西一入口六路由北數就是列 ${[...W.columns,...B.columns].join('、')}。`;
  $('tl').min=Math.max(0,cues[0].t-3);$('tl').max=Math.min(ds.T_END,cues[cues.length-1].t+1);t=+$('tl').min;
  v.fit(Dome.bounds(ps.flatMap(p=>p.path.map(q=>[q[0],q[1]])),.6),true);dirty=true;}
 
@@ -173,9 +169,8 @@ function draw(){const team=TEAM[k-1],D=ds.D;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
- if(labels){const mine=new Set(gs.flatMap(g=>['A','B','C'].map(L=>g.lanes[L].exit)));
-  for(const s of D.map.stands)if(mine.has(s.sec))v.text(s.sec,s.labelXY[0],s.labelXY[1],{color:'#f1f3ef',size:11,weight:700,halo:'#11171a'});
-  for(const key of new Set(gs.map(g=>g.assembly==='STAIR'?'STAIR_TOP':g.assembly))){const nd=D.nodes[key];if(nd)v.text('集結區',nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}}
+ if(labels){const mine=new Set(gs.flatMap(g=>g.exits.map(e=>e.exit)));
+  for(const s of D.map.stands)if(mine.has(s.sec))v.text(s.sec,s.labelXY[0],s.labelXY[1],{color:'#f1f3ef',size:11,weight:700,halo:'#11171a'});}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',align:'right',dx:-12});}
 
 function setIco(){$('ico').innerHTML=playing?'<rect x="1" y="1" width="4" height="14" fill="currentColor"/><rect x="9" y="1" width="4" height="14" fill="currentColor"/>':'<path d="M1 1v14l12-7z" fill="currentColor"/>';$('play').setAttribute('aria-label',playing?'暫停':'播放');}
