@@ -169,3 +169,18 @@ def test_check_detects_slow_segment(built):            # final review：放慢�
     p['t']['arrive'] = p['path'][-1][2]
     C = check.check_all(D)
     assert C['noWait']['violations'] >= 1 and C['ok'] is False
+
+
+def test_check_ranks_green_and_tamper(built):
+    _, D = built
+    C = check.check_all(D)
+    assert C['ranks']['violations'] == 0 and C['ranks']['ranks'] > 200
+    D = _copy(D)
+    p = next(q for q in D['persons'] if q['dadui'] == 2 and q['slot'] == 5)
+    k = next(i for i, q in enumerate(p['path']) if abs(q[2] - p['t']['door']) < 1e-6)
+    for q in p['path'][k:]:
+        q[2] += 0.5
+    for key in ('door', 'gate', 'arrive'):
+        p['t'][key] += 0.5
+    C = check.check_all(D)
+    assert C['ranks']['violations'] >= 1 and C['ok'] is False

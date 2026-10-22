@@ -119,7 +119,7 @@ function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
   frames.append(fig);jobs.push({cv,ds,t:tc});});
  for(const j of jobs){j.v=new SheetView(j.cv,{pad:6});j.v.onresize=()=>paint(j);}}
 function paint({v,ds,t}){v.fit(FRAME,true);const c=v.begin(C.paper),D=ds.D,r=Math.max(.9,.04*v.s);
- v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule,gate:C.ink,gateA:.08});
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule,gate:C.ink,gateA:.08,gateLanes:[C.dim,C.blue],gateLanesA:.45});
  c.globalAlpha=.7;c.lineCap='round';
  for(const p of ds.P){const st=state(p,t);if(st!=='walk'&&st!=='enter')continue;const pts=p.path.filter(q=>q[2]>t-8&&q[2]<t).flatMap(q=>[q[0],q[1]]),a=pos(p,Math.max(0,t-8)),b=pos(p,t);v.stroke([a[0],a[1],...pts,b[0],b[1]],C.rust,.6);}
  c.globalAlpha=1;

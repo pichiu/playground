@@ -126,7 +126,7 @@ function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.me
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
  return t>=S.stair[0].a?'大隊 1 下樓':'大隊 1 離座';}
 function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*v.s);
- v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber});
+ v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber,gateLanes:[C.white,C.blue],gateLanesA:.3});window.__gateLanesDrawn=v.gateLanesDrawn;
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT;v.text('樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}

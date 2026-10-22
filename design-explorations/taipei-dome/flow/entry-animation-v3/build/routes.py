@@ -96,6 +96,15 @@ class Geometry:
         return None
 
     # ---------- 圖面 ----------
+    def gate_lanes_map(self):
+        """下樓後到門前的六條線：從樓梯平台（A／B 路各自的端點）側移到第 j 條線，沿 B2 走到西一入口收攏點。j 0–2 白、3–5 藍。"""
+        out = []
+        for j in range(6):
+            lp = self.ST_LANE[self.LANE_OFF['A' if j < 3 else 'B']]
+            pts = [lp.at(lp.L - 0.05)] + self._b2_to_gate(j)
+            out.append([round(v, 3) for q in pts for v in q])
+        return out
+
     def stair_map(self):
         """樓梯 L 形的圖面：stair 是路線中線，stairBand 是底色帶（平台接到 B2 走廊外緣），stairTreads 是直段的踏階線。"""
         top, bot, _ = self.STAIR_PTS

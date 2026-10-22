@@ -32,3 +32,9 @@ def test_console_mobile(open_page):
     pg, errs, perrs = open_page('console.html', 375, 700)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert no_hscroll(pg) and not perrs
+
+
+def test_console_draws_six_gate_lanes(open_page):      # 指揮台在 B2 畫出六條西一入口線（北三白、南三藍）
+    pg, *_ = open_page('console.html', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    assert pg.evaluate('window.__gateLanesDrawn') == 6

@@ -18,6 +18,7 @@ T0 = 6.73               # 第一人離座
 STAND_MIN = 0.6         # 沿用 2c 常數（版本 3 沒有站定）
 DADUI_GAP = 0.8         # 大隊交界的對齊空檔：前一大隊隊尾先過西一入口線的轉入點
 SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
+RANK_SLOW_MAX = 2.0     # 門前齊頭：同一排先到的人在 B2 放慢等同排的人，最多慢這麼多秒（只放慢、不停）
 LANE_K = {'A': 0, 'B': 1}
 DIRECT_LABEL = '不集結，直接進場'
 
@@ -42,13 +43,17 @@ def timed(pts, t0):
 
 
 def prepare(G, people):
-    """每人的路線與距離（不含時間）：arr 全程到西一入口收攏點，d_top 到樓梯口。"""
+    """每人的路線與距離（不含時間）：arr 全程到西一入口收攏點，d_top 到樓梯口；
+    k_split 是 B2 上已側移到自己那條線的第一點，k_door 是門前那條線（六條線齊頭的地方，收攏點前一點）。"""
     R = {}
     for p in people:
         arr = G.arrival_route(p)
         carr = cum(arr)
         k = G.stair_top_index(arr)
-        R[p['id']] = dict(arr=arr, L_arr=carr[-1], d_top=carr[k], k_top=k)
+        k_split = len(arr) - len(G._b2_to_gate(p['gateLane']))
+        k_door = len(arr) - 2
+        R[p['id']] = dict(arr=arr, L_arr=carr[-1], d_top=carr[k], k_top=k, k_split=k_split, k_door=k_door,
+                          d_split=carr[k_split], d_door=carr[k_door])
     return R
 
 
@@ -82,11 +87,25 @@ def schedule(G, people, R=None, shift=None):
     shift = shift or {}
     rel, t_dadui = aligned_clock(people, 'lane', 'dadIdx', 'dadui', lambda it: STAGGER * LANE_K[it['lane']], group_gap=DADUI_GAP)
     T_S0 = max(T0 + R[p['id']]['d_top'] / V - rel[p['id']] for p in people)
+    # 門前齊頭：同一排＝同大隊、各列第 slot 位（最多六人，北三白南三藍）；全排在最晚那位自然到門前的時刻一起到，先到的在 B2 放慢
+    natural = {p['id']: T_S0 + rel[p['id']] + (R[p['id']]['d_door'] - R[p['id']]['d_top']) / V for p in people}
+    rank = collections.defaultdict(list)
+    for p in people:
+        rank[(p['dadui'], p['slot'])].append(p['id'])
+    door, prev = {}, None
+    for key in sorted(rank):                                   # 依大隊、位次：後一排至少晚前一排一拍，同一條線上前後不擠
+        t_rank = max(natural[q] for q in rank[key])
+        if prev is not None:
+            t_rank = max(t_rank, prev + HEADWAY)
+        for pid in rank[key]:
+            door[pid] = t_rank
+        prev = t_rank
     out = {}
     for p in people:
         r = R[p['id']]
         S = T_S0 + rel[p['id']]
-        out[p['id']] = dict(leave=S - r['d_top'] / V, assembly=S, enter=S, gate=S + (r['L_arr'] - r['d_top']) / V)
+        out[p['id']] = dict(leave=S - r['d_top'] / V, assembly=S, enter=S, door=door[p['id']],
+                            gate=door[p['id']] + (r['L_arr'] - r['d_door']) / V)
     for pid, dt in shift.items():
         for key in out[pid]:
             out[pid][key] += dt
@@ -95,8 +114,14 @@ def schedule(G, people, R=None, shift=None):
 
 
 def person_path(base_person, r, t):
-    """座位 → 西一入口收攏點（不停）→ 場內，含時間；場內沿版本 1 幾何等速重計時。"""
-    path = list(timed(r['arr'], t['leave']))
+    """座位 → B2 側移到自己那條線（等速）→ 門前齊頭（這一段放慢，準時到門前）→ 收攏點 → 場內（等速）；場內沿版本 1 幾何重計時。"""
+    arr, ks, kd = r['arr'], r['k_split'], r['k_door']
+    path = list(timed(arr[:ks + 1], t['leave']))
+    t_split = path[-1][2]
+    seg = cum(arr[ks:kd + 1])
+    for q, c in zip(arr[ks + 1:kd + 1], seg[1:]):
+        path.append((q[0], q[1], t_split + (t['door'] - t_split) * c / seg[-1]))
+    path += timed(arr[kd:], t['door'])[1:]
     post = [q for q in base_person['path'] if q[2] > base_person['t']['gate'] + 1e-6]
     tt, last = path[-1][2], path[-1]
     for x, y, _ in post:
@@ -124,7 +149,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
         r, t = R[p['id']], sched[p['id']]
         path = person_path(who[p['id']], r, t)
         tt = dict(leave=round(t['leave'], 3), assembly=round(t['assembly'], 3), enter=round(t['enter'], 3),
-                  gate=round(t['gate'], 3), arrive=path[-1][2])
+                  door=round(t['door'], 3), gate=round(t['gate'], 3), arrive=path[-1][2])
         persons.append(dict(id=p['id'], lie=p['lie'], pai=p['pai'], dadui=p['dadui'], costume=p['costume'], a=p['a'],
                             field=p['field'], rest=p['rest'], exit=p['exit'], exitSeq=p['exitSeq'], lane=p['lane'],
                             laneIdx=p['laneIdx'], gateLane=p['gateLane'], gateIdx=p['gateIdx'], slot=p['slot'],
@@ -194,7 +219,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
               dict(key='descend', label='大隊 1 白藍兩路離座、走 B1、下樓梯', t0=T0, t1=t_gate0),
               dict(key='enter', label='大隊 1→9 兩路不停下樓，西一入口六路進場', t0=t_gate0, t1=t_end)]
-    return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map()), restSeats=rest, exits=exits,
+    return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=G.gate_lanes_map()), restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'], stairSlots={}, zones={})
 
 
@@ -204,7 +229,7 @@ RULES = [
     '出口：白衣依序用 139 → 140 → 141 → 142，藍衣用 142 → 143 → 144 → 145；出口坐滿才換下一個，換口可以落在大隊中間',
     '142 兩路共用：藍衣大隊 1–3 先從上排出，白衣大隊 9 最後從下排出；任何時刻白衣用的出口都比藍衣近、且在不同階梯，所以走廊上不交叉',
     '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面',
-    '不集結、不候隊：每人依計畫時刻離座，一路走到西一入口；到 B2 後白衣散到北三條線、藍衣散到南三條線，六路進場，之後沿原場內路徑',
+    '不集結、不候隊：每人依計畫時刻離座，一路走到西一入口；下樓後白衣散到北三條線、藍衣散到南三條線，在門前六條線齊頭——同一排六人（各列同一位次）並肩進門，先到的稍微放慢、不停；之後沿原場內路徑',
 ]
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；同一路相鄰兩人 0.4 秒、兩路錯開 0.17 秒、大隊交界加 0.8 秒；皆為動畫節奏，不是現場秒數',

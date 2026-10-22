@@ -77,6 +77,8 @@ class View{
     if(pal.stand)for(const s of m.stands)this.stroke(s.poly,pal.stand,.8,[],true),pal.standFill&&this.fill(s.poly,pal.standFill,pal.standFillA??1);
     // 西一入口：帶寬 = 4 扇門可 12 人並排；門畫在場內端
     if(pal.gate&&m.gate){this.fill(m.gate.band,pal.gate,pal.gateA??.22);for(const d of m.gate.doors)this.stroke(d,pal.gate,Math.max(2.5,.05*this.s));}
+    // 下樓後到門前的六條線（北三白、南三藍）：pal.gateLanes=[白線色, 藍線色]
+    this.gateLanesDrawn=0;if(pal.gateLanes&&m.gateLanes){m.gateLanes.forEach((l,j)=>{this.ctx.globalAlpha=pal.gateLanesA??.35;this.stroke(l,pal.gateLanes[j<3?0:1],1.4);this.gateLanesDrawn++;});this.ctx.globalAlpha=1;}
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }

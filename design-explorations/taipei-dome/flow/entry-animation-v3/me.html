@@ -136,7 +136,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
   {k:'走',h:'走廊與樓梯',t:tExit,show:s.enter,tl:'過樓梯口',pts:pathIn(p,tExit,s.enter+1),pad:1.6,
    d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。這一路是三列交錯排隊，前一位常是別列的人，照順序跟著就好。到樓梯口<strong>不停</strong>，直接下 B2。`},
   {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過西一入口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
-   d:`下樓後在 B2 走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）${p.lane==='A'?'——白衣在北三路，最先轉進場':'——藍衣在南三路，白衣轉進場後再往前一點'}；你是<strong>大隊 ${p.dadui} 第 ${p.lie} 列第 ${p.slot+1} 位</strong>，${fmt(s.gate)} 過西一入口。`},
+   d:`下樓後在 B2 走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數）${p.lane==='A'?'——白衣在北三路，最先轉進場':'——藍衣在南三路，白衣轉進場後再往前一點'}；你是<strong>大隊 ${p.dadui} 第 ${p.lie} 列第 ${p.slot+1} 位</strong>。門前六條線齊頭：和其他五列的第 ${p.slot+1} 位<strong>並肩成一排</strong>（先到的放慢腳步等同排的人，不用停），${fmt(s.door??s.gate)} 到門前，${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
    d:`過西一入口後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
  ];}
