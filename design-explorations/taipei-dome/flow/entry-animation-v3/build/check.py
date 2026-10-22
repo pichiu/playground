@@ -15,6 +15,8 @@ from geo import Poly, pairs
 GAP_MIN, GAP_MAX = 0.25, 0.55      # 樓梯口節拍容許 0.4 ± 0.15（避撞平移）
 BOUNDARY_MAX = 7.0                 # 大隊交界：兩路同一大隊人數差到 12 人，短的那路空 0.4×12 + 0.4 + 0.8 ≈ 6.0 秒（spec §4）
 GATE_GAP_MAX = 1.4                 # 西一入口每條線：三列交錯 1.2 秒 + 避撞平移
+BEAT, DADUI_GAP, RULE_SLACK = 0.4, 0.8, 0.4   # 交界規則值 = 0.4 ×（兩路該大隊人數差）+ 0.4 + 0.8，容許錯開與避撞平移 0.4（spec §4）
+WAIT_SLACK = 0.05                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 POPULATION = 1609
 COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'noWait', 'seats', 'capacity')   # 與 meta.checks 逐項比對的鍵
 
@@ -142,15 +144,28 @@ def check_all(data):
     for j in range(6):
         ps = sorted((p for p in persons if p['gateLane'] == j), key=lambda p: p['gateIdx'])
         gate[str(j)] = _gaps(ps, 'gate', 'dadui')
-    cont_ok = all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GAP_MAX and v['maxGapBoundary'] <= BOUNDARY_MAX for v in stair.values()) and \
+    n_ld = collections.Counter((p['lane'], p['dadui']) for p in persons)
+    rule_bad = []
+    for L in plan.LANES:
+        for a, b in zip(seqs[L], seqs[L][1:]):
+            if a['dadui'] != b['dadui']:
+                d = a['dadui']
+                rule = BEAT * (max(n_ld[(M, d)] for M in plan.LANES) - n_ld[(L, d)]) + BEAT + DADUI_GAP
+                gap = b['t']['enter'] - a['t']['enter']
+                if gap > rule + RULE_SLACK + 1e-6:
+                    rule_bad.append(dict(lane=L, dadui=d, gap=round(gap, 3), rule=round(rule, 3)))
+    cont_ok = not rule_bad and all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GAP_MAX and v['maxGapBoundary'] <= BOUNDARY_MAX for v in stair.values()) and \
         all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GATE_GAP_MAX for v in gate.values())
-    out['continuity'] = dict(stair=stair, gate=gate, ok=cont_ok)
-    # 3b. 沒有人站著等：assembly == enter、沒有遞補、路徑上沒有原地停留
+    out['continuity'] = dict(stair=stair, gate=gate, boundaryRuleViolations=len(rule_bad), boundaryExamples=rule_bad[:3], ok=cont_ok)
+    # 3b. 沒有人站著等：assembly == enter、沒有遞補；路徑全程等速——從離座到到位的時間 = 路程 / 步速，
+    #     原地停留或放慢任何一段都會讓時間變長
+    V = data['meta']['speedUnitPerSec']
     wait_bad = []
     for p in persons:
-        t = p['t']
-        stood = any(a[:2] == b[:2] and b[2] - a[2] > 0.01 for a, b in zip(p['path'], p['path'][1:]))
-        if abs(t['assembly'] - t['enter']) > 1e-9 or p.get('adv') or stood or p['path'][0][2] > t['leave'] + 1e-6:
+        t, a = p['t'], p['path']
+        length = sum(((q[0] - r[0]) ** 2 + (q[1] - r[1]) ** 2) ** 0.5 for r, q in zip(a, a[1:]))
+        slow = (a[-1][2] - a[0][2]) - length / V > WAIT_SLACK
+        if abs(t['assembly'] - t['enter']) > 1e-9 or p.get('adv') or slow or abs(a[0][2] - t['leave']) > 1e-6 or abs(a[-1][2] - t['arrive']) > 1e-6:
             wait_bad.append(p['id'])
     out['noWait'] = dict(violations=len(wait_bad), examples=wait_bad[:3])
     # 4. 座位：唯一、合法、休息區＝出口的區、每出口由上排往下且由出口側往中央、exits.order 名單就是該出口全員（依 exitSeq）
@@ -201,7 +216,7 @@ def main(path):
         ('指派：換口往下游 / 未坐滿就換', f"{A['upstreamViolations']} / {A['notFullSwitches']}（每路 {'、'.join(f'{L} {A['segments'][L]} 段' for L in plan.LANES)}；分坐兩出口 {A['splitColumns']} 列）",
          '0 / 0', A['upstreamViolations'] == 0 == A['notFullSwitches']),
         ('路徑交叉（B2 六列 / B1 兩路）', f"{Rt['crossings']}", '0', Rt['crossings'] == 0),
-        ('不斷拍', f"樓梯 {rng(Cn['stair'].values())}，交界 ≤ {max(v['maxGapBoundary'] for v in Cn['stair'].values())}；西一入口 {rng(Cn['gate'].values())}",
+        ('不斷拍', f"樓梯 {rng(Cn['stair'].values())}，交界 ≤ {max(v['maxGapBoundary'] for v in Cn['stair'].values())}（超出規則值 {Cn['boundaryRuleViolations']} 處）；西一入口 {rng(Cn['gate'].values())}",
          f'樓梯 {GAP_MIN}–{GAP_MAX}、交界 ≤ {BOUNDARY_MAX}；西一入口 ≥ {GAP_MIN}、≤ {GATE_GAP_MAX}', Cn['ok']),
         ('沒有人站著等', f"{C['noWait']['violations']}", '0', C['noWait']['violations'] == 0),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',

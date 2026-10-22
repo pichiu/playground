@@ -37,3 +37,18 @@ def test_handout_moments_in_time_order(open_page):
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     ts = pg.evaluate("[...document.querySelectorAll('figure[data-key] time')].map(e=>e.textContent)")
     assert ts == sorted(ts), ts
+
+
+def test_handout_survives_fewer_segments(open_page, root):   # final review：座位改了、段數變了，講義不能壞
+    D = json.loads((root / 'data.json').read_text(encoding='utf-8'))
+    for L, keep in (('A', ['139', '140']), ('B', ['142', '145'])):
+        D['lanes'][L]['segments'] = [s for s in D['lanes'][L]['segments'] if s['exit'] in keep]
+    tmp = root / 'tmp-handout-test.json'
+    tmp.write_text(json.dumps(D, ensure_ascii=False), encoding='utf-8')
+    try:
+        pg, errs, perrs = open_page('handout.html?data=tmp-handout-test.json', 1280)
+        pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+        assert not perrs, perrs
+        assert '139→140' in pg.inner_text('figure[data-key="swapA"]') and '142→145' in pg.inner_text('figure[data-key="swapB"]')
+    finally:
+        tmp.unlink()

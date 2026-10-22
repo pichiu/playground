@@ -51,3 +51,10 @@ def test_core_names(open_page):
     assert pg.evaluate('Object.keys(Dome.LANE_NAME)') == ['A', 'B']
     assert pg.evaluate('Object.keys(Dome.ZONE_NAME)') == ['FEEDER'] and pg.evaluate('Dome.ZONE_NAME.FEEDER') == '不集結，直接進場'
     assert pg.get_attribute('nav.dome-nav', 'aria-label') == '進場動線版本 3 各頁'
+
+
+def test_index_lane_table_shows_to(open_page):         # spec §6.1：每段寫從哪裡起、到哪裡、人數
+    pg, *_ = open_page('index.html', 1280)
+    pg.wait_for_selector('[data-checks] .ok', timeout=20000)
+    cells = pg.locator('[data-lane-table] tbody td .seg')
+    assert cells.count() == 8 and all('到 大隊' in cells.nth(i).inner_text() for i in range(8))

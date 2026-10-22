@@ -90,8 +90,9 @@ class SheetView extends View{resize(){const r=this.c.getBoundingClientRect();thi
 const RULE='白衣一路（靠看台）、藍衣一路（外側），照大隊 1→9 直接離座、走 B1、下樓梯，到 B2 白衣散到北三路、藍衣散到南三路，由西一入口六路進場；不集結、不候隊。白衣依序用出口 139→140→141→142，藍衣 142→143→144→145，出口坐滿就換，所以任何時刻白衣的出口比藍衣近，走廊不交叉。';
 // 六個時刻取自 phases、groups 與 lanes（換口那一位的離座時刻）。
 function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p]));
- const swap=(L,k)=>{const s=ds.lanes[L].segments[k],prev=ds.lanes[L].segments[k-1],p=ds.P.find(q=>q.lane===L&&q.laneIdx===s.fromIdx);return {s,prev,p};};
- const A=swap('A',1),B=swap('B',3);
+ // 白衣第一次換口、藍衣最後一次換口；段數由資料決定（座位改了換口點會移動），沒有換口就取該路第一段
+ const swap=(L,k)=>{const sg=ds.lanes[L].segments,i=Math.max(0,Math.min(k<0?sg.length+k:k,sg.length-1)),s=sg[i],prev=sg[Math.max(0,i-1)],p=ds.P.find(q=>q.lane===L&&q.laneIdx===s.fromIdx);return {s,prev,p};};
+ const A=swap('A',1),B=swap('B',-1);
  return [
   // 就座階段的結束瞬間就是第一人離座的瞬間；畫面取它前一毫秒，讓「全員就座」真的是 1,609 人都在座位上。
   {key:'seated',t:ph.seated.t1,tc:ph.seated.t1-1e-3,h:'全員就座',d:'七個出口由上排往下坐，先走的坐上面。'},

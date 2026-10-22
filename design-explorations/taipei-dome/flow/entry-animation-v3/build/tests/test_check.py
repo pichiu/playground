@@ -144,3 +144,28 @@ def test_check_detects_lane_crossing(built):
             q[0], q[1] = B2.off(u, -0.30)
     C = check.check_all(D)
     assert C['routes']['crossings'] > 0 and C['ok'] is False
+
+
+def test_check_enforces_boundary_rule(built):          # final review：交界空檔要等於規則值，不只是 ≤ 7 秒
+    _, D = built
+    D = _copy(D)
+    for p in D['persons']:
+        if p['lane'] == 'B' and p['dadui'] >= 3:
+            for k in ('assembly', 'enter'):
+                p['t'][k] += 3.0
+    C = check.check_all(D)
+    assert C['continuity']['stair']['B']['maxGapBoundary'] < check.BOUNDARY_MAX
+    assert C['continuity']['boundaryRuleViolations'] >= 1 and C['continuity']['ok'] is False and C['ok'] is False
+
+
+def test_check_detects_slow_segment(built):            # final review：放慢某一段（不重複點）也算停下來等
+    _, D = built
+    D = _copy(D)
+    p = D['persons'][30]
+    k = len(p['path']) // 2
+    for q in p['path'][k:]:
+        q[2] += 1.0
+    p['t']['gate'] += 1.0 if p['t']['gate'] > p['path'][k - 1][2] else 0
+    p['t']['arrive'] = p['path'][-1][2]
+    C = check.check_all(D)
+    assert C['noWait']['violations'] >= 1 and C['ok'] is False
