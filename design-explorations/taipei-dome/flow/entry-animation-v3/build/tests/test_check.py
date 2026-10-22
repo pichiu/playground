@@ -4,6 +4,7 @@ import sys
 
 import pytest
 
+import build
 import check
 
 
@@ -27,8 +28,8 @@ def test_check_all_green(built):
     assert C['routes']['crossings'] == 0 and C['waits']['violations'] == 0 and C['doorQueue']['violations'] == 0
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
-    assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= 0.55 and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
-    assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= 1.4 and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
+    assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
+    assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
 
@@ -40,7 +41,7 @@ def test_boundary_gap_matches_rule(built):          # Review Focus 4
         for a, b in zip(ps, ps[1:]):
             if a['dadui'] != b['dadui']:
                 d = a['dadui']
-                rule = 0.4 * (max(n[('A', d)], n[('B', d)]) - n[(L, d)]) + 0.4 + 0.8
+                rule = build.HEADWAY * (max(n[('A', d)], n[('B', d)]) - n[(L, d)]) + build.HEADWAY + build.DADUI_GAP
                 assert b['t']['stair'] - a['t']['stair'] <= rule + 0.4 + 1e-6
                 assert rule <= check.BOUNDARY_MAX
 

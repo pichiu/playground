@@ -120,7 +120,7 @@ function checksTable(C){
   ['換口往下游 / 出口還沒坐滿就換',`${A.upstreamViolations} / ${A.notFullSwitches}（白衣 ${A.segments.A} 段、藍衣 ${A.segments.B} 段）`,'0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0,(A.examples||[]).map(e=>`${e.lane} 路第 ${e.idx+1} 位：${e.exits.join(' → ')}`)],
   ['一列分坐兩個出口（資訊）',`${A.splitColumns} 列：${A.splitLies.join('、')}`,'允許',null,[]],
   ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
-  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.25–0.55、交界 ≤ 7 秒；西一入口 ≥ 0.25、大隊內 ≤ 1.4、大隊間 ≤ 12',Cn.ok,[]],
+  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.27 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.25、大隊內 ≤ 1.41、大隊間 ≤ 12',Cn.ok,[]],
   ['只在門前自己的位置等（其餘等速）',`${C.waits.violations}（${C.waits.waiting} 人在門前等，最久 ${fmt(C.waits.maxWait)}）`,'0',C.waits.violations===0,C.waits.examples||[]],
   ['門前切齊、一路接續（大隊 1 頭一批切齊後進場，其餘到門前就走）',`${C.doorQueue.violations}（頭一批 ${C.doorQueue.firstBatch} 人；其餘停超過 1 秒 ${C.doorQueue.laterWaiting} 人）`,'0',C.doorQueue.violations===0,(C.doorQueue.examples||[]).map(e=>`${e.part==='first'?'頭一批':'其餘'}：${e.who.join('、')}`)],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],

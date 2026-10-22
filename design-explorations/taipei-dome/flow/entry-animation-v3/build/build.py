@@ -12,7 +12,7 @@ import plan
 import routes
 
 V = 1.1                 # 單位/秒
-HEADWAY = 0.4           # 同一路相鄰兩人節拍
+HEADWAY = 0.27          # 樓梯／走廊同一路相鄰兩人（一個接一個緊跟；下樓分成三條線後每條線約 0.8 秒一位）
 STAGGER = 0.17          # 兩路錯開
 T0 = 6.73               # 第一人離座
 DADUI_GAP = 0.8         # 大隊交界的對齊空檔：前一大隊隊尾先過西一入口線的轉入點
@@ -229,7 +229,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     t_go = min(p['t']['enter'] for p in persons)
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
               dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，在門前集合', t0=T0, t1=t_go),
-              dict(key='enter', label='大隊 1 頭一批切齊後進場，之後一路接續（每路 0.4 秒起）；樓梯不停', t0=t_go, t1=t_end)]
+              dict(key='enter', label='大隊 1 頭一批切齊後進場，之後一路接續、一個接一個（每條線約 0.8 秒一位）；樓梯不停', t0=t_go, t1=t_end)]
     return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=G.gate_lanes_map()), restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])
 
@@ -243,7 +243,7 @@ RULES = [
     '不在 B2 集結區、不在樓梯或走廊候隊：下樓後白衣散到北三條線、藍衣散到南三條線，大隊 1 先在西一入口前每條線集合 10 人、六條線切齊，0.4 秒一位、錯開 0.17 秒進場；之後一路接續，誰到門前就接著走，不再分大隊停下（過門後還有迴廊）；之後沿原場內路徑',
 ]
 ASSUMPTIONS = [
-    '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；同一路相鄰兩人 0.4 秒、兩路錯開 0.17 秒、大隊交界加 0.8 秒；皆為動畫節奏，不是現場秒數',
+    '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.27 秒（一個接一個緊跟）、西一入口每條線至少 0.4 秒、兩路錯開 0.17 秒、大隊交界加 0.8 秒；皆為動畫節奏，不是現場秒數',
     '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；139 的 1–5 號不用',
     '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
     '碰撞檢查為圖面點距（0.03 單位），不是人體寬度或通道容量認證',

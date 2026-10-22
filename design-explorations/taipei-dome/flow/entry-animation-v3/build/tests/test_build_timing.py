@@ -21,10 +21,10 @@ def test_stair_beats_and_dadui_alignment(base):
     for L in 'AB':
         for d in range(1, 10):
             ts = [S[p['id']]['stair'] for p in people if p['lane'] == L and p['dadui'] == d]
-            assert all(abs(b - a - 0.4) < 1e-6 for a, b in zip(ts, ts[1:]))
+            assert all(abs(b - a - build.HEADWAY) < 1e-6 for a, b in zip(ts, ts[1:]))
     ends = {d: max(S[p['id']]['stair'] for p in people if p['dadui'] == d) for d in range(1, 9)}
     starts = {d: min(S[p['id']]['stair'] for p in people if p['dadui'] == d) for d in range(2, 10)}
-    assert all(abs(starts[d + 1] - ends[d] - 1.2) < 1e-6 for d in range(1, 9))
+    assert all(abs(starts[d + 1] - ends[d] - build.HEADWAY - build.DADUI_GAP) < 1e-6 for d in range(1, 9))
 
 
 def test_lane_b_staggered(base):
@@ -36,7 +36,7 @@ def test_lane_b_staggered(base):
 
 def test_total_length_band(base):
     people, (S, clocks) = _sched(base)
-    assert 15 < clocks['tGateStart'] < 60 and 330 < max(v['gate'] for v in S.values()) < 370
+    assert 15 < clocks['tGateStart'] < 60 and 230 < max(v['gate'] for v in S.values()) < 260
 
 
 def test_shift_moves_whole_timeline(base):

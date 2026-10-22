@@ -138,7 +138,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
   {k:'集',h:'門前集合',t:s.assembly,show:s.assembly,tl:'站好',pts:pathIn(p,s.assembly-4,s.assembly+.1),pad:1.4,w:s.enter-s.assembly,
    d:`下樓後走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數；${p.lane==='A'?'白衣在北三路':'藍衣在南三路'}），站在這一路<strong>第 ${p.slot+1} 位</strong>——六條線的第一位在門前切齊，後面一位接一位排好。${s.enter-s.assembly>=.01?`${fmt(s.assembly)} 站好，等 <strong>${fmt(s.enter-s.assembly)}</strong>，大隊 ${p.dadui} 一起出發。`:'你到的時候隊伍正好在走，不用停，直接跟上。'}`},
   {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過西一入口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
-   d:`大隊 ${p.dadui} 六路一起進場，每一路 0.4 秒一位；你 ${fmt(s.enter)} 起步，${fmt(s.gate)} 過西一入口。`},
+   d:`${p.dadui===1&&p.slot<10?'大隊 1 頭一批六路一起進場，每一路 0.4 秒一位':'一路接續，到門前就接著走'}；你 ${fmt(s.enter)} 起步，${fmt(s.gate)} 過西一入口。`},
   {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
    d:`過西一入口後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，${fmt(s.arrive)} 到位。`},
  ];}

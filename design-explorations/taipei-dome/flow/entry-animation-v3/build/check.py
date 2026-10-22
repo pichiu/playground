@@ -14,12 +14,12 @@ import routes
 from collide import collisions
 from geo import Poly, pairs
 
-GAP_MIN, GAP_MAX = 0.25, 0.55      # 樓梯口節拍容許 0.4 ± 0.15（避撞平移）
+GAP_MIN, GAP_MAX = build.HEADWAY - 0.15, build.HEADWAY + 0.15   # 樓梯口節拍容許 ± 0.15（避撞平移）
 BOUNDARY_MAX = 7.0                 # 大隊交界：兩路同一大隊人數差到 12 人，短的那路空 0.4×12 + 0.4 + 0.8 ≈ 6.0 秒（spec §4）
-GATE_GAP_MAX = 1.4                 # 西一入口每條線、同一大隊內：一路接續，約 1.2 秒一位（三列交錯）± 避撞平移；大隊 1 頭一批 0.4 秒一位
+GATE_GAP_MAX = 3 * build.HEADWAY + 0.6   # 西一入口每條線、同一大隊內：三列交錯約 3 拍一位 ± 避撞平移；大隊 1 頭一批 0.4 秒一位
 RULE_SLACK = 0.4                   # 交界規則值 = 節拍 ×（兩路該大隊人數差）+ 節拍 + 大隊空檔（build.HEADWAY、build.DADUI_GAP），容許錯開與避撞平移 0.4（spec §4）
 GATE_BOUNDARY_MAX = 12.0           # 西一入口每條線兩個大隊之間的空檔上限：一路接續，只有樓梯交界對齊的空檔（實際 ≤ 約 8 秒）
-LATER_WAIT_MAX = 1.0               # 大隊 1 頭一批以外的人到門前就接著走，最多為了 0.4 秒間隔稍停
+LATER_WAIT_MAX = 1.0               # 大隊 1 頭一批以外的人到門前就接著走，最多為了保持西一入口 0.4 秒間隔稍停
 SHIFT_TOL = 0.16                   # 避撞平移上限 0.15
 WAIT_SLACK = 0.05                  # 每人從離座到到位的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 WAIT_MIN = build.WAIT_MIN           # 等不到這麼久就不算停（建置時也不留停留點）
@@ -200,7 +200,7 @@ def check_all(data, coll=None):
     out['waits'] = dict(violations=len(wait_bad), examples=wait_bad[:3], maxWait=round(max(waits), 3),
                         waiting=sum(1 for w in waits if w >= WAIT_MIN))
     # 3c. 門前切齊、一路接續：大隊 1 頭一批每條線 FIRST_BATCH 人，六條線的第一位站同一條線（切齊），G = T_1 + 0.4·slot + 0.17·j；
-    #     其餘的人到門前就接著走（最多為了 0.4 秒間隔稍停 LATER_WAIT_MAX）
+    #     其餘的人到門前就接著走（最多為了保持西一入口 0.4 秒間隔稍停 LATER_WAIT_MAX）
     q_bad = []
     base_t = sorted(p['t']['gate'] - build.ENTRY_HEADWAY * p['slot'] - build.STAGGER * p['gateLane'] for p in first)
     T1 = base_t[len(base_t) // 2] if base_t else 0.0
