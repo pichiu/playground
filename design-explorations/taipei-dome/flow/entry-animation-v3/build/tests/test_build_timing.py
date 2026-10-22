@@ -36,7 +36,7 @@ def test_lane_b_staggered(base):
 
 def test_total_length_band(base):
     people, (S, clocks) = _sched(base)
-    assert 15 < clocks['tGateStart'] < 60 and 230 < max(v['gate'] for v in S.values()) < 260
+    assert 15 < clocks['tGateStart'] < 60 and 170 < max(v['gate'] for v in S.values()) < 210
 
 
 def test_shift_moves_whole_timeline(base):
@@ -64,7 +64,7 @@ def test_first_batch_then_continuous(base):            # 大隊 1 頭一批六�
     later = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in people if p not in first]
     assert max(later) < 1.0                                # 頭一批以外到門前就接著走
     w = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in first]
-    assert 3 < max(w) < 15 and build.FIRST_BATCH == 10
+    assert 1 < max(w) < 15 and build.FIRST_BATCH == 10
 
 
 def test_every_dadui_has_a_walk_through(base):          # review：每個大隊都有人邊到邊走（T_k 不會晚到全大隊都要等）

@@ -83,7 +83,7 @@ body>.dome-nav.bar a{white-space:nowrap}
   <div class="title" id="title"><h1>版本 3 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、門前集合後六路進場 · 示意時間非現場秒數</p>
    <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>門前排隊中</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
   </div>
-  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span> <span>／ 示意全程 <span id="end"></span></span></div>
+  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span></div>
   <div class="flows"><div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div></div>
   <div class="focus"><strong>示意事件</strong><ol id="cues"></ol></div>
  </div>
@@ -168,7 +168,7 @@ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
   if(mobile){const top=view.p(b[0],b[1])[1],want=$('title').getBoundingClientRect().bottom-$('cv').getBoundingClientRect().top+8;if(top>want)view.cy+=(top-want)/view.s;}   // 手機：地圖貼著標題區下緣，把空白留給底下的流量柱與時鐘
   else{const left=view.p(b[0],b[1])[0],free=view.w-view.pad-view.p(b[2],b[3])[0],need=Math.min(360-left,Math.max(0,free));if(need>0)view.cx-=need/view.s;}};
  refit();view.onresize=()=>{refit();dirty=true;};
- $('end').textContent=fmt(T);track.setAttribute('aria-valuemax',Math.round(T));
+ track.setAttribute('aria-valuemax',Math.round(T));
  buildTrack();
  cues=[{t:0,s:'全員就座'},...S.stair.map(o=>({t:o.a,s:`大隊 ${o.k} 兩路下樓梯`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
  $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:${c}"></i>`).join('');
