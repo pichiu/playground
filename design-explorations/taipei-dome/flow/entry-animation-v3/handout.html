@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>進場動線 2c · 講義</title>
+<link rel="icon" href="data:,">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap"></noscript>
+<style>
+:root{--paper:#ffffff;--ink:#24211c;--dim:#655f55;--rule:#d9d6cc;--blue:#1d4f91;--floor:#efeee9;--rust:#a8461d;--ar:.68;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.65 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--ink);color:var(--paper)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.dome-nav.bar{--line:var(--rule)}
+.sheet{max-width:1400px;margin:auto;padding:18px max(16px,env(safe-area-inset-left)) 48px}
+.mast{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:end;border-bottom:2px solid var(--ink);padding:12px 0 14px;margin-bottom:22px}
+h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(28px,4vw,46px);line-height:1.15;margin:0;letter-spacing:.02em}
+.mast p{margin:8px 0 0;color:var(--dim);max-width:none}
+.mast p.rule{color:var(--ink)}
+.mast .print{font:inherit;background:var(--ink);color:var(--paper);border:0;border-radius:4px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+.key{display:flex;gap:18px;font-size:13px;color:var(--dim);margin-top:10px;flex-wrap:wrap}
+.key span{display:flex;align-items:center;gap:6px}
+.frames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 22px}
+figure[data-key]{margin:0;min-width:0;display:grid;grid-template-columns:minmax(0,11fr) minmax(0,9fr);gap:12px;border-top:1px solid var(--rule);padding-top:10px}
+figure canvas{display:block;width:100%;max-width:100%;aspect-ratio:var(--ar);background:var(--paper)}
+figcaption{min-width:0}
+figcaption h2{margin:0 0 6px;font-family:"Noto Serif TC",serif;font-size:18px;line-height:1.3;font-weight:700}
+figcaption h2 .no{font-size:1.4em;font-weight:900;line-height:1}
+figcaption h2 time{font-weight:500;white-space:nowrap}
+figcaption p{margin:0;font-size:14px;color:var(--dim)}
+figcaption .n{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px 10px;margin:10px 0 0;padding-top:8px;border-top:1px solid var(--rule);font-size:12px;color:var(--dim)}
+figcaption .n div{min-width:0}
+figcaption .n dt{font-size:11px;line-height:1.3}
+figcaption .n dd{margin:0;color:var(--ink);font-size:16px;font-weight:700;line-height:1.2;font-family:"Noto Serif TC",serif}
+figcaption .mv{margin-top:6px;font-size:12px;color:var(--dim)}
+figcaption .mv b{color:var(--ink);font-weight:500}
+.foot{margin-top:28px;border-top:1px solid var(--rule);padding-top:10px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
+@media(max-width:1180px){.frames{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.frames{grid-template-columns:1fr}.mast{grid-template-columns:1fr}.mast .print{justify-self:start}figure[data-key]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@page{size:A3 landscape;margin:10mm}
+@media print{
+ :root{--ph:110mm}
+ body{font-size:9.5pt;line-height:1.5}
+ .print{display:none}
+ .sheet{max-width:none;padding:0}
+ .mast{grid-template-columns:minmax(0,1fr);gap:0;padding:0 0 2.5mm;margin-bottom:4mm}
+ .mast p{margin-top:1.5mm}
+ h1{font-size:20pt}
+ .key{font-size:8.5pt;margin-top:1.5mm}
+ .frames{grid-template-columns:repeat(3,1fr);gap:4mm 6mm}
+ figure[data-key]{grid-template-columns:auto minmax(0,1fr);gap:4mm;padding-top:2.5mm;break-inside:avoid}
+ figure canvas{height:var(--ph);width:calc(var(--ph) * var(--ar))}
+ figcaption h2{font-size:12.5pt;margin-bottom:1.5mm}
+ figcaption p{font-size:9.5pt}
+ figcaption .n{font-size:8pt;margin-top:3mm;padding-top:2mm;gap:1.5mm 3mm}
+ figcaption .n dt{font-size:7.5pt}figcaption .n dd{font-size:11pt}
+ figcaption .mv{font-size:8pt;margin-top:1.5mm}
+ .foot{margin-top:3mm;padding-top:1.5mm;font-size:8pt}
+}
+</style>
+</head>
+<body>
+<div class="sheet" id="sheet">
+<header class="mast">
+ <div>
+  <h1>進場動線 2c · 六個關鍵時刻</h1>
+  <p class="rule" id="rule"></p>
+  <p id="intro"></p>
+  <div class="key"><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" fill="none" stroke="#24211c" stroke-width="1.4"/></svg>白衣</span><span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="#1d4f91"/></svg>藍衣</span><span><svg width="22" height="8" aria-hidden="true"><path d="M1 4h20" stroke="#a8461d" stroke-width="1.5"/></svg>前 8 秒走過的路</span><span>北朝上 · 甲舞台在左</span></div>
+ </div>
+ <button class="print" type="button" onclick="print()">列印 A3</button>
+</header>
+<section class="frames" id="frames" aria-label="六個關鍵時刻"></section>
+<p class="foot"><span id="foot-l">讀取中…</span><span id="foot-r"></span></p>
+</div>
+<script src="core.js"></script>
+<script>
+'use strict';
+const {pos,state,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
+Dome.nav('handout.html');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const C={};for(const n of ['paper','ink','dim','rule','blue','floor','rust'])C[n]=css(n);
+// 北朝上。框住休息區 139–145、B1 走廊、樓梯、B2 集結區、西一入口與西班的場內位置；左緣留給出口與候隊區的字。
+const FRAME=[-15.0,-11.0,0.3,11.6];
+// 與 core.js 的 View 相同，只把像素密度固定：螢幕 2×、列印 3×，1,609 個小點印出來才不糊。
+class SheetView extends View{resize(){const r=this.c.getBoundingClientRect();this.w=r.width;this.h=r.height;this.dpr=matchMedia('print').matches?3:2;this.c.width=Math.round(this.w*this.dpr);this.c.height=Math.round(this.h*this.dpr);this.fit(this.b,true);}}
+const RULE='七個出口 139–145 供三路下樓：任何時刻近的出口供內側路、遠的供外側路，所以走廊不交叉；藍衣依 藍9→藍1 先下 B2 集結，白1 進集結區 1；大隊 1 隊頭站定就出發、不等全部集結完，樓梯同時不停，白2 在樓梯、白3 在 B1 短暫候隊；進場依大隊 1→9 由西一入口六路不斷拍，白4 以後依西一入口時刻倒推離座、直接接尾。';
+// 六個時刻取自 phases 與 groups；group 以 key 找（藍9、白2、白4）。
+function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p])),b9=G['藍9'];
+ return [
+  // 就座階段的結束瞬間就是第一人離座的瞬間；畫面取它前一毫秒，讓「全員就座」真的是 1,609 人都在座位上。
+  {key:'seated',t:ph.seated.t1,tc:ph.seated.t1-1e-3,h:'全員就座',d:'七個出口由上排往下坐，先走的坐上面。'},
+  {key:'descend',t:b9.tStairFirst+8,h:'藍9 下樓、三路成形',d:`${['A','B','C'].map(L=>b9.lanes[L].exit).join('、')} 各供一路（A·B·C）；近的供內側路、遠的供外側路。`},
+  {key:'blue-b2',t:ph.enter.t0,h:'藍衣 B2 到位、大隊 1 出發',d:'藍 8·9／6·7／4·5／2·3 兩隊一區，藍1 與白1 同在集結區 1；隊頭站定就出發，不等全部集結完。'},
+  {key:'enter',t:G['白2'].tStairFirst+6,h:'大隊 1 進場、樓梯不停',d:'西一入口六路，北三路白、南三路藍，每路不斷拍；同一時間白2 繼續下樓，在樓梯上短暫停下。'},
+  {key:'feed',t:G['白4'].tLeave,h:'白4 由出口接尾',d:'白3 在 B1 只停了幾秒，此刻已下樓隨大隊 3 進場；白4 以後依西一入口時刻倒推離座，直接下樓接尾，不集結。'},
+  {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
+let jobs=[];
+function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
+ $('rule').textContent=RULE;
+ $('intro').textContent=`每格是同一時刻 ${M.population.toLocaleString('zh-TW')} 人的位置：空心是白衣、實心是藍衣，細線是之前 8 秒走過的路，不用播放也看得出往哪裡走。`;
+ $('foot-l').textContent=M.assumptions[0];
+ $('foot-r').textContent=`資料 data.json（${M.built}）`;
+ const F=moments(ds);frames.innerHTML='';jobs=[];
+ F.forEach((f,i)=>{const tc=f.tc??f.t,cs=counts(tc,ds.P);
+  const walk=new Set(),enter=new Set();for(const p of ds.P){const s=state(p,tc);if(s==='walk')walk.add(p.costume+p.dadui);else if(s==='enter')enter.add(p.costume+p.dadui);}
+  const names=set=>ds.groups.filter(g=>set.has(g.key)).map(g=>g.key).join('、');
+  const fig=document.createElement('figure');fig.dataset.key=f.key;
+  const cv=document.createElement('canvas');cv.setAttribute('role','img');cv.setAttribute('aria-label',`${f.h}，${fmt(f.t)} 的全體位置`);fig.append(cv);
+  fig.insertAdjacentHTML('beforeend',`<figcaption><h2><span class="no">${i+1}</span> · ${esc(f.h)} · <time>${fmt(f.t)}</time></h2><p>${esc(f.d)}</p>
+   <dl class="n"><div><dt>休息區</dt><dd>${cs.seated}</dd></div><div><dt>離座在走</dt><dd>${cs.walk}</dd></div><div><dt>集結等候</dt><dd>${cs.wait}</dd></div><div><dt>進場中</dt><dd>${cs.enter}</dd></div><div><dt>到位</dt><dd>${cs.done}</dd></div></dl>
+   ${walk.size?`<div class="mv">離座在走：<b>${names(walk)}</b></div>`:''}${enter.size?`<div class="mv">進場中：<b>${names(enter)}</b></div>`:''}</figcaption>`);
+  frames.append(fig);jobs.push({cv,ds,t:tc});});
+ for(const j of jobs){j.v=new SheetView(j.cv,{pad:6});j.v.onresize=()=>paint(j);}}
+function paint({v,ds,t}){v.fit(FRAME,true);const c=v.begin(C.paper),D=ds.D,r=Math.max(.9,.04*v.s);
+ v.base(D.map,{floor:C.floor,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,stand:C.rule,gate:C.ink,gateA:.08});
+ c.globalAlpha=.7;c.lineCap='round';
+ for(const p of ds.P){const st=state(p,t);if(st!=='walk'&&st!=='enter')continue;const pts=p.path.filter(q=>q[2]>t-8&&q[2]<t).flatMap(q=>[q[0],q[1]]),a=pos(p,Math.max(0,t-8)),b=pos(p,t);v.stroke([a[0],a[1],...pts,b[0],b[1]],C.rust,.6);}
+ c.globalAlpha=1;
+ for(const p of ds.P){const q=pos(p,t);if(p.costume==='白')v.dot(q[0],q[1],r,C.paper,C.ink,.7);else v.dot(q[0],q[1],r,C.blue);}
+ labels(v,D);}
+// 地名：七個出口（休息區號）、樓梯、集結區、西一入口、甲舞台。字都壓白邊，放在隊伍外側。
+function labels(v,D){const N=D.nodes,lab=(s,x,y,o={})=>v.text(s,x,y,{color:C.dim,size:9,weight:700,halo:C.paper,...o});
+ for(const s of D.map.stands)lab(s.sec,s.labelXY[0],s.labelXY[1],{align:'right',dx:-2});
+ // 139、白 3 候隊、樓梯口由北到南疊在走廊左側：139 用看台自己的標籤點，白 3 齊 P6 區頭，樓梯壓低到樓梯口下方。
+ lab(N.P6.label,N.P6.X,N.P6.Y,{align:'right',dx:-6});
+ lab('樓梯',N.STAIR_TOP.X,N.STAIR_TOP.Y,{align:'right',dx:-6,dy:8});
+ lab('集結區 1',N.P1.X,N.P1.Y,{align:'right',dx:-8});
+ for(const k of ['P2','P3','P4','P5']){const n=N[k],d=Math.hypot(n.X,n.Y),ox=n.X/d,oy=n.Y/d;lab(n.label,n.X+ox*.75,n.Y+oy*.75,{align:k==='P5'?'center':'right'});}
+ lab(N.GATE6.label,N.GATE6_IN.X,N.GATE6_IN.Y,{color:C.ink,align:'left',dx:6,font:'"Noto Serif TC",serif'});
+ v.text('甲舞台',-6.3,0,{color:C.dim,size:11,font:'"Noto Serif TC",serif'});}
+function repaint(){for(const j of jobs){j.v.resize();paint(j);}}
+addEventListener('beforeprint',repaint);addEventListener('afterprint',repaint);
+(async()=>{let ds;try{ds=await Dome.load();}catch(e){$('foot-l').textContent=e.message;return;}
+ build(ds);await document.fonts.ready;jobs.forEach(paint);window.__dome_ready=true;})();
+</script>
+</body>
+</html>
