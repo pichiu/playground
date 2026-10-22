@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>2c · 出口帶隊卡</title>
+<title>進場動線版本 3 · 出口帶隊卡</title>
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
@@ -126,13 +126,13 @@ canvas#seatmap{display:block;cursor:pointer}
 </head>
 <body>
 <div class="wrap">
-<a class="back" href="index.html">‹ 進場動線 2c · 總覽</a>
+<a class="back" href="index.html">‹ 進場動線版本 3 · 總覽</a>
 <p class="eyebrow">F · 出口帶隊卡</p>
 <p class="lede">休息區出口幹部用。選出口：由上排往下的帶隊順序、每排誰坐哪、每段走哪一路、什麼時候換口接尾。先走的坐上面，每排由出口側往中央。</p>
 <div class="layout">
  <aside class="side" aria-label="選出口">
   <div class="pick" id="pick" role="group" aria-label="七個出口（用量／可用席）"></div>
-  <p class="hint">數字為 用量／可用席。<span class="lnchip lane-A" style="background:var(--laneA)">A</span> 靠看台 <span class="lnchip" style="background:var(--laneB)">B</span> 中間 <span class="lnchip" style="background:var(--laneC)">C</span> 外側。</p>
+  <p class="hint">數字為 用量／可用席。<span class="lnchip lane-A" style="background:var(--laneA)">A</span> 白衣・靠看台 <span class="lnchip" style="background:var(--laneB)">B</span> 藍衣・外側。</p>
  </aside>
  <main id="main">
   <section class="card" id="head"><p class="err">讀取動線資料…</p></section>
@@ -158,6 +158,8 @@ const WARM=['#fbf4e3','#f4e8c6','#ecd9a7','#e2c98a','#d6b86f','#c7a65a','#b59348
 const colorOf=p=>(p.costume==='藍'?BLUE:WARM)[p.dadui-1];
 const inkOf=p=>(p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';   // 深色底才用白字，對比皆 ≥ 4.5:1
 const SIDE={N:'往北側',S:'往南側'};
+const COST={A:'白',B:'藍'};
+const blk=(w,L)=>`大隊 ${w.dadui} ${COST[L]}衣 列 ${w.lie} 第 ${w.pai} 排`;   // 換口可以落在大隊中間，所以段落起訖寫到列與排
 const PAI_MAX=14;
 let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,showIds=false,cells=[],cellMap=new Map(),rt=0;
 
@@ -183,9 +185,9 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  const first=byId.get(e.order[0]),last=byId.get(e.order[e.order.length-1]);
  const empties=e.capacity-e.used;
  // 每段：接在誰後面、之後換誰
- const segs=e.segments.map((s,i)=>{const L=s.lane,ls=ds.lanes[L].segments,j=ls.findIndex(x=>x.exit===key&&x.fromBlock===s.fromBlock),prev=ls[j-1],nx=ls[j+1];
-  const nxSeg=nx?ds.exitsByKey[nx.exit].segments.find(x=>x.lane===L&&x.fromBlock===nx.fromBlock):null;
-  return {s,i,L,prev,nx,nxSeg,blocks:s.fromBlock===s.toBlock?s.fromBlock:`${s.fromBlock} … ${s.toBlock}`};});
+ const segs=e.segments.map((s,i)=>{const L=s.lane,ls=ds.lanes[L].segments,j=ls.findIndex(x=>x.exit===key),prev=ls[j-1],nx=ls[j+1];
+  const nxSeg=nx?ds.exitsByKey[nx.exit].segments.find(x=>x.lane===L):null;
+  return {s,i,L,prev,nx,nxSeg,blocks:`${blk(s.from,L)} … ${blk(s.to,L)}`};});
  $('head').innerHTML=`<h1>${e.key} 出口 <span>（${esc(e.stairLabel)}）</span></h1>
  <dl class="facts">
   <div><dt>離座方向</dt><dd><b>${SIDE[e.side]||e.side}</b>上 ${esc(e.stairLabel)}</dd></div>
@@ -193,13 +195,13 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
   <div><dt>最後一位離座</dt><dd><b>${fmt(last.t.leave)}</b>${last.id} · 第 ${last.rest.pai} 排 ${last.rest.no} 號</dd></div>
   <div><dt>用量</dt><dd><b>${e.used} <small style="font-size:14px;font-weight:500">/ ${e.capacity} 席</small></b>${e.rows.length} 排${empties?` · 空 ${empties} 席`:' · 坐滿'}</dd></div>
  </dl>
- <ol class="segs" aria-label="本出口供應的路與時間">${segs.map(({s,L,prev,nx,nxSeg,blocks})=>`<li class="lane-${L}"><b class="l">${esc(ds.laneName(L))}</b> ${blocks} · ${s.n} 人 · 第 ${s.fromRow} → ${s.toRow} 排<br><span class="tm">第一位 ${fmt(s.tFirstLeave)} 離座 … 最後一位 ${fmt(s.tLastLeave)}</span><br><span class="nx">${prev?`接在 ${prev.exit} 出口的 ${prev.toBlock} 之後`:`${L} 路由本出口開頭`}${nx?` → ${s.toBlock} 走完換 ${nx.exit} 出口（${nx.fromBlock} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:` → ${s.toBlock} 走完 ${L} 路結束`}</span></li>`).join('')}</ol>`;
+ <ol class="segs" aria-label="本出口供應的路與時間">${segs.map(({s,L,prev,nx,nxSeg,blocks})=>`<li class="lane-${L}" data-seg="${L}"><b class="l">${esc(ds.laneName(L))}</b> ${blocks} · ${s.n} 人 · 第 ${s.fromRow} → ${s.toRow} 排<br><span class="tm">第一位 ${fmt(s.tFirstLeave)} 離座 … 最後一位 ${fmt(s.tLastLeave)}</span><br><span class="nx">${prev?`接在 ${prev.exit} 出口的 ${blk(prev.to,L)} 之後`:`${L} 路由本出口開頭`}${nx?` → 本出口坐滿，換 ${nx.exit} 出口（${blk(nx.from,L)} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:` → ${L} 路到此結束`}</span></li>`).join('')}</ol>`;
  // 段落交界：掛在該段最後一位所在那一排之後
  const hand=new Map(),push=(pai,h)=>{if(!hand.has(pai))hand.set(pai,[]);hand.get(pai).push(h);};
  for(const {s,i,L,nx,nxSeg} of segs){const lp=byId.get(s.lastId),where=`${s.lastId}，第 ${lp.rest.pai} 排 ${lp.rest.no} 號，${fmt(s.tLastLeave)} 離座`;
-  push(s.toRow,`<div class="hand lane-${L}" data-handover="${esc(s.toBlock)}"><div class="t">${fmt(s.tLastLeave)}<small>換口</small></div><p><b>${s.toBlock} 最後一位</b>（${where}）→ ${nx?`<b>換 ${nx.exit} 出口接 ${L} 路</b>（${nx.fromBlock} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:`<b>${L} 路到此結束</b>（全路 ${ds.lanes[L].total} 人走完）`}</p></div>`);
+  push(s.toRow,`<div class="hand lane-${L}" data-handover="${L}"><div class="t">${fmt(s.tLastLeave)}<small>換口</small></div><p><b>本出口 ${L} 路最後一位</b>（${where}）→ ${nx?`<b>換 ${nx.exit} 出口接 ${L} 路</b>（${blk(nx.from,L)} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:`<b>${L} 路到此結束</b>（全路 ${ds.lanes[L].total} 人走完）`}</p></div>`);
   const n2=e.segments[i+1];
-  if(n2){const fp=byId.get(n2.firstId);push(s.toRow,`<div class="hand switch lane-${n2.lane}" data-handover="${esc(s.toBlock)}→${n2.lane}"><div class="t">${fmt(n2.tFirstLeave)}<small>本出口改路</small></div><p><b>${s.toBlock} 最後一位</b> → <b>本出口改供 ${n2.lane} 路</b>（${n2.fromBlock} 起，${n2.firstId} 第 ${fp.rest.pai} 排 ${fp.rest.no} 號，${fmt(n2.tFirstLeave)} 第一位離座；中間空 ${fmt(n2.tFirstLeave-s.tLastLeave)}）</p></div>`);}}
+  if(n2){const fp=byId.get(n2.firstId);push(s.toRow,`<div class="hand switch lane-${n2.lane}" data-handover="${L}→${n2.lane}"><div class="t">${fmt(n2.tFirstLeave)}<small>本出口改路</small></div><p><b>${L} 路最後一位走後</b> → <b>本出口改供 ${n2.lane} 路</b>（${blk(n2.from,n2.lane)} 起，${n2.firstId} 第 ${fp.rest.pai} 排 ${fp.rest.no} 號，${fmt(n2.tFirstLeave)} 第一位離座）；<b>中間空檔 ${fmt(n2.tFirstLeave-s.tLastLeave)}</b>，這段時間本出口沒有人走，不要提早放人。</p></div>`);}}
  // 每排
  const tot=r=>(S.usable.get(r.pai)||r.seats).length,maxTot=Math.max(...e.rows.map(tot));
  const rowsHtml=e.rows.map(r=>{const pieces=[];
