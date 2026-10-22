@@ -89,7 +89,7 @@ function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
   out.push({lie,exit:ds.exitsOfFile(lie).join('/'),lane:g.lane,g,gi,ps,file:byLie.get(lie)});}});return out;}
 // 摘要：寫出在門前等最久的人。
 function summaryText(ds){const w=ds.P.reduce((a,p)=>ds.wait(p)>ds.wait(a)?p:a);
- return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在西一入口前排隊等</b>、藍是進場。每個大隊約三分之二的人到門前就一起進場，所以每列前段的人等得最久、最後幾位幾乎不用等。最久是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）${fmt(ds.wait(w))}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
+ return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在西一入口前排隊等</b>、藍是進場。只有大隊 1 頭一批在門前集合、切齊後出發，之後一路接續，到門前就走。最久是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）${fmt(ds.wait(w))}</b>；全員到位 <b>${fmt(ds.T_END)}</b>。`;}
 // 版面
 const g=$('g'),gx=g.getContext('2d'),labels=$('labels'),scroller=$('scroller');
 let W=0,H=0,dpr=1,scrollable=false;const PL=8,R=10,TOP=48,RH=13,GAP=8,BOT=32;

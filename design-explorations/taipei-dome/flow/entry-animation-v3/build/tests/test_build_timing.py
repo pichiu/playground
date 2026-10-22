@@ -13,7 +13,7 @@ def _sched(base):
 def test_first_leave_is_t0_and_order(base):
     people, (S, clocks) = _sched(base)
     assert abs(min(v['leave'] for v in S.values()) - build.T0) < 1e-6
-    assert all(v['leave'] < v['stair'] < v['assembly'] <= v['enter'] < v['gate'] for v in S.values())
+    assert all(v['leave'] < v['stair'] < v['assembly'] <= v['enter'] + 1e-9 and v['enter'] < v['gate'] for v in S.values())
 
 
 def test_stair_beats_and_dadui_alignment(base):
@@ -49,20 +49,22 @@ def test_shift_moves_whole_timeline(base):
     assert all(abs(S1[pid][k] - S0[pid][k] - 0.1) < 1e-9 for k in S0[pid])
 
 
-def test_door_queue_gate_clock(base):                # 門前集合、大隊一起進場：同一大隊每條線 0.4 秒一位、六條線錯開 0.17 秒（同 2c）
+def test_first_batch_then_continuous(base):            # 大隊 1 頭一批六條線切齊（同 2c 節奏）；之後每條線一路接續、不分大隊停
     people, (S, clocks) = _sched(base)
-    for d in range(1, 10):
-        ps = [p for p in people if p['dadui'] == d]
-        T = min(S[p['id']]['gate'] - build.ENTRY_HEADWAY * p['slot'] - build.STAGGER * p['gateLane'] for p in ps)
-        assert all(abs(S[p['id']]['gate'] - (T + build.ENTRY_HEADWAY * p['slot'] + build.STAGGER * p['gateLane'])) < 1e-6 for p in ps)
-    assert build.ENTRY_HEADWAY == 0.4
-
-
-def test_door_queue_waits_and_no_starving(base):        # 先到的在門前等，最後幾位邊到邊走：沒有人得在到門前之前就出發
-    people, (S, clocks) = _sched(base)
-    w = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in people]
-    assert min(w) > -1e-9 and 15 < max(w) < 40
-    assert sum(1 for x in w if x < 0.05) >= 9           # 每大隊至少有一位不必停
+    first = [p for p in people if p['dadui'] == 1 and p['slot'] < build.FIRST_BATCH]
+    T = min(S[p['id']]['gate'] - build.ENTRY_HEADWAY * p['slot'] - build.STAGGER * p['gateLane'] for p in first)
+    assert all(abs(S[p['id']]['gate'] - (T + build.ENTRY_HEADWAY * p['slot'] + build.STAGGER * p['gateLane'])) < 1e-6 for p in first)
+    import collections
+    lines = collections.defaultdict(list)
+    for p in people:
+        lines[p['gateLane']].append(S[p['id']]['gate'])
+    for g in lines.values():
+        g.sort()
+        assert min(b - a for a, b in zip(g, g[1:])) >= build.ENTRY_HEADWAY - 1e-9 and max(b - a for a, b in zip(g, g[1:])) < 12
+    later = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in people if p not in first]
+    assert max(later) < 1.0                                # 頭一批以外到門前就接著走
+    w = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in first]
+    assert 3 < max(w) < 15 and build.FIRST_BATCH == 10
 
 
 def test_every_dadui_has_a_walk_through(base):          # review：每個大隊都有人邊到邊走（T_k 不會晚到全大隊都要等）

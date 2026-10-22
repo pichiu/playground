@@ -28,7 +28,7 @@ def test_check_all_green(built):
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
     assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= 0.55 and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
-    assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= 0.55 for v in C['continuity']['gate'].values())
+    assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= 1.4 and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
 
@@ -167,9 +167,9 @@ def test_check_detects_slow_segment(built):            # 放慢某一段（不�
 def test_check_door_queue_tamper(built):                # 門前切齊：把某一大隊某條線的隊頭往後挪，就不齊了
     _, D = built
     C = check.check_all(D)
-    assert C['doorQueue']['violations'] == 0 and C['doorQueue']['dadui'] == 9
+    assert C['doorQueue']['violations'] == 0 and C['doorQueue']['firstBatch'] == 60 and C['doorQueue']['laterWaiting'] == 0
     D = _copy(D)
-    p = next(q for q in D['persons'] if q['dadui'] == 2 and q['slot'] == 0 and q['gateLane'] == 3)
+    p = next(q for q in D['persons'] if q['dadui'] == 1 and q['slot'] == 0 and q['gateLane'] == 3)
     for q in p['path']:
         if p['t']['assembly'] - 1e-6 <= q[2] <= p['t']['enter'] + 1e-6:
             q[0] += 0.2
@@ -188,16 +188,17 @@ def test_check_bounds_gate_gap_between_dadui(built):    # review：西一入口�
     assert C['continuity']['ok'] is False and C['ok'] is False
 
 
-def test_check_positions_heads_without_wait(built):     # review：不用等的隊頭也要檢查站位
+def test_check_detects_later_wait(built):              # 一路接續：頭一批以外的人在門前停超過 1 秒就算違反
     _, D = built
     D = _copy(D)
-    p = next(q for q in D['persons'] if q['slot'] == 0 and q['t']['enter'] - q['t']['assembly'] < 0.01) if any(
-        q['slot'] == 0 and q['t']['enter'] - q['t']['assembly'] < 0.01 for q in D['persons']) else None
-    if p is None:
-        p = next(q for q in D['persons'] if q['slot'] == 0)
-        p['t']['enter'] = p['t']['assembly']
-        p['path'] = [q for q in p['path'] if not (q[2] > p['t']['assembly'] + 1e-6 and abs(q[2] - p['t']['enter']) < 1e-6)]
-    q = next(q for q in p['path'] if abs(q[2] - p['t']['assembly']) < 1e-6)
-    q[0] += 0.2
+    p = next(q for q in D['persons'] if q['dadui'] == 5 and q['slot'] == 3)
+    k = next(i for i, q in enumerate(p['path']) if abs(q[2] - p['t']['enter']) < 1e-6)
+    q = p['path'][k]
+    p['path'].insert(k + 1, [q[0], q[1], q[2] + 3.0])
+    for r in p['path'][k + 2:]:
+        r[2] += 3.0
+    for key in ('enter', 'gate', 'arrive'):
+        p['t'][key] += 3.0
     C = check.check_all(D)
-    assert C['doorQueue']['violations'] >= 1 and C['ok'] is False
+    assert C['doorQueue']['laterWaiting'] >= 1 and C['ok'] is False
+

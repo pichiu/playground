@@ -128,7 +128,7 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'blue-first',t:first('藍').t.leave,h:'藍衣第一位離座',d:`${who(first('藍'))} 先起身，走 ${ds.laneName('B')}`},
   {id:'white-last',t:last('白').t.leave,h:'白衣最後一位離座',d:`${who(last('白'))}；白衣從 ${exitsTxt(W)} 出口出完`},
   {id:'blue-last',t:last('藍').t.leave,h:'藍衣最後一位離座',d:`${who(last('藍'))}；藍衣從 ${exitsTxt(B)} 出口出完`},
-  {id:'go',t:Math.min(...ps.map(p=>p.t.enter)),h:'門前出發',d:`六條線在西一入口前切齊，約三分之二的人到齊，大隊 ${k} 六路一起進場（每路 0.4 秒一位）；還在下樓的幾位邊到邊走跟上`},
+  {id:'go',t:Math.min(...ps.map(p=>p.t.enter)),h:k===1?'門前出發':'接續進場',d:k===1?'六條線在西一入口前切齊，每條線先集合 10 人就出發，每路 0.4 秒一位；後面的人到門前就接著走':`接在大隊 ${k-1} 後面，到門前就接著走，不用停`},
   {id:'gate-first',t:g0.t.gate,h:'第一位過西一入口',d:'北三路白、南三路藍'},
   {id:'gate-last',t:g1.t.gate,h:'最後一位過西一入口',d:k<9?`大隊 ${k+1} 接著進場`:'最後一個大隊，西一入口收'},
   {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];

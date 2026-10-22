@@ -87,11 +87,12 @@ class Geometry:
     def _b2_to_gate(self, j):
         return lane_run(self.B2, B2_U_START, QUEUE_HEAD, line_off(j)) + [self.GATE_PTS[j]]
 
-    def queue_u(self, person):
-        """門前集合的位置：自己那條線上、隊頭往後第 slot 位；排到側移完成之前（樓梯平台）就是隊伍太長。"""
-        u = QUEUE_HEAD - QUEUE_STEP * person['slot']
+    def queue_u(self, person, q=None):
+        """門前排隊的位置：自己那條線上、隊頭往後第 q 位（q 預設為列內位次）；排到側移完成之前（樓梯平台）就是隊伍太長。"""
+        q = person['slot'] if q is None else q
+        u = QUEUE_HEAD - QUEUE_STEP * q
         if u < QUEUE_MIN_U:
-            raise ValueError(f"門前第 {person['slot'] + 1} 位排到 u {u:.2f}，已在樓梯平台後面（下限 {QUEUE_MIN_U}）")
+            raise ValueError(f"門前第 {q + 1} 位排到 u {u:.2f}，已在樓梯平台後面（下限 {QUEUE_MIN_U}）")
         return u
 
     def _pre_b2(self, person):
@@ -102,9 +103,9 @@ class Geometry:
         pts.append(self.B1.off(u_in, off))
         return pts + lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off)
 
-    def queue_routes(self, person):
-        """(到門前位置的路線, 門前位置到收攏點的路線)：前者從座位起、沿兩路下樓、側移到自己那條線後停在 queue_u。"""
-        j, uq = person['gateLane'], self.queue_u(person)
+    def queue_routes(self, person, q=None):
+        """(到門前位置的路線, 門前位置到收攏點的路線)：前者從座位起、沿兩路下樓、側移到自己那條線後停在第 q 位。"""
+        j, uq = person['gateLane'], self.queue_u(person, q)
         b2 = self._b2_to_gate(j)
         spot = self.B2.off(uq, line_off(j))
         to = self._pre_b2(person) + [q for q in b2[:-1] if self.B2.proj(q)[0] < uq - 1e-6] + [spot]
