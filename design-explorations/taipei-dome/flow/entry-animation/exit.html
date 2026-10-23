@@ -8,9 +8,9 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
 <style>
-:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--on-accent:#fff;--grid:#e6e5de;--dead:#9a9f9c;--laneA:#e0a73a;--laneB:#7fa5c7;--laneC:#9b8ad1;--tick:rgba(255,255,255,.5);color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--tick:rgba(0,0,0,.35);color-scheme:dark}}
-:root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--tick:rgba(0,0,0,.35);color-scheme:dark}
+:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--on-accent:#fff;--grid:#e6e5de;--dead:#9a9f9c;--keep:#e9a198;--laneA:#e0a73a;--laneB:#7fa5c7;--laneC:#9b8ad1;--tick:rgba(255,255,255,.5);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--keep:#7a3f38;--tick:rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--keep:#7a3f38;--tick:rgba(0,0,0,.35);color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 a{color:var(--accent);text-underline-offset:3px}
@@ -139,7 +139,7 @@ canvas#seatmap{display:block;cursor:pointer}
  </main>
 </div>
 <section class="card map" id="map">
- <h2><span>休息區座位圖 <small>七區並排 · 左 139 → 右 145 · 上排在上 · 顏色＝大隊，灰＝空席，深灰＝不可用／工作席</small></span><span class="tools"><button type="button" id="zoom" aria-pressed="false">放大</button></span></h2>
+ <h2><span>休息區座位圖 <small>七區並排 · 左 139 → 右 145 · 上排在上 · 顏色＝大隊，灰＝空席，玫瑰紅＝保留不坐，深灰＝不可用／工作席</small></span><span class="tools"><button type="button" id="zoom" aria-pressed="false">放大</button></span></h2>
  <div class="scroll" id="mapscroll"><canvas id="seatmap" role="img" aria-label="休息區七區座位圖，每席一格，顏色為大隊"></canvas></div>
  <p id="seat-tip" aria-live="polite">點一下座位：顯示位置編碼、大隊、走哪一路。</p>
  <div class="legend" id="legend"></div>
@@ -158,13 +158,14 @@ const colorOf=p=>(p.costume==='藍'?BLUE:WARM)[p.dadui-1];
 const inkOf=p=>(p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';   // 深色底才用白字，對比皆 ≥ 4.5:1
 const SIDE={N:'往北側',S:'往南側'};
 const PAI_MAX=14;
+const reserved=s=>(s.sec==='139'&&s.no<=(s.pai>=11?5:3))||(s.sec==='144'&&s.pai<=6);   // 與 plan.seat_reserved 同一條規則：139 保留 31 席、144 第 1–6 排
 let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,showIds=false,cells=[],cellMap=new Map(),rt=0;
 
 // ---------- 索引：每區的座位、theta 範圍、可用席、出口在哪一端 ----------
 function buildIdx(){const R=ds.D.restSeats;TH={min:Infinity,max:-Infinity};
  for(const s of R){const S=SEC[s.sec]||(SEC[s.sec]={sec:s.sec,seats:[],thMin:Infinity,thMax:-Infinity,usable:new Map()});S.seats.push(s);
   if(s.theta<S.thMin)S.thMin=s.theta;if(s.theta>S.thMax)S.thMax=s.theta;if(s.theta<TH.min)TH.min=s.theta;if(s.theta>TH.max)TH.max=s.theta;
-  const ok=(s.kind==='normal'||s.kind==='blue')&&!(s.sec==='139'&&s.no<=(s.pai>=11?5:3))&&!(s.sec==='144'&&s.pai<=6);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 保留 31 席、144 第 1–6 排保留
+  const ok=(s.kind==='normal'||s.kind==='blue')&&!reserved(s);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 保留 31 席、144 第 1–6 排保留
   if(ok){if(!S.usable.has(s.pai))S.usable.set(s.pai,[]);S.usable.get(s.pai).push(s.no);}}
  SECS=Object.keys(SEC).sort();
  for(const e of ds.exits){const S=SEC[e.sec];if(!S)continue;const f=ds.byId.get(e.order[0]).rest,st=S.seats.find(s=>s.pai===f.pai&&s.no===f.no);S.exitRight=st?st.theta>(S.thMin+S.thMax)/2:false;}}
@@ -220,7 +221,7 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  const r0=e.rows[0];
  $('rows').classList.toggle('show-ids',showIds);
  $('rows').innerHTML=`<div class="rhead"><h2>帶隊順序 · 由上排往下</h2><button type="button" class="tg" id="idtg" aria-pressed="${showIds}">顯示每席人員編號</button></div><p class="how">本出口 ${e.used} 人依序從第 ${r0.pai} 排帶起，每排由出口側（${flip?'畫面右側':'畫面左側'}，與下方座位圖同方向）${r0.seats[0]} 號往 ${r0.seats[r0.seats.length-1]} 號方向；一排走完接下一排。色帶寬度依座位數，每格一席，底線顏色是走哪一路。</p><div class="dir">${flip?'<span>◀ 中央</span><span class="ex">出口側（先走）▶</span>':'<span class="ex">◀ 出口側（先走）</span><span>中央 ▶</span>'}</div>${rowsHtml}${unused.length?`<p class="unused">第 ${unused.join('、')} 排未使用（${unused.reduce((a,p)=>a+S.usable.get(p).length,0)} 席空）。</p>`:''}`;
- $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
+ $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--keep)"></i>保留不坐</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
 }
 // 色帶小格放不下字時藏起來（說明列仍完整列出）
 function alignIds(){for(const w of $('rows').querySelectorAll('.bs[data-flip="1"]'))w.scrollLeft=w.scrollWidth;}   // 窄螢幕要橫向捲時，鏡射的排先停在出口側（右端）
@@ -237,7 +238,7 @@ function drawMap(scrollTo=false){if(!ds)return;
  const W=Math.ceil(units*cell+padL+padR),H=Math.ceil(top+PAI_MAX*ch+bot),dpr=Math.min(2,devicePixelRatio||1);
  cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
- const col={grid:cssVar('--grid'),dead:cssVar('--dead'),dim:cssVar('--dim'),ink:cssVar('--ink'),accent:cssVar('--accent')};
+ const col={grid:cssVar('--grid'),dead:cssVar('--dead'),keep:cssVar('--keep'),dim:cssVar('--dim'),ink:cssVar('--ink'),accent:cssVar('--accent')};
  const F='"Noto Sans TC",system-ui,sans-serif',X=th=>padL+(th-TH.min)/DEG*cell,Y=pai=>top+(PAI_MAX-pai)*ch;
  cells=[];cellMap.clear();
  c.font=`500 10px ${F}`;c.fillStyle=col.dim;c.textBaseline='middle';
@@ -251,14 +252,14 @@ function drawMap(scrollTo=false){if(!ds)return;
    else{c.textAlign='left';c.fillText('出口',xs+7,y);c.beginPath();c.moveTo(xs+5,y-8);c.lineTo(xs,y-4);c.lineTo(xs+5,y);c.fill();}}
   c.globalAlpha=isCur?1:.6;
   for(const s of S.seats){const x=X(s.theta),y=Y(s.pai),w=Math.max(1,cell-1),h=ch-1;
-   c.fillStyle=(s.kind==='blocked'||s.kind==='work')?col.dead:s.who?colorOf(ds.byId.get(s.who)):col.grid;c.fillRect(x,y,w,h);
+   c.fillStyle=(s.kind==='blocked'||s.kind==='work')?col.dead:s.who?colorOf(ds.byId.get(s.who)):reserved(s)?col.keep:col.grid;c.fillRect(x,y,w,h);
    const rec={x,y,w,h,s};cells.push(rec);cellMap.set(`${s.sec}-${s.pai}-${s.no}`,rec);}
   c.globalAlpha=1;}
  if(sel){const rec=cellMap.get(sel);if(rec){c.strokeStyle=col.ink;c.lineWidth=2;c.strokeRect(rec.x-1.5,rec.y-1.5,rec.w+3,rec.h+3);}}
  if(scrollTo&&SEC[ds.exitsByKey[cur].sec]){const S=SEC[ds.exitsByKey[cur].sec],xs=X(S.thMin),xe=X(S.thMax)+cell;if(xs<sc.scrollLeft||xe>sc.scrollLeft+sc.clientWidth)sc.scrollLeft=Math.max(0,xs-24);}}
 function showTip(s){sel=`${s.sec}-${s.pai}-${s.no}`;const where=`${s.sec} 區 ${s.pai} 排 ${s.no} 號`;let t;
  if(s.kind==='blocked')t=`${where} · 不可用席`;else if(s.kind==='work')t=`${where} · 工作席，不排人`;
- else if(!s.who)t=`${where} · 空席`;
+ else if(!s.who)t=reserved(s)?`${where} · 保留不坐`:`${where} · 空席`;
  else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位`;}
  $('seat-tip').innerHTML=t+(s.sec!==cur?` <a href="?e=${s.sec}" data-go="${s.sec}">看 ${s.sec} 出口</a>`:'');drawMap();}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=Infinity;
