@@ -89,6 +89,7 @@ def check_all(data):
                                       [dict(kind='walking', who=list(k), t=t) for k, t in list(wk.items())[:3]])
     # 2. 逐序號巢狀
     seqs = {L: sorted((p for p in persons if p['lane'] == L), key=lambda p: p['laneIdx']) for L in plan.LANES}
+    cap_of = {e: len(plan.usable_seats(data, e)) for e in plan.EXITS}   # 可用席由 restSeats 重算，指派與容量兩項共用
     n = min(len(v) for v in seqs.values())
     bad = []
     for i in range(n):
@@ -97,15 +98,14 @@ def check_all(data):
             bad.append(dict(idx=i, exits={L: seqs[L][i]['exit'] for L in plan.LANES}))
     out['nesting'] = dict(violations=len(bad), indices=n, examples=bad[:3])
     # 2b. 指派性質（§3.3）：每路換口只往上游；換口前那個出口已用滿（各路合計）；每序號三路出口在三座不同階梯；
-    #     分坐兩出口的列（拆欄）只列出、不算違反（10/23 保留不坐之後只剩 4 席，換口只能落在列中間）
-    cap_of = {e: len(plan.usable_seats(data, e)) for e in plan.EXITS}
+    #     分坐兩出口的列（拆欄）只列出、不算違反（10/23 保留不坐之後只剩 6 席，換口只能落在列中間）
     used_of = collections.Counter(p['exit'] for p in persons)
     upstream, not_full, segments = [], [], {}
     for L in plan.LANES:
         pairs_ = [(a, b) for a, b in zip(seqs[L], seqs[L][1:]) if a['exit'] != b['exit']]
         upstream += [dict(lane=L, idx=a['laneIdx'] + 1, exits=[a['exit'], b['exit']]) for a, b in pairs_ if plan.EXIT_RANK[b['exit']] < plan.EXIT_RANK[a['exit']]]
         not_full += [dict(lane=L, idx=a['laneIdx'] + 1, exits=[a['exit'], b['exit']], used=used_of[a['exit']], capacity=cap_of[a['exit']])
-                     for a, b in pairs_ if plan.EXIT_RANK[b['exit']] >= plan.EXIT_RANK[a['exit']] and used_of[a['exit']] < cap_of[a['exit']]]
+                     for a, b in pairs_ if plan.EXIT_RANK[b['exit']] > plan.EXIT_RANK[a['exit']] and used_of[a['exit']] < cap_of[a['exit']]]
         segments[L] = 1 + len(pairs_)
     stairs_bad = []
     for i in range(n):
@@ -117,7 +117,7 @@ def check_all(data):
         by_col[p['lie']].add(p['exit'])
     split = sorted(lie for lie, es in by_col.items() if len(es) > 1)
     out['assignment'] = dict(upstreamViolations=len(upstream), notFullSwitches=len(not_full), distinctStairViolations=len(stairs_bad),
-                             segments=segments, splitColumns=len(split), splitLies=split, examples=upstream[:2] + not_full[:2] + stairs_bad[:2])
+                             segments=segments, splitColumns=len(split), examples=upstream[:2] + not_full[:2] + stairs_bad[:2])
     # 2c. 路徑不交叉：同一大隊三路（回西一入口 / 進集結區）
     out['routes'] = lane_crossings(data)
     # 3. 不斷拍：西一入口六路、集結階段樓梯口三路、接尾者樓梯口三路
@@ -188,7 +188,7 @@ def check_all(data):
     # 6. 容量：用量由 persons 計、可用席由 restSeats 重算，再與 exits 欄位比對
     cap = {}
     for e in plan.EXITS:
-        used, capacity = len(by_exit[e]), len(plan.usable_seats(data, e))
+        used, capacity = len(by_exit[e]), cap_of[e]
         f = listed.get(e, {})
         cap[e] = dict(used=used, capacity=capacity, fieldsOk=bool(f.get('used') == used and f.get('capacity') == capacity))
     out['capacity'] = cap

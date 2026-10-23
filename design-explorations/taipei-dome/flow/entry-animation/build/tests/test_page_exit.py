@@ -11,7 +11,7 @@ def test_exit_141(open_page):
     assert pg.locator('canvas#seatmap').count() == 1
 
 
-def test_exit_143_last_row_has_empty(open_page):                # 保留不坐之後只剩 143 有空席（4 席）
+def test_exit_143_last_row_has_empty(open_page):                # 保留不坐之後只剩 143 有空席（6 席）
     pg, errs, perrs = open_page('exit.html?e=143', 375, 700)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     rows = pg.locator('[data-row]')

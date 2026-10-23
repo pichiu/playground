@@ -183,4 +183,4 @@ python3 -m pytest tests -q
 2. `seats.csv` 1,609 列、1,609 個不同座位；出口用量 A 139 226、140 291、141 259、142 33；B 142 222、143 185、144 126、145 267（若可用席改了，以 3.2 規則算出的值為準）。
 3. 七個頁面在桌面與 375px 皆可操作、無主控台錯誤、無橫向捲動；總覽檢核表全綠。
 4. `pytest` 全過；2c 的測試也照舊全過（證明沒改到 2c）。
-5. `git diff` 對 `flow/entry-animation/` 只有 README 那一行。
+5. `git diff` 對 `flow/entry-animation/` 只有 README 那一行。（10/23 起 2c 也依保留席重算，刻意改了資料與建置；`test_release` 的「2c 不動」改以那次的 commit 為基準。）

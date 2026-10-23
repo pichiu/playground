@@ -4,6 +4,7 @@
 """
 import collections
 import csv
+import itertools
 import json
 import math
 import sys
@@ -232,7 +233,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
                 if s['exit'] != key:
                     continue
                 ids = [q['id'] for q in sorted((q for q in persons if q['lane'] == L and s['fromIdx'] <= q['laneIdx'] <= s['toIdx']), key=lambda q: q['laneIdx'])]
-                segs.append(dict(lane=L, fromBlock=s['fromBlock'], toBlock=s['toBlock'], fromLabel=s['fromLabel'], toLabel=s['toLabel'], label=s['label'], n=len(ids), firstId=ids[0], lastId=ids[-1],
+                segs.append(dict(lane=L, toBlock=s['toBlock'], fromLabel=s['fromLabel'], toLabel=s['toLabel'], label=s['label'], n=len(ids), firstId=ids[0], lastId=ids[-1],
                                  fromRow=P[ids[0]]['rest']['pai'], toRow=P[ids[-1]]['rest']['pai'],
                                  tFirstLeave=P[ids[0]]['t']['leave'], tLastLeave=P[ids[-1]]['t']['leave']))
         segs.sort(key=lambda s: s['tFirstLeave'])
@@ -251,7 +252,8 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     files = []
     for lie in range(1, 55):
         ps = sorted((p for p in persons if p['lie'] == lie), key=lambda p: p['gateIdx'])
-        files.append(dict(lie=lie, dadui=ps[0]['dadui'], costume=ps[0]['costume'], n=len(ps), lane=ps[0]['lane'], exit=ps[0]['exit'],
+        files.append(dict(lie=lie, dadui=ps[0]['dadui'], costume=ps[0]['costume'], n=len(ps), lane=ps[0]['lane'],
+                          exits=[dict(exit=e, n=len(list(g))) for e, g in itertools.groupby(sorted(ps, key=lambda p: p['laneIdx']), key=lambda p: p['exit'])],
                           assembly=ps[0]['assembly'], order=[p['id'] for p in ps],
                           tLeave=min(p['t']['leave'] for p in ps), tAssembly=max(p['t']['assembly'] for p in ps),
                           tEnter=min(p['t']['enter'] for p in ps), tGate=min(p['t']['gate'] for p in ps), tArrive=max(p['t']['arrive'] for p in ps)))
@@ -279,11 +281,11 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
             n['label'] = '西一入口(場內)'
         nodes[k] = n
     who_seat = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
-    rest = [dict(s, kind=plan.seat_kind(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
+    rest = [dict(s, kind=plan.seat_kind(s), reserved=plan.seat_reserved(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
     zones = {k: dict(v) for k, v in G.ZONES.items()}
     w3 = [p for p in persons if p['assembly'] == 'P6']
     zones['P6']['tailU'] = round(min(G.slot_u(p, p['slot']) for p in w3), 3)
-    meta = dict(title='入經藏 西一＋桃竹 休息區→集結→進場 動線資料（2c 七出口三路接續）', built='2026-10-19',
+    meta = dict(title='入經藏 西一＋桃竹 休息區→集結→進場 動線資料（2c 七出口三路接續）', built='2026-10-23',
                 mPerUnit=base['meta']['mPerUnit'], frame=base['meta']['frame'], population=len(persons), tEnd=t_end,
                 speedUnitPerSec=V, headway=HEADWAY, laneStagger=STAGGER, t0=T0,
                 tStairStart=round(clocks['tStairStart'], 3), tGateStart=round(clocks['tGateStart'], 3),

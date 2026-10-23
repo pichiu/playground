@@ -2,9 +2,7 @@ import plan
 
 
 def seqs_of(base):
-    seqs = {L: plan.lane_sequence(base, L) for L in 'ABC'}
-    plan.assign_exits(base, seqs)
-    return seqs
+    return plan.lane_sequences(base)
 
 
 def test_lane_totals(base):

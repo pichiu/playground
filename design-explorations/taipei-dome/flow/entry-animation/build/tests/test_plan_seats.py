@@ -3,9 +3,7 @@ import plan
 
 
 def people(base):
-    seqs = {L: plan.lane_sequence(base, L) for L in 'ABC'}
-    plan.assign_exits(base, seqs)
-    return plan.assign_seats(base, seqs)
+    return plan.assign_seats(base, plan.lane_sequences(base))
 
 
 def test_capacity(base):

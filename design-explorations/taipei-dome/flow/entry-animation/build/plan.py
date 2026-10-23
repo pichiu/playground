@@ -19,7 +19,7 @@ EXITS = ['139', '140', '141', '142', '143', '144', '145']
 EXIT_RANK = {e: i for i, e in enumerate(EXITS)}
 
 # ---------- 出口 → 路 指派（spec §3.3） ----------
-# 每路依序用的出口，坐滿才換下一個（10/23 保留不坐之後只剩 4 席空位，換口只能落在列中間）。
+# 每路依序用的出口，坐滿才換下一個（10/23 保留不坐之後只剩 6 席空位，換口只能落在列中間）。
 EXIT_ORDER = {'A': ['139', '140', '141'], 'B': ['141', '142', '143'], 'C': ['142', '144', '145']}
 # 共用出口先保留給外側那一路（它其餘的出口都是獨用的），剩下的給 B
 SHARED = {'141': 'A', '142': 'C'}
@@ -81,6 +81,13 @@ def exit_quota(base, seqs):
             if L != owner and e in quota[L]:
                 quota[L][e] = cap[e] - quota[owner][e]
     return quota
+
+
+def lane_sequences(base):
+    """三路的樓梯序，並依出口坐滿就換補上 exit。"""
+    seqs = {L: lane_sequence(base, L) for L in LANES}
+    assign_exits(base, seqs)
+    return seqs
 
 
 def assign_exits(base, seqs):
@@ -240,8 +247,7 @@ def _seg_labels(b_from, from_part, b_to, to_part):
 
 
 def build_plan(base):
-    seqs = {L: lane_sequence(base, L) for L in LANES}
-    assign_exits(base, seqs)
+    seqs = lane_sequences(base)
     bad = check_nesting(seqs)
     if bad:
         raise SystemExit(f'巢狀被破壞 {len(bad)} 個序號，例如 {bad[:3]}')
@@ -252,7 +258,7 @@ def build_plan(base):
         lanes = {}
         for L in LANES:
             members = [p for p in people if p['block'] == block and p['lane'] == L]
-            lanes[L] = dict(lie=column_of(block, L), exit=members[0]['exit'], n=len(members),
+            lanes[L] = dict(lie=column_of(block, L), n=len(members),
                             exits=[dict(exit=e, n=len(list(g))) for e, g in itertools.groupby(members, key=lambda p: p['exit'])])
         blocks.append(dict(key=block, costume=costume, dadui=k, population=sum(v['n'] for v in lanes.values()),
                            columns=[column_of(block, L) for L in LANES], assembly=ZONE_OF[block], lanes=lanes))
@@ -266,7 +272,7 @@ def build_plan(base):
             from_part = first['laneIdx'] > 0 and seqs[L][first['laneIdx'] - 1]['block'] == first['block']
             to_part = last['laneIdx'] + 1 < len(seqs[L]) and seqs[L][last['laneIdx'] + 1]['block'] == last['block']
             segs.append(dict(exit=exit_key, fromBlock=first['block'], toBlock=last['block'], n=len(g), fromIdx=first['laneIdx'], toIdx=last['laneIdx'],
-                             fromPart=from_part, toPart=to_part, **_seg_labels(first['block'], from_part, last['block'], to_part)))
+                             **_seg_labels(first['block'], from_part, last['block'], to_part)))
         lanes_out[L] = dict(total=len(seqs[L]), segments=segs)
     exits = {}
     for e in EXITS:

@@ -158,14 +158,13 @@ const colorOf=p=>(p.costume==='藍'?BLUE:WARM)[p.dadui-1];
 const inkOf=p=>(p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';   // 深色底才用白字，對比皆 ≥ 4.5:1
 const SIDE={N:'往北側',S:'往南側'};
 const PAI_MAX=14;
-const reserved=s=>(s.sec==='139'&&s.no<=(s.pai>=11?5:3))||(s.sec==='144'&&s.pai<=6);   // 與 plan.seat_reserved 同一條規則：139 保留 34 席給台東、144 第 1–6 排
 let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,showIds=false,cells=[],cellMap=new Map(),rt=0;
 
 // ---------- 索引：每區的座位、theta 範圍、可用席、出口在哪一端 ----------
 function buildIdx(){const R=ds.D.restSeats;TH={min:Infinity,max:-Infinity};
  for(const s of R){const S=SEC[s.sec]||(SEC[s.sec]={sec:s.sec,seats:[],thMin:Infinity,thMax:-Infinity,usable:new Map()});S.seats.push(s);
   if(s.theta<S.thMin)S.thMin=s.theta;if(s.theta>S.thMax)S.thMax=s.theta;if(s.theta<TH.min)TH.min=s.theta;if(s.theta>TH.max)TH.max=s.theta;
-  const ok=(s.kind==='normal'||s.kind==='blue')&&!reserved(s);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 保留 34 席給台東、144 第 1–6 排保留
+  const ok=(s.kind==='normal'||s.kind==='blue')&&!s.reserved;   // 保留席由 build.py 寫進 restSeats[].reserved（plan.seat_reserved）
   if(ok){if(!S.usable.has(s.pai))S.usable.set(s.pai,[]);S.usable.get(s.pai).push(s.no);}}
  SECS=Object.keys(SEC).sort();
  for(const e of ds.exits){const S=SEC[e.sec];if(!S)continue;const f=ds.byId.get(e.order[0]).rest,st=S.seats.find(s=>s.pai===f.pai&&s.no===f.no);S.exitRight=st?st.theta>(S.thMin+S.thMax)/2:false;}}
@@ -252,14 +251,14 @@ function drawMap(scrollTo=false){if(!ds)return;
    else{c.textAlign='left';c.fillText('出口',xs+7,y);c.beginPath();c.moveTo(xs+5,y-8);c.lineTo(xs,y-4);c.lineTo(xs+5,y);c.fill();}}
   c.globalAlpha=isCur?1:.6;
   for(const s of S.seats){const x=X(s.theta),y=Y(s.pai),w=Math.max(1,cell-1),h=ch-1;
-   c.fillStyle=(s.kind==='blocked'||s.kind==='work')?col.dead:s.who?colorOf(ds.byId.get(s.who)):reserved(s)?col.keep:col.grid;c.fillRect(x,y,w,h);
+   c.fillStyle=(s.kind==='blocked'||s.kind==='work')?col.dead:s.who?colorOf(ds.byId.get(s.who)):s.reserved?col.keep:col.grid;c.fillRect(x,y,w,h);
    const rec={x,y,w,h,s};cells.push(rec);cellMap.set(`${s.sec}-${s.pai}-${s.no}`,rec);}
   c.globalAlpha=1;}
  if(sel){const rec=cellMap.get(sel);if(rec){c.strokeStyle=col.ink;c.lineWidth=2;c.strokeRect(rec.x-1.5,rec.y-1.5,rec.w+3,rec.h+3);}}
  if(scrollTo&&SEC[ds.exitsByKey[cur].sec]){const S=SEC[ds.exitsByKey[cur].sec],xs=X(S.thMin),xe=X(S.thMax)+cell;if(xs<sc.scrollLeft||xe>sc.scrollLeft+sc.clientWidth)sc.scrollLeft=Math.max(0,xs-24);}}
 function showTip(s){sel=`${s.sec}-${s.pai}-${s.no}`;const where=`${s.sec} 區 ${s.pai} 排 ${s.no} 號`;let t;
  if(s.kind==='blocked')t=`${where} · 不可用席`;else if(s.kind==='work')t=`${where} · 工作席，不排人`;
- else if(!s.who)t=reserved(s)?`${where} · 保留不坐`:`${where} · 空席`;
+ else if(!s.who)t=s.reserved?`${where} · 保留不坐`:`${where} · 空席`;
  else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位`;}
  $('seat-tip').innerHTML=t+(s.sec!==cur?` <a href="?e=${s.sec}" data-go="${s.sec}">看 ${s.sec} 出口</a>`:'');drawMap();}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=Infinity;

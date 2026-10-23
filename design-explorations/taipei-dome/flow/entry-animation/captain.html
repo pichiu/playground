@@ -122,11 +122,11 @@ const stagedCue=(g,id,who)=>g.tAssembly>g.tEnter
  ?{id,t:g.tAssembly,h:`${who}最後一位到`,d:`${g.key} 邊到邊走：隊頭已起步，最後一位才到 ${ds.nodeName(g.assembly)}`}
  :{id,t:g.tAssembly,h:`${who}到齊`,d:`${g.key} ${g.population} 人站定 · ${ds.nodeName(g.assembly)}`};
 function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),prev=ds.groups.filter(g=>g.dadui===k-1);
- const first=lies.reduce((a,f)=>f.tLeave<a.tLeave?f:a),lastP=ps.reduce((a,p)=>p.t.leave>a.t.leave?p:a),lastF=lies.find(f=>f.lie===lastP.lie);
+ const firstP=ps.reduce((a,p)=>p.t.leave<a.t.leave?p:a),lastP=ps.reduce((a,p)=>p.t.leave>a.t.leave?p:a);   // 一列可能分坐兩個出口，出口取那一位本人的
  const staged=gs.filter(g=>g.assembly!=='FEEDER');
  const list=[
-  {id:'leave-first',t:first.tLeave,h:'第一位離座',d:`${first.costume}${k} 列 ${first.lie} 先起身：${ds.exitName(first.exit)}，上走廊走 ${ds.laneName(first.lane)}`},
-  {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastF.costume}${k} 列 ${lastF.lie} 最後一位離開 ${lastF.exit} 出口，本大隊休息區清空`},
+  {id:'leave-first',t:firstP.t.leave,h:'第一位離座',d:`${firstP.costume}${k} 列 ${firstP.lie} 先起身：${ds.exitName(firstP.exit)}，上走廊走 ${ds.laneName(firstP.lane)}`},
+  {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastP.costume}${k} 列 ${lastP.lie} 最後一位離開 ${lastP.exit} 出口，本大隊休息區清空`},
   W.assembly==='FEEDER'
    ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exits.map(x=>x.exit).join('→')).join('、')} 出口依西一入口時刻直接接尾`}
    :stagedCue(W,'white','白衣'),
@@ -149,7 +149,7 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  cues=cuesFor();
  $('cues').innerHTML=cues.map((c,i)=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><b class="no">${i+1}</b><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
  $('cue-n').textContent=`${cues.length} 條`;
- $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
+ $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exits.map(x=>x.exit).join('→')} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
  const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exits.map(x=>x.exit).join('→')).join('/');   // 換口落在列中間時，一欄寫成「139→140」
  const byNorth=g=>['A','B','C'].sort((x,y)=>((g.lanes[x].lie-1)%6)-((g.lanes[y].lie-1)%6)).join('·');   // 西一入口路 j=(列−1) mod 6 由北數；藍2–9 從死巷走回來，A 路在最南

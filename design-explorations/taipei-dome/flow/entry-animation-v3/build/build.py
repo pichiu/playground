@@ -268,8 +268,8 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
             n['label'] = '西一入口(場內)'
         nodes[k] = n
     who_seat = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
-    rest = [dict(s, kind=plan.seat_kind(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
-    meta = dict(title='入經藏 西一＋桃竹 休息區→進場 動線資料（版本 3 兩路直進）', built='2026-10-22',
+    rest = [dict(s, kind=plan.seat_kind(s), reserved=plan.seat_reserved(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
+    meta = dict(title='入經藏 西一＋桃竹 休息區→進場 動線資料（版本 3 兩路直進）', built='2026-10-23',
                 mPerUnit=base['meta']['mPerUnit'], frame=base['meta']['frame'], population=len(persons), tEnd=t_end,
                 speedUnitPerSec=V, headway=HEADWAY, laneStagger=STAGGER, rankGap=RANK_GAP, queueSpeed=round(SLOW, 4), turnT=TURN_T, t0=T0, daduiGap=DADUI_GAP,
                 tStairStart=round(clocks['tStairStart'], 3), tGateStart=round(t_gate0, 3),
