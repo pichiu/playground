@@ -3,7 +3,7 @@ import hashlib
 import re
 import subprocess
 
-BASE_2C = '039004c'   # 2c 最後一次刻意改資料與建置（10/23 保留不坐）；之後 2c 不動
+BASE_2C = '31fd9a0'   # 2c 最後一次刻意改資料與建置（10/23 139 第 1 排更正、留 34 席給台東）；之後 2c 不動
 
 
 def test_readmes_present(root):
