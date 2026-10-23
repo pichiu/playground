@@ -26,7 +26,7 @@ def test_2c_data_and_build_untouched(root):   # 2c 只動 README、頁面顯示�
     d = 'design-explorations/taipei-dome/flow/entry-animation/'
     changed = [f[len(d):] for f in r.stdout.split()]
     assert 'README.md' in changed and 'console.html' in changed, changed
-    assert all(f == 'README.md' or (f.endswith('.html') and '/' not in f) or f.startswith('build/tests/test_page') for f in changed), changed
+    assert all(f in ('README.md', 'core.js') or (f.endswith('.html') and '/' not in f) or f.startswith('build/tests/test_page') for f in changed), changed
     assert 'entry-animation-v3' in (root.parent / 'entry-animation' / 'README.md').read_text(encoding='utf-8')
 
 

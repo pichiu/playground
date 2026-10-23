@@ -17,7 +17,8 @@ GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
 QUEUE_HEAD, QUEUE_STEP = 4.2, 0.075      # 門前隊伍：六條線的隊頭切齊在 B2 u 4.2（收攏點前一點），前後間距 0.075（同 2c 集結格位間距）
 QUEUE_MIN_U = 1.4                        # 門前隊伍尾巴的下限：B2 側移完成（line_poly 第一點 LINE_START_U ≈ 1.36）之後
-LINE_START_U = B2_U_START + (QUEUE_HEAD - B2_U_START) / max(1, int((QUEUE_HEAD - B2_U_START) / 0.35))   # 與 lane_run 的第一點相同
+LANE_STEP = 0.35                         # lane_run 取點間距
+LINE_START_U = B2_U_START + (QUEUE_HEAD - B2_U_START) / max(1, int((QUEUE_HEAD - B2_U_START) / LANE_STEP))   # 與 lane_run 的第一點相同
 
 
 def line_off(j):
@@ -25,7 +26,7 @@ def line_off(j):
     return 0.2 - 0.08 * j
 
 
-def lane_run(poly, u0, u1, off, step=0.35):
+def lane_run(poly, u0, u1, off, step=LANE_STEP):
     n = max(1, int(abs(u1 - u0) / step))
     return [poly.off(u0 + (u1 - u0) * k / n, off) for k in range(1, n + 1)]
 

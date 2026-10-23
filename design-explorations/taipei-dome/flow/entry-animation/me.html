@@ -99,7 +99,7 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,zone,fmt,View,bounds}=Dome,$=id=>document.getElementById(id);
+const {pos,zone,View,bounds}=Dome,$=id=>document.getElementById(id);
 Dome.nav('me.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 let C={};const readC=()=>{for(const n of ['paper','ink','dim','rule','blue','sand','floor','go','ghost'])C[n]=css(n);};readC();

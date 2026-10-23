@@ -103,7 +103,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
+const {pos,counts,View}=Dome,$=id=>document.getElementById(id);
 Dome.nav('captain.html');
 const TEAM=['#e05d63','#d9ae3a','#79c25a','#b688dd','#f0a050','#bfc35a','#e586bd','#c9945e','#4fc2b4'];
 const STATE_ZH={seated:'休息區',walk:'走廊樓梯',wait:'集結等待',enter:'進場中',done:'已到位'};
@@ -147,7 +147,7 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
  lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.costume===b.costume?'ABC'.indexOf(a.lane)-'ABC'.indexOf(b.lane):(a.costume==='白'?-1:1)).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 白 A·B·C、藍 A·B·C（藍2–9 的 A 路是列 6k，不是列號最小的）
  cues=cuesFor();
- $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><time>${cues.indexOf(c)+1}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
+ $('cues').innerHTML=cues.map((c,i)=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><time>${i+1}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
  $('cue-n').textContent=`${cues.length} 條`;
  $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;

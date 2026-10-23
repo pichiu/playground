@@ -103,7 +103,7 @@ body>.dome-nav.bar a{white-space:nowrap}
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,state,zone,counts,fmt,View,LANE_NAME}=Dome,$=id=>document.getElementById(id);
+const {pos,state,zone,counts,View,LANE_NAME}=Dome,$=id=>document.getElementById(id);
 Dome.nav('console.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);

@@ -114,7 +114,7 @@ td.n{text-align:right;white-space:nowrap}
 <script src="core.js"></script>
 <script>
 'use strict';
-const {fmt}=Dome,$=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);
 Dome.nav('index.html');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function checksTable(C){
