@@ -1,4 +1,4 @@
-"""發行：首頁兩張進場動線卡、2c 只動 README、全站連結、README 在、追蹤檔可重現。"""
+"""發行：首頁兩張進場動線卡、2c 只動 README 與播放時鐘、全站連結、README 在、追蹤檔可重現。"""
 import hashlib
 import re
 import subprocess
@@ -19,11 +19,13 @@ def test_hub_has_v3_card(root):
     assert '進場動線 · 版本 3' in h and '進場動線 · 2c' in h
 
 
-def test_2c_untouched_except_readme(root):
+def test_2c_untouched_except_readme_and_clock(root):   # 2c 只動 README 與播放時鐘（10/23 企劃：改用百分比），資料與建置不動
     repo = root.parents[3]
     r = subprocess.run(['git', 'diff', '--name-only', BASE_2C, '--', 'design-explorations/taipei-dome/flow/entry-animation/'],
                        capture_output=True, text=True, cwd=repo)
-    assert r.stdout.split() == ['design-explorations/taipei-dome/flow/entry-animation/README.md'], r.stdout
+    d = 'design-explorations/taipei-dome/flow/entry-animation/'
+    assert sorted(r.stdout.split()) == sorted(d + f for f in ('README.md', 'console.html', 'captain.html', 'me.html', 'score.html',
+                                                              'build/tests/test_page_console.py')), r.stdout
     assert 'entry-animation-v3' in (root.parent / 'entry-animation' / 'README.md').read_text(encoding='utf-8')
 
 

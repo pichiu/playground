@@ -83,7 +83,7 @@ body>.dome-nav.bar a{white-space:nowrap}
   <div class="title" id="title"><h1>2c · 指揮台</h1><p>1,609 人 · 七出口三路接續 · 示意時間非現場秒數</p>
    <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集結區排隊中</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span><span><b class="num">196</b>集結區旁數字＝此刻在那裡等的人數</span></div>
   </div>
-  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span> <span>／ 示意全程 <span id="end"></span></span></div>
+  <div class="clock"><b id="clock">0%</b><span class="phase" id="phase"></span></div>
   <div class="flows"><div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div></div>
   <div class="focus"><strong>示意事件</strong><ol id="cues"></ol></div>
  </div>
@@ -148,8 +148,8 @@ function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*
   if(st!=='wait'){c.globalAlpha=alpha;v.dot(pts[0][0],pts[0][1],r*1.5,col,C.map,1);c.globalAlpha=1;}}}
 function ui(){const c=counts(t,ds.P),N=ds.P.length;
  for(const [k] of STATES){$('bar').querySelector(`[data-k="${k}"]`).style.width=c[k]/N*100+'%';$('dl').querySelector(`[data-n="${k}"]`).textContent=c[k].toLocaleString('zh-TW');}
- $('clock').textContent=fmt(t);$('phase').textContent=phaseName(c);$('head').style.left=pct(t);
- track.setAttribute('aria-valuenow',Math.round(t));track.setAttribute('aria-valuetext',fmt(t));
+ $('clock').textContent=Math.round(t/T*100)+'%';   // 播放進度用百分比$('phase').textContent=phaseName(c);$('head').style.left=pct(t);
+ track.setAttribute('aria-valuenow',Math.round(t));track.setAttribute('aria-valuetext',Math.round(t/T*100)+'%');
  let i=cues.findIndex(x=>x.t>t);if(i<0)i=cues.length;const from=Math.max(0,Math.min(i-2,cues.length-5));
  $('cues').innerHTML=cues.slice(from,from+5).map((x,j)=>`<li class="${from+j===i-1?'now':''}"><span>${fmt(x.t)}</span><span>${esc(x.s)}</span></li>`).join('');}
 function setPlaying(on){playing=on;if(on&&t>=T)t=0;$('play').setAttribute('aria-label',on?'暫停':'播放');$('ico').innerHTML=on?'<rect x="2" y="1.5" width="5" height="17" fill="currentColor"/><rect x="11" y="1.5" width="5" height="17" fill="currentColor"/>':'<path d="M2 1.5v17L17 10z" fill="currentColor"/>';last=0;}
@@ -171,7 +171,7 @@ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
   if(mobile){const top=view.p(b[0],b[1])[1],want=$('title').getBoundingClientRect().bottom-$('cv').getBoundingClientRect().top+8;if(top>want)view.cy+=(top-want)/view.s;}   // 手機：地圖貼著標題區下緣，把空白留給底下的流量柱與時鐘
   else{const left=view.p(b[0],b[1])[0],free=view.w-view.pad-view.p(b[2],b[3])[0],need=Math.min(360-left,Math.max(0,free));if(need>0)view.cx-=need/view.s;}};
  refit();view.onresize=()=>{refit();dirty=true;};
- $('end').textContent=fmt(T);track.setAttribute('aria-valuemax',Math.round(T));
+ track.setAttribute('aria-valuemax',Math.round(T));
  buildTrack();
  cues=[{t:0,s:'全員就座'},...S.blocks.map(o=>({t:o.a,s:`${o.key} ${o.feeder?'接尾':'下樓'}`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
  $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:${c}"></i>`).join('');

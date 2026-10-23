@@ -124,7 +124,7 @@ function paint(){gx.putImageData(staticImg,0,0);gx.setTransform(dpr,0,0,dpr,0,0)
  if(hover>=0){const y=yOf(hover);gx.strokeStyle=C.hi;gx.lineWidth=1.5;gx.strokeRect(PL-2,y-1.5,W-PL-R+4,RH+1);}
  const x=xOf(t);gx.fillStyle=C.hi;gx.fillRect(x-1,TOP-8,2,H-TOP-12);gx.beginPath();gx.moveTo(x-6,TOP-14);gx.lineTo(x+6,TOP-14);gx.lineTo(x,TOP-6);gx.fill();
  const lx=x+(x>W-80?-8:8);gx.font='700 12px "Noto Sans TC",system-ui';gx.textBaseline='middle';gx.textAlign=x>W-80?'right':'left';
- gx.lineWidth=4;gx.lineJoin='round';gx.strokeStyle=C.bg;gx.strokeText(fmt(t),lx,TOP-16);gx.fillStyle=C.hi;gx.fillText(fmt(t),lx,TOP-16);}
+ gx.lineWidth=4;gx.lineJoin='round';gx.strokeStyle=C.bg;const lb=Math.round(t/T*100)+'%';gx.strokeText(lb,lx,TOP-16);gx.fillStyle=C.hi;gx.fillText(lb,lx,TOP-16);}
 function syncLabels(){if(hover===lastHover)return;if(lastHover>=0)rowEls[lastHover].classList.remove('on');if(hover>=0)rowEls[hover].classList.add('on');lastHover=hover;}
 // 互動：滑過一列 → 地圖只亮那列；拖曳（觸控：左右滑；譜在容器內可捲時改為點一下）移動時間
 let drag=false,start=null;
@@ -149,7 +149,7 @@ function paintRead(){const rr=hover>=0?rows[hover]:null,list=rr?rr.ps:ds.P,cs=co
  const title=rr?`列 ${rr.lie} · ${esc(rr.g.key)}`:`全體 ${ds.D.meta.population.toLocaleString('zh-TW')} 人`;
  const sub=rr?`<p class="sub">${esc(ds.exitName(rr.exit))} → ${esc(ds.laneName(rr.lane))} → ${esc(ds.nodeName(rr.g.assembly))}</p>`:'';
  const waitRow=rr?`<tr><td>本列最久等待</td><td class="n">${rr.g.assembly==='FEEDER'?'不集結，直接接尾':fmt(rr.maxWait)}</td></tr><tr><td>離座 → 到位</td><td class="n">${fmt(rr.file.tLeave)} → ${fmt(rr.file.tArrive)}</td></tr>`:'';
- $('read').innerHTML=`<h2><span>${title}</span><output>${fmt(t)}</output></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
+ $('read').innerHTML=`<h2><span>${title}</span><output>${Math.round(t/T*100)}%</output></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
 (async()=>{try{ds=await Dome.load();}catch(e){$('summary').textContent=e.message;return;}
  rows=rowsFor(ds);T=ds.T_END;H=yOf(rows.length-1)+RH+BOT;
  t=Math.min(T,ds.D.phases.find(p=>p.key==='enter').t0);
