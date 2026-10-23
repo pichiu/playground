@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>進場動線版本 3 · 總譜</title>
+<link rel="icon" href="data:,">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap"></noscript>
+<style>
+:root{--bg:#fbfbf8;--card:#fff;--ink:#17262b;--dim:#5b6a6d;--rule:#e4e6e0;--faint:#eef0eb;--walk:#2f8f7a;--wait:#e0922a;--enter:#2b62b0;--hi:#c2410c;--blue:#2f6fd0;--white:#b9a77a;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--card:#182225;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#2a363b;--faint:#1f2a2d;--walk:#3fb39a;--wait:#e9a23b;--enter:#5b93e6;--hi:#f08a52;--blue:#4f8fe8;--white:#e6d9b4;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#121819;--card:#182225;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#2a363b;--faint:#1f2a2d;--walk:#3fb39a;--wait:#e9a23b;--enter:#5b93e6;--hi:#f08a52;--blue:#4f8fe8;--white:#e6d9b4;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+::selection{background:var(--wait);color:#111}
+:focus-visible{outline:2px solid var(--enter);outline-offset:2px}
+.dome-nav.bar{--line:var(--rule)}
+.wrap{max-width:1500px;margin:auto;padding:20px max(16px,env(safe-area-inset-left)) 32px;overflow-x:hidden}
+header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin:0 0 18px;border-bottom:1px solid var(--rule);padding-bottom:16px}
+h1{margin:0;font-size:30px;letter-spacing:.02em}
+.lede{margin:6px 0 0;max-width:72ch;color:var(--dim);font-size:15px}
+.lede b{color:var(--ink)}
+.keys{display:flex;gap:16px;font-size:13px;color:var(--dim);flex-wrap:wrap;justify-content:flex-end}
+.keys span{display:flex;align-items:center;gap:6px}.keys i{width:18px;height:6px;border-radius:2px}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px;align-items:start}
+.col{min-width:0}
+/* 譜：左欄列標籤（HTML，橫向捲動時釘住），右邊畫布；窄螢幕在這個容器內橫向捲，頁面不捲 */
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.sheet{display:flex;min-width:max(100%,640px)}
+.labels{position:sticky;left:0;z-index:1;flex:0 0 132px;background:var(--bg);box-shadow:6px 0 8px -8px rgba(0,0,0,.25)}
+.labels [data-row]{position:absolute;left:34px;right:6px;display:flex;align-items:center;justify-content:flex-end;font-size:11px;line-height:1;white-space:nowrap;color:var(--dim);border-radius:3px;padding:0 4px;cursor:default}
+.labels [data-row].on{color:var(--hi);font-weight:700;background:var(--faint)}
+.labels .grp{position:absolute;left:0;width:30px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border-left:3px solid;padding-left:1px;letter-spacing:.02em}
+.labels .grp.藍{border-color:var(--blue);color:var(--blue)}.labels .grp.白{border-color:var(--white);color:var(--white)}
+#g{display:block;flex:1 1 auto;min-width:0;cursor:crosshair;touch-action:pan-y}
+.phases{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--dim)}
+.phases li{display:flex;flex-wrap:wrap;gap:0 12px;line-height:1.5}
+.phases b{color:var(--ink);min-width:4.5em}.phases .t{min-width:8.5em}.phases .d{flex:1 1 20em;min-width:0}
+.side{position:sticky;top:16px;display:grid;gap:14px}
+.mapbox{border:1px solid var(--rule);border-radius:10px;background:var(--card);overflow:hidden;position:relative}
+.mapbox canvas{display:block;width:100%;height:440px}
+.read{border:1px solid var(--rule);border-radius:10px;background:var(--card);padding:14px 16px}
+.read h2{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between;gap:10px}
+.read h2 output{color:var(--hi);flex:0 0 auto}
+.read .sub{margin:-4px 0 8px;font-size:12px;color:var(--dim)}
+.read table{width:100%;border-collapse:collapse;font-size:13px}
+.read td{padding:4px 0;border-top:1px solid var(--faint);text-align:right}
+.read td:first-child{text-align:left}
+.read td.n{font-weight:700}
+.tip{font-size:12px;color:var(--dim);margin-top:8px}
+.bars{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--faint);margin:6px 0 10px}
+.bars i{height:100%}
+@media(max-width:1100px){.body{grid-template-columns:minmax(0,1fr)}.side{position:static;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.mapbox canvas{height:340px}}
+@media(max-width:640px){.side{grid-template-columns:minmax(0,1fr)}header{grid-template-columns:minmax(0,1fr)}.keys{justify-content:flex-start}h1{font-size:24px}.phases .d{flex-basis:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div><h1>版本 3 · 總譜</h1><p class="lede" id="summary">讀取動線資料…</p></div>
+ <div class="keys" id="keys"></div>
+</header>
+<div class="body">
+ <div class="col">
+  <div class="scroller" id="scroller"><div class="sheet">
+   <div class="labels" id="labels" aria-label="54 列，依樓梯序由大隊 1 到大隊 9（每大隊白三列、藍三列）"></div>
+   <canvas id="g" aria-label="54 列 × 時間的總譜，每條細線是一位菩薩"></canvas>
+  </div></div>
+  <ol class="phases" id="phases"></ol>
+ </div>
+ <aside class="side"><div class="mapbox"><canvas id="m" aria-label="同步地圖"></canvas></div><div class="read" id="read"></div></aside>
+</div>
+</div>
+<script src="core.js"></script>
+<script>
+'use strict';
+const {pos,state,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
+Dome.nav('score.html');
+const {esc}=Dome;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const C={},readC=()=>{for(const n of ['bg','card','ink','dim','rule','faint','walk','wait','enter','hi','blue','white'])C[n]=css(n);};readC();
+const KEY=`<span><i style="background:var(--walk)"></i>走廊／樓梯</span><span><i style="background:var(--wait)"></i>門前隊伍</span><span><i style="background:var(--enter)"></i>進場中</span>`;
+const PHASE_SHORT={seated:'就座',descend:'下樓',enter:'進場'};
+let ds=null,rows=[],rowEls=[],view=null,T=1,t=0,hover=-1,lastHover=-2,dirty=true,staticImg=null;
+// 列序 = 樓梯序：依 groups（大隊 1 白、大隊 1 藍、大隊 2 白…），每組三列；一列可能分坐兩個出口。
+function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
+ ds.groups.forEach((g,gi)=>{for(const lie of g.columns){const ps=ds.P.filter(p=>p.lie===lie).sort((a,b)=>a.t.leave-b.t.leave);
+  out.push({lie,exit:ds.exitsOfFile(lie).join('/'),lane:g.lane,g,gi,ps,file:byLie.get(lie)});}});return out;}
+// 摘要：寫出在門前隊伍最久的人。
+function summaryText(ds){const w=ds.P.reduce((a,p)=>ds.wait(p)>ds.wait(a)?p:a);
+ return `每一條細線是一位菩薩，從離座畫到到位；綠是走廊與樓梯、<b>橘是在 B2 門前隊伍裡慢慢往前推</b>、藍是進場。大隊 1 先排滿門前隊伍，之後一排六人並肩一排接一排進門。在隊伍裡最久的是 <b>${esc(w.id)}（大隊 ${w.dadui} ${w.costume}衣）</b>。`;}
+// 版面
+const g=$('g'),gx=g.getContext('2d'),labels=$('labels'),scroller=$('scroller');
+let W=0,H=0,dpr=1,scrollable=false;const PL=8,R=10,TOP=48,RH=13,GAP=8,BOT=32;
+function yOf(i){return TOP+i*RH+rows[i].gi*GAP;}
+const xOf=v=>PL+v/T*(W-PL-R),tOf=x=>Math.max(0,Math.min(T,(x-PL)/(W-PL-R)*T));
+function groupSpan(gi){const idx=rows.map((r,i)=>r.gi===gi?i:-1).filter(i=>i>=0);return [yOf(idx[0]),yOf(idx[idx.length-1])+RH];}
+function buildLabels(){labels.style.height=H+'px';let html='';
+ ds.groups.forEach((gr,gi)=>{const [y0,y1]=groupSpan(gi);html+=`<div class="grp ${gr.costume}" style="top:${y0}px;height:${y1-y0}px" title="${esc(`${gr.key}：${gr.population} 人`)}">${esc(gr.key)}</div>`;});
+ rows.forEach((r,i)=>{const f=r.file,tt=`列 ${r.lie}：${r.g.key}，${r.ps.length} 人。${r.exit} 出口 → ${ds.laneName(r.lane)} → 西一入口第 ${r.ps[0].gateLane+1} 路`;
+  html+=`<div data-row data-lie="${r.lie}" data-i="${i}" style="top:${yOf(i)}px;height:${RH}px" title="${esc(tt)}">列 ${r.lie} · ${esc(r.exit)}</div>`;});
+ labels.innerHTML=html;rowEls=[...labels.querySelectorAll('[data-row]')];}
+function layout(){if(!rows.length)return;const w=g.getBoundingClientRect().width;if(!w)return;W=w;dpr=Math.min(2,devicePixelRatio||1);
+ g.style.height=H+'px';g.width=Math.round(W*dpr);g.height=Math.round(H*dpr);
+ scrollable=scroller.scrollWidth>scroller.clientWidth+1;g.style.touchAction=scrollable?'auto':'pan-y';paintStatic();}
+function bar(ps,y,h){const n=ps.length;ps.forEach((p,j)=>{const yy=y+j/n*(h-1),s=p.t;
+  gx.globalAlpha=1;gx.fillStyle=C.walk;gx.fillRect(xOf(s.leave),yy,Math.max(1,xOf(s.assembly)-xOf(s.leave)),1);
+  if(s.enter-s.assembly>=.01){   // 與 check.py 的 WAIT_MIN 一致
+gx.globalAlpha=.75;gx.fillStyle=C.wait;gx.fillRect(xOf(s.assembly),yy,Math.max(1,xOf(s.enter)-xOf(s.assembly)),1);}
+  gx.globalAlpha=1;gx.fillStyle=C.enter;gx.fillRect(xOf(s.enter),yy,Math.max(1,xOf(s.arrive)-xOf(s.enter)),1);});gx.globalAlpha=1;}
+function paintStatic(){gx.setTransform(dpr,0,0,dpr,0,0);gx.fillStyle=C.bg;gx.fillRect(0,0,W,H);
+ gx.font='500 11px "Noto Sans TC",system-ui';gx.textBaseline='middle';
+ for(let s=0;s<=T;s+=30){const x=xOf(s);gx.fillStyle=s%60?C.faint:C.rule;gx.fillRect(x,TOP-6,1,H-TOP-16);}
+ rows.forEach((r,i)=>bar(r.ps,yOf(i)+1,RH-2));
+ ds.groups.forEach((gr,gi)=>{if(gi===ds.groups.length-1)return;const y1=groupSpan(gi)[1];gx.fillStyle=C.rule;gx.fillRect(0,y1+GAP/2,W,1);});
+ // phases 分界（descend／enter 起點）與上方標籤；太窄放不下字的只畫線，名稱在譜下方的清單
+ gx.font='700 11px "Noto Sans TC",system-ui';gx.textAlign='left';
+ for(const ph of ds.D.phases){const x0=xOf(ph.t0),x1=xOf(ph.t1),name=PHASE_SHORT[ph.key]||ph.label;
+  if(ph.t0>0){gx.setLineDash([3,3]);gx.strokeStyle=C.dim;gx.lineWidth=1;gx.beginPath();gx.moveTo(Math.round(x0)+.5,TOP-30);gx.lineTo(Math.round(x0)+.5,H-20);gx.stroke();gx.setLineDash([]);}
+  if(x1-x0>=gx.measureText(name).width+10){gx.fillStyle=C.ink;gx.fillText(name,x0+5,TOP-36);}}
+ const xe=xOf(T);gx.fillStyle=C.ink;gx.fillRect(xe,TOP-6,1.5,H-TOP-20);gx.textAlign='right';gx.fillText('全員到位',xe-4,H-10);
+ staticImg=gx.getImageData(0,0,g.width,g.height);}
+function paint(){gx.putImageData(staticImg,0,0);gx.setTransform(dpr,0,0,dpr,0,0);
+ if(hover>=0){const y=yOf(hover);gx.strokeStyle=C.hi;gx.lineWidth=1.5;gx.strokeRect(PL-2,y-1.5,W-PL-R+4,RH+1);}
+ const x=xOf(t);gx.fillStyle=C.hi;gx.fillRect(x-1,TOP-8,2,H-TOP-12);gx.beginPath();gx.moveTo(x-6,TOP-14);gx.lineTo(x+6,TOP-14);gx.lineTo(x,TOP-6);gx.fill();
+ const lx=x+(x>W-80?-8:8);gx.font='700 12px "Noto Sans TC",system-ui';gx.textBaseline='middle';gx.textAlign=x>W-80?'right':'left';
+ }
+function syncLabels(){if(hover===lastHover)return;if(lastHover>=0)rowEls[lastHover].classList.remove('on');if(hover>=0)rowEls[hover].classList.add('on');lastHover=hover;}
+// 互動：滑過一列 → 地圖只亮那列；拖曳（觸控：左右滑；譜在容器內可捲時改為點一下）移動時間
+let drag=false,start=null;
+function rowAt(y){for(let i=0;i<rows.length;i++){const a=yOf(i);if(y>=a-2&&y<=a+RH+2)return i;}return -1;}
+g.onpointerdown=e=>{start=[e.clientX,e.clientY,e.pointerType];if(e.pointerType!=='touch'){drag=true;g.setPointerCapture(e.pointerId);}move(e);};
+g.onpointerup=e=>{if(start&&start[2]==='touch'&&!drag&&Math.hypot(e.clientX-start[0],e.clientY-start[1])<8){t=tOf(e.clientX-g.getBoundingClientRect().left);dirty=true;}drag=false;start=null;};
+g.onpointercancel=()=>{drag=false;start=null;};
+function move(e){const r=g.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+ if(!drag&&start&&start[2]==='touch'&&!scrollable){const dx=Math.abs(e.clientX-start[0]),dy=Math.abs(e.clientY-start[1]);if(dx>8&&dx>dy){drag=true;g.setPointerCapture(e.pointerId);}}
+ if(drag)t=tOf(x);hover=rowAt(y);dirty=true;}
+g.onpointermove=move;g.onpointerleave=()=>{hover=-1;dirty=true;};
+labels.onpointerover=e=>{const el=e.target.closest('[data-row]');hover=el?+el.dataset.i:-1;dirty=true;};
+labels.onpointerleave=()=>{hover=-1;dirty=true;};
+document.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){t=Math.max(0,Math.min(T,t+(e.key==='ArrowLeft'?-5:5)));dirty=true;e.preventDefault();}};
+function paintMap(){const v=view,c=v.begin(C.card);v.base(ds.D.map,{floor:C.faint,stage:C.rule,wall:C.rule,band:C.dim,bandA:.08,lane:C.walk,laneA:.08,stand:C.rule,gate:C.dim,gateA:.14});
+ const sel=hover>=0?rows[hover].lie:null,r=Math.max(1,.04*v.s);
+ for(const p of ds.P){const st=state(p,t),q=pos(p,t),on=sel===null||p.lie===sel;c.globalAlpha=on?1:.15;
+  const col=st==='walk'?C.walk:st==='wait'?C.wait:st==='enter'?C.enter:st==='done'?C.ink:C.rule;v.dot(q[0],q[1],sel!==null&&on?r*1.6:r,col);}
+ c.globalAlpha=1;}
+const ROWS=[['seated','休息區'],['walk','走廊／樓梯'],['wait','門前隊伍'],['enter','進場中'],['done','已到位']];
+function paintRead(){const rr=hover>=0?rows[hover]:null,list=rr?rr.ps:ds.P,cs=counts(t,list),n=list.length;
+ const title=rr?`列 ${rr.lie} · ${esc(rr.g.key)}`:`全體 ${ds.D.meta.population.toLocaleString('zh-TW')} 人`;
+ const sub=rr?`<p class="sub">${esc(rr.exit)} 出口 → ${esc(ds.laneName(rr.lane))} → 門前隊伍 → 西一入口</p>`:'';
+ const waitRow='';
+ $('read').innerHTML=`<h2><span>${title}</span></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
+(async()=>{try{ds=await Dome.load();}catch(e){$('summary').textContent=e.message;return;}
+ rows=rowsFor(ds);T=ds.T_END;H=yOf(rows.length-1)+RH+BOT;
+ t=Math.min(T,ds.D.phases.find(p=>p.key==='enter').t0);
+ $('summary').innerHTML=summaryText(ds);$('keys').innerHTML=KEY;
+ $('phases').innerHTML=ds.D.phases.map(ph=>`<li><b>${esc(PHASE_SHORT[ph.key]||ph.key)}</b><span class="d">${esc(ph.label)}</span></li>`).join('');
+ buildLabels();
+ view=new View($('m'),{pad:14});view.fit(ds.B.west,true);view.onresize=()=>{view.fit(ds.B.west,true);dirty=true;};
+ layout();dirty=true;
+ new ResizeObserver(()=>{layout();dirty=true;}).observe(g);
+ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();layout();dirty=true;});
+ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
+ (function f(){if(dirty&&staticImg){paint();paintMap();paintRead();syncLabels();dirty=false;window.__dome_ready=true;}requestAnimationFrame(f);})();
+})();
+</script>
+</body>
+</html>

@@ -169,7 +169,7 @@ function draw(){const team=TEAM[k-1],D=ds.D;
  $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令 · ${fmt(nx.t)}`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
  $('nx-c').innerHTML=i<0?'完成':`${fmt(nx.t-t)}<span>後</span>`;
  $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
- $('clk').textContent=fmt(t);$('tl').value=t;
+ $('clk').textContent=Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)+'%';$('tl').value=t;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
