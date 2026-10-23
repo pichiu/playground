@@ -57,11 +57,11 @@ h1{margin:2px 0 0;font-size:22px;line-height:1.3;font-weight:900}
 ol.cues{list-style:none;margin:0;padding:0}
 .cues li{display:grid;grid-template-columns:58px 1fr;gap:2px 10px;padding:9px 0;border-top:1px solid var(--rule);color:var(--dim);cursor:pointer;border-radius:6px}
 .cues li:first-child{border-top:0}
-.cues li time{font-weight:700;grid-row:span 2;align-self:start;line-height:1.5}
+.cues li .no{font-weight:700;grid-row:span 2;align-self:start;line-height:1.5}
 .cues li .h{font-weight:700;font-size:16px;color:inherit;line-height:1.5}
 .cues li .d{font-size:13px;line-height:1.5}
 .cues li.done .h{text-decoration:line-through;text-decoration-color:var(--rule);text-decoration-thickness:2px}
-.cues li.cur{color:var(--ink)}.cues li.cur time{color:var(--team)}
+.cues li.cur{color:var(--ink)}.cues li.cur .no{color:var(--team)}
 .sum{font-size:13px;color:var(--dim);margin:12px 0 0;line-height:1.6}
 .sum b{color:var(--ink)}
 /* 地圖與時間列 */
@@ -144,7 +144,7 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
  lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.lie-b.lie).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 列 6k−5…6k：前三列白（A 路）、後三列藍（B 路），也就是西一入口由北數
  cues=cuesFor();
- $('cues').innerHTML=cues.map((c,i)=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><time>${i+1}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
+ $('cues').innerHTML=cues.map((c,i)=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><b class="no">${i+1}</b><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
  $('cue-n').textContent=`${cues.length} 條`;
  $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exits.join('、')} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
@@ -166,7 +166,7 @@ function draw(){const team=TEAM[k-1],D=ds.D;
  $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令（第 ${i+1} 條）`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
  $('nx-c').innerHTML=i<0?'完成':`${i+1}<span>／${cues.length}</span>`;
  $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
- $('clk').textContent=Math.max(0,Math.min(100,Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)))+'%';$('tl').value=t;
+ $('clk').textContent=Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)+'%';$('tl').value=t;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1,gateLanes:['#f3eee4',team],gateLanesA:.3});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
@@ -180,7 +180,7 @@ $('tl').oninput=e=>{t=+e.target.value;dirty=true;};
 function frame(n){if(ds){if(playing){if(last)t=Math.min(+$('tl').max,t+Math.min(n-last,100)/1000*speed);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v.step(n))dirty=true;if(dirty){draw();dirty=false;}}requestAnimationFrame(frame);}
 (async()=>{try{ds=await Dome.load();}catch(e){$('nx-k').textContent=e.message;return;}
  choose(k);draw();dirty=false;window.__dome_ready=true;requestAnimationFrame(frame);})();
-window.__seek=x=>{t=x;dirty=true;};
+window.__seek=x=>{t=Math.max(+$('tl').min,Math.min(+$('tl').max,x));dirty=true;};
 </script>
 </body>
 </html>

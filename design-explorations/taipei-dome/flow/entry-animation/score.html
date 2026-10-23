@@ -36,7 +36,7 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 #g{display:block;flex:1 1 auto;min-width:0;cursor:crosshair;touch-action:pan-y}
 .phases{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--dim)}
 .phases li{display:flex;flex-wrap:wrap;gap:0 12px;line-height:1.5}
-.phases b{color:var(--ink);min-width:4.5em}.phases .t{min-width:8.5em}.phases .d{flex:1 1 20em;min-width:0}
+.phases b{color:var(--ink);min-width:4.5em}.phases .d{flex:1 1 20em;min-width:0}
 .side{position:sticky;top:16px;display:grid;gap:14px}
 .mapbox{border:1px solid var(--rule);border-radius:10px;background:var(--card);overflow:hidden;position:relative}
 .mapbox canvas{display:block;width:100%;height:440px}
@@ -86,7 +86,7 @@ let ds=null,rows=[],rowEls=[],view=null,T=1,t=0,hover=-1,lastHover=-2,dirty=true
 // 列序 = 樓梯序：依 groups（藍9…藍1、白1…白9），每個區塊內 A、B、C 三欄。
 function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
  ds.groups.forEach((g,gi)=>{for(const L of ['A','B','C']){const ln=g.lanes[L],ps=ds.P.filter(p=>p.lie===ln.lie).sort((a,b)=>a.t.leave-b.t.leave);
-  out.push({lie:ln.lie,exit:ln.exit,lane:L,g,gi,ps,file:byLie.get(ln.lie),maxWait:Math.max(...ps.map(ds.wait))});}});return out;}
+  out.push({lie:ln.lie,exit:ln.exit,lane:L,g,gi,ps,file:byLie.get(ln.lie)});}});return out;}
 // 摘要：groups 中不是 FEEDER 者，tGateFirst − tAssembly 最大的區塊。
 function summaryText(ds){const w=ds.groups.filter(g=>g.assembly!=='FEEDER').reduce((a,g)=>(g.tGateFirst-g.tAssembly)>(a.tGateFirst-a.tAssembly)?g:a);
  return `每一條細線是一位菩薩，從離座畫到到位；<b>橘色越長，站在集結點越久</b>。最長等待在 <b>${esc(w.key)}</b>，集結點 ${esc(ds.nodeName(w.assembly))}。白4 以後不集結，由出口直接接尾下樓，所以沒有橘色。`;}

@@ -54,8 +54,6 @@ ol.steps::before{content:'';position:absolute;left:21px;top:20px;bottom:20px;wid
 .step .body{padding:6px 14px 12px;border-radius:14px;min-width:0}
 .step.now .body{background:var(--paper);box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(20,40,60,.07)}
 .step h2{margin:0;font-size:18px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.step h2 time{color:var(--blue);font-size:17px;white-space:nowrap}
-.step h2 time small{color:var(--dim);font-weight:400;font-size:12px;margin-right:5px}
 .step p{margin:4px 0 0;color:var(--dim);font-size:15px;overflow-wrap:anywhere}
 .step p strong{color:var(--ink)}
 .step:hover .body{background:var(--paper)}
@@ -129,17 +127,17 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
  const aheadTxt=!ahead?'你是這一路的第一位':`跟在 <strong>${ahead.id}</strong>${ahead.lie!==p.lie?`（列 ${ahead.lie}）`:''}${ahead.exit!==p.exit?`（${ahead.exit} 出口）`:''} 後面`;
  const seat=[p.rest.X,p.rest.Y];
  return [
-  {k:'起',h:'離座',t:s.leave,show:s.leave,tl:'',pts:[seat,...pathIn(p,s.leave,s.leave+2)],pad:2,
+  {k:'起',h:'離座',t:s.leave,pts:[seat,...pathIn(p,s.leave,s.leave+2)],pad:2,
    d:`從 <strong>${seatOf(p)}</strong> 起身。你是 <strong>${p.exit} 出口第 ${i+1} 位</strong>（共 ${ex.used} 位）；${prev?`前一位 <strong>${prev}</strong>`:'<strong>你是第一位</strong>'}，${next?`後一位 <strong>${next}</strong>`:'<strong>你是最後一位</strong>'}。${splitTxt}`},
-  {k:'出',h:'出口',t:s.leave+.8,show:tExit,tl:'到走廊',pts:pathIn(p,s.leave,tExit+1),pad:1.4,
+  {k:'出',h:'出口',t:s.leave+.8,pts:pathIn(p,s.leave,tExit+1),pad:1.4,
    d:`往<strong>${SIDE[ex.side]||''}側</strong>走道出去，上 <strong>${ex.stairLabel}</strong>，到 B1 走廊。`},
-  {k:'走',h:'走廊與樓梯',t:tExit,show:s.stair,tl:'過樓梯口',pts:pathIn(p,tExit,s.stair+1),pad:1.6,
+  {k:'走',h:'走廊與樓梯',t:tExit,pts:pathIn(p,tExit,s.stair+1),pad:1.6,
    d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。這一路是三列交錯排隊，前一位常是別列的人，照順序跟著就好。到樓梯口<strong>不停</strong>，直接下 B2。`},
-  {k:'集',h:'門前隊伍',t:s.assembly,show:s.assembly,tl:'跟上',pts:pathIn(p,s.assembly-4,s.assembly+.1),pad:1.4,w:s.enter-s.assembly,
+  {k:'集',h:'門前隊伍',t:s.assembly,pts:pathIn(p,s.assembly-4,s.assembly+.1),pad:1.4,w:s.enter-s.assembly,
    d:`下樓後走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數；${p.lane==='A'?'白衣在北三路':'藍衣在南三路'}），排在這一路<strong>第 ${p.slot+1} 位</strong>，跟上前一位，和左右同一排的人並肩。隊伍會<strong>慢慢往前推</strong>，跟著走就好${p.dadui===1?'；大隊 1 要先把隊伍排滿才開始推進':''}。`},
-  {k:'進',h:'進場',t:s.enter,show:s.gate,tl:'過西一入口',pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
+  {k:'進',h:'進場',t:s.enter,pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
    d:'走到隊頭時，和同一排六個人<strong>一起轉進西一入口</strong>；過門後照原路走到場內位置。'},
-  {k:'到',h:'到位',t:s.arrive,show:s.arrive,tl:'',pts:pathIn(p,s.gate,s.arrive),pad:1.6,
+  {k:'到',h:'到位',t:s.arrive,pts:pathIn(p,s.gate,s.arrive),pad:1.6,
    d:`過西一入口後走到場內位置 <strong>列 ${p.lie} 排 ${p.pai}</strong>，站定就是到位。`},
  ];}
 
@@ -183,7 +181,7 @@ function draw(){const D=ds.D,P=ds.P;v.begin(C.paper);
  v.dot(me.field.X,me.field.Y,7,null,C.go,2);
  v.dot(now[0],now[1],Math.max(7,r*2.2),C.go,C.paper,2.5);
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.ink,size:13,weight:700,halo:C.paper,dy:-14});
- $('clk').textContent=Math.max(0,Math.min(100,Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)))+'%';$('tl').value=t;
+ $('clk').textContent=Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)+'%';$('tl').value=t;
  const cur=steps.reduce((a,s,i)=>t>=s.t-.01?i:a,-1);document.querySelectorAll('.step').forEach((li,i)=>{li.classList.toggle('now',i===cur);li.classList.toggle('past',i<cur);});}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readC();dirty=true;});
 function frame(n){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*4);last=n;dirty=true;if(t>=+$('tl').max){playing=false;setIco();}}if(v&&v.step(n))dirty=true;if(dirty&&me&&v){draw();dirty=false;}requestAnimationFrame(frame);}
@@ -194,7 +192,7 @@ function frame(n){if(playing){if(last)t=Math.min(+$('tl').max,t+(n-last)/1000*4)
  if(q.has('id'))fromUrl(q.get('id')||'');
  else if(norm($('lie').value)&&norm($('pai').value))lookup($('lie').value,$('pai').value);   // 讀取中就先打好的列排
  requestAnimationFrame(function first(n){frame(n);window.__dome_ready=true;});})();
-window.__seek=x=>{if(me){t=me.t.leave+x*(me.t.arrive-me.t.leave);dirty=true;}};
+window.__seek=x=>{if(me){t=me.t.leave+Math.max(0,Math.min(1,x))*(me.t.arrive-me.t.leave);dirty=true;}};
 </script>
 </body>
 </html>
