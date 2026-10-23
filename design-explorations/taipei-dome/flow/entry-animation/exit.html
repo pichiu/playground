@@ -157,10 +157,9 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 // 大隊色：藍衣藍色系、白衣淡暖色，大隊 1→9 由淺到深；色帶上一律寫「{區塊}×{人數}」，顏色只是輔助。
 const BLUE=['#d3e3f8','#b2cdf1','#8fb4e9','#6c9ae0','#3a6bbd','#2c5aa8','#244b92','#1d3d7a','#162f62'];
 const WARM=['#fbf4e3','#f4e8c6','#ecd9a7','#e2c98a','#d6b86f','#c7a65a','#b59348','#86672a','#6d5320'];
-// 合心區：演繹位置依「位置（前→後）、列（1→54）」排序後切段，起訖含頭尾，寫成 列-位置。
-const AREAS=[{name:'高雄',from:[1,1],to:[48,11],c:'#b8442e',ink:'#ffffff'},{name:'屏東',from:[49,11],to:[7,14],c:'#e9c46a',ink:'#1b2629'},{name:'嘉義',from:[8,14],to:[54,15],c:'#7cbf8a',ink:'#1b2629'},{name:'台南',from:[1,16],to:[50,22],c:'#2f6690',ink:'#ffffff'},{name:'桃園',from:[1,23],to:[28,34],c:'#7d4a8c',ink:'#ffffff'}];
-const ordOf=(lie,pai)=>pai*100+lie;
-const areaOf=p=>{const o=ordOf(p.lie,p.pai);return AREAS.find(a=>o>=ordOf(...a.from)&&o<=ordOf(...a.to))||null;};
+// 合心區色：區別讀 persons[].a（高雄 1-1–49-11、屏東 50-11–7-14、嘉義 8-14–54-15、台南 1-16–50-22、桃竹 1-23–28-34，列-位置）。
+const AREAS=[{name:'高雄',c:'#b8442e',ink:'#ffffff'},{name:'屏東',c:'#e9c46a',ink:'#1b2629'},{name:'嘉義',c:'#7cbf8a',ink:'#1b2629'},{name:'台南',c:'#2f6690',ink:'#ffffff'},{name:'桃竹',c:'#7d4a8c',ink:'#ffffff'}];
+const areaOf=p=>AREAS.find(a=>a.name===p.a)||null;
 let paint='dadui';   // dadui＝藍白大隊色；area＝合心區色
 const colorOf=p=>{if(paint==='area'){const a=areaOf(p);return a?a.c:'#9a9f9c';}return (p.costume==='藍'?BLUE:WARM)[p.dadui-1];};
 const inkOf=p=>{if(paint==='area'){const a=areaOf(p);return a?a.ink:'#1b2629';}return (p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';};   // 深色底才用白字，對比皆 ≥ 4.5:1
