@@ -11,8 +11,8 @@ def test_exit_141(open_page):
     assert pg.locator('canvas#seatmap').count() == 1
 
 
-def test_exit_139_last_row_has_empty(open_page):
-    pg, errs, perrs = open_page('exit.html?e=139', 375, 700)
+def test_exit_143_last_row_has_empty(open_page):                # 保留不坐之後只剩 143 有空席（6 席）
+    pg, errs, perrs = open_page('exit.html?e=143', 375, 700)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     rows = pg.locator('[data-row]')
     assert '空' in rows.nth(rows.count() - 1).inner_text()
@@ -20,12 +20,12 @@ def test_exit_139_last_row_has_empty(open_page):
 
 
 def test_exit_141_handover_text_and_switch(open_page):
-    """141 先供 B 路（藍9…藍3）再供 A 路（白8…白9）：要有「換 142 接 B 路」、「本出口改供 A 路」、「A 路到此結束」。"""
+    """141 先供 B 路（藍9…藍1 前段）再供 A 路（白9 後段）：要有「換 142 接 B 路」、「本出口改供 A 路」、「A 路到此結束」。"""
     pg, errs, perrs = open_page('exit.html?e=141', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     txt = pg.inner_text('main')
-    assert '藍3 最後一位' in txt and '換 142' in txt and '接 B 路' in txt
-    assert '改供 A 路' in txt and '白8 起' in txt
+    assert '藍1（前段） 最後一位' in txt and '換 142' in txt and '接 B 路' in txt and '藍1（後段） 起' in txt
+    assert '改供 A 路' in txt and '白9（後段） 起' in txt
     assert 'A 路到此結束' in txt
     assert not errs and not perrs, (errs, perrs)
 
@@ -35,7 +35,7 @@ def test_exit_pick_button_switches(open_page):
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     pg.click('[data-exit="144"]')
     assert pg.locator('[data-exit="144"][aria-pressed="true"]').count() == 1
-    assert pg.locator('[data-row]').count() == 14 and '144 出口' in pg.inner_text('main h1')
+    assert pg.locator('[data-row]').count() == 8 and '144 出口' in pg.inner_text('main h1')
     assert '?e=144' in pg.url
     assert not errs and not perrs, (errs, perrs)
 

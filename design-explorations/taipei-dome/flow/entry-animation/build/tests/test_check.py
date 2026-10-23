@@ -20,11 +20,12 @@ def test_check_all_green(built):
     assert all(0.25 <= v['minGap'] and v['maxGapWithin'] <= 0.55 for v in C['continuity']['gate'].values())
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 and C['seats']['orderViolations'] == 0
     assert C['staging']['ok'] and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in C['capacity'].values())
-    assert C['assignment']['upstreamViolations'] == 0 == C['assignment']['distinctStairViolations'] == C['assignment']['splitColumns']
+    assert C['assignment']['upstreamViolations'] == 0 == C['assignment']['notFullSwitches'] == C['assignment']['distinctStairViolations']
+    assert C['assignment']['splitColumns'] == 5
     assert C['assignment']['segments'] == {'A': 3, 'B': 3, 'C': 3}
     assert C['seats']['wrongSection'] == 0 == C['seats']['orderCoverage']
     assert C['routes']['departureCrossings'] == 0 == C['routes']['arrivalCrossings']
-    assert C['capacity']['139'] == dict(used=199, capacity=206, fieldsOk=True)
+    assert C['capacity']['139'] == dict(used=226, capacity=226, fieldsOk=True)
     assert D['meta']['checks']['ok'] is True and D['meta']['checks']['nesting'] == C['nesting'] and D['meta']['checks']['assignment'] == C['assignment']
 
 
@@ -55,7 +56,7 @@ def test_check_recomputes_capacity_not_trusting_fields(built):
     e = next(e for e in D['exits'] if e['key'] == '140')
     e['used'], e['capacity'] = 1, 9999
     C = check.check_all(D)
-    assert C['capacity']['140']['used'] == 282 and C['capacity']['140']['capacity'] == 291   # 由 persons / restSeats 重算
+    assert C['capacity']['140']['used'] == 291 and C['capacity']['140']['capacity'] == 291   # 由 persons / restSeats 重算
     assert C['capacity']['140']['fieldsOk'] is False and C['ok'] is False
 
 
@@ -70,15 +71,15 @@ def test_check_detects_same_stair_supply(built):
     assert C['nesting']['violations'] == 0 and C['assignment']['distinctStairViolations'] == 1 and C['ok'] is False
 
 
-def test_check_detects_downstream_switch_and_split_column(built):
-    # A 路最後一位（白9，141）改回 139：巢狀仍成立，但換口往下游，而且那一列被拆成兩個出口
+def test_check_detects_downstream_switch_and_not_full_switch(built):
+    # A 路最後一位（白9，141）改回 139：巢狀仍成立，但換口往下游，141 少一人沒坐滿 B 路就換到 142
     _, D = built
     D = _copy(D)
     a = max((p for p in D['persons'] if p['lane'] == 'A'), key=lambda p: p['laneIdx'])
     assert a['exit'] == '141'
     a['exit'] = '139'
     C = check.check_all(D)
-    assert C['assignment']['upstreamViolations'] == 1 and C['assignment']['splitColumns'] == 1
+    assert C['assignment']['upstreamViolations'] == 1 and C['assignment']['notFullSwitches'] == 1
     assert C['seats']['wrongSection'] == 1 and C['ok'] is False
 
 

@@ -3,7 +3,7 @@ import hashlib
 import re
 import subprocess
 
-BASE_2C = '4cd340e'   # 版本 3 開工前的 2c
+BASE_2C = 'd9af8c5'   # 2c 最後一次刻意改資料與建置（10/23 code review：分兩出口的列、保留席由資料提供）；之後 2c 不動
 
 
 def test_readmes_present(root):

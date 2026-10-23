@@ -86,7 +86,7 @@ let ds=null,rows=[],rowEls=[],view=null,T=1,t=0,hover=-1,lastHover=-2,dirty=true
 // 列序 = 樓梯序：依 groups（藍9…藍1、白1…白9），每個區塊內 A、B、C 三欄。
 function rowsFor(ds){const byLie=new Map(ds.files.map(f=>[f.lie,f])),out=[];
  ds.groups.forEach((g,gi)=>{for(const L of ['A','B','C']){const ln=g.lanes[L],ps=ds.P.filter(p=>p.lie===ln.lie).sort((a,b)=>a.t.leave-b.t.leave);
-  out.push({lie:ln.lie,exit:ln.exit,lane:L,g,gi,ps,file:byLie.get(ln.lie)});}});return out;}
+  out.push({lie:ln.lie,exit:ln.exits.map(x=>x.exit).join('→'),lane:L,g,gi,ps,file:byLie.get(ln.lie)});}});return out;}   // exit：一列可能分坐兩個出口，寫成「139→140」
 // 摘要：groups 中不是 FEEDER 者，tGateFirst − tAssembly 最大的區塊。
 function summaryText(ds){const w=ds.groups.filter(g=>g.assembly!=='FEEDER').reduce((a,g)=>(g.tGateFirst-g.tAssembly)>(a.tGateFirst-a.tAssembly)?g:a);
  return `每一條細線是一位菩薩，從離座畫到到位；<b>橘色越長，站在集結點越久</b>。最長等待在 <b>${esc(w.key)}</b>，集結點 ${esc(ds.nodeName(w.assembly))}。白4 以後不集結，由出口直接接尾下樓，所以沒有橘色。`;}
@@ -98,7 +98,7 @@ const xOf=v=>PL+v/T*(W-PL-R),tOf=x=>Math.max(0,Math.min(T,(x-PL)/(W-PL-R)*T));
 function groupSpan(gi){const idx=rows.map((r,i)=>r.gi===gi?i:-1).filter(i=>i>=0);return [yOf(idx[0]),yOf(idx[idx.length-1])+RH];}
 function buildLabels(){labels.style.height=H+'px';let html='';
  ds.groups.forEach((gr,gi)=>{const [y0,y1]=groupSpan(gi);html+=`<div class="grp ${gr.costume}" style="top:${y0}px;height:${y1-y0}px" title="${esc(`${gr.key}：${gr.population} 人，${ds.nodeName(gr.assembly)}`)}">${esc(gr.key)}</div>`;});
- rows.forEach((r,i)=>{const f=r.file,tt=`列 ${r.lie}：${r.g.key}，${r.ps.length} 人。${ds.exitName(r.exit)} → ${ds.laneName(r.lane)} → ${ds.nodeName(r.g.assembly)}`;
+ rows.forEach((r,i)=>{const f=r.file,tt=`列 ${r.lie}：${r.g.key}，${r.ps.length} 人。${r.exit} 出口 → ${ds.laneName(r.lane)} → ${ds.nodeName(r.g.assembly)}`;
   html+=`<div data-row data-lie="${r.lie}" data-i="${i}" style="top:${yOf(i)}px;height:${RH}px" title="${esc(tt)}">列 ${r.lie} · ${esc(r.exit)}·${r.lane}</div>`;});
  labels.innerHTML=html;rowEls=[...labels.querySelectorAll('[data-row]')];}
 function layout(){if(!rows.length)return;const w=g.getBoundingClientRect().width;if(!w)return;W=w;dpr=Math.min(2,devicePixelRatio||1);
@@ -147,7 +147,7 @@ function paintMap(){const v=view,c=v.begin(C.card);v.base(ds.D.map,{floor:C.fain
 const ROWS=[['seated','休息區'],['walk','走廊／樓梯'],['wait','集結等待'],['enter','進場中'],['done','已到位']];
 function paintRead(){const rr=hover>=0?rows[hover]:null,list=rr?rr.ps:ds.P,cs=counts(t,list),n=list.length;
  const title=rr?`列 ${rr.lie} · ${esc(rr.g.key)}`:`全體 ${ds.D.meta.population.toLocaleString('zh-TW')} 人`;
- const sub=rr?`<p class="sub">${esc(ds.exitName(rr.exit))} → ${esc(ds.laneName(rr.lane))} → ${esc(ds.nodeName(rr.g.assembly))}</p>`:'';
+ const sub=rr?`<p class="sub">${esc(rr.exit)} 出口 → ${esc(ds.laneName(rr.lane))} → ${esc(ds.nodeName(rr.g.assembly))}</p>`:'';
  const waitRow=rr?`<tr><td>集結</td><td class="n">${rr.g.assembly==='FEEDER'?'不集結，直接接尾':'在集結區等'}</td></tr>`:'';
  $('read').innerHTML=`<h2><span>${title}</span><output>${Math.round(t/T*100)}%</output></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
 (async()=>{try{ds=await Dome.load();}catch(e){$('summary').textContent=e.message;return;}

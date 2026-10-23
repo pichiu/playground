@@ -57,15 +57,26 @@ EXIT_DEF = {
     '145': dict(sec='145', stair='144｜145', side='S', v1block='145',  fill='asc',  stairLabel='144｜145 階梯北半'),
 }
 UNUSED_KINDS = {'blocked', 'work'}
+# 139 第 1 排 1–5 號在版本 1 圖面標成 blocked；企劃座位表（2025.04.10「B1外野座位席ok」）整排 1–21 號都是「視線不良處」，可以坐
+KIND_FIX = {('139', 1, no): 'blue' for no in range(1, 6)}
+
+
+def seat_kind(seat):
+    return KIND_FIX.get((seat['sec'], seat['pai'], seat['no']), seat['kind'])
 STAIR_OF = {e: d['stair'] for e, d in EXIT_DEF.items()}   # 出口所在的階梯：139/140 同一座、144/145 同一座
 
 
+def seat_reserved(seat):
+    """保留不坐：139 留 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號，這兩排由 4 號起）；144 第 1–6 排 72 席。"""
+    if seat['sec'] == '139':
+        return seat['no'] <= (5 if seat['pai'] >= 11 else 3)
+    if seat['sec'] == '144':
+        return seat['pai'] <= 6
+    return False
+
+
 def seat_usable(seat):
-    if seat['kind'] in UNUSED_KINDS:
-        return False
-    if seat['sec'] == '139' and seat['no'] <= 5:          # 139 的 1–5 號沿現況不用
-        return False
-    return True
+    return seat_kind(seat) not in UNUSED_KINDS and not seat_reserved(seat)
 
 
 def usable_seats(base, exit_key):

@@ -4,6 +4,7 @@
 """
 import collections
 import csv
+import itertools
 import json
 import math
 import sys
@@ -232,7 +233,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
                 if s['exit'] != key:
                     continue
                 ids = [q['id'] for q in sorted((q for q in persons if q['lane'] == L and s['fromIdx'] <= q['laneIdx'] <= s['toIdx']), key=lambda q: q['laneIdx'])]
-                segs.append(dict(lane=L, fromBlock=s['fromBlock'], toBlock=s['toBlock'], n=len(ids), firstId=ids[0], lastId=ids[-1],
+                segs.append(dict(lane=L, toBlock=s['toBlock'], fromLabel=s['fromLabel'], toLabel=s['toLabel'], label=s['label'], n=len(ids), firstId=ids[0], lastId=ids[-1],
                                  fromRow=P[ids[0]]['rest']['pai'], toRow=P[ids[-1]]['rest']['pai'],
                                  tFirstLeave=P[ids[0]]['t']['leave'], tLastLeave=P[ids[-1]]['t']['leave']))
         segs.sort(key=lambda s: s['tFirstLeave'])
@@ -251,7 +252,8 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     files = []
     for lie in range(1, 55):
         ps = sorted((p for p in persons if p['lie'] == lie), key=lambda p: p['gateIdx'])
-        files.append(dict(lie=lie, dadui=ps[0]['dadui'], costume=ps[0]['costume'], n=len(ps), lane=ps[0]['lane'], exit=ps[0]['exit'],
+        files.append(dict(lie=lie, dadui=ps[0]['dadui'], costume=ps[0]['costume'], n=len(ps), lane=ps[0]['lane'],
+                          exits=[dict(exit=e, n=len(list(g))) for e, g in itertools.groupby(sorted(ps, key=lambda p: p['laneIdx']), key=lambda p: p['exit'])],
                           assembly=ps[0]['assembly'], order=[p['id'] for p in ps],
                           tLeave=min(p['t']['leave'] for p in ps), tAssembly=max(p['t']['assembly'] for p in ps),
                           tEnter=min(p['t']['enter'] for p in ps), tGate=min(p['t']['gate'] for p in ps), tArrive=max(p['t']['arrive'] for p in ps)))
@@ -279,11 +281,11 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
             n['label'] = '西一入口(場內)'
         nodes[k] = n
     who_seat = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
-    rest = [dict(s, who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
+    rest = [dict(s, kind=plan.seat_kind(s), reserved=plan.seat_reserved(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
     zones = {k: dict(v) for k, v in G.ZONES.items()}
     w3 = [p for p in persons if p['assembly'] == 'P6']
     zones['P6']['tailU'] = round(min(G.slot_u(p, p['slot']) for p in w3), 3)
-    meta = dict(title='入經藏 西一＋桃竹 休息區→集結→進場 動線資料（2c 七出口三路接續）', built='2026-10-19',
+    meta = dict(title='入經藏 西一＋桃竹 休息區→集結→進場 動線資料（2c 七出口三路接續）', built='2026-10-23',
                 mPerUnit=base['meta']['mPerUnit'], frame=base['meta']['frame'], population=len(persons), tEnd=t_end,
                 speedUnitPerSec=V, headway=HEADWAY, laneStagger=STAGGER, t0=T0,
                 tStairStart=round(clocks['tStairStart'], 3), tGateStart=round(clocks['tGateStart'], 3),
@@ -299,14 +301,14 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
 RULES = [
     '樓梯三路由北到南 A、B、C；A 最靠看台側。樓梯序：藍9→藍1，再白1→白9；每大隊三欄一欄一路（白 6k−5/6k−4/6k−3；藍1 6k−2/6k−1/6k；藍2–9 從死巷反向走回西一入口，6k/6k−1/6k−2，A 路才對到最先轉進場的那條線）',
     '七個出口：139、140、141、142、143、144、145，雙側可走的區只走靠樓梯那一側；任何時刻供 A 路的出口最近、供 C 路的最遠，所以走廊上不交叉',
-    'A 路：139（藍9–藍3）→140（藍2–白7）→141（白8–9）；B 路：141（藍9–藍3）→142（藍2–白3）→143（白4–9）；C 路：142（藍9–7）→144（藍6–1）→145（白1–9）',
-    '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面；每欄只來自一個出口',
+    'A 路：139 → 140 → 141；B 路：141 → 142 → 143；C 路：142 → 144 → 145；出口坐滿才換下一個（141 先給 A、142 先給 C 需要的席數，其餘給 B），換口可以落在列中間',
+    '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面；換口落在列中間時，那一欄前段、後段分坐兩個出口',
     '藍衣全部先下 B2 集結（藍 8·9／6·7／4·5／2·3，藍1 與白1 同在集結區 1）；白2 在樓梯、白3 在 B1 短暫候隊（數秒）；白4 以後依西一入口時刻倒推離座，直接接尾下樓',
     '進場依大隊 1→9，西一入口六路（北三路白、南三路藍）每路連續不斷拍；不等全部集結完：大隊 1 在藍1、白1 隊頭站定後就出發，樓梯同時不停、白2 以後接續下樓；西一入口之後沿原場內路徑',
 ]
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；同一路相鄰兩人 0.4 秒、三路／六路錯開 0.17 秒、站定後 0.6 秒才起步；皆為動畫節奏，不是現場秒數',
-    '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；集結區位置沿用版本 2；139 的 1–5 號不用',
+    '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；集結區位置沿用版本 2；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
     '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
     '碰撞檢查為圖面點距（0.03 單位），不是人體寬度或通道容量認證',
 ]

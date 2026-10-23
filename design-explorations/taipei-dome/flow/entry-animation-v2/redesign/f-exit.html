@@ -8,9 +8,9 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
 <style>
-:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--on-accent:#fff;--grid:#e6e5de;--dead:#9a9f9c;--laneA:#e0a73a;--laneB:#7fa5c7;--laneC:#9b8ad1;--tick:rgba(255,255,255,.5);color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--tick:rgba(0,0,0,.35);color-scheme:dark}}
-:root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--tick:rgba(0,0,0,.35);color-scheme:dark}
+:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--on-accent:#fff;--grid:#e6e5de;--dead:#9a9f9c;--keep:#e9a198;--laneA:#e0a73a;--laneB:#7fa5c7;--laneC:#9b8ad1;--tick:rgba(255,255,255,.5);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--keep:#7a3f38;--tick:rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--on-accent:#0e1a16;--grid:#2a373b;--dead:#55626a;--keep:#7a3f38;--tick:rgba(0,0,0,.35);color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 a{color:var(--accent);text-underline-offset:3px}
@@ -127,7 +127,7 @@ canvas#seatmap{display:block;cursor:pointer}
  </main>
 </div>
 <section class="card map" id="map">
- <h2><span>休息區座位圖 <small>七區並排 · 左 139 → 右 145 · 上排在上 · 顏色＝大隊，灰＝空席，深灰＝不可用／工作席</small></span><span class="tools"><button type="button" id="zoom" aria-pressed="false">放大</button></span></h2>
+ <h2><span>休息區座位圖 <small>七區並排 · 左 139 → 右 145 · 上排在上 · 顏色＝大隊，灰＝空席，玫瑰紅＝保留不坐，深灰＝不可用／工作席</small></span><span class="tools"><button type="button" id="zoom" aria-pressed="false">放大</button></span></h2>
  <div class="scroll" id="mapscroll"><canvas id="seatmap" role="img" aria-label="休息區七區座位圖，每席一格，顏色為大隊"></canvas></div>
  <p id="seat-tip" aria-live="polite">點一下座位：顯示位置編碼、大隊、走哪一路。</p>
  <div class="legend" id="legend"></div>
@@ -151,7 +151,7 @@ let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,cells=[
 function buildIdx(){const R=ds.D.restSeats;TH={min:Infinity,max:-Infinity};
  for(const s of R){const S=SEC[s.sec]||(SEC[s.sec]={sec:s.sec,seats:[],thMin:Infinity,thMax:-Infinity,usable:new Map()});S.seats.push(s);
   if(s.theta<S.thMin)S.thMin=s.theta;if(s.theta>S.thMax)S.thMax=s.theta;if(s.theta<TH.min)TH.min=s.theta;if(s.theta>TH.max)TH.max=s.theta;
-  const ok=(s.kind==='normal'||s.kind==='blue')&&!(s.sec==='139'&&s.no<=5);   // spec §3.2：blocked/work 不用，139 的 1–5 號不用
+  const ok=(s.kind==='normal'||s.kind==='blue')&&!s.reserved;   // 保留席由 build.py 寫進 restSeats[].reserved（plan.seat_reserved）
   if(ok){if(!S.usable.has(s.pai))S.usable.set(s.pai,[]);S.usable.get(s.pai).push(s.no);}}
  SECS=Object.keys(SEC).sort();
  for(const e of ds.exits){const S=SEC[e.sec];if(!S)continue;const f=ds.byId.get(e.order[0]).rest,st=S.seats.find(s=>s.pai===f.pai&&s.no===f.no);S.exitRight=st?st.theta>(S.thMin+S.thMax)/2:false;}}
@@ -169,9 +169,9 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  const first=byId.get(e.order[0]),last=byId.get(e.order[e.order.length-1]);
  const empties=e.capacity-e.used;
  // 每段：接在誰後面、之後換誰
- const segs=e.segments.map((s,i)=>{const L=s.lane,ls=ds.lanes[L].segments,j=ls.findIndex(x=>x.exit===key&&x.fromBlock===s.fromBlock),prev=ls[j-1],nx=ls[j+1];
-  const nxSeg=nx?ds.exitsByKey[nx.exit].segments.find(x=>x.lane===L&&x.fromBlock===nx.fromBlock):null;
-  return {s,i,L,prev,nx,nxSeg,blocks:s.fromBlock===s.toBlock?s.fromBlock:`${s.fromBlock} … ${s.toBlock}`};});
+ const segs=e.segments.map((s,i)=>{const L=s.lane,ls=ds.lanes[L].segments,j=ls.findIndex(x=>x.exit===key),prev=ls[j-1],nx=ls[j+1];
+  const nxSeg=nx?ds.exitsByKey[nx.exit].segments.find(x=>x.lane===L):null;
+  return {s,i,L,prev,nx,nxSeg,blocks:s.label};});
  $('head').innerHTML=`<h1>${e.key} 出口 <span>（${esc(e.stairLabel)}）</span></h1>
  <dl class="facts">
   <div><dt>離座方向</dt><dd><b>${SIDE[e.side]||e.side}</b>上 ${esc(e.stairLabel)}</dd></div>
@@ -179,13 +179,13 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
   <div><dt>最後一位離座</dt><dd><b>${fmt(last.t.leave)}</b>${last.id} · 第 ${last.rest.pai} 排 ${last.rest.no} 號</dd></div>
   <div><dt>用量</dt><dd><b>${e.used} <small style="font-size:14px;font-weight:500">/ ${e.capacity} 席</small></b>${e.rows.length} 排${empties?` · 空 ${empties} 席`:' · 坐滿'}</dd></div>
  </dl>
- <ol class="segs" aria-label="本出口供應的路與時間">${segs.map(({s,L,prev,nx,nxSeg,blocks})=>`<li class="lane-${L}"><b class="l">${esc(ds.laneName(L))}</b> ${blocks} · ${s.n} 人 · 第 ${s.fromRow} → ${s.toRow} 排<br><span class="tm">第一位 ${fmt(s.tFirstLeave)} 離座 … 最後一位 ${fmt(s.tLastLeave)}</span><br><span class="nx">${prev?`接在 ${prev.exit} 出口的 ${prev.toBlock} 之後`:`${L} 路由本出口開頭`}${nx?` → ${s.toBlock} 走完換 ${nx.exit} 出口（${nx.fromBlock} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:` → ${s.toBlock} 走完 ${L} 路結束`}</span></li>`).join('')}</ol>`;
+ <ol class="segs" aria-label="本出口供應的路與時間">${segs.map(({s,L,prev,nx,nxSeg,blocks})=>`<li class="lane-${L}"><b class="l">${esc(ds.laneName(L))}</b> ${blocks} · ${s.n} 人 · 第 ${s.fromRow} → ${s.toRow} 排<br><span class="tm">第一位 ${fmt(s.tFirstLeave)} 離座 … 最後一位 ${fmt(s.tLastLeave)}</span><br><span class="nx">${prev?`接在 ${prev.exit} 出口的 ${prev.toLabel} 之後`:`${L} 路由本出口開頭`}${nx?` → ${s.toLabel} 走完換 ${nx.exit} 出口（${nx.fromLabel} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:` → ${s.toLabel} 走完 ${L} 路結束`}</span></li>`).join('')}</ol>`;
  // 段落交界：掛在該段最後一位所在那一排之後
  const hand=new Map(),push=(pai,h)=>{if(!hand.has(pai))hand.set(pai,[]);hand.get(pai).push(h);};
  for(const {s,i,L,nx,nxSeg} of segs){const lp=byId.get(s.lastId),where=`${s.lastId}，第 ${lp.rest.pai} 排 ${lp.rest.no} 號，${fmt(s.tLastLeave)} 離座`;
-  push(s.toRow,`<div class="hand lane-${L}" data-handover="${esc(s.toBlock)}"><div class="t">${fmt(s.tLastLeave)}<small>換口</small></div><p><b>${s.toBlock} 最後一位</b>（${where}）→ ${nx?`<b>換 ${nx.exit} 出口接 ${L} 路</b>（${nx.fromBlock} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:`<b>${L} 路到此結束</b>（全路 ${ds.lanes[L].total} 人走完）`}</p></div>`);
+  push(s.toRow,`<div class="hand lane-${L}" data-handover="${esc(s.toBlock)}"><div class="t">${fmt(s.tLastLeave)}<small>換口</small></div><p><b>${s.toLabel} 最後一位</b>（${where}）→ ${nx?`<b>換 ${nx.exit} 出口接 ${L} 路</b>（${nx.fromLabel} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:`<b>${L} 路到此結束</b>（全路 ${ds.lanes[L].total} 人走完）`}</p></div>`);
   const n2=e.segments[i+1];
-  if(n2){const fp=byId.get(n2.firstId);push(s.toRow,`<div class="hand switch lane-${n2.lane}" data-handover="${esc(s.toBlock)}→${n2.lane}"><div class="t">${fmt(n2.tFirstLeave)}<small>本出口改路</small></div><p><b>${s.toBlock} 最後一位</b> → <b>本出口改供 ${n2.lane} 路</b>（${n2.fromBlock} 起，${n2.firstId} 第 ${fp.rest.pai} 排 ${fp.rest.no} 號，${fmt(n2.tFirstLeave)} 第一位離座；中間空 ${fmt(n2.tFirstLeave-s.tLastLeave)}）</p></div>`);}}
+  if(n2){const fp=byId.get(n2.firstId);push(s.toRow,`<div class="hand switch lane-${n2.lane}" data-handover="${esc(s.toBlock)}→${n2.lane}"><div class="t">${fmt(n2.tFirstLeave)}<small>本出口改路</small></div><p><b>${s.toLabel} 最後一位</b> → <b>本出口改供 ${n2.lane} 路</b>（${n2.fromLabel} 起，${n2.firstId} 第 ${fp.rest.pai} 排 ${fp.rest.no} 號，${fmt(n2.tFirstLeave)} 第一位離座；中間空 ${fmt(n2.tFirstLeave-s.tLastLeave)}）</p></div>`);}}
  // 每排
  const tot=r=>(S.usable.get(r.pai)||r.seats).length,maxTot=Math.max(...e.rows.map(tot));
  const rowsHtml=e.rows.map(r=>{const pieces=[];
@@ -202,7 +202,7 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  const usedPai=new Set(e.rows.map(r=>r.pai)),unused=[...S.usable.keys()].filter(p=>!usedPai.has(p)).sort((a,b)=>b-a);
  const r0=e.rows[0];
  $('rows').innerHTML=`<h2>帶隊順序 · 由上排往下</h2><p class="how">本出口 ${e.used} 人依序從第 ${r0.pai} 排帶起，每排由出口側 ${r0.seats[0]} 號往 ${r0.seats[r0.seats.length-1]} 號方向；一排走完接下一排。色帶寬度依座位數，每格一席，底線顏色是走哪一路。</p><div class="dir"><span>出口側（先走）</span><span>中央</span></div>${rowsHtml}${unused.length?`<p class="unused">第 ${unused.join('、')} 排未使用（${unused.reduce((a,p)=>a+S.usable.get(p).length,0)} 席空）。</p>`:''}`;
- $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
+ $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--keep)"></i>保留不坐</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
 }
 // 色帶小格放不下字時藏起來（說明列仍完整列出）
 function fitLabels(){for(const pc of $('rows').querySelectorAll('.pc')){const lb=pc.firstElementChild;pc.classList.remove('tight');if(lb.offsetWidth>pc.clientWidth-2)pc.classList.add('tight');}}
@@ -218,7 +218,7 @@ function drawMap(scrollTo=false){if(!ds)return;
  const W=Math.ceil(units*cell+padL+padR),H=Math.ceil(top+PAI_MAX*ch+bot),dpr=Math.min(2,devicePixelRatio||1);
  cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
- const col={grid:cssVar('--grid'),dead:cssVar('--dead'),dim:cssVar('--dim'),ink:cssVar('--ink'),accent:cssVar('--accent')};
+ const col={grid:cssVar('--grid'),dead:cssVar('--dead'),keep:cssVar('--keep'),dim:cssVar('--dim'),ink:cssVar('--ink'),accent:cssVar('--accent')};
  const F='"Noto Sans TC",system-ui,sans-serif',X=th=>padL+(th-TH.min)/DEG*cell,Y=pai=>top+(PAI_MAX-pai)*ch;
  cells=[];cellMap.clear();
  c.font=`500 10px ${F}`;c.fillStyle=col.dim;c.textBaseline='middle';
@@ -232,14 +232,14 @@ function drawMap(scrollTo=false){if(!ds)return;
    else{c.textAlign='left';c.fillText('出口',xs+7,y);c.beginPath();c.moveTo(xs+5,y-8);c.lineTo(xs,y-4);c.lineTo(xs+5,y);c.fill();}}
   c.globalAlpha=isCur?1:.6;
   for(const s of S.seats){const x=X(s.theta),y=Y(s.pai),w=Math.max(1,cell-1),h=ch-1;
-   c.fillStyle=(s.kind==='blocked'||s.kind==='work')?col.dead:s.who?colorOf(ds.byId.get(s.who)):col.grid;c.fillRect(x,y,w,h);
+   c.fillStyle=(s.kind==='blocked'||s.kind==='work')?col.dead:s.who?colorOf(ds.byId.get(s.who)):s.reserved?col.keep:col.grid;c.fillRect(x,y,w,h);
    const rec={x,y,w,h,s};cells.push(rec);cellMap.set(`${s.sec}-${s.pai}-${s.no}`,rec);}
   c.globalAlpha=1;}
  if(sel){const rec=cellMap.get(sel);if(rec){c.strokeStyle=col.ink;c.lineWidth=2;c.strokeRect(rec.x-1.5,rec.y-1.5,rec.w+3,rec.h+3);}}
  if(scrollTo&&SEC[ds.exitsByKey[cur].sec]){const S=SEC[ds.exitsByKey[cur].sec],xs=X(S.thMin),xe=X(S.thMax)+cell;if(xs<sc.scrollLeft||xe>sc.scrollLeft+sc.clientWidth)sc.scrollLeft=Math.max(0,xs-24);}}
 function showTip(s){sel=`${s.sec}-${s.pai}-${s.no}`;const where=`${s.sec} 區 ${s.pai} 排 ${s.no} 號`;let t;
  if(s.kind==='blocked')t=`${where} · 不可用席`;else if(s.kind==='work')t=`${where} · 工作席，不排人`;
- else if(!s.who)t=`${where} · 空席`;
+ else if(!s.who)t=s.reserved?`${where} · 保留不坐`:`${where} · 空席`;
  else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位 · ${fmt(p.t.leave)} 離座`;}
  $('seat-tip').innerHTML=t+(s.sec!==cur?` <a href="?e=${s.sec}" data-go="${s.sec}">看 ${s.sec} 出口</a>`:'');drawMap();}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=Infinity;

@@ -1,8 +1,9 @@
-"""2c 排位規則：樓梯序、七出口巢狀指派、出口 FIFO 配座（spec §3.1–3.4）。
+"""2c 排位規則：樓梯序、七出口巢狀指派（出口坐滿就換）、出口 FIFO 配座（spec §3.1–3.4）。
 
 用法: python3 plan.py base.json plan.json
 """
 import collections
+import itertools
 import json
 import sys
 
@@ -17,12 +18,11 @@ LANE_COL = {'白': {'A': -5, 'B': -4, 'C': -3}, '藍': {'A': -2, 'B': -1, 'C': 0
 EXITS = ['139', '140', '141', '142', '143', '144', '145']
 EXIT_RANK = {e: i for i, e in enumerate(EXITS)}
 
-# ---------- 出口 → 路 固定指派（spec §3.3） ----------
-ASSIGN = {
-    'A': [('139', '藍9', '藍3'), ('140', '藍2', '白7'), ('141', '白8', '白9')],
-    'B': [('141', '藍9', '藍3'), ('142', '藍2', '白3'), ('143', '白4', '白9')],
-    'C': [('142', '藍9', '藍7'), ('144', '藍6', '藍1'), ('145', '白1', '白9')],
-}
+# ---------- 出口 → 路 指派（spec §3.3） ----------
+# 每路依序用的出口，坐滿才換下一個（10/23 保留不坐之後只剩 6 席空位，換口只能落在列中間）。
+EXIT_ORDER = {'A': ['139', '140', '141'], 'B': ['141', '142', '143'], 'C': ['142', '144', '145']}
+# 共用出口先保留給外側那一路（它其餘的出口都是獨用的），剩下的給 B
+SHARED = {'141': 'A', '142': 'C'}
 
 # ---------- 集結區（spec §3.5） ----------
 ZONE_OF = {}
@@ -43,14 +43,6 @@ def column_of(block, lane):
     costume, k = block_parts(block)
     key = '藍LIFO' if (costume == '藍' and ZONE_OF[block] in LIFO_ZONES) else costume
     return 6 * k + LANE_COL[key][lane]
-
-
-def exit_of(block, lane):
-    bi = BLOCKS.index(block)
-    for exit_key, b_from, b_to in ASSIGN[lane]:
-        if BLOCKS.index(b_from) <= bi <= BLOCKS.index(b_to):
-            return exit_key
-    raise KeyError((block, lane))
 
 
 def _people_index(base):
@@ -74,9 +66,44 @@ def lane_sequence(base, lane):
             pid = f'{lie}-{pai}'
             src = who[pid]
             out.append(dict(id=pid, lie=lie, pai=pai, dadui=k, costume=costume, a=src['a'],
-                            block=block, lane=lane, laneIdx=len(out), exit=exit_of(block, lane),
-                            assembly=ZONE_OF[block]))
+                            block=block, lane=lane, laneIdx=len(out), assembly=ZONE_OF[block]))
     return out
+
+
+def exit_quota(base, seqs):
+    """每路每個出口可坐幾人：獨用出口給全部可用席；共用出口先給 SHARED 那一路需要的（總人數 − 它獨用出口的席數），其餘給 B。"""
+    cap = {e: len(usable_seats(base, e)) for e in EXITS}
+    quota = {L: {e: cap[e] for e in EXIT_ORDER[L]} for L in LANES}
+    for e, owner in SHARED.items():
+        need = len(seqs[owner]) - sum(cap[x] for x in EXIT_ORDER[owner] if x != e)
+        quota[owner][e] = min(max(0, need), cap[e])
+        for L in LANES:
+            if L != owner and e in quota[L]:
+                quota[L][e] = cap[e] - quota[owner][e]
+    return quota
+
+
+def lane_sequences(base):
+    """三路的樓梯序，並依出口坐滿就換補上 exit。"""
+    seqs = {L: lane_sequence(base, L) for L in LANES}
+    assign_exits(base, seqs)
+    return seqs
+
+
+def assign_exits(base, seqs):
+    """出口坐滿就換：每路依 EXIT_ORDER 往下填，目前的出口沒有配額才換下一個。"""
+    quota = exit_quota(base, seqs)
+    for L in LANES:
+        left = dict(quota[L])
+        order = EXIT_ORDER[L]
+        oi = 0
+        for p in seqs[L]:
+            while oi < len(order) and left[order[oi]] <= 0:
+                oi += 1
+            if oi == len(order):
+                raise SystemExit(f'路 {L} 缺 {len(seqs[L]) - p["laneIdx"]} 席')
+            p['exit'] = order[oi]
+            left[order[oi]] -= 1
 
 
 def check_nesting(seqs):
@@ -101,15 +128,26 @@ EXIT_DEF = {
     '145': dict(sec='145', side='S', v1block='145',  fill='asc',  stairLabel='144｜145 階梯北半'),
 }
 UNUSED_KINDS = {'blocked', 'work'}
+# 139 第 1 排 1–5 號在版本 1 圖面標成 blocked；企劃座位表（2025.04.10「B1外野座位席ok」）整排 1–21 號都是「視線不良處」，可以坐
+KIND_FIX = {('139', 1, no): 'blue' for no in range(1, 6)}
+
+
+def seat_kind(seat):
+    return KIND_FIX.get((seat['sec'], seat['pai'], seat['no']), seat['kind'])
 STAIR_OF = {e: d['stairLabel'].split(' ')[0] for e, d in EXIT_DEF.items()}   # 出口所在的階梯：139/140 同一座、144/145 同一座
 
 
+def seat_reserved(seat):
+    """保留不坐：139 留 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號，這兩排由 4 號起）；144 第 1–6 排 72 席。"""
+    if seat['sec'] == '139':
+        return seat['no'] <= (5 if seat['pai'] >= 11 else 3)
+    if seat['sec'] == '144':
+        return seat['pai'] <= 6
+    return False
+
+
 def seat_usable(seat):
-    if seat['kind'] in UNUSED_KINDS:
-        return False
-    if seat['sec'] == '139' and seat['no'] <= 5:          # 139 的 1–5 號沿現況不用
-        return False
-    return True
+    return seat_kind(seat) not in UNUSED_KINDS and not seat_reserved(seat)
 
 
 def usable_seats(base, exit_key):
@@ -197,8 +235,19 @@ def assign_seats(base, seqs):
     return people
 
 
+def _seg_labels(b_from, from_part, b_to, to_part):
+    """段的文字：「藍2（後段）… 白9（前段）」；同一區塊頭尾都切到時是「中段」。"""
+    from_label = b_from + ('（後段）' if from_part else '')
+    to_label = b_to + ('（前段）' if to_part else '')
+    if b_from != b_to:
+        label = f'{from_label} … {to_label}'
+    else:
+        label = b_from + ('（中段）' if from_part and to_part else '（後段）' if from_part else '（前段）' if to_part else '')
+    return dict(fromLabel=from_label, toLabel=to_label, label=label)
+
+
 def build_plan(base):
-    seqs = {L: lane_sequence(base, L) for L in LANES}
+    seqs = lane_sequences(base)
     bad = check_nesting(seqs)
     if bad:
         raise SystemExit(f'巢狀被破壞 {len(bad)} 個序號，例如 {bad[:3]}')
@@ -209,15 +258,21 @@ def build_plan(base):
         lanes = {}
         for L in LANES:
             members = [p for p in people if p['block'] == block and p['lane'] == L]
-            lanes[L] = dict(lie=column_of(block, L), exit=members[0]['exit'], n=len(members))
+            lanes[L] = dict(lie=column_of(block, L), n=len(members),
+                            exits=[dict(exit=e, n=len(list(g))) for e, g in itertools.groupby(members, key=lambda p: p['exit'])])
         blocks.append(dict(key=block, costume=costume, dadui=k, population=sum(v['n'] for v in lanes.values()),
                            columns=[column_of(block, L) for L in LANES], assembly=ZONE_OF[block], lanes=lanes))
     lanes_out = {}
     for L in LANES:
         segs = []
-        for exit_key, b_from, b_to in ASSIGN[L]:
-            idx = [s['laneIdx'] for s in seqs[L] if BLOCKS.index(b_from) <= BLOCKS.index(s['block']) <= BLOCKS.index(b_to)]
-            segs.append(dict(exit=exit_key, fromBlock=b_from, toBlock=b_to, n=len(idx), fromIdx=min(idx), toIdx=max(idx)))
+        for exit_key, g in itertools.groupby(seqs[L], key=lambda s: s['exit']):
+            g = list(g)
+            first, last = g[0], g[-1]
+            # 換口落在列中間時，該段的頭（尾）只是那一列的後段（前段）
+            from_part = first['laneIdx'] > 0 and seqs[L][first['laneIdx'] - 1]['block'] == first['block']
+            to_part = last['laneIdx'] + 1 < len(seqs[L]) and seqs[L][last['laneIdx'] + 1]['block'] == last['block']
+            segs.append(dict(exit=exit_key, fromBlock=first['block'], toBlock=last['block'], n=len(g), fromIdx=first['laneIdx'], toIdx=last['laneIdx'],
+                             **_seg_labels(first['block'], from_part, last['block'], to_part)))
         lanes_out[L] = dict(total=len(seqs[L]), segments=segs)
     exits = {}
     for e in EXITS:

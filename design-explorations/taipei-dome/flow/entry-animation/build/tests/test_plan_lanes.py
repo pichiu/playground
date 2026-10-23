@@ -2,7 +2,7 @@ import plan
 
 
 def seqs_of(base):
-    return {L: plan.lane_sequence(base, L) for L in 'ABC'}
+    return plan.lane_sequences(base)
 
 
 def test_lane_totals(base):
@@ -18,15 +18,30 @@ def test_block_exits(base):
         return tuple(sorted({s['exit'] for L in 'ABC' for s in seqs[L] if s['block'] == blk}, key=plan.EXIT_RANK.get))
 
     assert by('藍9') == ('139', '141', '142') and by('藍4') == ('139', '141', '144')
-    assert by('藍1') == ('140', '142', '144') and by('白2') == ('140', '142', '145')
-    assert by('白5') == ('140', '143', '145') and by('白9') == ('141', '143', '145')
+    assert by('藍1') == ('140', '141', '142', '144', '145') and by('白2') == ('140', '142', '145')
+    assert by('白5') == ('140', '143', '145') and by('白9') == ('140', '141', '143', '145')
 
 
-def test_single_exit_per_column(base):
+def test_exit_quota_and_split_columns(base):
     seqs = seqs_of(base)
-    for L in 'ABC':
+    assert plan.exit_quota(base, seqs) == {'A': {'139': 226, '140': 291, '141': 17}, 'B': {'141': 242, '142': 116, '143': 185},
+                                           'C': {'142': 139, '144': 126, '145': 273}}
+    split = [(L, blk) for L in 'ABC' for blk in plan.BLOCKS if len({s['exit'] for s in seqs[L] if s['block'] == blk}) > 1]
+    assert split == [('A', '藍2'), ('A', '白9'), ('B', '藍1'), ('C', '藍5'), ('C', '藍1')]
+    for L in 'ABC':                                     # 一欄最多分兩個出口，前段在前一個出口
         for blk in plan.BLOCKS:
-            assert len({s['exit'] for s in seqs[L] if s['block'] == blk}) == 1
+            es = [s['exit'] for s in seqs[L] if s['block'] == blk]
+            assert len(set(es)) <= 2 and es == sorted(es, key=plan.EXIT_RANK.get)
+
+
+def test_lane_shortfall_is_reported(base):
+    import copy
+    import pytest
+    b = copy.deepcopy(base)
+    b['restSeats'] = [s for s in b['restSeats'] if not (s['sec'] == '143' and s['pai'] == 1)]
+    short = 179 - len(plan.usable_seats(b, '143'))
+    with pytest.raises(SystemExit, match=f'路 B 缺 {short} 席'):
+        plan.build_plan(b)
 
 
 def test_nesting_clean(base):
@@ -43,8 +58,8 @@ def test_within_column_order(base):
 
 def test_exit_usage(base):
     from collections import Counter
-    c = Counter(s['exit'] for L in 'ABC' for s in plan.lane_sequence(base, L))
-    assert c == {'139': 199, '140': 282, '141': 256, '142': 234, '143': 179, '144': 191, '145': 268}
+    c = Counter(s['exit'] for seq in seqs_of(base).values() for s in seq)
+    assert c == {'139': 226, '140': 291, '141': 259, '142': 255, '143': 179, '144': 126, '145': 273}
 
 
 def test_blue_lane_mapping_by_approach_direction():
@@ -59,5 +74,5 @@ def test_lane_idx_and_fields(base):
     A = plan.lane_sequence(base, 'A')
     assert [s['laneIdx'] for s in A] == list(range(len(A)))
     s = A[0]
-    assert set(s) >= {'id', 'lie', 'pai', 'dadui', 'costume', 'block', 'lane', 'laneIdx', 'exit', 'assembly'}
+    assert set(s) >= {'id', 'lie', 'pai', 'dadui', 'costume', 'block', 'lane', 'laneIdx', 'assembly'}   # exit 由 assign_exits 補上
     assert s['id'] == '54-1' and s['lie'] == 54 and s['costume'] == '藍' and s['dadui'] == 9 and s['assembly'] == 'P5'
