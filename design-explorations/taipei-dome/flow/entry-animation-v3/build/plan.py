@@ -87,11 +87,11 @@ _B1 = {}
 
 
 def _b1(base):
-    key = id(base)
-    if key not in _B1:
+    hit = _B1.get(id(base))
+    if hit is None or hit[0] is not base:                # id 會被回收重用：連同 base 本身一起比對
         from geo import Poly, pairs
-        _B1[key] = Poly(pairs(base['map']['b1Corridor']))
-    return _B1[key]
+        hit = _B1[id(base)] = (base, Poly(pairs(base['map']['b1Corridor'])))
+    return hit[1]
 
 
 def approach(base, exit_key, pai):

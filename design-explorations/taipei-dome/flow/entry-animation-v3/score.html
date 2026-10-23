@@ -36,7 +36,7 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 #g{display:block;flex:1 1 auto;min-width:0;cursor:crosshair;touch-action:pan-y}
 .phases{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--dim)}
 .phases li{display:flex;flex-wrap:wrap;gap:0 12px;line-height:1.5}
-.phases b{color:var(--ink);min-width:4.5em}.phases .t{min-width:8.5em}.phases .d{flex:1 1 20em;min-width:0}
+.phases b{color:var(--ink);min-width:4.5em}.phases .d{flex:1 1 20em;min-width:0}
 .side{position:sticky;top:16px;display:grid;gap:14px}
 .mapbox{border:1px solid var(--rule);border-radius:10px;background:var(--card);overflow:hidden;position:relative}
 .mapbox canvas{display:block;width:100%;height:440px}
@@ -75,7 +75,7 @@ h1{margin:0;font-size:30px;letter-spacing:.02em}
 <script src="core.js"></script>
 <script>
 'use strict';
-const {pos,state,counts,fmt,View}=Dome,$=id=>document.getElementById(id);
+const {pos,state,counts,View}=Dome,$=id=>document.getElementById(id);
 Dome.nav('score.html');
 const {esc}=Dome;
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
@@ -124,7 +124,6 @@ function paintStatic(){gx.setTransform(dpr,0,0,dpr,0,0);gx.fillStyle=C.bg;gx.fil
 function paint(){gx.putImageData(staticImg,0,0);gx.setTransform(dpr,0,0,dpr,0,0);
  if(hover>=0){const y=yOf(hover);gx.strokeStyle=C.hi;gx.lineWidth=1.5;gx.strokeRect(PL-2,y-1.5,W-PL-R+4,RH+1);}
  const x=xOf(t);gx.fillStyle=C.hi;gx.fillRect(x-1,TOP-8,2,H-TOP-12);gx.beginPath();gx.moveTo(x-6,TOP-14);gx.lineTo(x+6,TOP-14);gx.lineTo(x,TOP-6);gx.fill();
- const lx=x+(x>W-80?-8:8);gx.font='700 12px "Noto Sans TC",system-ui';gx.textBaseline='middle';gx.textAlign=x>W-80?'right':'left';
  }
 function syncLabels(){if(hover===lastHover)return;if(lastHover>=0)rowEls[lastHover].classList.remove('on');if(hover>=0)rowEls[hover].classList.add('on');lastHover=hover;}
 // 互動：滑過一列 → 地圖只亮那列；拖曳（觸控：左右滑；譜在容器內可捲時改為點一下）移動時間

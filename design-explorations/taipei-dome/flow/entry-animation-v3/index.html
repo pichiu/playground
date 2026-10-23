@@ -107,7 +107,7 @@ td.n{text-align:right;white-space:nowrap}
 <script src="core.js"></script>
 <script>
 'use strict';
-const {fmt}=Dome,$=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);
 Dome.nav('index.html');
 const {esc}=Dome;
 const where=w=>`大隊 ${w.dadui} 列 ${w.lie} 第 ${w.pai} 排`;
@@ -120,7 +120,7 @@ function checksTable(C){
   ['換口往下游 / 出口還沒坐滿就換',`${A.upstreamViolations} / ${A.notFullSwitches}（白衣 ${A.segments.A} 段、藍衣 ${A.segments.B} 段）`,'0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0,(A.examples||[]).map(e=>`${e.lane} 路第 ${e.idx+1} 位：${e.exits.join(' → ')}`)],
   ['一列分坐兩個出口（資訊）',`${A.splitColumns} 列：${A.splitLies.join('、')}`,'允許',null,[]],
   ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
-  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.25、大隊內 ≤ 1.41、大隊間 ≤ 12',Cn.ok,[]],
+  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.44、大隊內 ≤ 1.2、大隊間 ≤ 12',Cn.ok,[]],
   ['步速與門前隊伍（隊伍裡只在自己那條線慢行或站住，其餘等速）',`${C.pace.violations}`,'0',C.pace.violations===0,C.pace.examples||[]],
   ['一排六人一起進門（大隊 1 排滿才出發、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],

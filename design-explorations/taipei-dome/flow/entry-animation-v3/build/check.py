@@ -16,7 +16,7 @@ from collide import collisions
 from geo import Poly, pairs
 
 GAP_MIN, GAP_MAX = round(build.HEADWAY - 0.15, 3), round(build.HEADWAY + 0.15, 3)   # 樓梯口節拍容許 ± 0.15（避撞平移）
-BOUNDARY_MAX = 7.0                 # 大隊交界：兩路同一大隊人數差到 12 人，短的那路空 0.4×12 + 0.4 + 0.8 ≈ 6.0 秒（spec §4）
+BOUNDARY_MAX = 7.0                 # 大隊交界的外框；每一處交界另外要等於規則值 HEADWAY×人數差 + HEADWAY + DADUI_GAP（± RULE_SLACK），那才是緊的檢核（現在最多約 3.6 秒）
 GATE_GAP_MIN = round(build.RANK_GAP - 0.16, 3)   # 西一入口每條線：一排接一排（避撞平移容許 0.15）
 GATE_GAP_MAX = round(build.RANK_GAP + 0.6, 3)    # 同一大隊內：隊伍不停就是 RANK_GAP，容許避撞平移與短暫停住
 RULE_SLACK = 0.4                   # 交界規則值 = 節拍 ×（兩路該大隊人數差）+ 節拍 + 大隊空檔（build.HEADWAY、build.DADUI_GAP），容許錯開與避撞平移 0.4（spec §4）
@@ -136,7 +136,7 @@ def check_all(data, coll=None):
                              splitLies=split, examples=examples[:3])
     # 2c. 路徑不交叉
     out['routes'] = lane_crossings(data)
-    # 3. 不斷拍：樓梯口兩路（t.enter）、西一入口六路（t.gate）
+    # 3. 不斷拍：樓梯口兩路（t.stair）、西一入口六路（t.gate）
     stair = {L: _gaps(seqs[L], 'stair', 'dadui') for L in plan.LANES}
     gate = {}
     for j in range(6):

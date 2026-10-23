@@ -9,7 +9,6 @@ function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)ret
 // 遞補往前：此刻站在哪一區（p.adv＝[起,止,目的區]…；沒有遞補的人就是原本集結的區）
 function zone(p,t){let z=p.assembly;for(const a of p.adv||[])if(t>=a[0])z=a[2];return z;}
 function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
-function fmt(v){const neg=v<0;v=Math.abs(v);return (neg?'−':'')+String(Math.floor(v/60)).padStart(2,'0')+':'+String(Math.floor(v%60)).padStart(2,'0');}
 const LANE_NAME={A:'A 路（靠看台）',B:'B 路（中間）',C:'C 路（外側）'};
 const ZONE_NAME={P1:'集結區 1（B2）',P2:'藍 2·3（B2）',P3:'藍 4·5（B2）',P4:'藍 6·7（B2）',P5:'藍 8·9（B2）',STAIR:'樓梯（白 2）',P6:'白 3（B1 候隊）',FEEDER:'不集結，直接接尾下樓'};
 
@@ -79,5 +78,5 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
-window.Dome={load,dataUrl,fail,nav,pos,state,zone,counts,bounds,fmt,View,pairs,LANE_NAME,ZONE_NAME};
+window.Dome={load,dataUrl,fail,nav,pos,state,zone,counts,bounds,View,pairs,LANE_NAME,ZONE_NAME};
 })();
