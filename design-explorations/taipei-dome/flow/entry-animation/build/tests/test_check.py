@@ -21,11 +21,11 @@ def test_check_all_green(built):
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 and C['seats']['orderViolations'] == 0
     assert C['staging']['ok'] and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in C['capacity'].values())
     assert C['assignment']['upstreamViolations'] == 0 == C['assignment']['notFullSwitches'] == C['assignment']['distinctStairViolations']
-    assert C['assignment']['splitColumns'] == 6
+    assert C['assignment']['splitColumns'] == 5
     assert C['assignment']['segments'] == {'A': 3, 'B': 3, 'C': 3}
     assert C['seats']['wrongSection'] == 0 == C['seats']['orderCoverage']
     assert C['routes']['departureCrossings'] == 0 == C['routes']['arrivalCrossings']
-    assert C['capacity']['139'] == dict(used=224, capacity=224, fieldsOk=True)
+    assert C['capacity']['139'] == dict(used=226, capacity=226, fieldsOk=True)
     assert D['meta']['checks']['ok'] is True and D['meta']['checks']['nesting'] == C['nesting'] and D['meta']['checks']['assignment'] == C['assignment']
 
 

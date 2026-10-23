@@ -279,7 +279,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
             n['label'] = '西一入口(場內)'
         nodes[k] = n
     who_seat = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']): p['id'] for p in persons}
-    rest = [dict(s, who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
+    rest = [dict(s, kind=plan.seat_kind(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
     zones = {k: dict(v) for k, v in G.ZONES.items()}
     w3 = [p for p in persons if p['assembly'] == 'P6']
     zones['P6']['tailU'] = round(min(G.slot_u(p, p['slot']) for p in w3), 3)
@@ -306,7 +306,7 @@ RULES = [
 ]
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；同一路相鄰兩人 0.4 秒、三路／六路錯開 0.17 秒、站定後 0.6 秒才起步；皆為動畫節奏，不是現場秒數',
-    '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；集結區位置沿用版本 2；保留不坐：139 的 31 席（第 2–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
+    '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；集結區位置沿用版本 2；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
     '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
     '碰撞檢查為圖面點距（0.03 單位），不是人體寬度或通道容量認證',
 ]

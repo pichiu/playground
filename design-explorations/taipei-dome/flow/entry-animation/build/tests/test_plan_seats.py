@@ -9,16 +9,16 @@ def people(base):
 
 
 def test_capacity(base):
-    assert [len(plan.usable_seats(base, e)) for e in plan.EXITS] == [224, 291, 259, 255, 185, 126, 273]
+    assert [len(plan.usable_seats(base, e)) for e in plan.EXITS] == [226, 291, 259, 255, 185, 126, 273]
 
 
 def test_seats_unique_and_legal(base):
     P = people(base)
     keys = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']) for p in P}
     assert len(P) == 1609 == len(keys)
-    bad = {(s['sec'], s['pai'], s['no']) for s in base['restSeats'] if s['kind'] in ('blocked', 'work')}
-    reserved = {(s['sec'], s['pai'], s['no']) for s in base['restSeats'] if plan.seat_reserved(s) and s['kind'] not in plan.UNUSED_KINDS}
-    assert len(reserved) == 31 + 72 and not (keys & bad) and not (keys & reserved)
+    bad = {(s['sec'], s['pai'], s['no']) for s in base['restSeats'] if plan.seat_kind(s) in ('blocked', 'work')}
+    reserved = {(s['sec'], s['pai'], s['no']) for s in base['restSeats'] if plan.seat_reserved(s) and plan.seat_kind(s) not in plan.UNUSED_KINDS}
+    assert len(reserved) == 34 + 72 and not (keys & bad) and not (keys & reserved)
 
 
 def test_exit_fifo_is_top_down(base):

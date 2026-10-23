@@ -158,14 +158,14 @@ const colorOf=p=>(p.costume==='藍'?BLUE:WARM)[p.dadui-1];
 const inkOf=p=>(p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';   // 深色底才用白字，對比皆 ≥ 4.5:1
 const SIDE={N:'往北側',S:'往南側'};
 const PAI_MAX=14;
-const reserved=s=>(s.sec==='139'&&s.no<=(s.pai>=11?5:3))||(s.sec==='144'&&s.pai<=6);   // 與 plan.seat_reserved 同一條規則：139 保留 31 席、144 第 1–6 排
+const reserved=s=>(s.sec==='139'&&s.no<=(s.pai>=11?5:3))||(s.sec==='144'&&s.pai<=6);   // 與 plan.seat_reserved 同一條規則：139 保留 34 席給台東、144 第 1–6 排
 let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,showIds=false,cells=[],cellMap=new Map(),rt=0;
 
 // ---------- 索引：每區的座位、theta 範圍、可用席、出口在哪一端 ----------
 function buildIdx(){const R=ds.D.restSeats;TH={min:Infinity,max:-Infinity};
  for(const s of R){const S=SEC[s.sec]||(SEC[s.sec]={sec:s.sec,seats:[],thMin:Infinity,thMax:-Infinity,usable:new Map()});S.seats.push(s);
   if(s.theta<S.thMin)S.thMin=s.theta;if(s.theta>S.thMax)S.thMax=s.theta;if(s.theta<TH.min)TH.min=s.theta;if(s.theta>TH.max)TH.max=s.theta;
-  const ok=(s.kind==='normal'||s.kind==='blue')&&!reserved(s);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 保留 31 席、144 第 1–6 排保留
+  const ok=(s.kind==='normal'||s.kind==='blue')&&!reserved(s);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 保留 34 席給台東、144 第 1–6 排保留
   if(ok){if(!S.usable.has(s.pai))S.usable.set(s.pai,[]);S.usable.get(s.pai).push(s.no);}}
  SECS=Object.keys(SEC).sort();
  for(const e of ds.exits){const S=SEC[e.sec];if(!S)continue;const f=ds.byId.get(e.order[0]).rest,st=S.seats.find(s=>s.pai===f.pai&&s.no===f.no);S.exitRight=st?st.theta>(S.thMin+S.thMax)/2:false;}}

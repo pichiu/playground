@@ -13,5 +13,5 @@ def test_cli_writes_plan(root, tmp_path):
     assert [g['key'] for g in P['groups'][:3]] == ['白1', '藍1', '白2']
     assert P['groups'][0]['columns'] == [1, 2, 3] and P['groups'][0]['lane'] == 'A' and P['groups'][0]['exits'] == [dict(exit='139', n=87)]
     s = P['lanes']['A']['segments'][0]
-    assert (s['exit'], s['fromIdx'], s['toIdx'], s['n']) == ('139', 0, 223, 224) and s['from']['dadui'] == 1 and s['to']['dadui'] == 3
-    assert P['exits']['139']['used'] == 224 and P['exits']['139']['rows'][0]['pai'] == 12
+    assert (s['exit'], s['fromIdx'], s['toIdx'], s['n']) == ('139', 0, 225, 226) and s['from']['dadui'] == 1 and s['to']['dadui'] == 3
+    assert P['exits']['139']['used'] == 226 and P['exits']['139']['rows'][0]['pai'] == 12

@@ -26,10 +26,10 @@ def test_block_exits(base):
 
 def test_exit_quota_and_split_columns(base):
     seqs = seqs_of(base)
-    assert plan.exit_quota(base, seqs) == {'A': {'139': 224, '140': 291, '141': 19}, 'B': {'141': 240, '142': 116, '143': 185},
+    assert plan.exit_quota(base, seqs) == {'A': {'139': 226, '140': 291, '141': 17}, 'B': {'141': 242, '142': 116, '143': 185},
                                            'C': {'142': 139, '144': 126, '145': 273}}
     split = [(L, blk) for L in 'ABC' for blk in plan.BLOCKS if len({s['exit'] for s in seqs[L] if s['block'] == blk}) > 1]
-    assert split == [('A', '藍2'), ('A', '白9'), ('B', '藍1'), ('B', '白3'), ('C', '藍5'), ('C', '藍1')]
+    assert split == [('A', '藍2'), ('A', '白9'), ('B', '藍1'), ('C', '藍5'), ('C', '藍1')]
     for L in 'ABC':                                     # 一欄最多分兩個出口，前段在前一個出口
         for blk in plan.BLOCKS:
             es = [s['exit'] for s in seqs[L] if s['block'] == blk]
@@ -41,7 +41,7 @@ def test_lane_shortfall_is_reported(base):
     import pytest
     b = copy.deepcopy(base)
     b['restSeats'] = [s for s in b['restSeats'] if not (s['sec'] == '143' and s['pai'] == 1)]
-    short = 181 - len(plan.usable_seats(b, '143'))
+    short = 179 - len(plan.usable_seats(b, '143'))
     with pytest.raises(SystemExit, match=f'路 B 缺 {short} 席'):
         plan.build_plan(b)
 
@@ -61,7 +61,7 @@ def test_within_column_order(base):
 def test_exit_usage(base):
     from collections import Counter
     c = Counter(s['exit'] for seq in seqs_of(base).values() for s in seq)
-    assert c == {'139': 224, '140': 291, '141': 259, '142': 255, '143': 181, '144': 126, '145': 273}
+    assert c == {'139': 226, '140': 291, '141': 259, '142': 255, '143': 179, '144': 126, '145': 273}
 
 
 def test_blue_lane_mapping_by_approach_direction():
