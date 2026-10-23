@@ -4,10 +4,6 @@ import json
 from conftest import no_hscroll
 
 
-def _fmt(v):
-    return f'{int(v // 60):02d}:{int(v % 60):02d}'
-
-
 def test_handout(open_page, root):
     D = json.loads((root / 'data.json').read_text(encoding='utf-8'))
     pg, errs, perrs = open_page('handout.html', 1280)
@@ -18,7 +14,6 @@ def test_handout(open_page, root):
     assert [figs.nth(i).get_attribute('data-key') for i in range(6)] == ['seated', 'form', 'gate', 'swapA', 'swapB', 'done']
     lens = pg.evaluate("Array.from(document.querySelectorAll('figure[data-key] canvas')).map(c=>c.toDataURL().length)")
     assert len(lens) == 6 and all(l > 5000 for l in lens), lens
-    assert _fmt(D['meta']['tGateStart']) in pg.inner_text('figure[data-key="gate"]')
     assert '139' in pg.inner_text('figure[data-key="swapA"]') and '140' in pg.inner_text('figure[data-key="swapA"]')
     assert '144' in pg.inner_text('figure[data-key="swapB"]') and '145' in pg.inner_text('figure[data-key="swapB"]')
     assert '全員到位' in pg.inner_text('figure[data-key="done"]')
@@ -35,7 +30,7 @@ def test_handout_mobile(open_page):
 def test_handout_moments_in_time_order(open_page):
     pg, *_ = open_page('handout.html', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
-    ts = pg.evaluate("[...document.querySelectorAll('figure[data-key] time')].map(e=>e.textContent)")
+    ts = pg.evaluate("[...document.querySelectorAll('figure[data-key]')].map(e=>+e.dataset.t)")
     assert ts == sorted(ts), ts
 
 
@@ -59,7 +54,7 @@ def test_handout_single_segment_and_go_time(open_page, root):   # review：只�
     go = min(p['t']['enter'] for p in D['persons'])
     pg, *_ = open_page('handout.html', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
-    assert _fmt(go) in pg.inner_text('figure[data-key="gate"] time')
+    assert abs(float(pg.get_attribute('figure[data-key="gate"]', 'data-t')) - go) < 1e-6
     D['lanes']['A']['segments'] = D['lanes']['A']['segments'][:1]
     tmp = root / 'tmp-handout-test2.json'
     tmp.write_text(json.dumps(D, ensure_ascii=False), encoding='utf-8')

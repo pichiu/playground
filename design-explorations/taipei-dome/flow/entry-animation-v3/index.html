@@ -115,20 +115,20 @@ function checksTable(C){
  const A=C.assignment,S=C.seats,R=C.routes,Cn=C.continuity,st=Object.values(Cn.stair),gt=Object.values(Cn.gate);
  const rng=vs=>`${Math.min(...vs.map(v=>v.minGap))}–${Math.max(...vs.map(v=>v.maxGapWithin))} 秒`;
  const rows=[
-  ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>`${e.who.join(' × ')} @ ${fmt(e.t)}`)],
+  ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>e.who.join(' × '))],
   ['任何時刻白衣出口比藍衣近 / 兩路不在同一座階梯',`${C.nesting.violations} / ${C.nesting.sameStair}`,'0 / 0',C.nesting.violations===0&&C.nesting.sameStair===0,(C.nesting.examples||[]).map(e=>`${e.id}：${(e.exits||e.stairs).join(' / ')}`)],
   ['換口往下游 / 出口還沒坐滿就換',`${A.upstreamViolations} / ${A.notFullSwitches}（白衣 ${A.segments.A} 段、藍衣 ${A.segments.B} 段）`,'0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0,(A.examples||[]).map(e=>`${e.lane} 路第 ${e.idx+1} 位：${e.exits.join(' → ')}`)],
   ['一列分坐兩個出口（資訊）',`${A.splitColumns} 列：${A.splitLies.join('、')}`,'允許',null,[]],
   ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
   ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.25、大隊內 ≤ 1.41、大隊間 ≤ 12',Cn.ok,[]],
-  ['只在門前自己的位置等（其餘等速）',`${C.waits.violations}（${C.waits.waiting} 人在門前等，最久 ${fmt(C.waits.maxWait)}）`,'0',C.waits.violations===0,C.waits.examples||[]],
+  ['只在門前自己的位置等（其餘等速）',`${C.waits.violations}（${C.waits.waiting} 人在門前稍等）`,'0',C.waits.violations===0,C.waits.examples||[]],
   ['門前切齊、一路接續（大隊 1 頭一批切齊後進場，其餘到門前就走）',`${C.doorQueue.violations}（頭一批 ${C.doorQueue.firstBatch} 人；其餘停超過 1 秒 ${C.doorQueue.laterWaiting} 人）`,'0',C.doorQueue.violations===0,(C.doorQueue.examples||[]).map(e=>`${e.part==='first'?'頭一批':'其餘'}：${e.who.join('、')}`)],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];
  return `<p class="verdict">${C.ok?'全部通過':'未通過'}</p><div class="scroll"><table><thead><tr><th>項目</th><th>結果</th><th>門檻</th></tr></thead><tbody>${rows.map(([n,v,t,ok,ex])=>`<tr class="${ok===null?'info':ok?'ok':'ng'}"><td>${n}${ex.length?`<div class="ex">${ex.map(esc).join('；')}</div>`:''}</td><td>${esc(v)}</td><td>${t}</td></tr>`).join('')}</tbody></table></div>`;}
 (async()=>{let ds;try{ds=await Dome.load();}catch(e){$('rules').innerHTML='';document.querySelector('[data-checks]').innerHTML=`<p class="err">${esc(e.message)}</p>`;return;}
  const D=ds.D,M=D.meta;
- $('kpi').innerHTML=[['人數',M.population.toLocaleString('zh-TW')],['第一位離座',fmt(M.t0)],['第一位過西一入口',fmt(M.tGateStart)],['建置',M.built]].map(([k,v])=>`<span><b>${v}</b>${k}</span>`).join('');
+ $('kpi').innerHTML=[['人數',M.population.toLocaleString('zh-TW')],['建置',M.built]].map(([k,v])=>`<span><b>${v}</b>${k}</span>`).join('');
  $('rules').innerHTML=M.rules.map(r=>`<li>${esc(r)}</li>`).join('');
  const segCell=s=>`<td><span class="seg"><b>${s.exit}</b><small>${where(s.from)} 起</small><small>到 ${where(s.to)} · ${s.n} 人</small></span></td>`;
  const nSeg=Math.max(...['A','B'].map(L=>ds.lanes[L].segments.length)),ORD='一二三四五六七';   // 段數由資料決定（座位改了換口點會移動）
@@ -136,7 +136,7 @@ function checksTable(C){
  document.querySelector('[data-lane-table] tbody').innerHTML=['A','B'].map(L=>{const l=ds.lanes[L];return `<tr class="lane-${L}"><td><b>${ds.laneName(L)}</b></td>${l.segments.map(segCell).join('')}${'<td></td>'.repeat(nSeg-l.segments.length)}<td class="n">${l.total}</td></tr>`;}).join('');
  const gOf=(d,c)=>ds.groups.find(g=>g.dadui===d&&g.costume===c);
  document.querySelector('[data-stair-order]').innerHTML=[1,2,3,4,5,6,7,8,9].map(d=>{const w=gOf(d,'白'),b=gOf(d,'藍');
-   return `<div data-dadui="${d}" title="大隊 ${d}：白 ${w.population}、藍 ${b.population} 人，${fmt(Math.min(w.tStairFirst,b.tStairFirst))}–${fmt(Math.max(w.tStairLast,b.tStairLast))} 通過樓梯口"><b>${d}</b><span class="w">${w.exits.map(e=>e.exit).join('→')}</span><span class="b">${b.exits.map(e=>e.exit).join('→')}</span></div>`;}).join('');
+   return `<div data-dadui="${d}" title="大隊 ${d}：白 ${w.population}、藍 ${b.population} 人"><b>${d}</b><span class="w">${w.exits.map(e=>e.exit).join('→')}</span><span class="b">${b.exits.map(e=>e.exit).join('→')}</span></div>`;}).join('');
  const maxCap=Math.max(...ds.exits.map(e=>e.capacity));
  document.querySelector('[data-exit-usage]').innerHTML=ds.exits.map(e=>{const blue=e.order.filter(id=>ds.byId.get(id).costume==='藍').length;return `<div data-exit="${e.key}"><b>${e.key}</b><div class="bar" title="${e.stairLabel}"><i class="b" style="width:${blue/maxCap*100}%"></i><i class="w" style="left:${blue/maxCap*100}%;width:${(e.used-blue)/maxCap*100}%"></i></div><span class="n">${e.used} / ${e.capacity}</span></div>`;}).join('');
  const box=document.querySelector('[data-checks]');box.innerHTML=checksTable(M.checks);box.classList.toggle('ok',!!M.checks.ok);

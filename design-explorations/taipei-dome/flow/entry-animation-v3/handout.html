@@ -114,9 +114,9 @@ function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
  F.forEach((f,i)=>{const tc=f.tc??f.t,cs=counts(tc,ds.P);
   const walk=new Set(),enter=new Set();for(const p of ds.P){const s=state(p,tc);if(s==='walk')walk.add(p.costume+p.dadui);else if(s==='enter')enter.add(p.costume+p.dadui);}
   const names=set=>ds.groups.filter(g=>set.has(g.key)).map(g=>`大隊 ${g.dadui} ${g.costume}衣`).join('、');
-  const fig=document.createElement('figure');fig.dataset.key=f.key;
-  const cv=document.createElement('canvas');cv.setAttribute('role','img');cv.setAttribute('aria-label',`${f.h}，${fmt(f.t)} 的全體位置`);fig.append(cv);
-  fig.insertAdjacentHTML('beforeend',`<figcaption><h2><span class="no">${i+1}</span> · ${esc(f.h)} · <time>${fmt(f.t)}</time></h2><p>${esc(f.d)}</p>
+  const fig=document.createElement('figure');fig.dataset.key=f.key;fig.dataset.t=f.t;
+  const cv=document.createElement('canvas');cv.setAttribute('role','img');cv.setAttribute('aria-label',`${f.h} 的全體位置`);fig.append(cv);
+  fig.insertAdjacentHTML('beforeend',`<figcaption><h2><span class="no">${i+1}</span> · ${esc(f.h)}</h2><p>${esc(f.d)}</p>
    <dl class="n"><div><dt>休息區</dt><dd>${cs.seated}</dd></div><div><dt>離座在走</dt><dd>${cs.walk}</dd></div><div><dt>門前等待</dt><dd>${cs.wait}</dd></div><div><dt>進場中</dt><dd>${cs.enter}</dd></div><div><dt>到位</dt><dd>${cs.done}</dd></div></dl>
    ${walk.size?`<div class="mv">離座在走：<b>${names(walk)}</b></div>`:''}${enter.size?`<div class="mv">進場中：<b>${names(enter)}</b></div>`:''}</figcaption>`);
   frames.append(fig);jobs.push({cv,ds,t:tc});});

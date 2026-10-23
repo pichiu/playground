@@ -58,3 +58,15 @@ def test_index_lane_table_shows_to(open_page):         # spec §6.1：每段寫�
     pg.wait_for_selector('[data-checks] .ok', timeout=20000)
     cells = pg.locator('[data-lane-table] tbody td .seg')
     assert cells.count() == 8 and all('到 大隊' in cells.nth(i).inner_text() for i in range(8))
+
+
+def test_no_time_shown_on_any_page(open_page):   # 使用者要求：所有時間顯示都拿掉，避免拿來和 2c 比快慢
+    import re
+    for name in ('index', 'console', 'me', 'me?id=1-28', 'score', 'handout', 'captain', 'captain?k=1', 'exit'):
+        base, _, q = name.partition('?')
+        pg, errs, perrs = open_page(f'{base}.html' + (f'?{q}' if q else ''), 1280)
+        pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+        pg.wait_for_timeout(300)
+        body = pg.inner_text('body')
+        assert not re.search(r'\d{1,2}:\d\d', body), (name, re.findall(r'.{0,20}\d{1,2}:\d\d.{0,20}', body)[:5])
+        assert '分鐘' not in body, name

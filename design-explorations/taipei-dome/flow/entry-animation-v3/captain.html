@@ -98,7 +98,7 @@ canvas{display:block;width:100%;height:440px;border-radius:12px}
   <section class="card" style="padding:8px"><canvas id="c" aria-label="本大隊位置圖：只亮本大隊，其他人淡灰"></canvas></section>
  </div>
 </div>
-<p class="note">時間為動畫示意（mm:ss），不是現場秒數；1 單位 ≈ 7.6 m，步速 1.1 單位/秒。資料來自同一份 <code>data.json</code>。</p>
+<p class="note">頁面不顯示時間，口令照順序喊；動畫節奏不是現場秒數，1 單位 ≈ 7.6 m，步速 1.1 單位/秒。資料來自同一份 <code>data.json</code>。</p>
 </div>
 <script src="core.js"></script>
 <script>
@@ -144,8 +144,8 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
  lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.lie-b.lie).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 列 6k−5…6k：前三列白（A 路）、後三列藍（B 路），也就是西一入口由北數
  cues=cuesFor();
- $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${fmt(c.t)} ${c.h}"><time>${fmt(c.t)}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
- $('cue-n').textContent=`${cues.length} 條 · ${fmt(cues[0].t)}–${fmt(cues[cues.length-1].t)}`;
+ $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><time>${cues.indexOf(c)+1}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
+ $('cue-n').textContent=`${cues.length} 條`;
  $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exits.join('、')} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
  const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·');
@@ -163,10 +163,10 @@ function draw(){const team=TEAM[k-1],D=ds.D;
   el.querySelectorAll('.bar i').forEach(i=>{const st=i.dataset.s,col=ST.find(x=>x[0]===st)[1];i.style.width=c[st]/n*100+'%';i.style.background=col==='TEAM'?team:col==='TEAMA'?team+'8c':col;});
   const sp=el.querySelector('.st .s');sp.textContent=STATE_ZH[s];sp.className='s '+s;el.querySelector('.st .n').textContent=`已到位 ${c.done}/${n}`;}
  const i=cues.findIndex(c=>c.t>t),nx=cues[i<0?cues.length-1:i];
- $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令 · ${fmt(nx.t)}`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
- $('nx-c').innerHTML=i<0?'完成':`${fmt(nx.t-t)}<span>後</span>`;
+ $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令（第 ${i+1} 條）`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
+ $('nx-c').innerHTML=i<0?'完成':`${i+1}<span>／${cues.length}</span>`;
  $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
- $('clk').textContent=fmt(t);$('tl').value=t;
+ $('clk').textContent=Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)+'%';$('tl').value=t;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1,gateLanes:['#f3eee4',team],gateLanesA:.3});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}

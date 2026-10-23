@@ -191,17 +191,17 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  $('head').innerHTML=`<h1>${e.key} 出口 <span>（${esc(e.stairLabel)}）</span></h1>
  <dl class="facts">
   <div><dt>離座方向</dt><dd><b>${SIDE[e.side]||e.side}</b>上 ${esc(e.stairLabel)}</dd></div>
-  <div><dt>本出口第一位離座</dt><dd><b>${fmt(first.t.leave)}</b>${first.id} · 第 ${first.rest.pai} 排 ${first.rest.no} 號</dd></div>
-  <div><dt>最後一位離座</dt><dd><b>${fmt(last.t.leave)}</b>${last.id} · 第 ${last.rest.pai} 排 ${last.rest.no} 號</dd></div>
+  <div><dt>本出口第一位離座</dt><dd><b>${first.id}</b>第 ${first.rest.pai} 排 ${first.rest.no} 號</dd></div>
+  <div><dt>最後一位離座</dt><dd><b>${last.id}</b>第 ${last.rest.pai} 排 ${last.rest.no} 號</dd></div>
   <div><dt>用量</dt><dd><b>${e.used} <small style="font-size:14px;font-weight:500">/ ${e.capacity} 席</small></b>${e.rows.length} 排${empties?` · 空 ${empties} 席`:' · 坐滿'}</dd></div>
  </dl>
- <ol class="segs" aria-label="本出口供應的路與時間">${segs.map(({s,L,prev,nx,nxSeg,blocks})=>`<li class="lane-${L}" data-seg="${L}"><b class="l">${esc(ds.laneName(L))}</b> ${blocks} · ${s.n} 人 · 第 ${s.fromRow} → ${s.toRow} 排<br><span class="tm">第一位 ${fmt(s.tFirstLeave)} 離座 … 最後一位 ${fmt(s.tLastLeave)}</span><br><span class="nx">${prev?`接在 ${prev.exit} 出口的 ${blk(prev.to,L)} 之後`:`${L} 路由本出口開頭`}${nx?` → 本出口坐滿，換 ${nx.exit} 出口（${blk(nx.from,L)} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:` → ${L} 路到此結束`}</span></li>`).join('')}</ol>`;
+ <ol class="segs" aria-label="本出口供應的路與時間">${segs.map(({s,L,prev,nx,nxSeg,blocks})=>`<li class="lane-${L}" data-seg="${L}"><b class="l">${esc(ds.laneName(L))}</b> ${blocks} · ${s.n} 人 · 第 ${s.fromRow} → ${s.toRow} 排<br><span class="tm">第一位 ${s.firstId} … 最後一位 ${s.lastId}</span><br><span class="nx">${prev?`接在 ${prev.exit} 出口的 ${blk(prev.to,L)} 之後`:`${L} 路由本出口開頭`}${nx?` → 本出口坐滿，換 ${nx.exit} 出口（${blk(nx.from,L)} 起）`:` → ${L} 路到此結束`}</span></li>`).join('')}</ol>`;
  // 段落交界：掛在該段最後一位所在那一排之後
  const hand=new Map(),push=(pai,h)=>{if(!hand.has(pai))hand.set(pai,[]);hand.get(pai).push(h);};
- for(const {s,i,L,nx,nxSeg} of segs){const lp=byId.get(s.lastId),where=`${s.lastId}，第 ${lp.rest.pai} 排 ${lp.rest.no} 號，${fmt(s.tLastLeave)} 離座`;
-  push(s.toRow,`<div class="hand lane-${L}" data-handover="${L}"><div class="t">${fmt(s.tLastLeave)}<small>換口</small></div><p><b>本出口 ${L} 路最後一位</b>（${where}）→ ${nx?`<b>換 ${nx.exit} 出口接 ${L} 路</b>（${blk(nx.from,L)} 起${nxSeg?'，'+fmt(nxSeg.tFirstLeave)+' 第一位離座':''}）`:`<b>${L} 路到此結束</b>（全路 ${ds.lanes[L].total} 人走完）`}</p></div>`);
+ for(const {s,i,L,nx,nxSeg} of segs){const lp=byId.get(s.lastId),where=`${s.lastId}，第 ${lp.rest.pai} 排 ${lp.rest.no} 號`;
+  push(s.toRow,`<div class="hand lane-${L}" data-handover="${L}"><div class="t">換口</div><p><b>本出口 ${L} 路最後一位</b>（${where}）→ ${nx?`<b>換 ${nx.exit} 出口接 ${L} 路</b>（${blk(nx.from,L)} 起）`:`<b>${L} 路到此結束</b>（全路 ${ds.lanes[L].total} 人走完）`}</p></div>`);
   const n2=e.segments[i+1];
-  if(n2){const fp=byId.get(n2.firstId);push(s.toRow,`<div class="hand switch lane-${n2.lane}" data-handover="${L}→${n2.lane}"><div class="t">${fmt(n2.tFirstLeave)}<small>本出口改路</small></div><p><b>${L} 路最後一位走後</b> → <b>本出口改供 ${n2.lane} 路</b>（${blk(n2.from,n2.lane)} 起，${n2.firstId} 第 ${fp.rest.pai} 排 ${fp.rest.no} 號，${fmt(n2.tFirstLeave)} 第一位離座）；<b>中間空檔 ${fmt(n2.tFirstLeave-s.tLastLeave)}</b>，這段時間本出口沒有人走，不要提早放人。</p></div>`);}}
+  if(n2){const fp=byId.get(n2.firstId);push(s.toRow,`<div class="hand switch lane-${n2.lane}" data-handover="${L}→${n2.lane}"><div class="t">本出口改路</div><p><b>${L} 路最後一位走後</b> → <b>本出口改供 ${n2.lane} 路</b>（${blk(n2.from,n2.lane)} 起，${n2.firstId} 第 ${fp.rest.pai} 排 ${fp.rest.no} 號起）；<b>中間有一段空檔</b>，這段時間本出口沒有人走，不要提早放人。</p></div>`);}}
  // 每排
  const tot=r=>(S.usable.get(r.pai)||r.seats).length,maxTot=Math.max(...e.rows.map(tot));
  const rowsHtml=e.rows.map(r=>{const pieces=[];
@@ -263,7 +263,7 @@ function drawMap(scrollTo=false){if(!ds)return;
 function showTip(s){sel=`${s.sec}-${s.pai}-${s.no}`;const where=`${s.sec} 區 ${s.pai} 排 ${s.no} 號`;let t;
  if(s.kind==='blocked')t=`${where} · 不可用席`;else if(s.kind==='work')t=`${where} · 工作席，不排人`;
  else if(!s.who)t=`${where} · 空席`;
- else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位 · ${fmt(p.t.leave)} 離座`;}
+ else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位`;}
  $('seat-tip').innerHTML=t+(s.sec!==cur?` <a href="?e=${s.sec}" data-go="${s.sec}">看 ${s.sec} 出口</a>`:'');drawMap();}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=Infinity;
  for(const rec of cells){const dx=Math.max(rec.x-x,0,x-(rec.x+rec.w)),dy=Math.max(rec.y-y,0,y-(rec.y+rec.h)),d=dx*dx+dy*dy;if(d<bd){bd=d;best=rec;}}

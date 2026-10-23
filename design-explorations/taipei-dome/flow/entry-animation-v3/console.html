@@ -80,10 +80,10 @@ body>.dome-nav.bar a{white-space:nowrap}
 <div class="stage" id="stage">
  <div class="maps"><canvas id="cv" aria-label="版本 3 全場動線地圖"></canvas><div class="loading" id="loading">讀取動線資料…</div></div>
  <div class="hud">
-  <div class="title" id="title"><h1>版本 3 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、門前集合後六路進場 · 示意時間非現場秒數</p>
+  <div class="title" id="title"><h1>版本 3 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、門前集合後六路進場 · 動畫節奏非現場秒數</p>
    <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>門前排隊中</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
   </div>
-  <div class="clock"><b id="clock">00:00</b><span class="phase" id="phase"></span></div>
+  <div class="clock"><b id="clock">0%</b><span class="phase" id="phase"></span></div>
   <div class="flows"><div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div></div>
   <div class="focus"><strong>示意事件</strong><ol id="cues"></ol></div>
  </div>
@@ -120,8 +120,8 @@ function stats(ds){
  const dad=Array.from({length:9},(_,i)=>({k:i+1,...span(of(i+1),'tGateFirst','tGateLast')}));
  return {stair,dad};}
 function buildTrack(){
- document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.stair.map(o=>`<i data-dadui="${o.k}" class="dd" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人（白藍兩路），${fmt(o.a)}–${fmt(o.b)} 通過樓梯口"><span>${o.k}</span></i>`).join(''));
- document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)} 通過西一入口"><span>${o.k}</span></i>`).join(''));}
+ document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.stair.map(o=>`<i data-dadui="${o.k}" class="dd" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人（白藍兩路）"><span>${o.k}</span></i>`).join(''));
+ document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人"><span>${o.k}</span></i>`).join(''));}
 function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.meta.t0)return '休息區就座';
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
  return t>=S.stair[0].a?'大隊 1 下樓':'大隊 1 離座';}
@@ -145,10 +145,11 @@ function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*
   if(st!=='wait'){c.globalAlpha=alpha;v.dot(pts[0][0],pts[0][1],r*1.5,col,C.map,1);c.globalAlpha=1;}}}
 function ui(){const c=counts(t,ds.P),N=ds.P.length;
  for(const [k] of STATES){$('bar').querySelector(`[data-k="${k}"]`).style.width=c[k]/N*100+'%';$('dl').querySelector(`[data-n="${k}"]`).textContent=c[k].toLocaleString('zh-TW');}
- $('clock').textContent=fmt(t);$('phase').textContent=phaseName(c);$('head').style.left=pct(t);
- track.setAttribute('aria-valuenow',Math.round(t));track.setAttribute('aria-valuetext',fmt(t));
+ $('clock').textContent=Math.round(t/T*100)+'%';   // 不顯示時間（示意節奏），只顯示進度
+$('phase').textContent=phaseName(c);$('head').style.left=pct(t);
+ track.setAttribute('aria-valuenow',Math.round(t));track.setAttribute('aria-valuetext',Math.round(t/T*100)+'%');
  let i=cues.findIndex(x=>x.t>t);if(i<0)i=cues.length;const from=Math.max(0,Math.min(i-2,cues.length-5));
- $('cues').innerHTML=cues.slice(from,from+5).map((x,j)=>`<li class="${from+j===i-1?'now':''}"><span>${fmt(x.t)}</span><span>${esc(x.s)}</span></li>`).join('');}
+ $('cues').innerHTML=cues.slice(from,from+5).map((x,j)=>`<li class="${from+j===i-1?'now':''}"><span>${from+j+1}</span><span>${esc(x.s)}</span></li>`).join('');}
 function setPlaying(on){playing=on;if(on&&t>=T)t=0;$('play').setAttribute('aria-label',on?'暫停':'播放');$('ico').innerHTML=on?'<rect x="2" y="1.5" width="5" height="17" fill="currentColor"/><rect x="11" y="1.5" width="5" height="17" fill="currentColor"/>':'<path d="M2 1.5v17L17 10z" fill="currentColor"/>';last=0;}
 $('play').onclick=()=>setPlaying(!playing);
 $('speed').innerHTML=[.5,1,2,5].map(s=>`<button data-s="${s}" aria-pressed="${s===speed}">×${s}</button>`).join('');
