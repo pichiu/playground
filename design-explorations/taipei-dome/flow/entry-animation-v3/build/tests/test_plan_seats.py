@@ -7,7 +7,7 @@ def people(base):
 
 
 def test_capacity(base):
-    assert [len(plan.usable_seats(base, e)) for e in plan.EXITS] == [206, 291, 259, 255, 185, 198, 273]
+    assert [len(plan.usable_seats(base, e)) for e in plan.EXITS] == [224, 291, 259, 255, 185, 126, 273]
 
 
 def test_seats_unique_and_legal(base):
@@ -15,7 +15,8 @@ def test_seats_unique_and_legal(base):
     keys = {(p['rest']['sec'], p['rest']['pai'], p['rest']['no']) for p in P}
     assert len(P) == 1609 == len(keys)
     bad = {(s['sec'], s['pai'], s['no']) for s in base['restSeats'] if s['kind'] in ('blocked', 'work')}
-    assert not (keys & bad) and not any(k[0] == '139' and k[2] <= 5 for k in keys)
+    reserved = {(s['sec'], s['pai'], s['no']) for s in base['restSeats'] if plan.seat_reserved(s) and s['kind'] not in plan.UNUSED_KINDS}
+    assert len(reserved) == 31 + 72 and not (keys & bad) and not (keys & reserved)
     assert all(p['rest']['sec'] == p['exit'] for p in P)
 
 
@@ -41,8 +42,8 @@ def test_exit_seq_follows_stair_order(base):
 def test_142_shared_fifo(base):                     # Review Focus 1
     P = plan.build_plan(base)
     q = sorted((p for p in P['people'] if p['exit'] == '142'), key=lambda p: p['exitSeq'])
-    assert [p['lane'] for p in q] == ['B'] * 202 + ['A'] * 53
-    assert {p['dadui'] for p in q[:202]} <= {1, 2, 3} and {p['dadui'] for p in q[202:]} == {9}
+    assert [p['lane'] for p in q] == ['B'] * 220 + ['A'] * 35
+    assert {p['dadui'] for p in q[:220]} <= {1, 2, 3} and {p['dadui'] for p in q[220:]} == {9}
     assert P['exits']['142']['order'] == [p['id'] for p in q]
 
 

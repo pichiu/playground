@@ -128,7 +128,7 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'leave-first',t:first.tLeave,h:'第一位離座',d:`${first.costume}${k} 列 ${first.lie} 先起身：${ds.exitName(first.exit)}，上走廊走 ${ds.laneName(first.lane)}`},
   {id:'leave-last',t:lastP.t.leave,h:'最後一位離座',d:`${lastF.costume}${k} 列 ${lastF.lie} 最後一位離開 ${lastF.exit} 出口，本大隊休息區清空`},
   W.assembly==='FEEDER'
-   ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exit).join('、')} 出口依西一入口時刻直接接尾`}
+   ?{id:'white',t:W.tEnter,h:'白衣接尾中',d:`${W.key} 不集結：第一位已過樓梯口下 B2，三欄自 ${['A','B','C'].map(L=>W.lanes[L].exits.map(x=>x.exit).join('→')).join('、')} 出口依西一入口時刻直接接尾`}
    :stagedCue(W,'white','白衣'),
   stagedCue(B,'blue','藍衣'),
   ...(prev.length?[{id:'handover',t:Math.max(...prev.map(g=>g.tGateLast)),h:'西一入口交接',d:`大隊 ${k-1} 最後一位過西一入口，六路接著換本大隊`}]:[]),
@@ -151,7 +151,7 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  $('cue-n').textContent=`${cues.length} 條`;
  $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
- const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exit).join('/');
+ const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exits.map(x=>x.exit).join('→')).join('/');   // 換口落在列中間時，一欄寫成「139→140」
  const byNorth=g=>['A','B','C'].sort((x,y)=>((g.lanes[x].lie-1)%6)-((g.lanes[y].lie-1)%6)).join('·');   // 西一入口路 j=(列−1) mod 6 由北數；藍2–9 從死巷走回來，A 路在最南
  $('sum').innerHTML=`<b>${W.key}</b> 列 ${cols(W)}（${W.population} 人，出口 ${exits(W)}，${ds.nodeName(W.assembly)}）；<b>${B.key}</b> 列 ${cols(B)}（${B.population} 人，出口 ${exits(B)}，${ds.nodeName(B.assembly)}）。西一入口六路由北數：白 ${byNorth(W)}、藍 ${byNorth(B)}${byNorth(B)==='A·B·C'?'':'（藍衣從上游走回來，A 路在最南）'}。`;
  $('tl').min=Math.max(0,cues[0].t-3);$('tl').max=Math.min(ds.T_END,cues[cues.length-1].t+1);t=+$('tl').min;
@@ -173,7 +173,7 @@ function draw(){const team=TEAM[k-1],D=ds.D;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}
- if(labels){const mine=new Set(gs.flatMap(g=>['A','B','C'].map(L=>g.lanes[L].exit)));
+ if(labels){const mine=new Set(gs.flatMap(g=>['A','B','C'].flatMap(L=>g.lanes[L].exits.map(x=>x.exit))));
   for(const s of D.map.stands)if(mine.has(s.sec))v.text(s.sec,s.labelXY[0],s.labelXY[1],{color:'#f1f3ef',size:11,weight:700,halo:'#11171a'});
   for(const key of new Set(gs.map(g=>g.assembly==='STAIR'?'STAIR_TOP':g.assembly))){const nd=D.nodes[key];if(nd)v.text('集結區',nd.X,nd.Y,{color:team,size:11,weight:700,halo:'#11171a',align:'left',dx:9,dy:7});}}
  v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:'#f1f3ef',size:13,weight:900,halo:'#11171a',align:'right',dx:-12});}

@@ -60,12 +60,17 @@ UNUSED_KINDS = {'blocked', 'work'}
 STAIR_OF = {e: d['stair'] for e, d in EXIT_DEF.items()}   # 出口所在的階梯：139/140 同一座、144/145 同一座
 
 
+def seat_reserved(seat):
+    """保留不坐：139 留 31 席（第 2–10 排 1–3 號、第 11–12 排 4–5 號，這兩排由 4 號起）；144 第 1–6 排 72 席。"""
+    if seat['sec'] == '139':
+        return seat['no'] <= (5 if seat['pai'] >= 11 else 3)
+    if seat['sec'] == '144':
+        return seat['pai'] <= 6
+    return False
+
+
 def seat_usable(seat):
-    if seat['kind'] in UNUSED_KINDS:
-        return False
-    if seat['sec'] == '139' and seat['no'] <= 5:          # 139 的 1–5 號沿現況不用
-        return False
-    return True
+    return seat['kind'] not in UNUSED_KINDS and not seat_reserved(seat)
 
 
 def usable_seats(base, exit_key):

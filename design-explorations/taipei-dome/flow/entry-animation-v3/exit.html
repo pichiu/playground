@@ -166,7 +166,7 @@ let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,showIds
 function buildIdx(){const R=ds.D.restSeats;TH={min:Infinity,max:-Infinity};
  for(const s of R){const S=SEC[s.sec]||(SEC[s.sec]={sec:s.sec,seats:[],thMin:Infinity,thMax:-Infinity,usable:new Map()});S.seats.push(s);
   if(s.theta<S.thMin)S.thMin=s.theta;if(s.theta>S.thMax)S.thMax=s.theta;if(s.theta<TH.min)TH.min=s.theta;if(s.theta>TH.max)TH.max=s.theta;
-  const ok=!(s.kind==='blocked'||s.kind==='work')&&!(s.sec==='139'&&s.no<=5);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 的 1–5 號不用
+  const ok=!(s.kind==='blocked'||s.kind==='work')&&!(s.sec==='139'&&s.no<=(s.pai>=11?5:3))&&!(s.sec==='144'&&s.pai<=6);   // 與 plan.seat_usable 同一條規則：blocked/work 不用，139 保留 31 席、144 第 1–6 排保留
   if(ok){if(!S.usable.has(s.pai))S.usable.set(s.pai,[]);S.usable.get(s.pai).push(s.no);}}
  SECS=Object.keys(SEC).sort();
  for(const e of ds.exits){const S=SEC[e.sec];if(!S)continue;const f=ds.byId.get(e.order[0]).rest,st=S.seats.find(s=>s.pai===f.pai&&s.no===f.no);S.exitRight=st?st.theta>(S.thMin+S.thMax)/2:false;}}

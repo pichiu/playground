@@ -28,8 +28,8 @@ def test_interleave_skips_exhausted_column(base):     # Review Focus 3
 def test_exit_fill_counts(base):
     P = plan.build_plan(base)
     used = {(e, L): sum(1 for p in P['people'] if p['exit'] == e and p['lane'] == L) for e in plan.EXITS for L in 'AB'}
-    assert {k: v for k, v in used.items() if v} == {('139', 'A'): 206, ('140', 'A'): 291, ('141', 'A'): 259, ('142', 'A'): 53,
-                                                     ('142', 'B'): 202, ('143', 'B'): 185, ('144', 'B'): 198, ('145', 'B'): 215}
+    assert {k: v for k, v in used.items() if v} == {('139', 'A'): 224, ('140', 'A'): 291, ('141', 'A'): 259, ('142', 'A'): 35,
+                                                     ('142', 'B'): 220, ('143', 'B'): 185, ('144', 'B'): 126, ('145', 'B'): 269}
 
 
 def test_nesting_and_distinct_stairs(base):
@@ -61,5 +61,5 @@ def test_shared_exit_shortfall_is_reported(base):      # review：142 不夠 A �
     import pytest
     b = copy.deepcopy(base)
     b['restSeats'] = [s for s in b['restSeats'] if s['sec'] != '141']   # 沒有 141 → A 路要用超過 142 全部的席
-    with pytest.raises(SystemExit, match='路 A 缺 57 席'):
+    with pytest.raises(SystemExit, match='路 A 缺 39 席'):
         plan.build_plan(b)

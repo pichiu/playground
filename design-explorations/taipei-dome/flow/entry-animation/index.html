@@ -88,7 +88,7 @@ td.n{text-align:right;white-space:nowrap}
 <div class="stair" data-stair-order></div>
 
 <h2>七個出口的用量</h2>
-<p class="sub">雙側可進出的區只走靠樓梯那一側；139 的 1–5 號不用。</p>
+<p class="sub">雙側可進出的區只走靠樓梯那一側；保留不坐：139 的 31 席（第 2–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席；出口坐滿才換，換口可以落在列中間。</p>
 <div class="usage" data-exit-usage></div>
 
 <h2>檢核</h2>
@@ -123,7 +123,7 @@ function checksTable(C){
  const rows=[
   ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>e.who.join(' × '))],
   ['逐序號巢狀（A 的出口 < B < C）',`${C.nesting.violations} / ${C.nesting.indices} 個序號違反`,'0',C.nesting.violations===0,(C.nesting.examples||[]).map(e=>`序號 ${e.idx}：${Object.values(e.exits).join(' / ')}`)],
-  ['指派：換口往下游 / 三路落在同一座階梯 / 拆欄',`${A.upstreamViolations} / ${A.distinctStairViolations} / ${A.splitColumns}（每路 ${['A','B','C'].map(L=>(A.segments||{})[L]).join('、')} 段）`,'0 / 0 / 0',A.upstreamViolations===0&&A.distinctStairViolations===0&&A.splitColumns===0,(A.examples||[]).map(e=>e.lie!=null?`列 ${e.lie}：${e.exits.join(' / ')}`:e.stairs?`序號 ${e.idx}：${e.stairs.join(' / ')}`:`${e.lane} 路序號 ${e.idx}：${e.exits.join(' → ')}`)],
+  ['指派：換口往下游 / 未坐滿就換 / 三路落在同一座階梯',`${A.upstreamViolations} / ${A.notFullSwitches} / ${A.distinctStairViolations}（每路 ${['A','B','C'].map(L=>(A.segments||{})[L]).join('、')} 段；分坐兩出口 ${A.splitColumns} 列）`,'0 / 0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0&&A.distinctStairViolations===0,(A.examples||[]).map(e=>e.used!=null?`${e.lane} 路序號 ${e.idx}：${e.exits.join(' → ')}（${e.exits[0]} 只用 ${e.used}/${e.capacity}）`:e.stairs?`序號 ${e.idx}：${e.stairs.join(' / ')}`:`${e.lane} 路序號 ${e.idx}：${e.exits.join(' → ')}`)],
   ['同一大隊三路路徑不交叉（回西一入口 / 進集結區）',`${R.departureCrossings} / ${R.arrivalCrossings}`,'0 / 0',R.departureCrossings===0&&R.arrivalCrossings===0,(R.examples||[]).map(e=>`${e.block} ${e.lanes}（${e.phase==='departure'?'回西一入口':'進區'}）：${e.who.join(' × ')}`)],
   ['不斷拍：群內拍距 · 交界對齊空檔',`西一入口 ${rng(gate)}，交界 ≤ ${bnd(gate)} 秒；樓梯口 ${rng(st)}；接尾 ${rng(fd)}`,'0.25–0.55 秒；交界 ≤ 5 秒',C.continuity.ok,[]],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
@@ -134,9 +134,9 @@ function checksTable(C){
  const D=ds.D,M=D.meta;
  $('kpi').innerHTML=[['人數',M.population.toLocaleString('zh-TW')],['建置',M.built]].map(([k,v])=>`<span><b>${v}</b>${k}</span>`).join('');
  $('rules').innerHTML=M.rules.map(r=>`<li>${esc(r)}</li>`).join('');
- const segName=s=>`<span class="seg"><b>${s.exit}</b><small>${s.fromBlock===s.toBlock?s.fromBlock:s.fromBlock+'…'+s.toBlock} · ${s.n} 人</small></span>`;
+ const segName=s=>`<span class="seg"><b>${s.exit}</b><small>${s.label} · ${s.n} 人</small></span>`;
  document.querySelector('[data-lane-table] tbody').innerHTML=['A','B','C'].map(L=>{const l=ds.lanes[L];return `<tr class="lane-${L}"><td><b>${ds.laneName(L)}</b></td>${l.segments.map(s=>`<td>${segName(s)}</td>`).join('')}<td class="n">${l.total}</td></tr>`;}).join('');
- document.querySelector('[data-stair-order]').innerHTML=ds.groups.map(g=>`<div data-block="${g.key}" class="${g.costume}" style="flex-grow:${g.population}" title="${g.key}：${g.population} 人"><b>${g.key}</b><small>${['A','B','C'].map(L=>`<span>${g.lanes[L].exit}</span>`).join('')}</small></div>`).join('');
+ document.querySelector('[data-stair-order]').innerHTML=ds.groups.map(g=>`<div data-block="${g.key}" class="${g.costume}" style="flex-grow:${g.population}" title="${g.key}：${g.population} 人"><b>${g.key}</b><small>${['A','B','C'].map(L=>`<span>${g.lanes[L].exits.map(x=>x.exit).join('/')}</span>`).join('')}</small></div>`).join('');
  const maxCap=Math.max(...ds.exits.map(e=>e.capacity));
  document.querySelector('[data-exit-usage]').innerHTML=ds.exits.map(e=>{const blue=e.order.filter(id=>ds.byId.get(id).costume==='藍').length;return `<div data-exit="${e.key}"><b>${e.key}</b><div class="bar" title="${e.stairLabel}"><i class="b" style="width:${blue/maxCap*100}%"></i><i class="w" style="left:${blue/maxCap*100}%;width:${(e.used-blue)/maxCap*100}%"></i></div><span class="n">${e.used} / ${e.capacity}</span></div>`;}).join('');
  const box=document.querySelector('[data-checks]');box.innerHTML=checksTable(M.checks);box.classList.toggle('ok',!!M.checks.ok);
