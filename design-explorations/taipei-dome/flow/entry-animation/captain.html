@@ -119,7 +119,7 @@ $('pick').onclick=e=>{const b=e.target.closest('button');if(b)choose(+b.dataset.
 // 口令序列：全部取自 groups／files／persons 既有時刻，依時間排序。
 // 集結隊伍：隊頭站定就起步，最後一位到時隊頭可能已經在走（邊到邊走），白衣、藍衣同一條規則
 const stagedCue=(g,id,who)=>g.tAssembly>g.tEnter
- ?{id,t:g.tAssembly,h:`${who}最後一位到`,d:`${g.key} 邊到邊走：隊頭 ${fmt(g.tEnter)} 已起步，最後一位 ${fmt(g.tAssembly)} 到 ${ds.nodeName(g.assembly)}`}
+ ?{id,t:g.tAssembly,h:`${who}最後一位到`,d:`${g.key} 邊到邊走：隊頭已起步，最後一位才到 ${ds.nodeName(g.assembly)}`}
  :{id,t:g.tAssembly,h:`${who}到齊`,d:`${g.key} ${g.population} 人站定 · ${ds.nodeName(g.assembly)}`};
 function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),prev=ds.groups.filter(g=>g.dadui===k-1);
  const first=lies.reduce((a,f)=>f.tLeave<a.tLeave?f:a),lastP=ps.reduce((a,p)=>p.t.leave>a.t.leave?p:a),lastF=lies.find(f=>f.lie===lastP.lie);
@@ -132,7 +132,7 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
    :stagedCue(W,'white','白衣'),
   stagedCue(B,'blue','藍衣'),
   ...(prev.length?[{id:'handover',t:Math.max(...prev.map(g=>g.tGateLast)),h:'西一入口交接',d:`大隊 ${k-1} 最後一位過西一入口，六路接著換本大隊`}]:[]),
-  {id:'go',t:Math.min(...gs.map(g=>g.tGateFirst)),h:`大隊 ${k} 出發`,d:`六路並排往西一入口，北三路白、南三路藍${staged.length?`（集結區 ${fmt(Math.min(...staged.map(g=>g.tEnter)))} 起步）`:''}`},
+  {id:'go',t:Math.min(...gs.map(g=>g.tGateFirst)),h:`大隊 ${k} 出發`,d:`六路並排往西一入口，北三路白、南三路藍${staged.length?'（集結區的人跟著起步）':''}`},
   {id:'gate-last',t:Math.max(...gs.map(g=>g.tGateLast)),h:'最後一位過西一入口',d:k<9?`交給大隊 ${k+1}`:'最後一個大隊，西一入口收'},
   {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];
  return list.sort((a,b)=>a.t-b.t);}
@@ -147,8 +147,8 @@ function choose(n){k=clampK(n);document.documentElement.style.setProperty('--tea
  gs=ds.groups.filter(g=>g.dadui===k);ps=ds.P.filter(p=>p.dadui===k);
  lies=ds.files.filter(f=>f.dadui===k).sort((a,b)=>a.costume===b.costume?'ABC'.indexOf(a.lane)-'ABC'.indexOf(b.lane):(a.costume==='白'?-1:1)).map(f=>({...f,ps:ps.filter(p=>p.lie===f.lie)}));   // 白 A·B·C、藍 A·B·C（藍2–9 的 A 路是列 6k，不是列號最小的）
  cues=cuesFor();
- $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${fmt(c.t)} ${c.h}"><time>${fmt(c.t)}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
- $('cue-n').textContent=`${cues.length} 條 · ${fmt(cues[0].t)}–${fmt(cues[cues.length-1].t)}`;
+ $('cues').innerHTML=cues.map(c=>`<li data-cue="${c.id}" data-t="${c.t}" tabindex="0" role="button" aria-label="跳到 ${c.h}"><time>${cues.indexOf(c)+1}</time><span class="h">${c.h}</span><span class="d">${c.d}</span></li>`).join('');
+ $('cue-n').textContent=`${cues.length} 條`;
  $('lies').innerHTML=lies.map(l=>`<div data-lie="${l.lie}" class="${l.costume==='白'?'w':'b'}"><div class="hd"><b>列 ${l.lie}</b><em>${l.costume}衣 ${l.n}</em></div><div>${l.exit} 出口 · ${l.lane} 路</div><div class="bar">${ST.map(([s])=>`<i data-s="${s}"></i>`).join('')}</div><div class="st"><span class="s"></span><span class="n"></span></div></div>`).join('');
  $('lies-h').textContent=`大隊 ${k} · 六列狀態`;$('lies-n').textContent=`${ps.length} 人`;
  const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume==='藍'),cols=g=>g.columns.join('·'),exits=g=>['A','B','C'].map(L=>g.lanes[L].exit).join('/');
@@ -166,10 +166,10 @@ function draw(){const team=TEAM[k-1],D=ds.D;
   el.querySelectorAll('.bar i').forEach(i=>{const st=i.dataset.s,col=ST.find(x=>x[0]===st)[1];i.style.width=c[st]/n*100+'%';i.style.background=col==='TEAM'?team:col==='TEAMA'?team+'8c':col;});
   const sp=el.querySelector('.st .s');sp.textContent=STATE_ZH[s];sp.className='s '+s;el.querySelector('.st .n').textContent=`已到位 ${c.done}/${n}`;}
  const i=cues.findIndex(c=>c.t>t),nx=cues[i<0?cues.length-1:i];
- $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令 · ${fmt(nx.t)}`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
- $('nx-c').innerHTML=i<0?'完成':`${fmt(nx.t-t)}<span>後</span>`;
+ $('nx-k').textContent=i<0?`大隊 ${k} · 口令已全部下完`:`大隊 ${k} · 下一個口令（第 ${i+1} 條）`;$('nx-h').textContent=nx.h;$('nx-d').textContent=nx.d;
+ $('nx-c').innerHTML=i<0?'完成':`${i+1}<span>／${cues.length}</span>`;
  $('cues').querySelectorAll('li[data-t]').forEach((li,j)=>{li.classList.toggle('done',cues[j].t<=t);li.classList.toggle('cur',j===i);});
- $('clk').textContent=Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)+'%';$('tl').value=t;
+ $('clk').textContent=Math.max(0,Math.min(100,Math.round((t-+$('tl').min)/((+$('tl').max-+$('tl').min)||1)*100)))+'%';$('tl').value=t;
  const c=v.begin('#11171a');v.base(D.map,{floor:'#1a2326',stage:'#263236',wall:'#2d383b',band:'#a3b0ae',bandA:.07,stand:'#2d383b',gate:'#f1f3ef',gateA:.1});
  const r=Math.max(1.1,.045*v.s);c.globalAlpha=.22;for(const p of ds.P){if(p.dadui===k)continue;const q=pos(p,t);v.dot(q[0],q[1],r*.7,'#56636a');}c.globalAlpha=1;
  for(const p of ps){const q=pos(p,t);v.dot(q[0],q[1],r,p.costume==='白'?'#f3eee4':team);}

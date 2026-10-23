@@ -38,3 +38,15 @@ def test_data_param_rejects_absolute_url(open_page):
     pg, *_ = open_page('index.html?data=https://example.com/x.json', 1280)
     pg.wait_for_selector('#dome-err', timeout=20000)
     assert '相對路徑' in pg.inner_text('#dome-err')
+
+
+def test_no_time_shown_on_any_page(open_page):   # 企劃 10/23：2c 也拿掉所有時間顯示，播放進度用百分比
+    import re
+    for name in ('index', 'console', 'me', 'me?id=1-28', 'score', 'handout', 'captain', 'captain?k=1', 'exit'):
+        base, _, q = name.partition('?')
+        pg, errs, perrs = open_page(f'{base}.html' + (f'?{q}' if q else ''), 1280)
+        pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+        pg.wait_for_timeout(300)
+        body = pg.inner_text('body')
+        assert not re.search(r'\d{1,2}:\d\d', body), (name, re.findall(r'.{0,20}\d{1,2}:\d\d.{0,20}', body)[:5])
+        assert '分鐘' not in body and '示意全程' not in body, name

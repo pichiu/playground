@@ -119,8 +119,8 @@ function stats(ds){
  const dad=Array.from({length:9},(_,i)=>{const gs=ds.groups.filter(g=>g.dadui===i+1);return {k:i+1,n:gs.reduce((s,g)=>s+g.population,0),a:Math.min(...gs.map(g=>g.tGateFirst)),b:Math.max(...gs.map(g=>g.tGateLast))};});
  return {blocks,dad};}
 function buildTrack(){
- document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.blocks.map(o=>`<i data-block="${o.key}" class="${o.costume}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="${o.key}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)}${o.feeder?' 離座接尾至樓梯口':' 通過樓梯口'}"><span>${o.key}</span></i>`).join(''));
- document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人，${fmt(o.a)}–${fmt(o.b)} 通過西一入口"><span>${o.k}</span></i>`).join(''));}
+ document.querySelector('[data-track="stair"]').insertAdjacentHTML('beforeend',S.blocks.map(o=>`<i data-block="${o.key}" class="${o.costume}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="${o.key}：${o.n} 人${o.feeder?'，離座接尾至樓梯口':''}"><span>${o.key}</span></i>`).join(''));
+ document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人"><span>${o.k}</span></i>`).join(''));}
 function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.meta.t0)return '休息區就座';
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
  const blk=S.blocks.filter(o=>!o.feeder&&t>=o.a).pop();return blk?`${blk.key} 下樓`:`${S.blocks[0].key} 離座`;}
@@ -151,7 +151,7 @@ function ui(){const c=counts(t,ds.P),N=ds.P.length;
  $('clock').textContent=Math.round(t/T*100)+'%';   // 播放進度用百分比$('phase').textContent=phaseName(c);$('head').style.left=pct(t);
  track.setAttribute('aria-valuenow',Math.round(t));track.setAttribute('aria-valuetext',Math.round(t/T*100)+'%');
  let i=cues.findIndex(x=>x.t>t);if(i<0)i=cues.length;const from=Math.max(0,Math.min(i-2,cues.length-5));
- $('cues').innerHTML=cues.slice(from,from+5).map((x,j)=>`<li class="${from+j===i-1?'now':''}"><span>${fmt(x.t)}</span><span>${esc(x.s)}</span></li>`).join('');}
+ $('cues').innerHTML=cues.slice(from,from+5).map((x,j)=>`<li class="${from+j===i-1?'now':''}"><span>${from+j+1}</span><span>${esc(x.s)}</span></li>`).join('');}
 function setPlaying(on){playing=on;if(on&&t>=T)t=0;$('play').setAttribute('aria-label',on?'暫停':'播放');$('ico').innerHTML=on?'<rect x="2" y="1.5" width="5" height="17" fill="currentColor"/><rect x="11" y="1.5" width="5" height="17" fill="currentColor"/>':'<path d="M2 1.5v17L17 10z" fill="currentColor"/>';last=0;}
 $('play').onclick=()=>setPlaying(!playing);
 $('speed').innerHTML=[.5,1,2,5].map(s=>`<button data-s="${s}" aria-pressed="${s===speed}">×${s}</button>`).join('');

@@ -52,3 +52,13 @@ def test_captain_speed_and_labels(open_page):   # 速度預設 ×6、可切換�
     pg.click('#lbl')
     assert pg.get_attribute('#lbl', 'aria-pressed') == 'true'
     assert pg.evaluate("document.getElementById('tl').getBoundingClientRect().width") > 150 and no_hscroll(pg)
+
+
+def test_captain_progress_clamped(open_page):          # 播放進度百分比限制在 0–100%（跳到範圍外也一樣）
+    pg, *_ = open_page('captain.html?k=1', 390, 844)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    for t in (0, 99999):
+        pg.evaluate(f'window.__seek({t})')
+        pg.wait_for_timeout(200)
+        v = pg.inner_text('#clk')
+        assert v.endswith('%') and 0 <= int(v[:-1]) <= 100, v
