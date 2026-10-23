@@ -62,7 +62,10 @@ h1 span{font-size:.5em;font-weight:500;color:var(--dim);white-space:nowrap}
 .dir{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);padding:0 0 2px 74px;font-weight:700}
 .dir .ex{color:var(--accent)}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap}
-.tg[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tg[aria-pressed=true],.map .tools .tg[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.paint{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--dim)}
+.paint .tg{margin:0}
+.rtools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bs{grid-column:2;min-width:0;overflow-x:auto}
 .show-ids .bsi{min-width:var(--minw)}
 .bs[data-flip="1"] .bsi{margin-left:auto}
@@ -139,9 +142,9 @@ canvas#seatmap{display:block;cursor:pointer}
  </main>
 </div>
 <section class="card map" id="map">
- <h2><span>休息區座位圖 <small>七區並排 · 左 139 → 右 145 · 上排在上 · 顏色＝大隊，灰＝空席，玫瑰紅＝保留不坐，深灰＝不可用／工作席</small></span><span class="tools"><button type="button" id="zoom" aria-pressed="false">放大</button></span></h2>
- <div class="scroll" id="mapscroll"><canvas id="seatmap" role="img" aria-label="休息區七區座位圖，每席一格，顏色為大隊"></canvas></div>
- <p id="seat-tip" aria-live="polite">點一下座位：顯示位置編碼、大隊、走哪一路。</p>
+ <h2><span>休息區座位圖 <small>七區並排 · 左 139 → 右 145 · 上排在上 · <span id="paintnote">顏色＝大隊</span>，灰＝空席，玫瑰紅＝保留不坐，深灰＝不可用／工作席</small></span><span class="tools"><span class="paint" role="group" aria-label="座位著色"><span>著色</span><button type="button" class="tg" data-paint="dadui" aria-pressed="true">大隊</button><button type="button" class="tg" data-paint="area" aria-pressed="false">合心區</button></span><button type="button" id="zoom" aria-pressed="false">放大</button></span></h2>
+ <div class="scroll" id="mapscroll"><canvas id="seatmap" role="img" aria-label="休息區七區座位圖，每席一格，顏色為大隊或合心區"></canvas></div>
+ <p id="seat-tip" aria-live="polite">點一下座位：顯示位置編碼、大隊、合心區、走哪一路。</p>
  <div class="legend" id="legend"></div>
 </section>
 </div>
@@ -154,8 +157,14 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 // 大隊色：藍衣藍色系、白衣淡暖色，大隊 1→9 由淺到深；色帶上一律寫「{區塊}×{人數}」，顏色只是輔助。
 const BLUE=['#d3e3f8','#b2cdf1','#8fb4e9','#6c9ae0','#3a6bbd','#2c5aa8','#244b92','#1d3d7a','#162f62'];
 const WARM=['#fbf4e3','#f4e8c6','#ecd9a7','#e2c98a','#d6b86f','#c7a65a','#b59348','#86672a','#6d5320'];
-const colorOf=p=>(p.costume==='藍'?BLUE:WARM)[p.dadui-1];
-const inkOf=p=>(p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';   // 深色底才用白字，對比皆 ≥ 4.5:1
+// 合心區：演繹位置依「位置（前→後）、列（1→54）」排序後切段，起訖含頭尾，寫成 列-位置。
+const AREAS=[{name:'高雄',from:[1,1],to:[48,11],c:'#b8442e',ink:'#ffffff'},{name:'屏東',from:[49,11],to:[7,14],c:'#e9c46a',ink:'#1b2629'},{name:'嘉義',from:[8,14],to:[54,15],c:'#7cbf8a',ink:'#1b2629'},{name:'台南',from:[1,16],to:[50,22],c:'#2f6690',ink:'#ffffff'},{name:'桃園',from:[1,23],to:[28,34],c:'#7d4a8c',ink:'#ffffff'}];
+const ordOf=(lie,pai)=>pai*100+lie;
+const areaOf=p=>{const o=ordOf(p.lie,p.pai);return AREAS.find(a=>o>=ordOf(...a.from)&&o<=ordOf(...a.to))||null;};
+let paint='dadui';   // dadui＝藍白大隊色；area＝合心區色
+const colorOf=p=>{if(paint==='area'){const a=areaOf(p);return a?a.c:'#9a9f9c';}return (p.costume==='藍'?BLUE:WARM)[p.dadui-1];};
+const inkOf=p=>{if(paint==='area'){const a=areaOf(p);return a?a.ink:'#1b2629';}return (p.costume==='藍'?p.dadui>=5:p.dadui>=8)?'#ffffff':'#1b2629';};   // 深色底才用白字，對比皆 ≥ 4.5:1
+const keyOf=p=>paint==='area'?(areaOf(p)||{name:'未分區'}).name:p.costume+p.dadui;
 const SIDE={N:'往北側',S:'往南側'};
 const PAI_MAX=14;
 let ds=null,cur=null,SEC={},SECS=[],TH={min:0,max:1},sel=null,zoom=false,showIds=false,cells=[],cellMap=new Map(),rt=0;
@@ -201,7 +210,7 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  // 每排
  const tot=r=>(S.usable.get(r.pai)||r.seats).length,maxTot=Math.max(...e.rows.map(tot));
  const rowsHtml=e.rows.map(r=>{const pieces=[];
-  r.ids.forEach((id,i)=>{const p=byId.get(id),k=p.costume+p.dadui,lp=pieces[pieces.length-1];
+  r.ids.forEach((id,i)=>{const p=byId.get(id),k=keyOf(p),lp=pieces[pieces.length-1];
    if(lp&&lp.k===k&&lp.lane===p.lane){lp.n++;lp.nos.push(r.seats[i]);}else pieces.push({k,lane:p.lane,n:1,nos:[r.seats[i]],p});});
   const used=new Set(r.seats),desc=r.seats.length>1&&r.seats[0]>r.seats[1];
   const empt=(S.usable.get(r.pai)||[]).filter(no=>!used.has(no)).sort((a,b)=>desc?b-a:a-b);
@@ -219,8 +228,8 @@ function render(key){cur=key;const e=ds.exitsByKey[key],S=SEC[e.sec],byId=ds.byI
  const usedPai=new Set(e.rows.map(r=>r.pai)),unused=[...S.usable.keys()].filter(p=>!usedPai.has(p)).sort((a,b)=>b-a);
  const r0=e.rows[0];
  $('rows').classList.toggle('show-ids',showIds);
- $('rows').innerHTML=`<div class="rhead"><h2>帶隊順序 · 由上排往下</h2><button type="button" class="tg" id="idtg" aria-pressed="${showIds}">顯示每席人員編號</button></div><p class="how">本出口 ${e.used} 人依序從第 ${r0.pai} 排帶起，每排由出口側（${flip?'畫面右側':'畫面左側'}，與下方座位圖同方向）${r0.seats[0]} 號往 ${r0.seats[r0.seats.length-1]} 號方向；一排走完接下一排。色帶寬度依座位數，每格一席，底線顏色是走哪一路。</p><div class="dir">${flip?'<span>◀ 中央</span><span class="ex">出口側（先走）▶</span>':'<span class="ex">◀ 出口側（先走）</span><span>中央 ▶</span>'}</div>${rowsHtml}${unused.length?`<p class="unused">第 ${unused.join('、')} 排未使用（${unused.reduce((a,p)=>a+S.usable.get(p).length,0)} 席空）。</p>`:''}`;
- $('legend').innerHTML=ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;}).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--keep)"></i>保留不坐</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
+ $('rows').innerHTML=`<div class="rhead"><h2>帶隊順序 · 由上排往下</h2><div class="rtools"><span class="paint" role="group" aria-label="色帶著色"><span>著色</span><button type="button" class="tg" data-paint="dadui" aria-pressed="${paint==='dadui'}">大隊</button><button type="button" class="tg" data-paint="area" aria-pressed="${paint==='area'}">合心區</button></span><button type="button" class="tg" id="idtg" aria-pressed="${showIds}">顯示每席人員編號</button></div></div><p class="how">本出口 ${e.used} 人依序從第 ${r0.pai} 排帶起，每排由出口側（${flip?'畫面右側':'畫面左側'}，與下方座位圖同方向）${r0.seats[0]} 號往 ${r0.seats[r0.seats.length-1]} 號方向；一排走完接下一排。色帶寬度依座位數，每格一席，${paint==='area'?'底色是合心區':'底色是大隊'}，底線顏色是走哪一路。</p><div class="dir">${flip?'<span>◀ 中央</span><span class="ex">出口側（先走）▶</span>':'<span class="ex">◀ 出口側（先走）</span><span>中央 ▶</span>'}</div>${rowsHtml}${unused.length?`<p class="unused">第 ${unused.join('、')} 排未使用（${unused.reduce((a,p)=>a+S.usable.get(p).length,0)} 席空）。</p>`:''}`;
+ $('legend').innerHTML=(paint==='area'?AREAS.map(a=>`<span><i style="background:${a.c}"></i>${a.name}（${ds.P.filter(p=>areaOf(p)===a).length}）</span>`):ds.groups.map(g=>{const p={costume:g.costume,dadui:g.dadui};return `<span><i style="background:${colorOf(p)}"></i>${g.key}</span>`;})).join('')+`<span><i style="background:var(--grid)"></i>空席</span><span><i style="background:var(--keep)"></i>保留不坐</span><span><i style="background:var(--dead)"></i>不可用／工作席</span><span><i class="cur"></i>目前出口 ${key}</span>`;
 }
 // 色帶小格放不下字時藏起來（說明列仍完整列出）
 function alignIds(){for(const w of $('rows').querySelectorAll('.bs[data-flip="1"]'))w.scrollLeft=w.scrollWidth;}   // 窄螢幕要橫向捲時，鏡射的排先停在出口側（右端）
@@ -259,20 +268,22 @@ function drawMap(scrollTo=false){if(!ds)return;
 function showTip(s){sel=`${s.sec}-${s.pai}-${s.no}`;const where=`${s.sec} 區 ${s.pai} 排 ${s.no} 號`;let t;
  if(s.kind==='blocked')t=`${where} · 不可用席`;else if(s.kind==='work')t=`${where} · 工作席，不排人`;
  else if(!s.who)t=s.reserved?`${where} · 保留不坐`:`${where} · 空席`;
- else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位`;}
+ else{const p=ds.byId.get(s.who);t=`${where} · <b>${p.id}</b> · 大隊 ${p.dadui}${p.costume} · 合心區 ${(areaOf(p)||{name:'未分區'}).name} · 走 ${p.lane} 路 · ${p.exit} 出口第 ${p.exitSeq+1} 位`;}
  $('seat-tip').innerHTML=t+(s.sec!==cur?` <a href="?e=${s.sec}" data-go="${s.sec}">看 ${s.sec} 出口</a>`:'');drawMap();}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=Infinity;
  for(const rec of cells){const dx=Math.max(rec.x-x,0,x-(rec.x+rec.w)),dy=Math.max(rec.y-y,0,y-(rec.y+rec.h)),d=dx*dx+dy*dy;if(d<bd){bd=d;best=rec;}}
  if(best&&bd<=36)showTip(best.s);});
 $('seat-tip').onclick=ev=>{const a=ev.target.closest('[data-go]');if(a){ev.preventDefault();choose(a.dataset.go);}};
 $('rows').addEventListener('click',ev=>{const b=ev.target.closest('#idtg');if(!b)return;showIds=!showIds;b.setAttribute('aria-pressed',String(showIds));$('rows').classList.toggle('show-ids',showIds);try{localStorage.setItem('exit-show-ids',showIds?'1':'0');}catch(e){}fitLabels();if(showIds)alignIds();});
+function setPaint(m){paint=m==='area'?'area':'dadui';document.querySelectorAll('[data-paint]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.paint===paint)));$('paintnote').textContent=paint==='area'?'顏色＝合心區':'顏色＝大隊';try{localStorage.setItem('exit-paint',paint);}catch(e){}}
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-paint]');if(!b||b.dataset.paint===paint)return;setPaint(b.dataset.paint);if(ds)choose(cur,false);});
 $('zoom').onclick=()=>{zoom=!zoom;$('zoom').setAttribute('aria-pressed',String(zoom));$('zoom').textContent=zoom?'縮小':'放大';drawMap();};
 addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{drawMap();fitLabels();},80);});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>drawMap());
 window.__seatXY=(sec,pai,no)=>{const r=cellMap.get(`${sec}-${pai}-${no}`);return r?[r.x+r.w/2,r.y+r.h/2]:null;};
 
 (async()=>{try{ds=await Dome.load();}catch(e){$('head').innerHTML=`<p class="err">${esc(e.message)}</p>`;return;}
- try{showIds=localStorage.getItem('exit-show-ids')==='1';}catch(e){}
+ try{showIds=localStorage.getItem('exit-show-ids')==='1';setPaint(localStorage.getItem('exit-paint'));}catch(e){}
  buildIdx();picker();
  const q=new URLSearchParams(location.search).get('e');
  choose(ds.exitsByKey[q]?q:ds.exits[0].key,false);
