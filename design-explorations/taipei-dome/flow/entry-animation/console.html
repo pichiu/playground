@@ -148,7 +148,7 @@ function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*
   if(st!=='wait'){c.globalAlpha=alpha;v.dot(pts[0][0],pts[0][1],r*1.5,col,C.map,1);c.globalAlpha=1;}}}
 function ui(){const c=counts(t,ds.P),N=ds.P.length;
  for(const [k] of STATES){$('bar').querySelector(`[data-k="${k}"]`).style.width=c[k]/N*100+'%';$('dl').querySelector(`[data-n="${k}"]`).textContent=c[k].toLocaleString('zh-TW');}
- $('clock').textContent=Math.round(t/T*100)+'%';   // 播放進度用百分比$('phase').textContent=phaseName(c);$('head').style.left=pct(t);
+ $('clock').textContent=Math.round(t/T*100)+'%';$('phase').textContent=phaseName(c);$('head').style.left=pct(t);   // 播放進度用百分比
  track.setAttribute('aria-valuenow',Math.round(t));track.setAttribute('aria-valuetext',Math.round(t/T*100)+'%');
  let i=cues.findIndex(x=>x.t>t);if(i<0)i=cues.length;const from=Math.max(0,Math.min(i-2,cues.length-5));
  $('cues').innerHTML=cues.slice(from,from+5).map((x,j)=>`<li class="${from+j===i-1?'now':''}"><span>${from+j+1}</span><span>${esc(x.s)}</span></li>`).join('');}

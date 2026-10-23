@@ -31,3 +31,12 @@ def test_console_mobile(open_page):
     pg, errs, perrs = open_page('console.html', 375, 700)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert no_hscroll(pg) and not perrs
+
+
+def test_console_phase_and_head_follow_time(open_page):   # 回歸：播放／拖曳時階段文字與進度指針要跟著更新
+    pg, *_ = open_page('console.html', 1280)
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    pg.evaluate('window.__seek(120)')
+    pg.wait_for_function('document.getElementById("phase").textContent.trim() !== ""', timeout=5000)
+    left = pg.evaluate('parseFloat(document.getElementById("head").style.left)')
+    assert left > 10, left
