@@ -56,7 +56,7 @@ def test_check_recomputes_capacity_not_trusting_fields(built):
     e = next(e for e in D['exits'] if e['key'] == '140')
     e['used'], e['capacity'] = 1, 9999
     C = check.check_all(D)
-    assert C['capacity']['140']['used'] == 282 and C['capacity']['140']['capacity'] == 291   # 由 persons / restSeats 重算
+    assert C['capacity']['140']['used'] == 291 and C['capacity']['140']['capacity'] == 291   # 由 persons / restSeats 重算
     assert C['capacity']['140']['fieldsOk'] is False and C['ok'] is False
 
 

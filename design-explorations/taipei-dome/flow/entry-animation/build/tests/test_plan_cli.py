@@ -13,4 +13,4 @@ def test_cli_writes_plan(root, tmp_path):
     assert P['exits']['139']['used'] == 224 and P['exits']['139']['rows'][0]['pai'] == 12
     assert P['lanes']['A']['segments'][0] == dict(exit='139', fromBlock='藍9', toBlock='藍2', n=224, fromIdx=0, toIdx=223, fromPart=False, toPart=True,
                                                 fromLabel='藍9', toLabel='藍2（前段）', label='藍9 … 藍2（前段）')
-    assert P['blocks'][0]['key'] == '藍9' and P['blocks'][0]['lanes']['A'] == dict(lie=54, exit='139', n=18) and P['blocks'][0]['lanes']['C']['lie'] == 52
+    assert P['blocks'][0]['key'] == '藍9' and P['blocks'][0]['lanes']['A'] == dict(lie=54, exit='139', n=18, exits=[dict(exit='139', n=18)]) and P['blocks'][0]['lanes']['C']['lie'] == 52

@@ -76,5 +76,5 @@ def test_lane_idx_and_fields(base):
     A = plan.lane_sequence(base, 'A')
     assert [s['laneIdx'] for s in A] == list(range(len(A)))
     s = A[0]
-    assert set(s) >= {'id', 'lie', 'pai', 'dadui', 'costume', 'block', 'lane', 'laneIdx', 'exit', 'assembly'}
+    assert set(s) >= {'id', 'lie', 'pai', 'dadui', 'costume', 'block', 'lane', 'laneIdx', 'assembly'}   # exit 由 assign_exits 補上
     assert s['id'] == '54-1' and s['lie'] == 54 and s['costume'] == '藍' and s['dadui'] == 9 and s['assembly'] == 'P5'
