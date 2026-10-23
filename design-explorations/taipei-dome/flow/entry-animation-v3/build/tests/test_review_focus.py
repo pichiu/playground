@@ -5,7 +5,7 @@ import csv
 def test_seats_csv(root):
     rows = list(csv.DictReader(open(root / 'seats.csv', encoding='utf-8')))
     assert len(rows) == 1609 and len({(r['休息區'], r['休息排'], r['座號']) for r in rows}) == 1609
-    assert {r['集結區'] for r in rows} == {'門前集合（B2）'} and {r['樓梯路'] for r in rows} == {'A', 'B'}
+    assert {r['集結區'] for r in rows} == {'門前隊伍（B2）'} and {r['樓梯路'] for r in rows} == {'A', 'B'}
     used = {}
     for r in rows:
         used[(r['出口'], r['樓梯路'])] = used.get((r['出口'], r['樓梯路']), 0) + 1

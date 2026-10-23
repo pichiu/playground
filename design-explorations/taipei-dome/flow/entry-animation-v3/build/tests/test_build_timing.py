@@ -49,32 +49,26 @@ def test_shift_moves_whole_timeline(base):
     assert all(abs(S1[pid][k] - S0[pid][k] - 0.1) < 1e-9 for k in S0[pid])
 
 
-def test_first_batch_then_continuous(base):            # 大隊 1 頭一批六條線切齊（同 2c 節奏）；之後每條線一路接續、不分大隊停
+def test_ranks_fill_then_continuous(base):             # 大隊 1 排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP
     people, (S, clocks) = _sched(base)
-    first = [p for p in people if p['dadui'] == 1 and p['slot'] < build.FIRST_BATCH]
-    T = min(S[p['id']]['gate'] - build.ENTRY_HEADWAY * p['slot'] - build.STAGGER * p['gateLane'] for p in first)
-    assert all(abs(S[p['id']]['gate'] - (T + build.ENTRY_HEADWAY * p['slot'] + build.STAGGER * p['gateLane'])) < 1e-6 for p in first)
-    import collections
-    lines = collections.defaultdict(list)
-    for p in people:
-        lines[p['gateLane']].append(S[p['id']]['gate'])
-    for g in lines.values():
-        g.sort()
-        assert min(b - a for a, b in zip(g, g[1:])) >= build.ENTRY_HEADWAY - 1e-9 and max(b - a for a, b in zip(g, g[1:])) < 12
-    later = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in people if p not in first]
-    assert max(later) < 1.0                                # 頭一批以外到門前就接著走
-    w = [S[p['id']]['enter'] - S[p['id']]['assembly'] for p in first]
-    assert 1 < max(w) < 15 and build.FIRST_BATCH == 10
+    rank = clocks['rankOf']
+    ranks = clocks['ranks']
+    assert all(abs(S[p['id']]['enter'] - ranks[rank[p['id']]]) < 1e-9 and abs(S[p['id']]['gate'] - S[p['id']]['enter'] - build.TURN_T) < 1e-9 for p in people)
+    assert min(b - a for a, b in zip(ranks, ranks[1:])) >= build.RANK_GAP - 1e-9
+    assert max(S[p['id']]['assembly'] for p in people if p['dadui'] == 1) + build.FILL_PAUSE <= ranks[0] + 1e-9
 
 
-def test_every_dadui_has_a_walk_through(base):          # review：每個大隊都有人邊到邊走（T_k 不會晚到全大隊都要等）
-    people, (S, clocks) = _sched(base)
-    for d in range(1, 10):
-        assert any(S[p['id']]['enter'] - S[p['id']]['assembly'] < 0.01 for p in people if p['dadui'] == d), d
+def test_rank_numbers_restart_per_dadui(base):          # 每個大隊從新的一排開始（下一大隊不往前補）
+    people = plan.build_plan(base)['people']
+    rank = build.rank_numbers(people)
+    for d in range(2, 10):
+        assert min(rank[p['id']] for p in people if p['dadui'] == d) > max(rank[p['id']] for p in people if p['dadui'] == d - 1)
+    assert all(rank[p['id']] - min(rank[q['id']] for q in people if q['dadui'] == p['dadui']) == p['slot'] for p in people)
 
 
-def test_queue_spot_has_room(base):                      # review：門前位置不能排到樓梯平台後面
-    import pytest
+def test_queue_never_overflows(base):                   # 門前隊伍不排回樓梯平台：每人追上隊伍的位置在側移完成之後
     G = routes.Geometry(base)
-    with pytest.raises(ValueError):
-        G.queue_u({'slot': 60, 'gateLane': 0})
+    people, (S, clocks) = _sched(base)
+    for p in people:
+        s_join = (S[p['id']]['assembly'] - S[p['id']]['entry']) * build.V
+        assert s_join >= G.line_min_s(p['gateLane']) - 1e-9, p['id']

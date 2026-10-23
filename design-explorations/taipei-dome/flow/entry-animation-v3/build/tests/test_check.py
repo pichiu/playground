@@ -25,11 +25,11 @@ def test_check_all_green(built):
     assert C['nesting'] == dict(violations=0, sameStair=0, examples=[])
     A = C['assignment']
     assert A['upstreamViolations'] == 0 == A['notFullSwitches'] and A['segments'] == {'A': 4, 'B': 4} and A['splitColumns'] == 18
-    assert C['routes']['crossings'] == 0 and C['waits']['violations'] == 0 and C['doorQueue']['violations'] == 0
+    assert C['routes']['crossings'] == 0 and C['pace']['violations'] == 0 and C['ranks']['violations'] == 0
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
     assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
-    assert all(v['minGap'] >= 0.25 and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
+    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
 
@@ -92,7 +92,7 @@ def test_check_detects_downstream_switch(built):
     assert C['assignment']['upstreamViolations'] == 1 and C['ok'] is False
 
 
-def test_check_detects_wait_outside_queue(built):     # 只能在門前自己的位置等：在 B1 走廊停一下就算違反
+def test_check_detects_wait_outside_queue(built):     # 只能在門前隊伍裡停：在 B1 走廊停一下就算違反
     _, D = built
     D = _copy(D)
     p = D['persons'][10]
@@ -101,10 +101,10 @@ def test_check_detects_wait_outside_queue(built):     # 只能在門前自己的
     p['path'].insert(k + 1, [q[0], q[1], q[2] + 1.0])
     for r in p['path'][k + 2:]:
         r[2] += 1.0
-    for key in ('stair', 'assembly', 'enter', 'gate', 'arrive'):
+    for key in ('stair', 'entry', 'assembly', 'enter', 'gate', 'arrive'):
         p['t'][key] += 1.0
     C = check.check_all(D)
-    assert C['waits']['violations'] >= 1 and C['ok'] is False
+    assert C['pace']['violations'] >= 1 and C['ok'] is False
 
 
 
@@ -162,20 +162,29 @@ def test_check_detects_slow_segment(built):            # 放慢某一段（不�
         q[2] += 1.0
     p['t']['arrive'] = p['path'][-1][2]
     C = check.check_all(D)
-    assert C['waits']['violations'] >= 1 and C['ok'] is False
+    assert C['pace']['violations'] >= 1 and C['ok'] is False
 
 
-def test_check_door_queue_tamper(built):                # 門前切齊：把某一大隊某條線的隊頭往後挪，就不齊了
+def test_check_rank_tamper(built):                     # 一排六人：把某人離開隊頭的時刻往後挪 0.5 秒，這一排就不齊了
     _, D = built
     C = check.check_all(D)
-    assert C['doorQueue']['violations'] == 0 and C['doorQueue']['firstBatch'] == 60 and C['doorQueue']['laterWaiting'] == 0
+    assert C['ranks']['violations'] == 0 and C['ranks']['maxSkew'] <= check.SHIFT_TOL and C['ranks']['fillOk'] is True
     D = _copy(D)
-    p = next(q for q in D['persons'] if q['dadui'] == 1 and q['slot'] == 0 and q['gateLane'] == 3)
-    for q in p['path']:
-        if p['t']['assembly'] - 1e-6 <= q[2] <= p['t']['enter'] + 1e-6:
-            q[0] += 0.2
+    p = next(q for q in D['persons'] if q['dadui'] == 3 and q['slot'] == 5 and q['gateLane'] == 2)
+    p['t']['enter'] += 0.5
     C = check.check_all(D)
-    assert C['doorQueue']['violations'] >= 1 and C['ok'] is False
+    assert C['ranks']['violations'] >= 1 and C['ok'] is False
+
+
+def test_check_detects_off_line_in_queue(built):       # 門前隊伍裡要在自己那條線上：往旁邊挪就算違反
+    _, D = built
+    D = _copy(D)
+    p = next(q for q in D['persons'] if q['dadui'] == 2 and q['slot'] == 4 and q['gateLane'] == 3)
+    for q in p['path']:
+        if p['t']['assembly'] + 1e-6 < q[2] <= p['t']['enter'] + 1e-6:
+            q[0] += 0.05
+    C = check.check_all(D)
+    assert C['pace']['violations'] >= 1 and C['ok'] is False
 
 
 def test_check_bounds_gate_gap_between_dadui(built):    # review：西一入口兩個大隊之間不能空太久
@@ -189,17 +198,13 @@ def test_check_bounds_gate_gap_between_dadui(built):    # review：西一入口�
     assert C['continuity']['ok'] is False and C['ok'] is False
 
 
-def test_check_detects_later_wait(built):              # 一路接續：頭一批以外的人在門前停超過 1 秒就算違反
+def test_check_detects_fast_in_queue(built):           # 門前隊伍是慢慢推進：在隊伍裡用步速衝到隊頭就算違反
     _, D = built
     D = _copy(D)
     p = next(q for q in D['persons'] if q['dadui'] == 5 and q['slot'] == 3)
-    k = next(i for i, q in enumerate(p['path']) if abs(q[2] - p['t']['enter']) < 1e-6)
-    q = p['path'][k]
-    p['path'].insert(k + 1, [q[0], q[1], q[2] + 3.0])
-    for r in p['path'][k + 2:]:
-        r[2] += 3.0
-    for key in ('enter', 'gate', 'arrive'):
-        p['t'][key] += 3.0
+    a = p['path']
+    ka = next(i for i, q in enumerate(a) if abs(q[2] - p['t']['assembly']) < 2e-3)
+    ke = next(i for i, q in enumerate(a) if abs(q[2] - p['t']['enter']) < 2e-3)
+    a[ka + 1:ke] = [[a[ke][0], a[ke][1], a[ka][2] + 0.5]]
     C = check.check_all(D)
-    assert C['doorQueue']['laterWaiting'] >= 1 and C['ok'] is False
-
+    assert C['pace']['violations'] >= 1 and C['ok'] is False

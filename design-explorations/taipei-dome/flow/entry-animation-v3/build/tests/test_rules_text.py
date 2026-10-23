@@ -6,7 +6,7 @@ import build
 def test_rules_text_words():
     text = '\n'.join(build.RULES)
     assert all(w in text for w in ('白衣', '藍衣', '坐滿', '142', '139 → 140 → 141 → 142', '142 → 143 → 144 → 145'))
-    assert not any(w in text for w in ('遞補', '死巷', 'C 路')) and '切齊' in text and '0.4 秒' in text
+    assert not any(w in text for w in ('遞補', '死巷', 'C 路')) and '一排六人並肩' in text and '排滿' in text and '切齊' not in text
 
 
 def test_data_json_rules_match(root):

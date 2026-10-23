@@ -80,7 +80,7 @@ body>.dome-nav.bar a{white-space:nowrap}
 <div class="stage" id="stage">
  <div class="maps"><canvas id="cv" aria-label="版本 3 全場動線地圖"></canvas><div class="loading" id="loading">讀取動線資料…</div></div>
  <div class="hud">
-  <div class="title" id="title"><h1>版本 3 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、門前集合後六路進場 · 動畫節奏非現場秒數</p>
+  <div class="title" id="title"><h1>版本 3 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、排成六條線的門前隊伍，一排六人並肩進場 · 動畫節奏非現場秒數</p>
    <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>門前排隊中</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
   </div>
   <div class="clock"><b id="clock">0%</b><span class="phase" id="phase"></span></div>
@@ -107,7 +107,7 @@ const {pos,state,counts,fmt,View,LANE_NAME}=Dome,$=id=>document.getElementById(i
 Dome.nav('console.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
 const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);
-const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','門前等待',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
+const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','門前隊伍',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
 const {esc}=Dome;
 let ds=null,S=null,view=null,t=0,T=1,playing=false,speed=1,last=0,dirty=true,cues=[];
 const hl=new Set();   // 目前高亮的路別（可多選）

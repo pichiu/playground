@@ -15,8 +15,9 @@ STAIR_HALF_W = 0.2                       # 樓梯／平台半寬
 GATE_W, GATE_DOORS = 0.95, 4                 # 西一入口：4 扇門，可 12 人並排（約 7.2 m）
 GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
-QUEUE_HEAD, QUEUE_STEP = 4.2, 0.075      # 門前集合：六條線的隊頭切齊在 B2 u 4.2（收攏點前一點），往後每位 0.075（同 2c 集結格位間距）
-QUEUE_MIN_U = 1.4                        # 門前位置的下限：B2 側移完成（第一個 lane_run 點 ≈ 1.36）之後
+QUEUE_HEAD, QUEUE_STEP = 4.2, 0.075      # 門前隊伍：六條線的隊頭切齊在 B2 u 4.2（收攏點前一點），前後間距 0.075（同 2c 集結格位間距）
+QUEUE_MIN_U = 1.4                        # 門前隊伍尾巴的下限：B2 側移完成（line_poly 第一點 LINE_START_U ≈ 1.36）之後
+LINE_START_U = B2_U_START + (QUEUE_HEAD - B2_U_START) / max(1, int((QUEUE_HEAD - B2_U_START) / 0.35))   # 與 lane_run 的第一點相同
 
 
 def line_off(j):
@@ -70,6 +71,7 @@ class Geometry:
         bot = (top[0], top[1] + STAIR_RUN)
         self.STAIR_PTS = [top, bot, (LANDING_X, bot[1])]       # 樓梯口 → 樓梯底（B2）→ 平台東端
         self.LANE_OFF = LANE_OFF
+        self._lines = {}
         self.ST_LANE = {o: Poly(miter(self.STAIR_PTS, o)) for o in self.LANE_OFF.values()}   # 樓梯兩路各自的折線
         self.GATE_PTS, self.GATE_DIR = {}, {}                   # 西一入口六路收攏點：版本 1 大隊 1 過西一入口的點；GATE_DIR 是該點之後場內線的方向
         for p in base['persons']:
@@ -87,13 +89,17 @@ class Geometry:
     def _b2_to_gate(self, j):
         return lane_run(self.B2, B2_U_START, QUEUE_HEAD, line_off(j)) + [self.GATE_PTS[j]]
 
-    def queue_u(self, person, q=None):
-        """門前排隊的位置：自己那條線上、隊頭往後第 q 位（q 預設為列內位次）；排到側移完成之前（樓梯平台）就是隊伍太長。"""
-        q = person['slot'] if q is None else q
-        u = QUEUE_HEAD - QUEUE_STEP * q
-        if u < QUEUE_MIN_U:
-            raise ValueError(f"門前第 {q + 1} 位排到 u {u:.2f}，已在樓梯平台後面（下限 {QUEUE_MIN_U}）")
-        return u
+    def line_poly(self, j):
+        """第 j 條線在 B2 的折線：側移完成點 → 隊頭（u QUEUE_HEAD）。門前隊伍的位置都用這條線的弧長量，隊頭在弧長 L。"""
+        if j not in self._lines:
+            u0 = LINE_START_U
+            us = [u0] + [c for c in self.B2.cum if u0 + 1e-6 < c < QUEUE_HEAD - 1e-6] + [QUEUE_HEAD]
+            self._lines[j] = Poly([self.B2.off(u, line_off(j)) for u in us])
+        return self._lines[j]
+
+    def line_min_s(self, j):
+        """門前隊伍最後一位最多排到這裡（側移完成之後），超過就是隊伍太長、排回樓梯平台。"""
+        return self.line_poly(j).proj(self.B2.off(QUEUE_MIN_U, line_off(j)))[0]
 
     def _pre_b2(self, person):
         """座位 → 走道口 → 接入點 → 自己那一路 → 樓梯（到平台端）。"""
@@ -103,14 +109,13 @@ class Geometry:
         pts.append(self.B1.off(u_in, off))
         return pts + lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off)
 
-    def queue_routes(self, person, q=None):
-        """(到門前位置的路線, 門前位置到收攏點的路線)：前者從座位起、沿兩路下樓、側移到自己那條線後停在第 q 位。"""
-        j, uq = person['gateLane'], self.queue_u(person, q)
-        b2 = self._b2_to_gate(j)
-        spot = self.B2.off(uq, line_off(j))
-        to = self._pre_b2(person) + [q for q in b2[:-1] if self.B2.proj(q)[0] < uq - 1e-6] + [spot]
-        frm = [spot] + [q for q in b2[:-1] if self.B2.proj(q)[0] > uq + 1e-6] + [b2[-1]]
-        return to, frm
+    def entry_route(self, person):
+        """座位 → … → 樓梯 → B2 側移到自己那條線的起點（line_poly 的第一點）。"""
+        return self._pre_b2(person) + [self.line_poly(person['gateLane']).p[0]]
+
+    def turn_route(self, j):
+        """隊頭 → 西一入口收攏點：一排六人在這段一起轉進門（外側線路程長、走得快）。"""
+        return [self.line_poly(j).p[-1], self.GATE_PTS[j]]
 
     def arrival_route(self, person):
         """不停的整條路：座位 → … → 樓梯 → B2 側移到第 j 條線 → 西一入口收攏點。"""
