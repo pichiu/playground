@@ -32,7 +32,7 @@ def test_check_all_green(built):
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
     assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
-    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
+    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= check.GATE_BOUNDARY_MAX for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
 
@@ -296,3 +296,29 @@ def test_check_detects_walking_over_seated(built):     # 穿過已坐好的人�
     pts[k:k] = [[a['field']['X'], a['field']['Y'], t1], [a['field']['X'], a['field']['Y'], t1 + 0.5]]
     b['t']['arrive'] = pts[-1][2]
     assert len(seated_hits([a, b], b['t']['arrive'] + 1)) >= 1
+
+
+def test_check_detects_corridor_rules(built):           # 迴廊候隊：前一大隊在下一大隊排滿之前就走、最後一個大隊也停
+    _, D = built
+    D = _copy(D)
+    assert check.staging(D)['violations'] == 0
+    for p in D['persons']:
+        if p['dadui'] == 3:
+            p['t']['holdEnd'] -= 5.0
+    assert check.staging(D)['violations'] >= 1
+    D = _copy(built[1])
+    p = next(q for q in D['persons'] if q['dadui'] == 9)
+    p['t']['holdStart'], p['t']['holdEnd'] = p['t']['gate'] + 1, p['t']['gate'] + 2
+    assert check.staging(D)['violations'] >= 1
+
+
+def test_check_detects_too_many_steps(built):           # 階梯：最多上 3 階，走到第 5 條階梯線以西就算越界
+    _, D = built
+    D = _copy(D)
+    G = check.geometry(D)
+    assert G['maxSteps'] <= check.MAX_STEPS and G['stepViolations'] == 0
+    p = next(q for q in D['persons'] if q['dadui'] == 1 and q['gateLane'] == 0)
+    k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
+    q = p['path'][k]
+    p['path'].insert(k, [-5.0, 3.1, q[2] - 0.001])       # Y 3.1 那一段，X −5.0 已經跨過 9 條階梯線
+    assert check.geometry(D)['stepViolations'] >= 1

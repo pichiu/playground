@@ -19,14 +19,14 @@ DS = 0.01                                # 取樣步長（單位）
 WALK_OFF = -0.09                         # 沿牆段：中心線比 insideWalk 往牆側移（舞台南翼角離 insideWalk 只有 0.28，要留 0.15）
 WALK_TOL = 0.04                          # insideWalk 折線簡化的容許誤差（再倒圓角）
 SEAT_X0 = -4.934                         # 座位欄的網格原點（pai 1 那一欄）；欄距 = SP_SEAT
-# 北行段中心線折點：三段直線的 x 都在座位欄上（x0 + 1、7、3 欄），六路（半整數偏移）就走在欄間空隙，離任何座位半格；
-# 第 0 路在舞台線稿 0.15 之外（南段 x −5.13、中段閃舞台 −4.34、北段 −4.87）；閃舞台的斜段放在大隊 4 分出之前
-NORTH = [(SEAT_X0 + SP_SEAT, 5.2), (SEAT_X0 + 7 * SP_SEAT, 4.3), (SEAT_X0 + 7 * SP_SEAT, 2.85), (SEAT_X0 + 3 * SP_SEAT, 1.95), (SEAT_X0 + 3 * SP_SEAT, 1.2)]
+# 北行段中心線折點：三段直線的 x 都在座位欄上（x0 + 1、4、3 欄），六路（半整數偏移）就走在欄間空隙，離任何座位半格。
+# 舞台在大隊 2–4 列區西側是 11 階的階梯（每階約 0.055 單位）；中段走欄 4，靠舞台的第 0 路最多上 3 階、第 1 路 1 階，
+# 其餘四路與分出後各自進列的人都在地面。不往東閃舞台，大隊 2 的最後幾排就不必往西橫走 5–6 欄。
+NORTH = [(SEAT_X0 + SP_SEAT, 5.2), (SEAT_X0 + 4 * SP_SEAT, 4.5), (SEAT_X0 + 4 * SP_SEAT, 2.35), (SEAT_X0 + 3 * SP_SEAT, 1.95), (SEAT_X0 + 3 * SP_SEAT, 1.2)]
 R_GATE_IN, R_WALL, R_NORTH, R_JOG = 0.35, 0.45, 0.6, 0.6
 SPLIT_AHEAD = 0.12                       # 大隊在最南一列之南這麼遠處分出
 TURN_R = 0.08                            # 分出後各人轉進自己那一列的轉彎半徑
-LATERAL_SLOW = 0.9                       # 第 5 路橫走 5 欄以上那一段的速度倍數（避開下一排第 0、1 路經過那條空隙的時刻）
-STAGE_CLEAR = 0.16                       # 分出後橫走的列間空隙離舞台線稿至少這麼遠（檢核門檻 0.15 再留 0.01）
+STAGE_CLEAR = 0.02                       # 分出後橫走的列間空隙離舞台線稿至少這麼遠：可以走到階梯邊，不壓在階梯線上
 GAP_H = SP_SEAT / 2                      # 半格：兩列（兩欄）中間的空隙離座位的距離
 
 
@@ -190,9 +190,10 @@ class March:
                 return self.ss[k]
         return self.C.L
 
-    def lane_track(self, j, s_end, tol=2e-3):
-        """lane j 從隊頭到 s_end 的 (x, y, τ)：省略「與前後點等速共線」的中間點（任何省略點偏離 < tol）。"""
-        raw = [(*self.lane_xy(s, j), t) for s, t in zip(self.ss, self.tau) if s < s_end - 1e-9]
+    def lane_track(self, j, s_end, tol=2e-3, s_start=0.0):
+        """lane j 從 s_start（預設隊頭）到 s_end 的 (x, y, τ)：省略「與前後點等速共線」的中間點（任何省略點偏離 < tol）。"""
+        raw = [(*self.lane_xy(s_start, j), self.tau_at_s(s_start))] if s_start > 0 else []
+        raw += [(*self.lane_xy(s, j), t) for s, t in zip(self.ss, self.tau) if s_start + 1e-9 < s < s_end - 1e-9 or (s_start == 0 and s == 0)]
         raw.append((*self.lane_xy(s_end, j), self.tau_at_s(s_end)))
         out, k = [raw[0]], 0
         while k < len(raw) - 1:
@@ -222,11 +223,10 @@ class March:
         1. ax 在座位西側：沿欄間空隙往北到自己那一列、右轉往東到座位。
         2. ax 在座位東側（多半是每大隊最後幾排、座位靠舞台）：沿 ax 往北到本大隊列區南緣的列間空隙（y_south + 半格），
            往西到座位西側那條欄間空隙 xa、沿 xa 往北到自己那一列、往東半格進座位。同一排要橫走的人在同一個高度一起往西，
-           西邊的人先到、先往北，所以不交叉。要橫走 5 欄以上的（只有第 5 路）橫走那一段放慢到 LATERAL_SLOW 倍步速：
-           5 欄的路程（0.658）幾乎等於排距的路程（0.6 秒 × V = 0.66），照步速走會在第 0 路那條空隙碰上下一排的第 0 路。
-           f_lat：build.avoid 指定的橫走速度倍數（還有碰撞時再放慢一級），覆蓋上面的預設。
-           南緣那一點離舞台不到 STAGE_CLEAR 時（大隊 2、3 南緣是舞台鼓出來的地方），斜切到夠寬的那條欄間空隙，
-           往北到第一個夠寬的列間空隙再往西到 xa。
+           西邊的人先到、先往北，所以不交叉。橫走正好 5 欄的改走座位東側那條空隙（4 欄），最後往西半格：
+           沿格線每格 0.12 秒，5 欄 0.598 秒 ≈ 3 排 × 0.2 秒，會在第 0 路那條空隙碰上 3 排之後的第 0 路。
+           f_lat：build.avoid 指定的橫走速度倍數（還有碰撞時放慢一級）。
+           南緣那一點離舞台線稿不到 STAGE_CLEAR 時，在夠寬的那條欄間空隙往北，到第一個夠寬的列間空隙再往西到 xa。
         沿牆段就分出的大隊 9（不是往北走）：斜走到 xlim 西側那條欄間空隙與自己那一列的交點，再往東進座位
         （xlim：自己那一列與同大隊南邊幾列裡排號不晚於自己的人最西的座位 X；斜線經過的南邊幾列都在它西側）。"""
         xs, ys = seat
@@ -244,7 +244,10 @@ class March:
         while xc < ax - 1e-9 and self.stage_clear((xc, yg)) < STAGE_CLEAR:
             xc += SP_SEAT
         xc = min(xc, ax)
-        f = f_lat if f_lat is not None else (LATERAL_SLOW if round((ax - xa) / SP_SEAT) >= 5 else 1.0)
+        if round((ax - xa) / SP_SEAT) == 5:               # 橫走 5 欄（0.598 秒）≈ 3 排 × 0.2 秒，會在第 0 路那條空隙碰上 3 排之後的第 0 路：改走座位東側那條（4 欄），最後往西半格進座位
+            xa = xs + GAP_H
+            xc = max(xc, xa)
+        f = f_lat if f_lat is not None else 1.0
         pts = out + [(ax, yg), (xc, yg, f)]
         if xc > xa + 1e-9:                                # 舞台鼓出來處：沿欄間空隙往北，到第一個夠寬的列間空隙再往西
             y = yg
@@ -262,6 +265,7 @@ def export(M, split):
         xs.append(x); ys.append(y); txs.append(tx); tys.append(ty); sps.append(M.sp(s))
     r9 = lambda v: [round(q, 9) for q in v]
     return dict(tau=r9(M.tau), x=r9(xs), y=r9(ys), tx=r9(txs), ty=r9(tys), sp=r9(sps),
+                stageTau=[round(M.tau_at_s(M.s_walk), 6), round(M.tau_at_s(M.C.arcs()[-5][0]), 6)],
                 arcs=[[round(M.tau_at_s(a), 6), round(M.tau_at_s(b), 6), round(r, 6), left] for a, b, r, left in M.C.arcs()],
                 tauGate=[round(t, 6) for t in M.tau_gate], split={str(d): round(M.tau_at_s(s), 6) for d, s in split.items()},
                 spQueue=SP_QUEUE, spSeat=SP_SEAT, innerMin=INNER_MIN, speed=V)

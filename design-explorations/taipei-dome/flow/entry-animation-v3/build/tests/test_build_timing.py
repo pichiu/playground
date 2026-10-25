@@ -49,7 +49,7 @@ def test_shift_moves_whole_timeline(base):
     assert all(abs(S1[pid][k] - S0[pid][k] - 0.1) < 1e-9 for k in S0[pid])
 
 
-def test_ranks_fill_then_continuous(base):             # 大隊 1 排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP
+def test_ranks_fill_then_continuous(base):             # 每個大隊排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP
     people, (S, clocks) = _sched(base)
     rank = clocks['rankOf']
     ranks = clocks['ranks']
@@ -57,9 +57,26 @@ def test_ranks_fill_then_continuous(base):             # 大隊 1 排滿門前�
     M = build.march_of(G)
     # 整排並肩：所有排同一個速度剖面，穿過西一入口牆線的時刻 = t.enter + 該線的 τ
     assert all(abs(S[p['id']]['enter'] - ranks[rank[p['id']]]) < 1e-9 and abs(S[p['id']]['gate'] - S[p['id']]['enter'] - M.tau_gate[p['gateLane']]) < 1e-9 for p in people)
-    assert all(abs(S[p['id']]['split'] - S[p['id']]['enter'] - M.tau_at_s(clocks['split'][p['dadui']])) < 1e-9 for p in people)
+    held = lambda v: v.get('holdEnd', 0.0) - v.get('holdStart', 0.0)            # 迴廊候隊停的時間
+    assert all(abs(S[p['id']]['split'] - S[p['id']]['enter'] - held(S[p['id']]) - M.tau_at_s(clocks['split'][p['dadui']])) < 1e-9 for p in people)
     assert min(b - a for a, b in zip(ranks, ranks[1:])) >= build.RANK_GAP - 1e-9
-    assert max(S[p['id']]['assembly'] for p in people if p['dadui'] == 1) + build.FILL_PAUSE <= ranks[0] + 1e-9
+    for d in range(1, 10):                              # 每個大隊排滿門前隊伍才出發
+        ps = [p for p in people if p['dadui'] == d]
+        assert max(S[p['id']]['assembly'] for p in ps) + build.FILL_PAUSE <= min(S[p['id']]['enter'] for p in ps) + 1e-9
+
+
+def test_corridor_staging(base):                       # 迴廊候隊：大隊 1–8 在沿牆迴廊停到下一大隊排滿，迴廊一次一個大隊；大隊 9 不停
+    people, (S, clocks) = _sched(base)
+    for d in range(1, 10):
+        ps = [p for p in people if p['dadui'] == d]
+        if d == 9:
+            assert not any('holdStart' in S[p['id']] for p in ps)
+            continue
+        nxt = [p for p in people if p['dadui'] == d + 1]
+        assert all(S[p['id']]['holdEnd'] > S[p['id']]['holdStart'] for p in ps)
+        assert min(S[p['id']]['holdEnd'] for p in ps) >= max(S[p['id']]['assembly'] for p in nxt) + build.STAGE_PAUSE - 1e-9
+        if d + 1 < 9:
+            assert min(S[p['id']]['holdStart'] for p in nxt) >= max(S[p['id']]['holdEnd'] for p in ps) - 1e-9
 
 
 def test_rank_numbers_restart_per_dadui(base):          # 每個大隊從新的一排開始（下一大隊不往前補）
