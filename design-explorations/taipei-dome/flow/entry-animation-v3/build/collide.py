@@ -50,3 +50,39 @@ def collisions(persons, t_end, dt=0.01, r=0.03, t_start=6.0):
                         else:
                             walk_hit.setdefault((P[i]['id'], P[j]['id']), round(float(t), 2))
     return stand_hit, walk_hit
+
+
+def seated_hits(persons, t_end, dt=0.01, r=0.03, t_start=6.0):
+    """穿過已坐好的人:走動中的人(離座後、到位前,門前隊伍站定時段除外)與已經坐到場內位置的人(t ≥ t.arrive)距離 < R。
+    北行時整排會壓過後面大隊還空著的座位、各人進列時會經過同一大隊別人的座位,這一項證明那些座位當下沒人。
+    坐好的人不動,所以每個取樣區間內只看走動者的線段到該點的最近距離。"""
+    P = persons
+    T = np.arange(t_start, t_end, dt)
+    X = np.empty((len(P), len(T)), dtype=np.float64); Y = np.empty_like(X)
+    for i, p in enumerate(P):
+        a = np.array(p['path'], dtype=float)
+        X[i] = np.interp(T, a[:, 2], a[:, 0]); Y[i] = np.interp(T, a[:, 2], a[:, 1])
+    tt = lambda k: np.array([p['t'][k] for p in P])
+    leave, assembly, enter, arrive = tt('leave'), tt('assembly'), tt('enter'), tt('arrive')
+    FX = np.array([p['path'][-1][0] for p in P]); FY = np.array([p['path'][-1][1] for p in P])
+    cell = 0.1
+    grid = collections.defaultdict(list)          # 座位不動：網格只建一次，取樣時再看那一位坐下了沒
+    for j in range(len(P)): grid[(int(FX[j] // cell), int(FY[j] // cell))].append(j)
+    hits = {}
+    for k in range(len(T) - 1):
+        t = T[k]
+        mv = np.nonzero(((leave + 0.05 < t) & (t < assembly - 0.05)) | ((enter + 0.05 < t) & (t < arrive - 0.05)))[0]
+        if not len(mv): continue
+        for i in mv:
+            cx, cy = int(X[i, k] // cell), int(Y[i, k] // cell)
+            for gx in (cx - 1, cx, cx + 1):
+                for gy in (cy - 1, cy, cy + 1):
+                    for j in grid.get((gx, gy), ()):
+                        if arrive[j] > t: continue
+                        ax, ay = X[i, k] - FX[j], Y[i, k] - FY[j]
+                        ex, ey = X[i, k + 1] - X[i, k], Y[i, k + 1] - Y[i, k]
+                        ee = ex * ex + ey * ey
+                        f = 0.0 if ee < 1e-12 else min(1.0, max(0.0, -(ax * ex + ay * ey) / ee))
+                        if (ax + ex * f) ** 2 + (ay + ey * f) ** 2 < r * r:
+                            hits.setdefault(P[i]['id'], (round(float(t), 2), P[j]['id']))
+    return hits

@@ -53,7 +53,11 @@ def test_ranks_fill_then_continuous(base):             # 大隊 1 排滿門前�
     people, (S, clocks) = _sched(base)
     rank = clocks['rankOf']
     ranks = clocks['ranks']
-    assert all(abs(S[p['id']]['enter'] - ranks[rank[p['id']]]) < 1e-9 and abs(S[p['id']]['gate'] - S[p['id']]['enter'] - build.TURN_T) < 1e-9 for p in people)
+    G = routes.Geometry(base)
+    M = build.march_of(G)
+    # 整排並肩：所有排同一個速度剖面，穿過西一入口牆線的時刻 = t.enter + 該線的 τ
+    assert all(abs(S[p['id']]['enter'] - ranks[rank[p['id']]]) < 1e-9 and abs(S[p['id']]['gate'] - S[p['id']]['enter'] - M.tau_gate[p['gateLane']]) < 1e-9 for p in people)
+    assert all(abs(S[p['id']]['split'] - S[p['id']]['enter'] - M.tau_at_s(clocks['split'][p['dadui']])) < 1e-9 for p in people)
     assert min(b - a for a, b in zip(ranks, ranks[1:])) >= build.RANK_GAP - 1e-9
     assert max(S[p['id']]['assembly'] for p in people if p['dadui'] == 1) + build.FILL_PAUSE <= ranks[0] + 1e-9
 

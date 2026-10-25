@@ -31,7 +31,8 @@ def pipeline(root, tmp_path_factory):
 
 
 # ---------- 頁面測試共用（http.server + Playwright） ----------
-CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+_CHROMES = ['/opt/pw-browsers/chromium', '/opt/pw-browsers/chromium-1194/chrome-linux/chrome']   # 預裝的 Chromium（新版環境是前者）
+CHROME = next((c for c in _CHROMES if Path(c).exists()), _CHROMES[0])
 
 
 @pytest.fixture(scope='session')

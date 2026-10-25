@@ -1,4 +1,5 @@
 """版本 3 排程：一個時鐘（樓梯口兩路、大隊交界對齊），拉式倒推離座時刻（spec §3.4），輸出 data.json 與 seats.csv。
+隊頭之後一排六人並肩走 march.py 的中心線（整排轉彎，spec §3.4c），到自己大隊列區南緣分出、梯次進列。
 
 用法: python3 build.py base.json plan.json ../data.json ../seats.csv [--no-avoid]
 """
@@ -9,6 +10,7 @@ import json
 import math
 import sys
 
+import march
 import plan
 import routes
 
@@ -17,11 +19,11 @@ HEADWAY = 0.2           # 樓梯／走廊同一路相鄰兩人（一個接一個
 STAGGER = 0.17          # 兩路錯開
 T0 = 6.73               # 第一人離座
 DADUI_GAP = 0.8         # 大隊交界的對齊空檔：前一大隊隊尾先過西一入口線的轉入點
-SHIFT_STEP, SHIFT_MAX, AVOID_ROUNDS = 0.05, 0.15, 60
+SLOW_STEP, SLOW_MIN, AVOID_ROUNDS = 0.05, 0.7, 30   # 避撞：進列時橫走那一段每次放慢 0.05 倍步速，最低 0.7 倍
 RANK_GAP = 0.6          # 門前隊伍一排六人並肩，排與排相隔（= 樓梯兩路 0.2 秒一人分成六條線後每條線的節奏）
 SLOW = 0.075 / RANK_GAP # 門前隊伍推進的慢速（單位/秒）：前後間距 QUEUE_STEP 0.075、每 RANK_GAP 秒前進一格
-TURN_T = 2.0            # 一排六人從隊頭一起轉進西一入口的時間（外側那條線路程長、走得快）
 FILL_PAUSE = 1.0        # 大隊 1 把門前隊伍排滿後，稍停這麼久才開始推進
+GATE_DRAW_AFTER = 1.0   # 圖面六條線畫到穿過西一入口之後這麼久（秒）
 WAIT_MIN = 0.01         # 路徑上同一點停不到這麼久就不留停留點
 LANE_K = {'A': 0, 'B': 1}
 DIRECT_LABEL = '門前隊伍（B2）'
@@ -43,6 +45,23 @@ def timed(pts, t0):
             continue
         t += dd / V
         out.append((b[0], b[1], t))
+    return out
+
+
+def march_of(G):
+    """整排並肩的中心線與時間剖面（所有排共用，只差 t.enter）。"""
+    if not hasattr(G, 'march'):
+        G.march = march.March(G, G.D, routes.QUEUE_HEAD)
+    return G.march
+
+
+def split_points(G, people):
+    """每個大隊在哪裡分出（中心線弧長 s）：該大隊最南一列之南、最前座位西側一點。"""
+    M = march_of(G)
+    out = {}
+    for d in sorted({p['dadui'] for p in people}):
+        ps = [p for p in people if p['dadui'] == d]
+        out[d] = M.split_s(max(p['field']['Y'] for p in ps), min(p['field']['X'] for p in ps))
     return out
 
 
@@ -106,7 +125,8 @@ def rank_numbers(people):
 def schedule(G, people, R=None, shift=None):
     """兩個時鐘（spec §3.4、§3.4c）：
     1. 樓梯口時刻 S（兩路、大隊交界對齊）；下樓後以步速走到自己那條線的起點（t.entry）。
-    2. 門前隊伍：六條線同一個排號的人是一排（rank_numbers：每個大隊從新的一排開始），一排一起離開隊頭（t.enter）、一起轉進西一入口（t.gate = t.enter + TURN_T）。
+    2. 門前隊伍：六條線同一個排號的人是一排（rank_numbers：每個大隊從新的一排開始），一排一起離開隊頭（t.enter），
+       之後整排並肩沿 march 中心線走（t.gate = 穿過全壘打牆的時刻、t.split = 在自己大隊列區南緣分出）。
        排與排至少隔 RANK_GAP；隊伍以 QUEUE_STEP / RANK_GAP 的慢速推進，前後間距 QUEUE_STEP。
        大隊 1 先把隊伍排滿（隊伍不動），全部到齊後 FILL_PAUSE 秒第 0 排出發；之後一排接一排，哪一排有人還沒到就等他（隊伍停住）。
        每人下樓後以步速追上自己的位置（t.assembly），之後跟著隊伍走。
@@ -127,6 +147,8 @@ def schedule(G, people, R=None, shift=None):
     ranks = []
     for r in range(n_rank):
         ranks.append(max(reach[r], fill + FILL_PAUSE if r == 0 else ranks[-1] + RANK_GAP))
+    M = march_of(G)
+    split = split_points(G, people)
     out = {}
     for p in people:
         pid, r, line = p['id'], rank_of[p['id']], G.line_poly(p['gateLane'])
@@ -141,15 +163,32 @@ def schedule(G, people, R=None, shift=None):
                     lo = mid
                 else:
                     hi = mid
-        out[pid] = dict(leave=stair[pid] - R[pid]['d_top'] / V, stair=stair[pid], entry=t_e, assembly=hi, enter=g, gate=g + TURN_T)
+        out[pid] = dict(leave=stair[pid] - R[pid]['d_top'] / V, stair=stair[pid], entry=t_e, assembly=hi, enter=g,
+                        gate=g + M.tau_gate[p['gateLane']], split=g + M.tau_at_s(split[p['dadui']]))
     for pid, dt in shift.items():
         for key in out[pid]:
             out[pid][key] += dt
-    return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()), ranks=ranks, rankOf=rank_of)
+    return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()), ranks=ranks, rankOf=rank_of, split=split)
 
 
-def person_path(G, base_person, p, r, t, ranks, rank):
-    """座位 → 自己那條線的起點 → 步速追上隊伍 → 跟著隊伍（慢行或站住）到隊頭 → 一排一起轉進西一入口 → 場內（步速，沿版本 1 幾何重計時）。"""
+def tail_limits(people, rank_of):
+    """每人分出後的兩個參數：xlim（自己那一列與同大隊南邊幾列，排號 ≤ 自己的人裡最西的座位 X；沿牆段就分出的大隊斜切時要在它西側）
+    與 y_south（本大隊最南一列的 Y；要橫走的人在它南邊半格那條列間空隙往西）。"""
+    rows = collections.defaultdict(list)                  # (大隊, gateLane) → [(排號, X)]
+    y_south = {d: max(p['field']['Y'] for p in people if p['dadui'] == d) for d in {p['dadui'] for p in people}}
+    for p in people:
+        rows[(p['dadui'], p['gateLane'])].append((rank_of[p['id']], p['field']['X']))
+    out = {}
+    for p in people:
+        r, d = rank_of[p['id']], p['dadui']
+        xs = [x for j in range(p['gateLane'], 6) for rr, x in rows[(d, j)] if rr <= r]
+        out[p['id']] = (min(xs), y_south[d])
+    return out
+
+
+def person_path(G, p, r, t, ranks, rank, s_split, lim, f_lat=None):
+    """座位 → 自己那條線的起點 → 步速追上隊伍 → 跟著隊伍（慢行或站住）到隊頭
+    → 一排六人並肩沿 march 中心線（整排轉進西一入口、沿牆、北轉、沿舞台邊北行）→ 在自己大隊列區南緣分出 → 自己那一列 → 座位（步速）。"""
     line = G.line_poly(p['gateLane'])
     dt = t['enter'] - ranks[rank]                 # 避撞平移
     path = list(timed(r['to'], t['leave']))
@@ -169,14 +208,15 @@ def person_path(G, base_person, p, r, t, ranks, rank):
         pts = _line_pts(line, s0, s1)
         for x, y, s in pts[1:]:
             path.append((x, y, t0 + (t1 - t0) * ((s - s0) / (s1 - s0) if s1 - s0 > 1e-9 else 1.0)))
-    gx, gy = G.turn_route(p['gateLane'])[1]
-    path.append((gx, gy, t['gate']))
-    post = [q for q in base_person['path'] if q[2] > base_person['t']['gate'] + 1e-6]
+    M = march_of(G)
+    j = p['gateLane']
+    path += [(x, y, t['enter'] + tau) for x, y, tau in M.lane_track(j, s_split)[1:]]
+    x, y, tx, ty, _ = M.C.at(s_split)
     tt, last = path[-1][2], path[-1]
-    for x, y, _ in post:
-        tt += math.dist((last[0], last[1]), (x, y)) / V
-        path.append((x, y, tt))
-        last = (x, y)
+    for q in M.tail(last[:2], (tx, ty), (p['field']['X'], p['field']['Y']), *lim, f_lat):
+        tt += math.dist(last[:2], q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
+        path.append((q[0], q[1], tt))
+        last = path[-1]
     rounded = [[round(x, 3), round(y, 3), round(z, 3)] for x, y, z in path]
     clean = [rounded[0]]
     for q in rounded[1:]:
@@ -199,15 +239,15 @@ def _ids_between(persons, L, i0, i1):
     return [q['id'] for q in sorted((q for q in persons if q['lane'] == L and i0 <= q['laneIdx'] <= i1), key=lambda q: q['laneIdx'])]
 
 
-def assemble(base, planj, G, R, sched, clocks, checks=None):
-    who = {p['id']: p for p in base['persons']}
+def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     people = planj['people']
     persons = []
+    lims = tail_limits(people, clocks['rankOf'])
     for p in people:
         r, t = R[p['id']], sched[p['id']]
-        path = person_path(G, who[p['id']], p, r, t, clocks['ranks'], clocks['rankOf'][p['id']])
+        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], clocks['split'][p['dadui']], lims[p['id']], (slow or {}).get(p['id']))
         tt = dict(leave=round(t['leave'], 3), stair=round(t['stair'], 3), entry=round(t['entry'], 3), assembly=round(t['assembly'], 3), enter=round(t['enter'], 3),
-                  gate=round(t['gate'], 3), arrive=path[-1][2])
+                  gate=round(t['gate'], 3), split=round(t['split'], 3), arrive=path[-1][2])
         persons.append(dict(id=p['id'], lie=p['lie'], pai=p['pai'], dadui=p['dadui'], costume=p['costume'], a=p['a'],
                             field=p['field'], rest=p['rest'], exit=p['exit'], exitSeq=p['exitSeq'], lane=p['lane'],
                             laneIdx=p['laneIdx'], gateLane=p['gateLane'], gateIdx=p['gateIdx'], slot=p['slot'], rank=clocks['rankOf'][p['id']],
@@ -271,15 +311,21 @@ def assemble(base, planj, G, R, sched, clocks, checks=None):
     rest = [dict(s, kind=plan.seat_kind(s), reserved=plan.seat_reserved(s), who=who_seat.get((s['sec'], s['pai'], s['no']))) for s in base['restSeats']]
     meta = dict(title='入經藏 西一＋桃竹 休息區→進場 動線資料（版本 3 兩路直進）', built='2026-10-23',
                 mPerUnit=base['meta']['mPerUnit'], frame=base['meta']['frame'], population=len(persons), tEnd=t_end,
-                speedUnitPerSec=V, headway=HEADWAY, laneStagger=STAGGER, rankGap=RANK_GAP, queueSpeed=round(SLOW, 4), turnT=TURN_T, t0=T0, daduiGap=DADUI_GAP,
+                speedUnitPerSec=V, headway=HEADWAY, laneStagger=STAGGER, rankGap=RANK_GAP, queueSpeed=round(SLOW, 4), turnT=round(max(G.march.tau_gate), 3), t0=T0, daduiGap=DADUI_GAP,
                 tStairStart=round(clocks['tStairStart'], 3), tGateStart=round(t_gate0, 3),
                 rules=RULES, assumptions=ASSUMPTIONS, checks=checks or {})
     t_go = min(p['t']['enter'] for p in persons)
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
               dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，排滿門前隊伍', t0=T0, t1=t_go),
-              dict(key='enter', label='門前隊伍慢慢推進，一排六人並肩一起轉進西一入口，一排接一排；樓梯不停', t0=t_go, t1=t_end)]
-    return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=G.gate_lanes_map()), restSeats=rest, exits=exits,
+              dict(key='enter', label='門前隊伍慢慢推進，一排六人並肩整排轉進西一入口、沿牆、北行，到自己大隊列區梯次進列；一排接一排，樓梯不停', t0=t_go, t1=t_end)]
+    return dict(meta=meta, phases=phases, nodes=nodes, map=dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=G.gate_lanes_map(_lanes_after_queue(G)), march=march.export(G.march, clocks['split'])), restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])
+
+
+def _lanes_after_queue(G):
+    """圖面六條線在隊頭之後接著畫：整排平移線，到穿過西一入口之後 GATE_DRAW_AFTER 秒。"""
+    M = march_of(G)
+    return {j: [q[:2] for q in M.lane_track(j, M.s_at_tau(M.tau_gate[j] + GATE_DRAW_AFTER))[1:]] for j in range(6)}
 
 
 RULES = [
@@ -288,10 +334,13 @@ RULES = [
     '出口：白衣依序用 139 → 140 → 141 → 142，藍衣用 142 → 143 → 144 → 145；出口坐滿才換下一個，換口可以落在大隊中間',
     '142 兩路共用：藍衣大隊 1–3 先從上排出，白衣大隊 9 最後從下排出；任何時刻白衣用的出口都比藍衣近、且在不同階梯，所以走廊上不交叉',
     '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面',
-    '不進 B2 集結區、不在樓梯或 B1 走廊候隊：下樓後白衣散到北三條線、藍衣散到南三條線，在樓梯口到西一入口這段 B2 走廊（舞台後方）排成六條線的門前隊伍；大隊 1 先把隊伍排滿，之後隊伍慢慢往前推，一排六人並肩、一起轉進西一入口，一排接一排不停；每個大隊從新的一排開始；之後沿原場內路徑',
+    '不進 B2 集結區、不在樓梯或 B1 走廊候隊：下樓後白衣散到北三條線、藍衣散到南三條線，在樓梯口到西一入口這段 B2 走廊（舞台後方）排成六條線的門前隊伍；大隊 1 先把隊伍排滿，之後隊伍慢慢往前推，一排六人並肩離開隊頭，一排接一排不停；每個大隊從新的一排開始',
+    '整排轉彎：一排六人從隊頭到自己大隊的列區南緣全程並肩——左轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿舞台邊閃過舞台階梯；轉彎時整排一起轉，內圈走小步、外圈走大步，轉過來仍是六人並肩；第 1 路（白衣列 6k−5）永遠在行進方向左側，北行時在西側、進列時對到大隊第一列',
+    '梯次進列：舞台階梯和最前排座位之間只有一人寬，整排右轉進列放不下，所以到了自己大隊列區南緣，每人從自己那一路沿兩欄之間的空隙往北、轉進自己那一列往東到位；座位在自己那一路西側的（多半是每大隊最後幾排、靠舞台）沿列區南緣的空隙往西，再從座位旁的空隙進列；北行時壓過的是後面大隊還空著的座位',
 ]
 ASSUMPTIONS = [
-    '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒（一個接一個緊跟）、兩路錯開 0.17 秒、大隊交界加 0.8 秒；門前隊伍前後間距 0.075 單位、0.6 秒一排、慢行 0.125 單位/秒，一排轉進門 2 秒；皆為動畫節奏，不是現場秒數',
+    '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒（一個接一個緊跟）、兩路錯開 0.17 秒、大隊交界加 0.8 秒；門前隊伍前後間距 0.075 單位、0.6 秒一排、慢行 0.125 單位/秒；皆為動畫節奏，不是現場秒數',
+    '整排並肩的線距：門前隊伍、門洞與沿牆段 0.08 單位（牆和舞台南翼之間扣掉舞台淨距只剩約 0.45，放不下更寬的排），北轉時漸變為座位列距 0.13；轉彎內圈半徑至少 0.08、外圈走步速；路線離舞台線稿至少 0.15 單位、只在西一入口門洞穿過全壘打牆',
     '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
     '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
     '碰撞檢查為圖面點距（0.03 單位），不是人體寬度或通道容量認證',
@@ -312,28 +361,44 @@ def write_seats_csv(data, path):
 
 
 def avoid(base, planj, G, R, sched, clocks):
-    """碰撞避讓（spec §3.6）：每輪對每對碰撞，把西一入口較晚的那位整條時間線延後 SHIFT_STEP，同一人累計不超過 SHIFT_MAX。
-    回傳最後的 sched、clocks、組好的 data 與它的碰撞結果（main 直接沿用，不再重組、重算）。"""
-    from collide import collisions
-    people = planj['people']
-    shift = collections.defaultdict(float)
+    """碰撞避讓：整排並肩的部分（t.enter → t.split）所有排共用同一個速度剖面，不平移、不拆排；
+    還有碰撞（都發生在分出後各人進列的那一段）時，把排號較晚的那一位（同一排取 lane 較大的）橫走那一段放慢 SLOW_STEP，
+    最低 SLOW_MIN 倍步速，重算到沒有碰撞為止。不動任何人的 t.enter 以前，也不動排與排的時間。
+    回傳最後的 sched、clocks、組好的 data、碰撞結果（main 直接沿用）與放慢的名單。"""
+    from collide import collisions, seated_hits
+    slow = {}
     for rnd in range(AVOID_ROUNDS + 1):
-        data = assemble(base, planj, G, R, sched, clocks)
+        data = assemble(base, planj, G, R, sched, clocks, slow=slow)
         st, wk = collisions(data['persons'], data['meta']['tEnd'])
-        print('  避撞第', rnd, '輪：穿過站定者', len(st), '互撞', len(wk), file=sys.stderr)
-        if (not st and not wk) or rnd == AVOID_ROUNDS:
+        sh = seated_hits(data['persons'], data['meta']['tEnd'])
+        print('  避撞第', rnd, '輪：穿過站定者', len(st), '互撞', len(wk), '穿過已坐好的人', len(sh), file=sys.stderr)
+        if (not st and not wk and not sh) or rnd == AVOID_ROUNDS:
             break
         P = {p['id']: p for p in data['persons']}
-        later = {a if P[a]['t']['gate'] > P[b]['t']['gate'] else b for (a, b) in wk} | set(st)
+        pick = set()
+        for pair in list(wk) + [(k, v[1]) for k, v in st.items()] + [(k, v[1]) for k, v in sh.items()]:
+            cand = [i for i in pair if i in P and _lateral(P[i])]           # 只有要橫走的人能放慢
+            if cand:
+                pick.add(max(cand, key=lambda i: (P[i]['rank'], P[i]['gateLane'])))
         moved = False
-        for pid in later:
-            if shift[pid] + SHIFT_STEP <= SHIFT_MAX + 1e-9:
-                shift[pid] += SHIFT_STEP
+        for pid in pick:
+            cur = slow.get(pid) or (march.LATERAL_SLOW if _lateral(P[pid], slowed=True) else 1.0)
+            if cur - SLOW_STEP >= SLOW_MIN - 1e-9:
+                slow[pid] = round(cur - SLOW_STEP, 3)
                 moved = True
         if not moved:
             break
-        sched, clocks = schedule(G, people, R, shift)
-    return sched, clocks, data, (st, wk)
+    return sched, clocks, data, (st, wk, sh), slow
+
+
+def _lateral(p, slowed=False):
+    """分出後有沒有往西橫走的一段（沿列間空隙）；slowed=True 時只看比步速慢的橫走段（第 5 路橫走 5 欄以上的預設）。"""
+    a = [q for q in p['path'] if q[2] >= p['t']['split'] - 1e-6]
+    for q0, q1 in zip(a, a[1:]):
+        if abs(q1[1] - q0[1]) < 1e-6 and q0[0] - q1[0] > 0.07:
+            if not slowed or math.dist(q0[:2], q1[:2]) < 0.97 * V * (q1[2] - q0[2]):
+                return True
+    return False
 
 
 def main(argv):
@@ -352,7 +417,7 @@ def main(argv):
         data = assemble(base, planj, G, R, sched, clocks)
     else:
         import check
-        sched, clocks, data, coll = avoid(base, planj, G, R, sched, clocks)
+        sched, clocks, data, coll, slow = avoid(base, planj, G, R, sched, clocks)
         data['meta']['checks'] = check.check_all(data, coll)          # 碰撞已在 avoid 最後一輪算過；check.py CLI 會再獨立重算
     json.dump(data, open(out_path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
     write_seats_csv(data, csv_path)
