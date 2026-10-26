@@ -145,7 +145,7 @@ function build(){$('main').hidden=false;$('hint').hidden=true;
  if(!v){v=new View($('c'),{rotate:true,pad:28});v.onresize=()=>{dirty=true;};}
  $('who').textContent=me.id;$('seat').textContent=seatOf(me);$('meta').textContent=`大隊 ${me.dadui} · ${me.costume}衣 · ${me.a} · ${me.exit} 出口 · ${me.lane} 路`;
  steps=stepsFor(ds,me);
- $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span></h2><p>${x.d}</p>${x.w>=.01&&x.k==='集'?'<span class="wait">門前隊伍慢慢推進</span>':''}</div></li>`).join('');
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span></h2><p>${x.d}</p>${x.w>=.01&&x.k==='集'?'<span class="wait">在門前隊伍等候</span>':''}</div></li>`).join('');
  const {gate}=indexes(ds),ahead=gate.get(me.gateLane+'|'+(me.gateIdx-1)),behind=gate.get(me.gateLane+'|'+(me.gateIdx+1));
  $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時西一入口第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
  $('orient').textContent='甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';

@@ -39,16 +39,6 @@ def test_total_length_band(base):
     assert 15 < clocks['tGateStart'] < 60 and 170 < max(v['gate'] for v in S.values()) < 210
 
 
-def test_shift_moves_whole_timeline(base):
-    G = routes.Geometry(base)
-    people = plan.build_plan(base)['people']
-    R = build.prepare(G, people)
-    S0, _ = build.schedule(G, people, R)
-    pid = people[5]['id']
-    S1, _ = build.schedule(G, people, R, {pid: 0.1})
-    assert all(abs(S1[pid][k] - S0[pid][k] - 0.1) < 1e-9 for k in S0[pid])
-
-
 def test_ranks_fill_then_continuous(base):             # 每個大隊排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP
     people, (S, clocks) = _sched(base)
     rank = clocks['rankOf']

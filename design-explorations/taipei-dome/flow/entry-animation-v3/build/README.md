@@ -27,7 +27,7 @@ python3 check.py ../data.json                                   # §4：檢核�
 
 ## 依賴
 
-Python 3 與 numpy（建置）；測試另需 `pip install pytest playwright`，Chromium 用預裝的 `/opt/pw-browsers/chromium`（舊環境的 `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` 也認得，`tests/conftest.py` 取存在的那一個）。跑全部測試：`cd build && python3 -m pytest tests -q`（約 16 分鐘）。
+Python 3 與 numpy（建置）；測試另需 `pip install pytest playwright`，Chromium 用預裝的 `/opt/pw-browsers/chromium`（舊環境的 `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` 也認得，`tests/conftest.py` 取存在的那一個）。跑全部測試：`cd build && python3 -m pytest tests -q`（約 8 分鐘）。
 
 ## 檢核與門檻
 

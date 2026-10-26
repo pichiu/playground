@@ -20,11 +20,12 @@ WALK_OFF = -0.09                         # 沿牆段：中心線比 insideWalk �
 WALK_TOL = 0.04                          # insideWalk 折線簡化的容許誤差（再倒圓角）
 SEAT_X0 = -4.934                         # 座位欄的網格原點（pai 1 那一欄）；欄距 = SP_SEAT
 # 北行段中心線折點：三段直線的 x 都在座位欄上（x0 + 1、4、3 欄），六路（半整數偏移）就走在欄間空隙，離任何座位半格。
-# 舞台在大隊 2–4 列區西側是 11 階的階梯（每階約 0.055 單位）；中段走欄 4，靠舞台的第 0 路最多上 3 階、第 1 路 1 階，
+# 舞台在大隊 1–4 列區西側是 11 階的階梯（每階約 0.055 單位）；中段走欄 4，靠舞台的第 0 路最多上 3 階、第 1 路 1 階，
 # 其餘四路與分出後各自進列的人都在地面。不往東閃舞台，大隊 2 的最後幾排就不必往西橫走 5–6 欄。
 NORTH = [(SEAT_X0 + SP_SEAT, 5.2), (SEAT_X0 + 4 * SP_SEAT, 4.5), (SEAT_X0 + 4 * SP_SEAT, 2.35), (SEAT_X0 + 3 * SP_SEAT, 1.95), (SEAT_X0 + 3 * SP_SEAT, 1.2)]
 R_GATE_IN, R_WALL, R_NORTH, R_JOG = 0.35, 0.45, 0.6, 0.6
 SPLIT_AHEAD = 0.12                       # 大隊在最南一列之南這麼遠處分出
+NORTH_TY = -0.2                          # 中心線切線 ty < 這個值算「往北走」（北行段）；否則還在沿牆段（大隊 9 在沿牆段就分出）
 TURN_R = 0.08                            # 分出後各人轉進自己那一列的轉彎半徑
 STAGE_CLEAR = 0.02                       # 分出後橫走的列間空隙離舞台線稿至少這麼遠：可以走到階梯邊，不壓在階梯線上
 GAP_H = SP_SEAT / 2                      # 半格：兩列（兩欄）中間的空隙離座位的距離
@@ -99,7 +100,6 @@ class March:
         """G：routes.Geometry（B2 走廊）；base：base.json（gateIn、insideWalk、wall）；u0：隊頭在 B2 的 u。
         起點 = 隊頭中心 B2.at(u0)、方向 B2.tan(u0)，所以 t.enter 那一刻六人正好在 B2.off(u0, 線偏移) 的隊頭位置。"""
         q0, t0 = G.B2.at(u0), G.B2.tan(u0)
-        self.q0 = q0
         ga, gb = pairs(base['map']['gateIn'])
         # 隊頭方向與 gateIn 線的交點（西一入口轉角）
         dg = _unit(ga, gb)
@@ -116,9 +116,10 @@ class March:
         self.pts = [q0, corner] + [_line_hit(corner, dg, walk_off[0], walk_off[1])] + walk_off[1:-1] + [corner_n] + NORTH
         radii = [R_GATE_IN, R_WALL] + [_walk_r(walk_off, i) for i in range(1, len(walk_off) - 1)] + [R_NORTH] + [R_JOG] * (len(NORTH) - 1)
         self.C = Centerline(self.pts, radii)
+        self._tracks = {}
         # 間距漸變：在北轉的弧內由 0.08 漸變到 0.1316（門洞與沿牆段放不下 0.13 間距；大隊 8 一轉北就分出）
         arcs = self.C.arcs()
-        self.sp0, self.sp1 = arcs[-5][0], arcs[-5][1]
+        self.sp0, self.sp1 = arcs[-len(NORTH)][:2]               # 北轉弧：corner_n 與 NORTH 除最後一點外各一個弧，倒數第 len(NORTH) 個就是 corner_n
         self.s_walk = arcs[1][1]                                  # 沿牆段開始（右轉進 insideWalk 之後）
         self.sample()
         self.wall = pairs(base['map']['wall'])
@@ -184,14 +185,23 @@ class March:
         for k, s in enumerate(self.ss):
             x = self.C.at(s)[0]
             if s > self.s_walk and x >= x_front - 0.7 and min(self.lane_xy(s, j)[1] for j in range(6)) <= y_south + SPLIT_AHEAD:
-                if self.C.at(s)[3] < -0.2:
+                if self.C.at(s)[3] < NORTH_TY:
                     while k > 0 and abs(self.C.at(self.ss[k])[2]) > 1e-9:
                         k -= 1
+                    if s > self.sp0 and self.ss[k] < self.sp1:
+                        raise SystemExit(f'大隊分出點落在北轉弧上（s = {s:.3f}），退不回正北段')
                 return self.ss[k]
         return self.C.L
 
     def lane_track(self, j, s_end, tol=2e-3, s_start=0.0):
-        """lane j 從 s_start（預設隊頭）到 s_end 的 (x, y, τ)：省略「與前後點等速共線」的中間點（任何省略點偏離 < tol）。"""
+        """lane j 從 s_start（預設隊頭）到 s_end 的 (x, y, τ)：省略「與前後點等速共線」的中間點（任何省略點偏離 < tol）。
+        結果只看這四個參數，同一大隊同一路的人與避撞每一輪都一樣，記下來重用（回傳 tuple，呼叫端不能改它）。"""
+        key = (j, s_end, tol, s_start)
+        if key not in self._tracks:
+            self._tracks[key] = tuple(self._lane_track(*key))
+        return self._tracks[key]
+
+    def _lane_track(self, j, s_end, tol, s_start):
         raw = [(*self.lane_xy(s_start, j), self.tau_at_s(s_start))] if s_start > 0 else []
         raw += [(*self.lane_xy(s, j), t) for s, t in zip(self.ss, self.tau) if s_start + 1e-9 < s < s_end - 1e-9 or (s_start == 0 and s == 0)]
         raw.append((*self.lane_xy(s_end, j), self.tau_at_s(s_end)))
@@ -230,7 +240,7 @@ class March:
         沿牆段就分出的大隊 9（不是往北走）：斜走到 xlim 西側那條欄間空隙與自己那一列的交點，再往東進座位
         （xlim：自己那一列與同大隊南邊幾列裡排號不晚於自己的人最西的座位 X；斜線經過的南邊幾列都在它西側）。"""
         xs, ys = seat
-        if heading[1] >= -0.2:
+        if heading[1] >= NORTH_TY:
             return [(xlim - GAP_H, ys), (xs, ys)]
         ax = SEAT_X0 + SP_SEAT * (math.floor((p0[0] - SEAT_X0) / SP_SEAT) + 0.5)
         out = [(ax, p0[1] - abs(ax - p0[0]))] if abs(ax - p0[0]) > 1e-6 else []
@@ -253,6 +263,8 @@ class March:
             y = yg
             while y > ys + GAP_H + 1e-9 and self.stage_clear((xa, y)) < STAGE_CLEAR:
                 y -= SP_SEAT
+            if self.stage_clear((xa, y)) < STAGE_CLEAR:
+                raise SystemExit(f'座位 {seat} 南邊沒有離舞台夠遠的列間空隙可以往西')
             pts += [(xc, y), (xa, y, f)]
         return pts + [(xa, ys), (xs, ys)]
 
@@ -265,7 +277,7 @@ def export(M, split):
         xs.append(x); ys.append(y); txs.append(tx); tys.append(ty); sps.append(M.sp(s))
     r9 = lambda v: [round(q, 9) for q in v]
     return dict(tau=r9(M.tau), x=r9(xs), y=r9(ys), tx=r9(txs), ty=r9(tys), sp=r9(sps),
-                stageTau=[round(M.tau_at_s(M.s_walk), 6), round(M.tau_at_s(M.C.arcs()[-5][0]), 6)],
+                stageTau=[round(M.tau_at_s(M.s_walk), 6), round(M.tau_at_s(M.sp0), 6)],
                 arcs=[[round(M.tau_at_s(a), 6), round(M.tau_at_s(b), 6), round(r, 6), left] for a, b, r, left in M.C.arcs()],
                 tauGate=[round(t, 6) for t in M.tau_gate], split={str(d): round(M.tau_at_s(s), 6) for d, s in split.items()},
                 spQueue=SP_QUEUE, spSeat=SP_SEAT, innerMin=INNER_MIN, speed=V)

@@ -193,7 +193,7 @@ def staging(data):
     bad = []
     by = {d: [p for p in P if p['dadui'] == d] for d in daduis}
     waits = {}
-    for d in daduis:
+    for d, d_next in zip(daduis, daduis[1:] + [None]):
         ps = by[d]
         has = [p for p in ps if 'holdStart' in p['t']]
         if d == daduis[-1]:
@@ -212,7 +212,7 @@ def staging(data):
                 bad.append(dict(who=p['id'], why='where', tau=round(tau, 3)))
         if any(len(v) != 1 for v in ranks.values()):
             bad.append(dict(dadui=d, why='rank split'))
-        nxt = by[d + 1]
+        nxt = by[d_next]
         full = max(p['t']['assembly'] for p in nxt)
         go = min(p['t']['holdEnd'] for p in ps)
         if go < full - 1e-6:
