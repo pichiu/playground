@@ -17,6 +17,9 @@ def _copy(D):
     return json.loads(json.dumps(D))
 
 
+NO_COLL = ({}, {}, {})   # 竄改測試只驗非碰撞的項目：碰撞由 test_check_all_green 與 CLI 測試完整重算，這裡不重跑（每次約 30 秒）
+
+
 def test_check_all_green(built):
     _, D = built
     C = check.check_all(D)
@@ -29,7 +32,7 @@ def test_check_all_green(built):
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
     assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
-    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= 12 for v in C['continuity']['gate'].values())
+    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= check.GATE_BOUNDARY_MAX for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
 
@@ -59,7 +62,7 @@ def test_check_detects_nesting_swap(built):
     a = next(p for p in D['persons'] if p['lane'] == 'A' and p['laneIdx'] == 0)
     b = next(p for p in D['persons'] if p['lane'] == 'B' and p['laneIdx'] == 0)
     a['exit'], b['exit'] = b['exit'], a['exit']
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['nesting']['violations'] > 0 and C['ok'] is False
 
 
@@ -69,7 +72,7 @@ def test_check_detects_same_stair(built):
     b = next(p for p in D['persons'] if p['lane'] == 'B' and p['laneIdx'] == 0)
     assert b['exit'] == '142'
     b['exit'] = '140'                # 139 與 140 同一座階梯；rank 仍是 A < B
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['nesting']['sameStair'] > 0 and C['ok'] is False
 
 
@@ -79,7 +82,7 @@ def test_check_detects_early_switch(built):
     D = _copy(D)
     a = max((p for p in D['persons'] if p['lane'] == 'A' and p['exit'] == '139'), key=lambda p: p['laneIdx'])
     a['exit'] = '140'
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['assignment']['notFullSwitches'] > 0 and C['ok'] is False
 
 
@@ -88,7 +91,7 @@ def test_check_detects_downstream_switch(built):
     D = _copy(D)
     a = max((p for p in D['persons'] if p['lane'] == 'A'), key=lambda p: p['laneIdx'])
     a['exit'] = '139'
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['assignment']['upstreamViolations'] == 1 and C['ok'] is False
 
 
@@ -101,9 +104,9 @@ def test_check_detects_wait_outside_queue(built):     # 只能在門前隊伍裡
     p['path'].insert(k + 1, [q[0], q[1], q[2] + 1.0])
     for r in p['path'][k + 2:]:
         r[2] += 1.0
-    for key in ('stair', 'entry', 'assembly', 'enter', 'gate', 'arrive'):
+    for key in ('stair', 'entry', 'assembly', 'enter', 'gate', 'split', 'arrive'):
         p['t'][key] += 1.0
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['pace']['violations'] >= 1 and C['ok'] is False
 
 
@@ -113,7 +116,7 @@ def test_check_recomputes_capacity_not_trusting_fields(built):
     D = _copy(D)
     e = next(e for e in D['exits'] if e['key'] == '140')
     e['used'], e['capacity'] = 1, 9999
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['capacity']['140']['used'] == 291 and C['capacity']['140']['capacity'] == 291
     assert C['capacity']['140']['fieldsOk'] is False and C['ok'] is False
 
@@ -123,7 +126,7 @@ def test_check_detects_order_list_tampering(built):
     D = _copy(D)
     e = next(e for e in D['exits'] if e['key'] == '145')
     e['order'] = e['order'][:-1]
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['seats']['orderCoverage'] == 1 and C['ok'] is False
 
 
@@ -138,7 +141,7 @@ def test_check_detects_lane_crossing(built):
         u, o, dist = B2.proj(q[:2])
         if a['t']['stair'] + 0.8 <= q[2] < a['t']['gate'] - 0.3 and dist < 0.3:
             q[0], q[1] = B2.off(u, -0.30)
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['routes']['crossings'] > 0 and C['ok'] is False
 
 
@@ -148,7 +151,7 @@ def test_check_enforces_boundary_rule(built):          # final review：交界�
     for p in D['persons']:
         if p['lane'] == 'B' and p['dadui'] >= 3:
             p['t']['stair'] += 3.0
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['continuity']['stair']['B']['maxGapBoundary'] < check.BOUNDARY_MAX
     assert C['continuity']['boundaryRuleViolations'] >= 1 and C['continuity']['ok'] is False and C['ok'] is False
 
@@ -161,18 +164,18 @@ def test_check_detects_slow_segment(built):            # 放慢某一段（不�
     for q in p['path'][k:]:
         q[2] += 1.0
     p['t']['arrive'] = p['path'][-1][2]
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['pace']['violations'] >= 1 and C['ok'] is False
 
 
 def test_check_rank_tamper(built):                     # 一排六人：把某人離開隊頭的時刻往後挪 0.5 秒，這一排就不齊了
     _, D = built
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['ranks']['violations'] == 0 and C['ranks']['maxSkew'] <= check.SHIFT_TOL and C['ranks']['fillOk'] is True
     D = _copy(D)
     p = next(q for q in D['persons'] if q['dadui'] == 3 and q['slot'] == 5 and q['gateLane'] == 2)
     p['t']['enter'] += 0.5
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['ranks']['violations'] >= 1 and C['ok'] is False
 
 
@@ -183,7 +186,7 @@ def test_check_detects_off_line_in_queue(built):       # 門前隊伍裡要在�
     for q in p['path']:
         if p['t']['assembly'] + 1e-6 < q[2] <= p['t']['enter'] + 1e-6:
             q[0] += 0.05
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['pace']['violations'] >= 1 and C['ok'] is False
 
 
@@ -194,7 +197,7 @@ def test_check_bounds_gate_gap_between_dadui(built):    # review：西一入口�
         if p['dadui'] >= 5:
             for k in ('enter', 'gate'):
                 p['t'][k] += 120
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['continuity']['ok'] is False and C['ok'] is False
 
 
@@ -206,5 +209,116 @@ def test_check_detects_fast_in_queue(built):           # 門前隊伍是慢慢�
     ka = next(i for i, q in enumerate(a) if abs(q[2] - p['t']['assembly']) < 2e-3)
     ke = next(i for i, q in enumerate(a) if abs(q[2] - p['t']['enter']) < 2e-3)
     a[ka + 1:ke] = [[a[ke][0], a[ke][1], a[ka][2] + 0.5]]
-    C = check.check_all(D)
+    C = check.check_all(D, NO_COLL)
     assert C['pace']['violations'] >= 1 and C['ok'] is False
+
+
+def _ranks(D):
+    import collections
+    by = collections.defaultdict(list)
+    for p in D['persons']:
+        by[p['rank']].append(p)
+    return by
+
+
+def test_wheel_items_green(built):                     # 整排轉彎新增的五項：並肩、轉彎、lane 對應、幾何避讓、穿過已坐好的人
+    _, D = built
+    C = D['meta']['checks']
+    assert C['collisions']['seated'] == 0
+    F, W, L, G = C['formation'], C['wheel'], C['laneMap'], C['geometry']
+    assert F['violations'] == 0 and F['maxAngle'] <= check.ANGLE_MAX and F['maxSpacingErr'] <= check.SPACING_TOL and F['maxCenterOff'] <= check.CENTER_TOL
+    assert W['violations'] == 0 and W['maxSpeed'] <= D['meta']['speedUnitPerSec'] + check.SPEED_EPS and W['minInnerR'] >= 0.08 and W['minInnerSpeed'] > 0
+    assert L['violations'] == 0 and L['maxRowDev'] <= check.ROW_TOL
+    assert G['violations'] == 0 and G['minStage'] >= check.STAGE_MIN and G['wallOutside'] == 0
+
+
+def test_check_detects_broken_rank(built):             # 並肩：把一人在沿牆段往旁邊推 0.03，排就不齊
+    _, D = built
+    D = _copy(D)
+    p = next(q for q in D['persons'] if q['dadui'] == 4 and q['gateLane'] == 3 and q['slot'] == 2)
+    for q in p['path']:
+        if p['t']['enter'] + 3 <= q[2] <= p['t']['enter'] + 5:
+            q[0] += 0.03
+    assert check.formation(D, _ranks(D))['violations'] >= 1
+
+
+def test_check_detects_fast_outer_lane(built):         # 轉彎：把第一個轉彎的時間壓短（外圈超過步速）
+    _, D = built
+    D = _copy(D)
+    m = D['map']['march']
+    t0, t1 = m['arcs'][0][:2]
+    m['tau'] = [t if t <= t0 else (t0 + (t - t0) * 0.8 if t <= t1 else t - (t1 - t0) * 0.2) for t in m['tau']]
+    W = check.wheel(D)
+    assert W['violations'] >= 1 and W['maxSpeed'] > D['meta']['speedUnitPerSec']
+
+
+def test_check_detects_lane_swap(built):               # lane 對應：同一排兩人互換 lane，列就對不上
+    _, D = built
+    D = _copy(D)
+    a = next(q for q in D['persons'] if q['dadui'] == 6 and q['gateLane'] == 0 and q['slot'] == 3)
+    b = next(q for q in D['persons'] if q['rank'] == a['rank'] and q['gateLane'] == 1)
+    a['gateLane'], b['gateLane'] = b['gateLane'], a['gateLane']
+    assert check.lane_map(D, _ranks(D))['violations'] >= 1
+
+
+def test_check_detects_stage_and_wall(built):          # 幾何避讓：一點壓到舞台線稿、一段在門洞外穿牆
+    from geo import pairs
+    _, D = built
+    D = _copy(D)
+    stage = next(q for poly in D['map']['base']['stage'] for q in pairs(poly) if q[0] < -5)
+    p = D['persons'][100]
+    k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
+    q = p['path'][k]
+    p['path'].insert(k + 1, [stage[0], stage[1], q[2] + 0.001])
+    G = check.geometry(D)
+    assert G['stageNear'] >= 1 and G['violations'] >= 1
+    D = _copy(built[1])
+    p = D['persons'][200]
+    k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
+    q = p['path'][k]
+    w = pairs(D['map']['wall'])[80]
+    p['path'][k + 1:k + 1] = [[w[0] * 1.05, w[1] * 1.05, q[2] + 0.001], [q[0], q[1], q[2] + 0.002]]
+    assert check.geometry(D)['wallOutside'] >= 1
+
+
+def test_check_detects_walking_over_seated(built):     # 穿過已坐好的人：讓同大隊後一排的人走過前一排已坐好的座位
+    from collide import seated_hits
+    _, D = built
+    D = _copy(D)
+    a = next(q for q in D['persons'] if q['dadui'] == 3 and q['gateLane'] == 2 and q['slot'] == 0)
+    b = next(q for q in D['persons'] if q['dadui'] == 3 and q['gateLane'] == 2 and q['slot'] == 5)
+    pts = b['path']
+    k = next(i for i, q in enumerate(pts) if q[2] > b['t']['split'])
+    t_s = pts[k - 1][2]
+    t1 = max(t_s, a['t']['arrive']) + 0.3                 # a 坐好之後，b 在 a 的座位上停 0.5 秒
+    for q in pts[k:]:
+        q[2] += t1 + 1.0 - t_s
+    pts[k:k] = [[a['field']['X'], a['field']['Y'], t1], [a['field']['X'], a['field']['Y'], t1 + 0.5]]
+    b['t']['arrive'] = pts[-1][2]
+    assert len(seated_hits([a, b], b['t']['arrive'] + 1)) >= 1
+
+
+def test_check_detects_corridor_rules(built):           # 迴廊候隊：前一大隊在下一大隊排滿之前就走、最後一個大隊也停
+    _, D = built
+    D = _copy(D)
+    assert check.staging(D)['violations'] == 0
+    for p in D['persons']:
+        if p['dadui'] == 3:
+            p['t']['holdEnd'] -= 5.0
+    assert check.staging(D)['violations'] >= 1
+    D = _copy(built[1])
+    p = next(q for q in D['persons'] if q['dadui'] == 9)
+    p['t']['holdStart'], p['t']['holdEnd'] = p['t']['gate'] + 1, p['t']['gate'] + 2
+    assert check.staging(D)['violations'] >= 1
+
+
+def test_check_detects_too_many_steps(built):           # 階梯：最多上 3 階，走到第 5 條階梯線以西就算越界
+    _, D = built
+    D = _copy(D)
+    G = check.geometry(D)
+    assert G['maxSteps'] <= check.MAX_STEPS and G['stepViolations'] == 0
+    p = next(q for q in D['persons'] if q['dadui'] == 1 and q['gateLane'] == 0)
+    k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
+    q = p['path'][k]
+    p['path'].insert(k, [-5.0, 3.1, q[2] - 0.001])       # Y 3.1 那一段，X −5.0 已經跨過 9 條階梯線
+    assert check.geometry(D)['stepViolations'] >= 1

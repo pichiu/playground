@@ -1,6 +1,7 @@
 """版本 3 路線幾何（spec §3.5），自 2c routes.py 精簡。
 
-只留一條路：座位 → 走道口 → 走廊邊 → 斜向前方併入自己那一路 → B1 → 樓梯（L 形）→ B2 側移到自己那條西一入口線 → 收攏點。
+只留一條路：座位 → 走道口 → 走廊邊 → 斜向前方併入自己那一路 → B1 → 樓梯（L 形）→ B2 側移到自己那條線 → 門前隊伍隊頭。
+隊頭之後一排六人並肩走 march.py 的中心線（整排轉進西一入口、沿牆、北行、到自己大隊列區分出）。
 沒有集結區、格位、死巷、遞補。兩路偏移 A +0.12（白衣、靠看台）、B −0.12（藍衣、外側）。
 """
 import math
@@ -74,21 +75,10 @@ class Geometry:
         self.LANE_OFF = LANE_OFF
         self._lines = {}
         self.ST_LANE = {o: Poly(miter(self.STAIR_PTS, o)) for o in self.LANE_OFF.values()}   # 樓梯兩路各自的折線
-        self.GATE_PTS, self.GATE_DIR = {}, {}                   # 西一入口六路收攏點：版本 1 大隊 1 過西一入口的點；GATE_DIR 是該點之後場內線的方向
-        for p in base['persons']:
-            if p['dadui'] == 1 and p['laneIdx'] not in self.GATE_PTS:
-                k = next(i for i, q in enumerate(p['path']) if abs(q[2] - p['t']['gate']) < 1e-6)
-                a, b = p['path'][k], p['path'][k + 1]
-                d = math.dist(a[:2], b[:2])
-                self.GATE_PTS[p['laneIdx']] = (a[0], a[1])
-                self.GATE_DIR[p['laneIdx']] = ((b[0] - a[0]) / d, (b[1] - a[1]) / d)
 
     def _down_stair(self, off):
         lp = self.ST_LANE[off]
         return [self.B1.off(STAIR_U_B1, off)] + poly_between(lp, 0.05, lp.L - 0.05)
-
-    def _b2_to_gate(self, j):
-        return lane_run(self.B2, B2_U_START, QUEUE_HEAD, line_off(j)) + [self.GATE_PTS[j]]
 
     def line_poly(self, j):
         """第 j 條線在 B2 的折線：側移完成點 → 隊頭（u QUEUE_HEAD）。門前隊伍的位置都用這條線的弧長量，隊頭在弧長 L。"""
@@ -114,14 +104,6 @@ class Geometry:
         """座位 → … → 樓梯 → B2 側移到自己那條線的起點（line_poly 的第一點）。"""
         return self._pre_b2(person) + [self.line_poly(person['gateLane']).p[0]]
 
-    def turn_route(self, j):
-        """隊頭 → 西一入口收攏點：一排六人在這段一起轉進門（外側線路程長、走得快）。"""
-        return [self.line_poly(j).p[-1], self.GATE_PTS[j]]
-
-    def arrival_route(self, person):
-        """不停的整條路：座位 → … → 樓梯 → B2 側移到第 j 條線 → 西一入口收攏點。"""
-        return self._pre_b2(person) + self._b2_to_gate(person['gateLane'])
-
     def stair_top_index(self, pts):
         """路線中樓梯口那個點的序號（沒有經過樓梯口回 None）。"""
         tops = [self.B1.off(STAIR_U_B1, off) for off in self.LANE_OFF.values()]
@@ -131,12 +113,13 @@ class Geometry:
         return None
 
     # ---------- 圖面 ----------
-    def gate_lanes_map(self):
-        """下樓後到門前的六條線：從樓梯平台（A／B 路各自的端點）側移到第 j 條線，沿 B2 走到西一入口收攏點。j 0–2 白、3–5 藍。"""
+    def gate_lanes_map(self, after=None):
+        """下樓後到門前的六條線：從樓梯平台（A／B 路各自的端點）側移到第 j 條線，沿 B2 走到門前隊伍隊頭；
+        after[j]：隊頭之後接著畫的點（build 傳入整排平移線到穿過西一入口之後一段）。j 0–2 白、3–5 藍。"""
         out = []
         for j in range(6):
             lp = self.ST_LANE[self.LANE_OFF[next(L for L in plan.LANES if j in plan.LANE_J[L])]]
-            pts = [lp.at(lp.L - 0.05)] + self._b2_to_gate(j)
+            pts = [lp.at(lp.L - 0.05)] + lane_run(self.B2, B2_U_START, QUEUE_HEAD, line_off(j)) + list((after or {}).get(j, []))
             out.append(flat(pts))
         return out
 

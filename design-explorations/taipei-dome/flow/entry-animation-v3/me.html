@@ -134,7 +134,7 @@ function stepsFor(d,p){const s=p.t,D=d.D,ex=d.exitsByKey[p.exit],order=ex.order;
   {k:'走',h:'走廊與樓梯',t:tExit,pts:pathIn(p,tExit,s.stair+1),pad:1.6,
    d:`沿 B1 走廊走 <strong>${d.laneName(p.lane)}</strong>，${aheadTxt}。這一路是三列交錯排隊，前一位常是別列的人，照順序跟著就好。到樓梯口<strong>不停</strong>，直接下 B2。`},
   {k:'集',h:'門前隊伍',t:s.assembly,pts:pathIn(p,s.assembly-4,s.assembly+.1),pad:1.4,w:s.enter-s.assembly,
-   d:`下樓後走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數；${p.lane==='A'?'白衣在北三路':'藍衣在南三路'}），排在這一路<strong>第 ${p.slot+1} 位</strong>，跟上前一位，和左右同一排的人並肩。隊伍會<strong>慢慢往前推</strong>，跟著走就好${p.dadui===1?'；大隊 1 要先把隊伍排滿才開始推進':''}。`},
+   d:`下樓後走到 <strong>西一入口第 ${p.gateLane+1} 路</strong>（北數；${p.lane==='A'?'白衣在北三路':'藍衣在南三路'}），排在這一路<strong>第 ${p.slot+1} 位</strong>，跟上前一位，和左右同一排的人並肩。要等<strong>整個大隊排滿</strong>才出發，之後一排緊跟一排，跟著走就好${p.dadui<9?`；進門後在沿牆迴廊停好，等大隊 ${p.dadui+1} 排滿再進列`:''}。`},
   {k:'進',h:'進場',t:s.enter,pts:pathIn(p,s.enter,s.gate+4),pad:1.6,
    d:'走到隊頭時，和同一排六個人<strong>一起轉進西一入口</strong>；過門後照原路走到場內位置。'},
   {k:'到',h:'到位',t:s.arrive,pts:pathIn(p,s.gate,s.arrive),pad:1.6,
@@ -145,7 +145,7 @@ function build(){$('main').hidden=false;$('hint').hidden=true;
  if(!v){v=new View($('c'),{rotate:true,pad:28});v.onresize=()=>{dirty=true;};}
  $('who').textContent=me.id;$('seat').textContent=seatOf(me);$('meta').textContent=`大隊 ${me.dadui} · ${me.costume}衣 · ${me.a} · ${me.exit} 出口 · ${me.lane} 路`;
  steps=stepsFor(ds,me);
- $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span></h2><p>${x.d}</p>${x.w>=.01&&x.k==='集'?'<span class="wait">門前隊伍慢慢推進</span>':''}</div></li>`).join('');
+ $('steps').innerHTML=steps.map((x,i)=>`<li class="step" data-step="${x.k}" data-i="${i}" tabindex="0"><span class="dot">${x.k}</span><div class="body"><h2><span>${x.h}</span></h2><p>${x.d}</p>${x.w>=.01&&x.k==='集'?'<span class="wait">在門前隊伍等候</span>':''}</div></li>`).join('');
  const {gate}=indexes(ds),ahead=gate.get(me.gateLane+'|'+(me.gateIdx-1)),behind=gate.get(me.gateLane+'|'+(me.gateIdx+1));
  $('buddy').innerHTML=`<div>你前面<b>${ahead?ahead.id:'—'}</b></div><div>你後面<b>${behind?behind.id:'—'}</b></div><p>進場時西一入口第 ${me.gateLane+1} 路的前後位。彩排時先跟這兩位打聲招呼。</p>`;
  $('orient').textContent='甲舞台朝上，與 app《我的走位》同向。橘色是你，藍框是你這一列的其他人。';

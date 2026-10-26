@@ -74,7 +74,7 @@ td.n{text-align:right;white-space:nowrap}
 <div class="wrap">
 <a class="back" href="../../index.html">‹ Taipei Dome · 大巨蛋活動 App</a>
 <h1>進場動線 版本 3：兩路直進</h1>
-<p class="lede">西一＋桃竹 1,609 人，從 139–145 區休息區出發。<b>白衣一路、藍衣一路</b>，照大隊 1→9 直接走 B1 走廊、下樓梯，到 B2 各自散成三條，在樓梯口到西一入口這段走廊（舞台後方）排成六條線的門前隊伍。大隊 1 先排滿，之後隊伍慢慢往前推，<b>一排六人並肩一起轉進門</b>，一排接一排不停。不進 B2 集結區、不在樓梯或 B1 走廊候隊。出口坐滿就換下一個。和現行版本對照：<a href="../entry-animation/index.html">2c 總覽</a>。</p>
+<p class="lede">西一＋桃竹 1,609 人，從 139–145 區休息區出發。<b>白衣一路、藍衣一路</b>，照大隊 1→9 直接走 B1 走廊、下樓梯，到 B2 各自散成三條，在樓梯口到西一入口這段走廊（舞台後方）排成六條線的門前隊伍。每個大隊先排滿，再一排緊跟一排，<b>一排六人並肩一起轉進門</b>，在沿牆迴廊停好，等下一大隊排滿再進列；靠舞台的人可以走上舞台東側的階梯。不進 B2 集結區、不在樓梯或 B1 走廊候隊。出口坐滿就換下一個。和現行版本對照：<a href="../entry-animation/index.html">2c 總覽</a>。</p>
 <div class="kpi" id="kpi"></div>
 <h2>規則</h2>
 <ol class="rules" id="rules"></ol>
@@ -120,9 +120,9 @@ function checksTable(C){
   ['換口往下游 / 出口還沒坐滿就換',`${A.upstreamViolations} / ${A.notFullSwitches}（白衣 ${A.segments.A} 段、藍衣 ${A.segments.B} 段）`,'0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0,(A.examples||[]).map(e=>`${e.lane} 路第 ${e.idx+1} 位：${e.exits.join(' → ')}`)],
   ['一列分坐兩個出口（資訊）',`${A.splitColumns} 列：${A.splitLies.join('、')}`,'允許',null,[]],
   ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
-  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.44、大隊內 ≤ 1.2、大隊間 ≤ 12',Cn.ok,[]],
+  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.19、大隊內 ≤ 0.8、大隊間 ≤ 16',Cn.ok,[]],
   ['步速與門前隊伍（隊伍裡只在自己那條線慢行或站住，其餘等速）',`${C.pace.violations}`,'0',C.pace.violations===0,C.pace.examples||[]],
-  ['一排六人一起進門（大隊 1 排滿才出發、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],
+  ['一排六人一起進門（每個大隊排滿才出發、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];
  return `<p class="verdict">${C.ok?'全部通過':'未通過'}</p><div class="scroll"><table><thead><tr><th>項目</th><th>結果</th><th>門檻</th></tr></thead><tbody>${rows.map(([n,v,t,ok,ex])=>`<tr class="${ok===null?'info':ok?'ok':'ng'}"><td>${n}${ex.length?`<div class="ex">${ex.map(esc).join('；')}</div>`:''}</td><td>${esc(v)}</td><td>${t}</td></tr>`).join('')}</tbody></table></div>`;}

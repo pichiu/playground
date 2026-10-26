@@ -128,7 +128,7 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'blue-first',t:first('藍').t.leave,h:'藍衣第一位離座',d:`${who(first('藍'))} 先起身，走 ${ds.laneName('B')}`},
   {id:'white-last',t:last('白').t.leave,h:'白衣最後一位離座',d:`${who(last('白'))}；白衣從 ${exitsTxt(W)} 出口出完`},
   {id:'blue-last',t:last('藍').t.leave,h:'藍衣最後一位離座',d:`${who(last('藍'))}；藍衣從 ${exitsTxt(B)} 出口出完`},
-  {id:'go',t:Math.min(...ps.map(p=>p.t.enter)),h:k===1?'門前隊伍出發':'接續進場',d:k===1?'大隊 1 排滿門前隊伍（六條線）後，隊伍慢慢往前推，一排六人並肩一起轉進西一入口':`大隊 ${k} 從新的一排開始，接在大隊 ${k-1} 後面一排接一排進場，隊伍不停`},
+  {id:'go',t:Math.min(...ps.map(p=>p.t.enter)),h:k===1?'門前隊伍出發':'接續進場',d:k===1?'大隊 1 排滿門前隊伍（六條線）後，一排緊跟一排，六人並肩一起轉進西一入口，在沿牆迴廊停好，等大隊 2 排滿再進列':`大隊 ${k} 排滿門前隊伍後，一排緊跟一排進門${k<9?`，在沿牆迴廊停好，等大隊 ${k+1} 排滿再進列`:'，直接進列'}`},
   {id:'gate-first',t:g0.t.gate,h:'第一位過西一入口',d:'北三路白、南三路藍'},
   {id:'gate-last',t:g1.t.gate,h:'最後一位過西一入口',d:k<9?`大隊 ${k+1} 接著進場`:'最後一個大隊，西一入口收'},
   {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];
