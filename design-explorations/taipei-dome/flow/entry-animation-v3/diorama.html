@@ -1,0 +1,2224 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="data:,">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!-- 由 pichiu/workshop cases/taipei-dome-diorama/diorama.src.html 以 `python3 -I inline.py --pages` 產生；要改請改那邊的 src 再重新產生，不要直接改這個檔。資料讀同資料夾的 data.json。 -->
+<title>入經藏進場模型</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{
+  --cream:#fff8f4; --coral:#db6a41; --ink:#211d1d; --stone:#c5b5a7; --yellow:#fcea8b; --green:#71806a;
+  --glass:#86a8a6; --wood:#b48560; --teal:#3e7c8c; --blue-coat:#6f7fb5;
+  --bg-hi:#fffdf9; --bg-lo:#edddcf;
+  /* 3D 場景與其標籤固定淺色（SPEC：3D 場景維持淺色），所以這組 token 不在 dark 區塊覆寫 */
+  --scene-bg-hi:#fffdf9; --scene-bg-lo:#edddcf;
+  --lbl-text:#4b3f39; --lbl-bg:rgba(255,248,244,.82); --lbl-shadow:#4a2a1418;
+  --lbl-sec-bg:#fff8f4; --lbl-sec-text:#5b4a40; --lbl-sec-border:#e4d6c3;
+  --lbl-dir:#8c7c71; --lbl-key-bg:#211d1d; --lbl-key-text:#fff8f4;
+  --lbl-soft-bg:rgba(255,248,244,.6); --lbl-soft-text:#6b5f58;
+  /* 大隊 1–9 資料色：與 3D 身上色帶共用（JS 從這裡讀），3D 場景固定淺色，所以刻意不在 dark 區塊覆寫 */
+  --dadui-1:#f19a9a; --dadui-2:#f5b77c; --dadui-3:#eedc6e; --dadui-4:#a9d37f; --dadui-5:#7fcdb8; --dadui-6:#86bde6; --dadui-7:#a3a2e6; --dadui-8:#cf9be0; --dadui-9:#f09cc4;
+  /* 載入畫面跟主題 */
+  --loader-hi:#fffdf9; --loader-lo:#edddcf; --dot-2:#e9b44c;
+  --text:#211d1d; --muted:#6b5f58; --line:#e4d6c3; --accent-text:#a8461f;
+  --panel:rgba(255,250,246,.72); --panel-solid:#fffaf6; --panel-border:rgba(255,255,255,.8);
+  --chip:#fffaf6; --chip-text:#211d1d; --chip-hover:#fcea8b; --chip-pressed:#211d1d; --chip-pressed-text:#fff8f4;
+  --shadow-card:0 1px 2px #4a2a1410,0 8px 24px #4a2a1414;
+  --err-bg:#fff; --err-text:#8a2f17; --err-border:#f0c9b8;
+  /* 計數卡與小人卡片的狀態色（跟主題） */
+  --st-seated:#c5b5a7; --st-walk:#3e7c8c; --st-wait:#e0a93e; --st-enter:#6f7fb5; --st-done:#71806a; --step-past:#e4d6c3; --step-past-text:#5b4a40; --step-now:#db6a41; --step-now-text:#fff8f4;
+  --err-inline:#a8461f;
+  /* 第 4 階段：剩下的陰影、描邊、遮罩改成 token（dark 跟著） */
+  --knob-shadow:#4a2a1430; --swatch-ring:#0000002a; --sw-shadow:#00000033; --mask:#000;
+  --leader:#7d6d63; --scrim:rgba(33,29,29,.32); --help-num-bg:#211d1d; --help-num-text:#fcea8b; --chap-dot:#db6a41;
+  /* 跟隨 pill 掛在 3D 場景裡（固定淺色場景），不在 dark 區塊覆寫 */
+  --pill-bg:#db6a41; --pill-text:#fff8f4; --pill-head-bg:#211d1d; --pill-head-text:#fcea8b;
+  --track:#eadfd5; --ph-seated:#e2d6cb; --ph-descend:#f6df8f; --ph-enter:#b9d2cd; --tick:#7d6d63; --knob:#db6a41; --knob-ring:#fffaf6;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --serif:Georgia,"Times New Roman",serif;
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --text:#f3ebe5; --muted:#c3b5ab; --line:#4a403b; --accent-text:#f29a72;
+  --panel:rgba(36,31,30,.74); --panel-solid:#2a2423; --panel-border:rgba(255,255,255,.08);
+  --chip:#2f2826; --chip-text:#f3ebe5; --chip-hover:#5a4e2a; --chip-pressed:#fff8f4; --chip-pressed-text:#211d1d;
+  --shadow-card:0 1px 2px #0006,0 8px 24px #0005;
+  --err-bg:#2a1a16; --err-text:#ffc9b4; --err-border:#6b3524;
+  --loader-hi:#2b2422; --loader-lo:#191514;
+  --st-seated:#8c7c71; --st-walk:#6fb3c4; --st-wait:#f0c562; --st-enter:#9aa8de; --st-done:#a4b59b; --step-past:#4a403b; --step-past-text:#e4d6c3; --step-now:#f08a62; --step-now-text:#211d1d;
+  --err-inline:#f29a72;
+  --knob-shadow:#00000066; --swatch-ring:#ffffff33; --sw-shadow:#00000080;
+  --scrim:rgba(0,0,0,.5); --help-num-bg:#fcea8b; --help-num-text:#211d1d; --chap-dot:#f08a62;
+  --track:#3a322f; --ph-seated:#4d4440; --ph-descend:#6e5f2a; --ph-enter:#2f5650; --tick:#c3b5ab; --knob:#f08a62; --knob-ring:#2a2423;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --text:#f3ebe5; --muted:#c3b5ab; --line:#4a403b; --accent-text:#f29a72;
+  --panel:rgba(36,31,30,.74); --panel-solid:#2a2423; --panel-border:rgba(255,255,255,.08);
+  --chip:#2f2826; --chip-text:#f3ebe5; --chip-hover:#5a4e2a; --chip-pressed:#fff8f4; --chip-pressed-text:#211d1d;
+  --shadow-card:0 1px 2px #0006,0 8px 24px #0005;
+  --err-bg:#2a1a16; --err-text:#ffc9b4; --err-border:#6b3524;
+  --loader-hi:#2b2422; --loader-lo:#191514;
+  --st-seated:#8c7c71; --st-walk:#6fb3c4; --st-wait:#f0c562; --st-enter:#9aa8de; --st-done:#a4b59b; --step-past:#4a403b; --step-past-text:#e4d6c3; --step-now:#f08a62; --step-now-text:#211d1d;
+  --err-inline:#f29a72;
+  --knob-shadow:#00000066; --swatch-ring:#ffffff33; --sw-shadow:#00000080;
+  --scrim:rgba(0,0,0,.5); --help-num-bg:#fcea8b; --help-num-text:#211d1d; --chap-dot:#f08a62;
+  --track:#3a322f; --ph-seated:#4d4440; --ph-descend:#6e5f2a; --ph-enter:#2f5650; --tick:#c3b5ab; --knob:#f08a62; --knob-ring:#2a2423;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{overflow:hidden;background:radial-gradient(120% 90% at 50% 30%, var(--bg-hi) 0%, var(--bg-lo) 100%) var(--bg-lo);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+/* 3D 場景維持淺色：背景固定用淺色漸層，不跟主題 */
+#app{position:fixed;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 30%, var(--scene-bg-hi) 0%, var(--scene-bg-lo) 100%)}
+#stage,#labels{position:absolute;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#labels{pointer-events:none;z-index:1}
+#labels>div{pointer-events:none}
+
+/* ---------- CSS2D 標籤 ---------- */
+.lbl{font:600 11.5px/1.2 var(--font);color:var(--lbl-text);white-space:nowrap;padding:2px 8px;border-radius:999px;background:var(--lbl-bg);box-shadow:0 1px 4px var(--lbl-shadow);letter-spacing:.02em;user-select:none}
+.lbl.sec{font:700 11px/1 var(--mono);padding:3px 6px;background:var(--lbl-sec-bg);color:var(--lbl-sec-text);border:1px solid var(--lbl-sec-border)}
+.lbl.dir{background:none;box-shadow:none;color:var(--lbl-dir);font-weight:500;font-size:12px;opacity:.75}
+.lbl.key{background:var(--lbl-key-bg);color:var(--lbl-key-text)}
+.lbl.soft{background:var(--lbl-soft-bg);color:var(--lbl-soft-text);font-weight:500}
+.lbl.hid{visibility:hidden}
+
+/* ---------- 共用元件 ---------- */
+.ui{position:absolute;z-index:5}
+.glass{background:var(--panel);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);border:1px solid var(--panel-border);box-shadow:var(--shadow-card);color:var(--text)}
+.eyebrow{font:700 10px/1.2 var(--mono);letter-spacing:2px;text-transform:uppercase;color:var(--accent-text)}
+.big{font:italic 400 30px/1 var(--serif);letter-spacing:-.01em}
+button{font:inherit;color:inherit}
+.btn{min-height:44px;min-width:44px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:var(--chip);color:var(--chip-text);font:600 13px/1 var(--font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:background-color .15s,color .15s}
+.btn[aria-pressed="true"],.btn:active{background:var(--chip-pressed);color:var(--chip-pressed-text);border-color:var(--chip-pressed)}
+.btn:focus-visible,.chip:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.chip{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--chip);color:var(--chip-text);font:600 13px/1 var(--font);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--chip-pressed);color:var(--chip-pressed-text);border-color:var(--chip-pressed)}
+
+/* ---------- 品牌卡 ---------- */
+#brand{left:var(--gutter-l);top:max(16px, env(safe-area-inset-top, 0px));width:min(340px, calc(100vw - var(--gutter-l) - var(--gutter-r)));border-radius:18px;padding:16px 18px 14px}
+#brand h1{margin:6px 0 2px;font:900 30px/1.1 var(--font);letter-spacing:.06em}
+#brand .sub{margin:0;font:500 13px/1.5 var(--font);color:var(--muted)}
+#pages-link{display:inline-block;margin-top:2px;font:600 12.5px/1.5 var(--font);color:var(--accent-text)}
+#pages-link:focus-visible{outline:3px solid var(--coral);outline-offset:2px;border-radius:4px}
+#brand details{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+#brand summary{cursor:pointer;font:600 12px/1.4 var(--font);color:var(--muted);min-height:28px;display:flex;align-items:center;gap:8px;list-style:none}
+/* display:flex 會拿掉瀏覽器的展開三角形：自己畫一個 chevron（和清單的 details 同一種），收合時也看得出可以點開（審查 rv14） */
+#brand summary::-webkit-details-marker{display:none}
+#brand summary::after{content:'';width:6px;height:6px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-2px) rotate(45deg);transition:transform .15s;flex:none}
+#brand details[open] summary::after{transform:translateY(1px) rotate(-135deg)}
+#brand summary .hint{font-weight:500;opacity:.8}
+#brand details[open] summary .hint{display:none}
+#brand summary:focus-visible{outline:3px solid var(--coral);outline-offset:2px;border-radius:6px}
+#brand .note{margin:6px 0 0;font:400 12px/1.65 var(--font);color:var(--muted)}
+
+/* ---------- 鏡頭列（第 1 階段：總覽與特寫；之後由章節鈕取代） ---------- */
+#cams{left:50%;transform:translateX(-50%);bottom:calc(max(16px, env(safe-area-inset-bottom, 0px)) + var(--hud-h, 66px) + 10px);border-radius:999px;padding:6px;display:flex;gap:6px;max-width:calc(100vw - var(--gutter-l) - var(--gutter-r));overflow-x:auto;scrollbar-width:none}
+#cams::-webkit-scrollbar{display:none}
+/* 可橫捲提示：還有內容的那一側漸隱（JS 依 scrollLeft 切換 class） */
+#cams.fade-r{-webkit-mask-image:linear-gradient(90deg,var(--mask) calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,var(--mask) calc(100% - 36px),transparent)}
+#cams.fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,var(--mask) 36px);mask-image:linear-gradient(90deg,transparent,var(--mask) 36px)}
+#cams.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,var(--mask) 36px,var(--mask) calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,transparent,var(--mask) 36px,var(--mask) calc(100% - 36px),transparent)}
+#cams .chip{border-color:transparent;background:transparent}
+#cams .chip[aria-pressed="true"]{background:var(--chip-pressed);color:var(--chip-pressed-text)}
+
+/* ---------- 播放 HUD（第 6 節）：播放／暫停、速度、可拖曳進度條（階段色段＋大隊刻度）、百分比；不顯示秒數 ---------- */
+#hud{left:50%;transform:translateX(-50%);bottom:max(16px, env(safe-area-inset-bottom, 0px));width:min(880px, calc(100vw - var(--gutter-l) - var(--gutter-r)));border-radius:999px;padding:8px 18px 8px 8px;display:flex;align-items:center;gap:10px}
+#hud .btn.round{border-radius:999px;width:48px;height:48px;padding:0;flex:none;border-color:transparent;background:var(--chip-pressed);color:var(--chip-pressed-text)}
+#hud .btn.round svg{width:18px;height:18px;fill:currentColor}
+#speeds{display:flex;gap:2px;flex:none;padding:0 2px}
+#speeds .btn{min-width:44px;padding:0 8px;border-color:transparent;background:transparent;font:700 12px/1 var(--mono)}
+#speeds .btn[aria-pressed="true"]{background:var(--chip-pressed);color:var(--chip-pressed-text)}
+#speed1{display:none}
+#tw{position:relative;flex:1;min-width:0;height:48px}
+#track{position:absolute;left:0;right:0;top:20px;height:8px;border-radius:999px;background:var(--track);overflow:hidden}
+#track .ph{position:absolute;top:0;bottom:0}
+#track .ph.seated{background:var(--ph-seated)}#track .ph.descend{background:var(--ph-descend)}#track .ph.enter{background:var(--ph-enter)}
+#fill{position:absolute;left:0;top:0;bottom:0;background:var(--coral);opacity:.55;border-radius:999px 0 0 999px}
+#ticks{position:absolute;left:0;right:0;top:0;height:30px;pointer-events:none}
+#ticks i{position:absolute;top:15px;width:2px;height:18px;margin-left:-1px;background:var(--tick);border-radius:1px;opacity:.7}
+#ticks b{position:absolute;top:1px;transform:translateX(-50%);font:700 9.5px/1 var(--mono);color:var(--tick)}
+#knob{position:absolute;top:14px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:var(--knob);border:3px solid var(--knob-ring);box-shadow:0 1px 4px var(--knob-shadow);pointer-events:none}
+#phase{position:absolute;left:0;right:0;top:33px;font:500 11px/1.3 var(--font);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:default}
+/* hover 只給有滑鼠的裝置：觸控點一下後 :hover 會黏住（播放鈕一直是黃底）；觸控用 :active 做按下回饋 */
+@media (hover:hover) and (pointer:fine){
+  /* 排在 pressed／active 規則之後，所以排除那兩種狀態，維持原本「按下的狀態優先」 */
+  .btn:not([aria-pressed="true"]):not(:active):hover,.chip:not([aria-pressed="true"]):hover,#cams .chip:not([aria-pressed="true"]):hover,#speeds .btn:not([aria-pressed="true"]):not(:active):hover{background:var(--chip-hover)}
+  #hud .btn.round:hover{background:var(--chip-hover);color:var(--chip-text)}
+}
+#ticks .cap{right:0;transform:none;font-weight:600;letter-spacing:1px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+#scrub{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;touch-action:none}
+#scrub:focus-visible ~ #knob{outline:3px solid var(--coral);outline-offset:2px}
+#pct{flex:none;min-width:64px;text-align:right;font:italic 400 26px/1 var(--serif);font-variant-numeric:tabular-nums}
+#pct small{font:700 10px/1 var(--mono);letter-spacing:1px;font-style:normal;color:var(--muted);margin-left:1px}
+
+/* ---------- 第 3 階段：計數卡、清單、小人卡片、跟隨 pill ---------- */
+[hidden]{display:none!important}
+.big-n{font:italic 400 20px/1 var(--serif);font-variant-numeric:tabular-nums}
+/* 計數卡（右上）：counts(t, persons) 的五種狀態 */
+#counts{right:var(--gutter-r);top:max(16px, env(safe-area-inset-top, 0px));width:318px;border-radius:18px;padding:12px 14px 12px}
+#counts .cbar{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--track);margin:8px 0 10px}
+#counts .cbar i{display:block;height:100%;transition:width .2s linear}
+#counts dl{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px 5px;margin:0}
+#counts dl>div{border-top:3px solid var(--k);padding-top:5px;min-width:0}
+#counts dt{font:600 11px/1.25 var(--font);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:clip}
+#counts dd{margin:3px 0 0}
+#counts dd small{display:block;margin-top:2px;font:700 10px/1.3 var(--mono);color:var(--muted);letter-spacing:.5px}
+/* 右側清單（寬 318px、blur 16px） */
+#list{right:var(--gutter-r);top:var(--list-top,150px);bottom:var(--panel-bottom,170px);width:318px;border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
+#list .lh{padding:12px 14px 10px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+#list .row{display:flex;align-items:center;gap:8px}
+#list .row .eyebrow{flex:1}
+#search{display:flex;gap:6px}
+#search input{flex:1;min-width:0;min-height:44px;border-radius:9px;border:1px solid var(--line);background:var(--chip);color:var(--text);padding:0 12px;font:500 15px/1 var(--font)}
+#search input::placeholder{color:var(--muted)}
+#search input:focus-visible{outline:3px solid var(--coral);outline-offset:1px}
+#search-msg{margin:0;font:500 12px/1.5 var(--font);color:var(--muted);min-height:18px}
+#search-msg.err{color:var(--err-inline)}
+#ribbon-tg{min-height:44px;padding:0 10px;font-size:12px;gap:8px}
+#ribbon-tg .sw{width:30px;height:18px;border-radius:999px;background:var(--track);position:relative;flex:none;transition:background-color .15s}
+#ribbon-tg .sw::after{content:'';position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--panel-solid);box-shadow:0 1px 2px var(--sw-shadow);transition:transform .15s}
+#ribbon-tg[aria-pressed="true"] .sw{background:var(--coral)}
+#ribbon-tg[aria-pressed="true"] .sw::after{transform:translateX(12px)}
+#ribbon-tg[aria-pressed="true"]{background:var(--chip);color:var(--chip-text);border-color:var(--line)}
+#groups{overflow-y:auto;padding:10px 8px 14px;flex:1;min-height:0;overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,var(--mask) 14px,var(--mask) calc(100% - 14px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,var(--mask) 14px,var(--mask) calc(100% - 14px),transparent 100%)}
+#groups details{border-radius:12px}
+#groups details+details{margin-top:2px}
+#groups summary{list-style:none;cursor:pointer;min-height:44px;padding:0 10px;border-radius:12px;display:flex;align-items:center;gap:8px;font:600 13.5px/1.2 var(--font)}
+#groups summary::-webkit-details-marker{display:none}
+#groups summary::after{content:'';margin-left:auto;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;flex:none}
+#groups details[open] summary::after{transform:rotate(45deg)}
+#groups summary:focus-visible{outline:3px solid var(--coral);outline-offset:-3px}
+#groups summary .dd{width:12px;height:12px;border-radius:4px;flex:none;box-shadow:inset 0 0 0 1px var(--swatch-ring)}
+#groups summary .coat{width:14px;height:14px;border-radius:50%;flex:none;border:1px solid var(--line)}
+#groups summary small{font:500 11.5px/1 var(--font);color:var(--muted)}
+#groups .lies{display:grid;gap:4px;padding:2px 6px 8px 30px}
+#groups .lies .btn{justify-content:space-between;width:100%;font-weight:600}
+#groups .lies .btn small{font:500 11.5px/1 var(--font);opacity:.75}
+/* 小人卡片（左側，寬 340px，圓角 22） */
+#card{left:var(--gutter-l);top:var(--card-top,190px);width:min(340px, calc(100vw - var(--gutter-l) - var(--gutter-r)));max-height:calc(100% - var(--card-top,190px) - var(--panel-bottom,170px));border-radius:22px;padding:14px 16px 14px;overflow-y:auto;overscroll-behavior:contain}
+#card .handle,#list .handle{display:none}
+#card .ch{display:flex;align-items:flex-start;gap:10px}
+#card .ch>div{flex:1;min-width:0}
+#card .cid{font:italic 400 34px/1 var(--serif);margin-top:4px;font-variant-numeric:tabular-nums}
+.x-btn{min-width:44px;min-height:44px;padding:0;border-radius:9px;flex:none}
+.x-btn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none}
+#card .tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
+#card .tag{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--line);font:600 12px/1 var(--font);background:var(--chip)}
+#card .tag i{width:10px;height:10px;border-radius:50%;flex:none;border:1px solid var(--swatch-ring)}
+#card dl{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font:500 12.5px/1.45 var(--font)}
+#card dt{color:var(--muted);white-space:nowrap}
+#card dd{margin:0;min-width:0;overflow-wrap:anywhere}
+#card .rt{margin:12px 0 0}
+#card .rt .eyebrow{margin-bottom:6px}
+#route{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:relative}
+#route::before{content:'';position:absolute;left:8%;right:8%;top:21px;height:2px;background:var(--line)}
+#route li{display:flex;justify-content:center;position:relative}
+#route button{min-width:44px;min-height:44px;width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--panel-solid);color:var(--text);font:700 15px/1 var(--font);cursor:pointer;padding:0;display:grid;place-items:center}
+#route li.past button{background:var(--step-past);border-color:var(--step-past);color:var(--step-past-text)}
+#route li.now button{background:var(--step-now);border-color:var(--step-now);color:var(--step-now-text);box-shadow:0 0 0 4px color-mix(in srgb, var(--step-now) 25%, transparent)}
+#route button:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+#route-lbl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:4px;font:500 10px/1.25 var(--font);color:var(--muted);text-align:center}
+#route-lbl span{white-space:nowrap;letter-spacing:-.04em}
+#route-lbl span.now{color:var(--text);font-weight:700}
+#step-now{margin:8px 0 0;font:500 12.5px/1.5 var(--font);color:var(--text);min-height:19px}
+#card .acts{display:flex;gap:8px;margin-top:12px}
+#card .acts .btn{flex:1}
+/* 手機：清單鈕（桌面平常隱藏；桌面收合清單後出現在計數卡下方） */
+#list-btn{display:none}
+#list-fold svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none}
+@media (min-width:801px) and (min-height:501px){
+  body.list-collapsed #list{display:none}
+  body.list-collapsed #list-btn{display:inline-flex;right:var(--gutter-r);top:var(--list-top,150px);border-radius:14px;padding:0 16px;gap:6px}
+  #list-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+}
+/* 跟隨 pill（CSS2D，掛在人頭上） */
+.pill{font:700 11px/1 var(--font);padding:5px 9px;border-radius:999px;background:var(--pill-bg);color:var(--pill-text);white-space:nowrap;box-shadow:0 2px 6px var(--lbl-shadow);user-select:none;pointer-events:none}
+.pill.head{background:var(--pill-head-bg);color:var(--pill-head-text)}
+/* 指向被標記者的小三角（人群密集時一眼對上是誰） */
+.pill{position:relative}
+.pill::after{content:'';position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top:6px solid var(--pill-bg)}
+.pill.head::after{border-top-color:var(--pill-head-bg)}
+
+
+/* ---------- 第 4 階段：章節鈕、標籤引線、首次說明 ---------- */
+#cams .chip .n{font:700 10px/1 var(--mono);letter-spacing:.5px;opacity:.7;margin-right:-1px}
+#cams .chip.sep{margin-left:4px}
+/* 目前所在的章節（依時間）：chip 下緣一個小點；按下的章節（鏡頭）用 aria-pressed */
+#cams .chip{position:relative}
+#cams .chip.cur::after{content:'';position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--chap-dot)}
+.leader{position:absolute;left:0;top:0;height:1.5px;background:var(--leader);transform-origin:0 50%;opacity:.75;pointer-events:none;border-radius:1px}
+.leader.hid{display:none}
+.leader::before{content:'';position:absolute;left:-2.5px;top:-1.75px;width:5px;height:5px;border-radius:50%;background:var(--leader)}
+#help-btn{position:absolute;top:10px;right:10px;width:44px;height:44px;min-width:44px;padding:0;border-radius:999px;font:700 15px/1 var(--serif);font-style:italic}
+#brand h1,#brand .eyebrow{padding-right:40px}
+#help{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px var(--gutter-r) 20px var(--gutter-l);background:var(--scrim)}
+#help .hd{position:relative;width:min(470px,100%);max-height:100%;overflow:auto;border-radius:22px;padding:20px 22px 18px;background:var(--panel-solid);color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow-card)}
+#help h2{margin:6px 0 0;font:900 24px/1.2 var(--font);letter-spacing:.04em}
+#help ol{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:12px}
+#help li{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;font:500 14px/1.55 var(--font)}
+#help li .n{width:34px;height:34px;border-radius:50%;background:var(--help-num-bg);color:var(--help-num-text);display:grid;place-items:center;font:italic 400 19px/1 var(--serif)}
+#help li strong{display:block;font-weight:700}
+#help li span.d{color:var(--muted);font-size:13px}
+#help kbd{font:700 11px/1 var(--mono);padding:2px 5px;border-radius:5px;border:1px solid var(--line);background:var(--chip)}
+#help .phases .ph-i{display:block}
+#help .disc{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:var(--chip);border:1px solid var(--line);font:400 12px/1.65 var(--font);color:var(--muted)}
+#help .go{margin-top:14px;width:100%;min-height:48px;font-size:15px;background:var(--chip-pressed);color:var(--chip-pressed-text);border-color:var(--chip-pressed)}
+#help .x-btn{position:absolute;top:10px;right:10px}
+
+/* ---------- 載入畫面 ---------- */
+#loader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;text-align:center;padding:24px var(--gutter-r) 24px var(--gutter-l);background:radial-gradient(120% 90% at 50% 30%, var(--loader-hi) 0%, var(--loader-lo) 100%);background-color:var(--loader-lo);color:var(--text);transition:opacity .6s ease,visibility .6s}
+#loader.done{opacity:0;visibility:hidden;pointer-events:none}
+#loader .ld-in{max-width:min(720px,100%)}
+#loader .eyebrow{margin-bottom:18px}
+#loader h1{margin:0;font:900 clamp(48px, 12vw, 104px)/1.02 var(--font);letter-spacing:.08em}
+#loader .sub{margin-top:18px;font:500 17px/1.5 var(--font);color:var(--muted)}
+#loader .dots{display:flex;justify-content:center;gap:10px;margin-top:26px}
+#loader .dots i{width:14px;height:14px;border-radius:50%;background:var(--coral);animation:bob 1.2s ease-in-out infinite}
+#loader .dots i:nth-child(2){background:var(--dot-2);animation-delay:.15s}
+#loader .dots i:nth-child(3){background:var(--teal);animation-delay:.3s}
+#loader .dots i:nth-child(4){background:var(--blue-coat);animation-delay:.45s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+#loader .err{display:none;margin:24px auto 0;max-width:560px;padding:14px 18px;border-radius:14px;background:var(--err-bg);color:var(--err-text);border:1px solid var(--err-border);font:500 14px/1.6 var(--font);text-align:left;word-break:break-word}
+#loader.failed .err{display:block}
+#loader.failed .dots{display:none}
+@media (prefers-reduced-motion: reduce){#loader .dots i{animation:none}
+  /* reduced-motion：介面也不做過場（鏡頭瞬移、絲帶不流動由 JS 處理） */
+  *,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* 手機版：寬 ≤ 800，或高 ≤ 500（手機橫拿；審查 rv14：橫拿時寬 844 會套到桌面版，面板蓋滿場景） */
+@media (max-width:800px), (max-height:500px){
+  #brand{padding:12px 14px 10px;border-radius:16px;width:min(300px, calc(100vw - var(--gutter-l) - var(--gutter-r)))}
+  #brand h1{font-size:24px}
+  #brand .sub{font-size:12px}
+  #cams{left:var(--gutter-l);right:var(--gutter-r);transform:none;max-width:none}
+  #hud{left:var(--gutter-l);right:var(--gutter-r);transform:none;width:auto;padding:6px 12px 6px 6px;gap:8px;border-radius:26px}
+  #hud .btn.round{width:44px;height:44px}
+  #speeds{display:none}
+  #speed1{display:inline-flex;min-width:44px;padding:0 6px;border-color:transparent;background:transparent;font:700 12px/1 var(--mono)}
+  #phase{display:none}
+  #tw{height:44px}#track{top:22px;height:6px}#ticks i{top:18px;height:14px}#ticks b{top:4px;font-size:9px}#knob{top:15px}
+  #pct{min-width:48px;font-size:20px}
+  /* 第 2 階段裁決：手機速度鈕按下時字不要消失（id 規則的 transparent 會蓋過 .btn:active 的底色） */
+  #speed1:active{background:var(--chip-pressed);color:var(--chip-pressed-text)}
+  /* 計數卡：品牌卡下方一條橫向窄卡 */
+  #counts{left:var(--gutter-l);right:var(--gutter-r);width:auto;top:var(--counts-top,150px);padding:8px 12px 8px;border-radius:14px}
+  #counts .eyebrow,#counts .cbar{display:none}
+  #counts dt{font-size:10.5px}
+  #counts .big-n{font-size:16px}
+  #counts dd small{font-size:9.5px}
+  /* 清單鈕：右上角 */
+  #list-btn{display:inline-flex;position:absolute;right:var(--gutter-r);top:max(16px, env(safe-area-inset-top, 0px));z-index:6;border-radius:14px;width:44px;padding:0;flex-direction:column;gap:1px;font-size:10px;min-height:52px}
+  #list-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none}
+  /* 清單與卡片改成 bottom sheet（52%／34%），同時只開一個 */
+  #list,#card{left:0;right:0;width:auto;top:auto;bottom:var(--sheet-bottom,0px);max-height:none;border-radius:22px 22px 0 0;z-index:20;padding-top:0}
+  #list{height:52%}
+  #card{height:34%;padding:0 16px 12px}
+  #list:not(.open){display:none}
+  #list-fold{display:none}
+  #card .handle,#list .handle{display:block;height:22px;cursor:grab;touch-action:none;position:sticky;top:0;z-index:1}
+  /* 卡片 sheet 的標題列（把手、位置編碼、✕）固定在上緣、底色不透明，往下捲時不會跟著捲走 */
+  #card .chead{position:sticky;top:0;z-index:2;margin:0 -16px;padding:0 16px 6px;background:var(--panel-solid);border-bottom:1px solid var(--line)}
+  #card .chead .handle{position:static;margin:0}
+  /* sheet 開著時：品牌卡收成一行（只留大標）、計數條收成單行（不顯示百分比），把場景讓出來 */
+  body.sheet-open #brand{padding:8px 14px;border-radius:14px}
+  body.sheet-open #brand .eyebrow,body.sheet-open #brand .sub,body.sheet-open #brand details{display:none}
+  body.sheet-open #brand h1{margin:0;font-size:20px}
+  body.sheet-open #counts{padding:6px 12px}
+  body.sheet-open #counts dd{margin-top:1px}
+  body.sheet-open #counts .big-n{font-size:15px}
+  body.sheet-open #list-btn{min-height:44px}
+  /* 收成一行的品牌卡（約 40px 高）裡，? 鈕縮成 34px 並垂直置中，不再掛出卡片下緣；用 ::before 把點擊範圍補回 44px（審查 rv14） */
+  body.sheet-open #help-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:50%;right:6px;transform:translateY(-50%);font-size:13px}
+  body.sheet-open #help-btn::before{content:'';position:absolute;inset:-5px}
+  #card .handle::before,#list .handle::before{content:'';display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:9px auto 0}
+  #list .lh{padding-top:2px}
+  /* sheet 開著時章節 chip 列照樣留在底部（SPEC 第 7 節「底部固定保留」）：sheet 改放在 chip 列上方（--sheet-bottom 由 layoutPanels 算） */
+  #card .cid{font-size:28px}
+  /* 第 4 階段：卡片 sheet 34% 高度內先看到「路線六步＋跟隨按鈕」，欄位放在下面（往下捲或拉高才看） */
+  #card{display:flex;flex-direction:column}
+  #card .chead{order:0}#card .rt{order:1;margin-top:6px}#card .acts{order:2;margin-top:8px}#card .tags{order:3;margin:12px 0 8px}#card dl{order:4}
+  #card .chead .eyebrow{display:none}
+  #card .ch{align-items:center}
+  #card .cid{margin-top:0;font-size:26px}
+  #card .rt .eyebrow{display:none}
+  #step-now{margin-top:6px;font-size:12px;min-height:18px}
+  #card .acts .btn{min-height:44px}
+  /* 把手往上拉：sheet 拉到全螢幕（HUD 以上） */
+  #card.full,#list.full{height:calc(100% - var(--sheet-bottom,0px) - max(10px, env(safe-area-inset-top, 0px)))}
+  /* 主持人裁決「sheet 往上拉到全螢幕」：卡片也維持全高，內容下方的空白就是 sheet 內的留白（rv15 撤回 rv14 的 height:auto） */
+  #card .handle,#list .handle{width:100%;border:0;background:none;padding:0;min-height:22px}
+  #help-btn{top:6px;right:6px}
+  #cams .chip{padding:0 13px}
+}
+/* 手機橫拿（高 ≤ 500）：品牌卡收成一行（大標＋聲明），計數條放在品牌卡右邊同一列；
+   卡片與清單改成左右側 sheet（高度從上緣到 HUD 上方），章節 chip 列讓到另一側，場景留在中間（審查 rv14） */
+@media (max-height:500px) and (orientation:landscape){
+  #brand,body.sheet-open #brand{width:232px;padding:6px 48px 6px 14px;border-radius:14px;display:flex;flex-wrap:wrap;align-items:center;column-gap:12px}
+  #brand .eyebrow,#brand .sub{display:none}
+  #brand h1,body.sheet-open #brand h1{margin:0;font-size:20px;padding-right:0}
+  #brand details{margin:0;border:0;padding:0}
+  #brand details[open]{flex-basis:100%;border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
+  #help-btn,body.sheet-open #help-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:6px;right:6px;transform:none;font-size:13px}
+  #help-btn::before{content:'';position:absolute;inset:-5px}
+  #counts{top:max(16px, env(safe-area-inset-top, 0px));left:calc(var(--gutter-l) + 242px);right:calc(var(--gutter-r) + 54px);width:auto;padding:6px 12px}
+  #list,#card{top:max(16px, env(safe-area-inset-top, 0px));bottom:var(--side-bottom,80px);height:auto;border-radius:18px}
+  #card{left:var(--gutter-l);right:auto;width:min(340px, 46vw)}
+  #list{right:var(--gutter-r);left:auto;width:min(318px, 46vw)}
+  #card .handle,#list .handle{display:none}
+  #card .chead{padding-top:10px}
+  #list .lh{padding-top:12px}
+  #card.full,#list.full{height:auto;max-height:none}
+  body:has(#card:not([hidden])) #cams{left:calc(var(--gutter-l) + min(340px, 46vw) + 10px)}
+  body:has(#list.open) #cams{right:calc(var(--gutter-r) + min(318px, 46vw) + 10px)}
+  body:has(#card:not([hidden])) #counts{left:calc(var(--gutter-l) + min(340px, 46vw) + 10px)}
+  body:has(#list.open) #counts{right:calc(var(--gutter-r) + min(318px, 46vw) + 10px)}
+  body:has(#list.open) #counts dt{font-size:9.5px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"></div>
+  <div id="labels"></div>
+
+  <section id="brand" class="ui glass" aria-label="說明">
+    <div class="eyebrow">B1 看台 → B2 → 西一入口</div>
+    <h1>入經藏</h1>
+    <p class="sub">進場微縮模型・版本 3 兩路直進</p>
+    <a id="pages-link" href="index.html" hidden>← 版本 3 總覽與其他頁面</a>
+    <button id="help-btn" class="btn" type="button" aria-label="說明：怎麼看這個模型" aria-controls="help" aria-expanded="false">?</button>
+    <details id="disc-box">
+      <summary>聲明<span class="hint">（點開）</span></summary>
+      <p class="note" id="disclaimer">動畫時間是節奏示意，不是現場秒數；座位、看台、通道、舞台、高度與小人大小都是示意，碰撞檢查是圖面點距、不是人體寬度。實際依企劃現場指示。</p>
+    </details>
+  </section>
+
+  <nav id="cams" class="ui glass" aria-label="章節與鏡頭"></nav>
+
+  <!-- 右上計數卡：counts(t, persons) -->
+  <section id="counts" class="ui glass" aria-label="人數" aria-live="off">
+    <div class="eyebrow">現在・1,609 人</div>
+    <div class="cbar" aria-hidden="true"></div>
+    <dl id="counts-dl"></dl>
+  </section>
+
+  <!-- 手機：開清單 -->
+  <button id="list-btn" class="btn ui glass" type="button" aria-controls="list" aria-expanded="false" aria-label="開啟清單與搜尋"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/></svg>清單</button>
+
+  <!-- 右側清單：搜尋＋大隊 1–9 × 白／藍 -->
+  <section id="list" class="ui glass" aria-label="清單與搜尋">
+    <button class="handle" type="button" aria-label="拉高清單（往下拉關閉）"></button>
+    <div class="lh">
+      <div class="row"><div class="eyebrow">清單・搜尋</div>
+        <button id="ribbon-tg" class="btn" type="button" aria-pressed="true"><span class="sw" aria-hidden="true"></span>隊伍絲帶</button>
+        <button id="list-fold" class="btn x-btn" type="button" aria-label="收合清單" aria-controls="list" title="收合清單"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>
+        <button id="list-close" class="btn x-btn" type="button" aria-label="關閉清單" hidden><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div>
+      <form id="search" role="search" autocomplete="off">
+        <input id="q" type="search" inputmode="text" enterkeyhint="search" placeholder="列 14 排 7、14-7、列 14" aria-label="搜尋：列、排或位置編碼" aria-describedby="search-msg">
+        <button class="btn" type="submit">找</button>
+      </form>
+      <p id="search-msg" role="status" aria-live="polite">輸入列與排（位置編碼）跟隨一個人；只輸入列就跟隨整列。</p>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <!-- 小人卡片（左側） -->
+  <section id="card" class="ui glass" aria-label="小人卡片" hidden>
+    <div class="chead"><button class="handle" type="button" aria-label="拉高卡片（往下拉關閉）"></button>
+    <div class="ch"><div><div class="eyebrow">位置編碼</div><div class="cid" id="c-id"></div></div>
+      <button id="card-close" class="btn x-btn" type="button" aria-label="關閉卡片並停止跟隨"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg></button></div></div>
+    <div class="tags" id="c-tags"></div>
+    <dl id="c-dl"></dl>
+    <div class="rt"><div class="eyebrow">路線</div>
+      <ol id="route"></ol><div id="route-lbl" aria-hidden="true"></div>
+      <p id="step-now" aria-live="polite"></p></div>
+    <div class="acts"><button id="c-follow" class="btn" type="button" aria-pressed="false">跟隨此人</button><button id="c-row" class="btn" type="button" aria-pressed="false">跟隨這一列</button></div>
+  </section>
+
+  <div id="hud" class="ui glass" role="group" aria-label="播放控制">
+    <button id="play" class="btn round" type="button" aria-label="播放" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path id="play-ico" d="M6 4l10 6-10 6z"/></svg></button>
+    <div id="speeds" role="group" aria-label="播放速度"></div>
+    <button id="speed1" class="btn" type="button" aria-label="播放速度，按一下切換">1×</button>
+    <div id="tw">
+      <div id="track" aria-hidden="true"><div id="fill"></div></div>
+      <div id="ticks" aria-hidden="true"></div>
+      <span id="ticks-desc" class="sr-only">進度條上的刻度 1 到 9 是大隊 1 到 9 開始下樓梯的位置；色段是三個階段，目前階段的名稱顯示在進度條下方。</span>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="進度">
+      <div id="knob" aria-hidden="true"></div>
+      <div id="phase" aria-hidden="true"></div>
+    </div>
+    <div id="pct" aria-hidden="true">0<small>%</small></div>
+  </div>
+</div>
+
+<!-- 第一次進入的 3 步驟說明（看過後用 localStorage dome.help 記住；品牌卡的「?」可再打開） -->
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="help-h" hidden>
+  <div class="hd">
+    <button id="help-x" class="btn x-btn" type="button" aria-label="關閉說明"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
+    <div class="eyebrow">怎麼看・3 步驟</div>
+    <h2 id="help-h">1,609 位小人依序進場</h2>
+    <ol>
+      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿舞台階梯北行入座。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
+      <li><span class="n" aria-hidden="true">2</span><div><strong>按章節鈕</strong><span class="d">離座、下樓梯、門前隊伍、穿過西一入口、迴廊候隊、北行進列、全部入座：跳到那個時間，鏡頭飛到特寫。拖曳轉鏡頭，<kbd>Shift</kbd>＋方向鍵也可以。</span></div></li>
+      <li><span class="n" aria-hidden="true">3</span><div><strong>點一個小人，或搜尋「列 14 排 7」</strong><span class="d">鏡頭跟著他走，卡片顯示他的六步路線；清單可以跟隨一整列。<kbd>Esc</kbd> 或拖曳鏡頭解除。</span></div></li>
+    </ol>
+    <p class="disc phases" id="help-phases"></p>
+    <p class="disc" id="help-disc"></p>
+    <button id="help-go" class="btn go" type="button">開始看</button>
+  </div>
+</div>
+
+<div id="loader" role="status" aria-live="polite">
+  <div class="ld-in">
+    <div class="eyebrow">入經藏・版本 3 兩路直進</div>
+    <h1>入經藏</h1>
+    <div class="sub" id="ld-sub">正在擺放 1,609 位小人…</div>
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="err" id="ld-err" role="alert"></div>
+  </div>
+</div>
+
+<script type="application/json" id="dome-data"></script>
+<script>
+document.documentElement.lang='zh-Hant-TW';   // SPEC 第 0 節：頁面自己設定，不依賴外層 skeleton
+// 初始化失敗時（資料解析、WebGL、CDN 模組載入）在載入畫面顯示錯誤，不要白畫面。
+window.__domeFail=function(msg){try{window.__domeError=String(msg||'未知錯誤');var L=document.getElementById('loader');if(!L)return;L.classList.remove('done');L.classList.add('failed');
+  var e=document.getElementById('ld-err');if(e)e.textContent='無法建立微縮模型：'+window.__domeError;var s=document.getElementById('ld-sub');if(s)s.textContent='載入失敗';}catch(_){}}
+window.addEventListener('error',function(ev){if(!(window.__dome&&window.__dome.ready)){var t=ev&&ev.target;if(t&&t.tagName==='SCRIPT')window.__domeFail('無法載入 3D 引擎（'+(t.src||'module')+'）');else if(ev&&ev.message)window.__domeFail(ev.message);}},true);
+window.addEventListener('unhandledrejection',function(ev){if(!(window.__dome&&window.__dome.ready))window.__domeFail(ev&&ev.reason&&ev.reason.message||ev.reason);});
+setTimeout(function(){if(!(window.__dome&&window.__dome.ready)&&!window.__domeError)window.__domeFail('載入逾時：3D 引擎（cdn.jsdelivr.net）沒有回應，請重新整理。');},45000);
+</script>
+<script src="core.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import * as BGU from 'three/addons/utils/BufferGeometryUtils.js';
+
+// =====================================================================
+// 0. 常數（檔案頂端）
+// =====================================================================
+const H1 = 0.6;              // B1 看台最上排與 B1 走廊的高度（world 單位）
+const ROW_DROP = 0.03;       // 看台每往球場一排降低的高度
+const DONE_FACING = 180;     // 入座後面向（度；0° = +X 東，Y 向南，與 restSeats.theta 同慣例）→ 朝西、甲舞台
+const STAGE_H = 0.12;        // 甲舞台平台高
+const STAGE_CLEAR = 0.15;    // 平台離 walkBand / laneBand / westEdge 的最小緩衝
+// 地面層的鋪面高約 0.006–0.018：人在地面（h=0）時腳底抬 0.017，在 B1（h=H1）時正好踩在 H1，中間線性（playground #23 移到檔頭：舞台階梯的踏面高也從這裡起算）
+const FOOT_LIFT = 0.017;
+const WALL_H = 0.25;         // 全壘打牆高
+const C = { cream:'#fff8f4', coral:'#db6a41', ink:'#211d1d', stone:'#c5b5a7', yellow:'#fcea8b', green:'#71806a',
+  glass:'#86a8a6', wood:'#b48560', teal:'#3e7c8c', grass:'#9cc27a', wall:'#3f6f5a', brick:'#e4d6c3', blueCoat:'#6f7fb5' };
+const IS_MOBILE = matchMedia('(max-width: 800px), (max-height: 500px)').matches || matchMedia('(pointer: coarse)').matches;
+const $ = s => document.querySelector(s);
+
+// =====================================================================
+// 1. 引擎：以下 pairs / bounds / pos / state / counts / dataset 的 B 範圍
+//    原樣複製自 design-explorations/taipei-dome/flow/entry-animation-v3/core.js（版本 3 七頁共用引擎）
+// =====================================================================
+const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
+function bounds(pts,pad=.6){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const [x,y] of pts){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y;}return [a-pad,b-pad,c+pad,d+pad];}
+function pos(p,t){const a=p.path;if(t<=a[0][2])return a[0];if(t>=a[a.length-1][2])return a[a.length-1];let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}const u=a[lo],v=a[hi],f=(t-u[2])/(v[2]-u[2]||1);return [u[0]+(v[0]-u[0])*f,u[1]+(v[1]-u[1])*f];}
+// seated → walk(離座、下樓、走到門前) → wait(B2 門前隊伍：慢行或站住) → enter(進場中) → done
+function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)return 'walk';if(t<s.enter)return 'wait';if(t<s.arrive)return 'enter';return 'done';}
+function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
+// （core.js dataset() 中的 B 範圍）
+function domeBounds(D,P){return {all:bounds([...pairs(D.map.wall),...D.map.stands.flatMap(s=>pairs(s.poly))],.4),
+  field:bounds(P.map(p=>[p.field.X,p.field.Y])),
+  west:bounds([...D.map.stands.flatMap(s=>pairs(s.poly)),...pairs(D.map.b2Corridor),...P.map(p=>[p.field.X,p.field.Y])],.5)};}
+
+// =====================================================================
+// 2. 小工具
+// =====================================================================
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const lerp=(a,b,f)=>a+(b-a)*f;
+const lerp2=(a,b,f)=>[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function pip(x,y,pts){let c=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const [xi,yi]=pts[i],[xj,yj]=pts[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+function polyArea(pts){let a=0;for(let i=0,j=pts.length-1;i<pts.length;j=i++)a+=pts[j][0]*pts[i][1]-pts[i][0]*pts[j][1];return a/2;}
+function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let f=L?((px-ax)*dx+(py-ay)*dy)/L:0;f=clamp(f,0,1);return Math.hypot(px-ax-dx*f,py-ay-dy*f);}
+function polylineDist(px,py,pts,closed){let d=1e9;const n=pts.length;for(let i=0;i<(closed?n:n-1);i++){const a=pts[i],b=pts[(i+1)%n];d=Math.min(d,segDist(px,py,a[0],a[1],b[0],b[1]));}return d;}
+function rdp(pts,eps){if(pts.length<3)return pts.slice();let dmax=0,k=0;const a=pts[0],b=pts[pts.length-1];for(let i=1;i<pts.length-1;i++){const d=segDist(pts[i][0],pts[i][1],a[0],a[1],b[0],b[1]);if(d>dmax){dmax=d;k=i;}}
+  if(dmax<=eps)return [a,b];const l=rdp(pts.slice(0,k+1),eps),r=rdp(pts.slice(k),eps);return l.slice(0,-1).concat(r);}
+function rdpClosed(pts,eps){if(pts.length<8)return pts;let far=0,fd=0;for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[0][0],pts[i][1]-pts[0][1]);if(d>fd){fd=d;far=i;}}
+  const A=rdp(pts.slice(0,far+1),eps),B=rdp(pts.slice(far).concat([pts[0]]),eps);return A.slice(0,-1).concat(B.slice(0,-1));}
+function convexHull(pts){const p=pts.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[],up=[];for(const q of p){while(lo.length>1&&cr(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q);}
+  for(let i=p.length-1;i>=0;i--){const q=p[i];while(up.length>1&&cr(up[up.length-2],up[up.length-1],q)<=0)up.pop();up.push(q);}return lo.slice(0,-1).concat(up.slice(0,-1));}
+// 凸多邊形（逆時針）往外平移 d（頂點沿兩側法線的和移動）
+function offsetPoly(pts,d){const n=pts.length,s=polyArea(pts)>0?1:-1;return pts.map((p,i)=>{const a=pts[(i-1+n)%n],b=pts[(i+1)%n];
+  const n1=[(p[1]-a[1]),-(p[0]-a[0])],n2=[(b[1]-p[1]),-(b[0]-p[0])],l1=Math.hypot(...n1)||1,l2=Math.hypot(...n2)||1;
+  let mx=n1[0]/l1+n2[0]/l2,my=n1[1]/l1+n2[1]/l2;const ml=Math.hypot(mx,my)||1;mx/=ml;my/=ml;const k=d/Math.max(0.35,(mx*n1[0]/l1+my*n1[1]/l1));
+  return [p[0]+mx*k*s,p[1]+my*k*s];});}
+// Chaikin 平滑（封閉迴圈）
+function chaikin(pts,it){let p=pts;for(let k=0;k<it;k++){const q=[];for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];q.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25],[a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}p=q;}return p;}
+const easeInOutCubic=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+const deg=d=>d*Math.PI/180;
+// 角度慣例：0° = +X（東），Y 向南。平面方向 (cos φ, sin φ) → world (x, z)。
+// Object3D 的 yaw（繞 +y）讓本地 +z 指向 (sin a, cos a)，所以 a = π/2 − φ。
+const yawFromPlanDeg=phiDeg=>Math.PI/2-deg(phiDeg);
+
+// =====================================================================
+// 3. 資料
+// =====================================================================
+let D,P,B;
+// 資料來源：artifact 版由 inline.py 內嵌在 #dome-data；playground 頁面版（inline.py --pages）不內嵌，
+// 改用同資料夾 core.js 的 Dome.load() 讀 data.json，和版本 3 其他七頁同一份資料。
+async function readData(){const el=document.getElementById('dome-data'),txt=el?el.textContent.trim():'';
+  if(txt)return JSON.parse(txt);
+  if(window.Dome&&Dome.load){const l=document.getElementById('pages-link');if(l)l.hidden=false;return (await Dome.load()).D;}
+  throw new Error('頁面沒有內嵌資料，也沒有載入 core.js');}
+try{
+  D=await readData();
+  P=D.persons;B=domeBounds(D,P);
+  if(!Array.isArray(P)||P.length!==D.meta.population)throw new Error('人數與 meta.population 不符');
+}catch(e){window.__domeFail('動線資料解析失敗：'+e.message);throw e;}
+const M=D.map,N=D.nodes;
+const B1BAND=Array.from({length:M.b1Band.length/2},(_,i)=>[M.b1Band[i*2],M.b1Band[i*2+1]]);
+
+// ---------------------------------------------------------------------
+// 3.1 高度（第 1 節）：座位 → (沿 path 弧長線性升到 H1，到看台出口 entry 點為止) → 維持 H1 到 t.stair
+//     → 樓梯從 t.stair 到 L 形轉角前一點線性降到 0 → 0
+//     （SPEC 字面是「t.leave→t.stair 線性升到 H1」；但出口 entry 點之後全都在 B1 走廊板上（頂面 H1），
+//       照字面內插會讓人陷進走廊板（最深 0.31）。改成在出口 entry 點就到 H1，見 NOTES「SPEC 與資料衝突」。）
+// ---------------------------------------------------------------------
+const MAXPAI={};for(const s of D.restSeats)MAXPAI[s.sec]=Math.max(MAXPAI[s.sec]||0,s.pai);
+const seatH=(sec,pai)=>H1-(MAXPAI[sec]-pai)*ROW_DROP;
+const EXIT_BY_SEC=new Map(D.exits.map(e=>[e.sec,e]));
+const HT=P.map(p=>{const a=p.path;let k=0,bd=1e9;for(let i=0;i<a.length;i++){const d=Math.abs(a[i][2]-p.t.stair);if(d<bd){bd=d;k=i;}}
+  let j=k+1;while(j<a.length&&a[j][0]===a[k][0])j++;const kEnd=j-1;   // 樓梯：t.stair 之後第一個 X 改變的點的前一點
+  // 上升終點：path 上第一個等於看台出口 entry 的點（找不到就用第一個進入 b1Band 的點，再不行用 t.stair）
+  const ex=EXIT_BY_SEC.get(p.exit);let kH=-1;
+  if(ex)for(let i=1;i<=k;i++)if(Math.hypot(a[i][0]-ex.entry[0],a[i][1]-ex.entry[1])<1e-3){kH=i;break;}
+  if(kH<0)for(let i=1;i<=k;i++)if(pip(a[i][0],a[i][1],B1BAND)){kH=i;break;}
+  if(kH<0)kH=k;
+  const cum=new Float64Array(kH+1);for(let i=1;i<=kH;i++)cum[i]=cum[i-1]+Math.hypot(a[i][0]-a[i-1][0],a[i][1]-a[i-1][1]);
+  return {h0:seatH(p.rest.sec,p.rest.pai),k,kH,kEnd,tL:a[0][2],tH:a[kH][2],tS:a[k][2],tE:a[kEnd][2],cum,len:cum[kH]};});
+// xy（選填）＝pos(P[i],t)，呼叫端已經算過時傳進來，不重算
+function heightAt(i,t,xy){const h=HT[i],a=P[i].path;
+  if(t<=h.tL)return h.h0;
+  if(t<h.tH){let lo=0,hi=h.kH;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}
+    const f=(t-a[lo][2])/(a[hi][2]-a[lo][2]||1),s=h.cum[lo]+(h.cum[hi]-h.cum[lo])*f;return h.h0+(H1-h.h0)*(h.len>0?s/h.len:1);}
+  if(t<h.tS)return H1;
+  if(t<h.tE)return H1*(1-(t-h.tS)/(h.tE-h.tS));
+  // playground #23：下樓之後在地面（0）；走上甲舞台東側階梯的人＝腳下那一階的高度（n × STAIR.rise，n＝往東數跨過幾條階梯線）
+  if(!h.stg)return 0;const q=xy||pos(P[i],t);return STAIR.stepH(q[0],q[1]);}
+
+// ---------------------------------------------------------------------
+// 3.2 甲舞台東側階梯（playground #23）
+//     資料：舞台在大隊 1–4 列區西側是 11 階的階梯（base.stage 線稿裡一組平行曲線，每階約 0.055 深）；
+//     整排北行時靠舞台的第 1 路最多走上 3 階、第 2 路 1 階（build/march.py；check.py geometry：maxSteps 3、stepViolations 0）。
+//     找階梯線：在 check.py 的階梯 Y 範圍（STAIR_Y 0.9–3.95）中線那一列，取 X < −4.5 的舞台線稿交點，由東往西連續、
+//     相鄰間距 ≤ STEP_LINE_GAP 的那幾條就是階梯線（遇到大空隙停；這份資料是 11 條，之後隔 0.33 才是台面上的另一組線）。
+//     每條線沿端點接上相鄰折線，接成一條 Y 單調的鏈（遇到分岔、或 Y 折返＝南端連到下一條線的短邊，就停）。
+//     階數 n(x,y)＝往東數跨過幾條階梯線（只數 y 落在該鏈 Y 範圍內的鏈；和 check.py 的數法相同，資料每個點的階數都對得上）。
+//     踏面頂＝FOOT_LIFT + n × rise，rise＝(STAGE_H − FOOT_LIFT) / N：地面上的腳底高是 FOOT_LIFT，第 N 階的頂正好是台面 STAGE_H。
+// ---------------------------------------------------------------------
+const STEP_ROW_Y=(0.9+3.95)/2,STEP_X_EAST=-4.3,STEP_LINE_GAP=0.1;   // check.py：STAIR_Y＝(0.9, 3.95)、STAIR_BOX 東界 −4.3
+const STAIR=(()=>{const west=M.base.stage.filter(l=>{let mx=-1e9;for(let i=0;i<l.length;i+=2)mx=Math.max(mx,l[i]);return mx<-4.5;});
+  // 去掉重複的折線（同一組點、正向或反向各畫了一次）
+  const seen=new Set(),pl=[],kp=q=>q[0].toFixed(4)+','+q[1].toFixed(4);
+  for(const l of west){const a=pairs(l),k1=a.map(kp).join(';'),k2=a.slice().reverse().map(kp).join(';');if(seen.has(k1)||seen.has(k2))continue;seen.add(k1);pl.push(a);}
+  const ek=q=>q[0].toFixed(3)+','+q[1].toFixed(3),ends=new Map();
+  pl.forEach((a,i)=>{for(const q of [a[0],a[a.length-1]]){const k=ek(q);(ends.get(k)||ends.set(k,[]).get(k)).push(i);}});
+  const hits=[];pl.forEach((a,i)=>{for(let j=0;j+1<a.length;j++){const [x0,y0]=a[j],[x1,y1]=a[j+1];if((y0<=STEP_ROW_Y)!==(y1<=STEP_ROW_Y)){const x=x0+(x1-x0)*(STEP_ROW_Y-y0)/(y1-y0);if(x<STEP_X_EAST)hits.push({x,i});}}});
+  hits.sort((p,q)=>q.x-p.x);const seeds=hits.length?[hits[0]]:[];for(let k=1;k<hits.length&&hits[k-1].x-hits[k].x<=STEP_LINE_GAP;k++)seeds.push(hits[k]);
+  const used=new Set(),member=new Map();   // member：折線 → 第幾條階梯線（1 起算，東→西）
+  const chains=seeds.map((sd,ci)=>{let c=pl[sd.i].slice();if(c[0][1]>c[c.length-1][1])c.reverse();used.add(sd.i);member.set(sd.i,ci+1);
+    for(const dir of [1,-1])for(;;){const e=dir>0?c[c.length-1]:c[0],all=ends.get(ek(e))||[],nb=all.filter(i=>!used.has(i));
+      if(all.length!==2||nb.length!==1)break;let a=pl[nb[0]].slice();if(ek(a[0])!==ek(e))a.reverse();
+      if(!a.every((q,j)=>!j||(dir>0?q[1]>=a[j-1][1]:q[1]<=a[j-1][1])))break;used.add(nb[0]);member.set(nb[0],ci+1);
+      c=dir>0?c.concat(a.slice(1)):a.slice(1).reverse().concat(c);}
+    return {pts:c,y0:c[0][1],y1:c[c.length-1][1]};});
+  const N=chains.length,rise=(STAGE_H-FOOT_LIFT)/Math.max(1,N);
+  let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;for(const c of chains)for(const [x,y] of c.pts){bx0=Math.min(bx0,x);bx1=Math.max(bx1,x);by0=Math.min(by0,y);by1=Math.max(by1,y);}
+  const xAt=(c,y)=>{const a=c.pts;let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][1]<=y)lo=m;else hi=m;}const f=(y-a[lo][1])/((a[hi][1]-a[lo][1])||1);return a[lo][0]+(a[hi][0]-a[lo][0])*f;};
+  const stepAt=(x,y)=>{if(x<bx0||x>bx1||y<by0||y>=by1)return 0;let n=0;for(const c of chains)if(y>=c.y0&&y<c.y1&&xAt(c,y)>x)n++;return n;};
+  // 踏面 T_k（k＝1..N−1）：第 k 條線（北→南）＋第 k+1 條線（南→北）圍起來的帶；南端兩線的終點之間是線稿裡的短邊，北端是兩線起點的連線
+  const treads=[];for(let k=1;k<N;k++)treads.push({k,top:FOOT_LIFT+k*rise,poly:[...chains[k-1].pts,...chains[k].pts.slice().reverse()]});
+  // Ω＝全部踏面的聯集：第 1 條線＋南端各線終點＋第 N 條線（反向）＋北端各線起點
+  const omega=N>1?[...chains[0].pts,...chains.slice(1,N-1).map(c=>c.pts[c.pts.length-1]),...chains[N-1].pts.slice().reverse(),...chains.slice(1,N-1).reverse().map(c=>c.pts[0])]:[];
+  return {N,rise,chains,treads,omega,member,pl,box:[bx0,by0,bx1,by1],xAt,stepAt,
+    top:n=>FOOT_LIFT+Math.min(n,N)*rise,stepH:(x,y)=>Math.min(stepAt(x,y),N)*rise};})();
+// 每人是否會經過階梯一帶（下樓後的 path 線段外框和階梯外框相交）：heightAt 只對這些人查階數
+for(let i=0;i<P.length;i++){const a=P[i].path,[x0,y0,x1,y1]=STAIR.box;let on=false;
+  for(let j=Math.max(0,HT[i].kEnd);j+1<a.length&&!on;j++){const ax=Math.min(a[j][0],a[j+1][0]),bx=Math.max(a[j][0],a[j+1][0]),ay=Math.min(a[j][1],a[j+1][1]),by=Math.max(a[j][1],a[j+1][1]);on=bx>=x0-0.5&&ax<=x1&&by>=y0&&ay<=y1;}
+  HT[i].stg=on;}
+
+// =====================================================================
+// 4. 三維：renderer / scene / camera
+// =====================================================================
+let renderer,scene,camera,orthoCam,controls,labelRenderer,sun;
+let dirty=true,activeCam=null,flight=null;
+const stageEl=$('#stage'),labelsEl=$('#labels');
+
+function initRenderer(){
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,IS_MOBILE?1.4:1.75));
+  renderer.setClearColor(0x000000,0);
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;
+  stageEl.appendChild(renderer.domElement);
+  renderer.domElement.setAttribute('aria-label','台北大巨蛋入經藏進場微縮模型 3D 場景');
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(32,1,0.1,400);
+  orthoCam=new THREE.OrthographicCamera(-10,10,10,-10,0.1,200);
+  activeCam=camera;
+  labelRenderer=new CSS2DRenderer({element:labelsEl});
+  controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true;controls.dampingFactor=0.07;
+  controls.minPolarAngle=deg(20);controls.maxPolarAngle=deg(65);
+  controls.minDistance=1.2;controls.maxDistance=70;
+  controls.screenSpacePanning=false;
+  controls.addEventListener('change',()=>{clampPan();dirty=true;});
+  renderer.domElement.addEventListener('pointerdown',cancelFlight,{passive:true});
+  renderer.domElement.addEventListener('wheel',cancelFlight,{passive:true});
+}
+
+function initLights(){
+  scene.add(new THREE.HemisphereLight(0xeef6fa,0x8f8270,1.3));
+  const cx=(B.all[0]+B.all[2])/2,cz=(B.all[1]+B.all[3])/2;
+  sun=new THREE.DirectionalLight(0xfff1de,2.4);
+  sun.position.set(cx+9,22,cz+12);sun.target.position.set(cx,0,cz);
+  sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  const r=Math.hypot(B.all[2]-B.all[0],B.all[3]-B.all[1])/2+1;
+  Object.assign(sun.shadow.camera,{left:-r,right:r,top:r,bottom:-r,near:1,far:80});sun.shadow.camera.updateProjectionMatrix();
+  sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.045;sun.shadow.radius=3;
+  scene.add(sun,sun.target);
+  const fill=new THREE.DirectionalLight(0xbfd6ff,0.35);fill.position.set(cx-14,10,cz-8);fill.target.position.set(cx,0,cz);scene.add(fill,fill.target);
+}
+
+// =====================================================================
+// 5. 幾何收集器：靜態建物合併成少數幾個 mesh（vertex color），重複零件用 InstancedMesh
+// =====================================================================
+const col=new THREE.Color();
+function tint(geo,hex){const g=geo.index?geo.toNonIndexed():geo;g.deleteAttribute('uv');if(g.getAttribute('uv2'))g.deleteAttribute('uv2');
+  col.set(hex);const n=g.getAttribute('position').count,a=new Float32Array(n*3);for(let i=0;i<n;i++){a[i*3]=col.r;a[i*3+1]=col.g;a[i*3+2]=col.b;}
+  g.setAttribute('color',new THREE.BufferAttribute(a,3));if(!g.getAttribute('normal'))g.computeVertexNormals();return g;}
+// 平面多邊形（plan 座標 [X,Y]）→ 拉伸成 y0..y1 的黏土板
+function slab(pts,y0,y1,hex,holes=[],bevel=0,sideHex=null){const sh=new THREE.Shape(pts.map(([x,y])=>new THREE.Vector2(x,y)));
+  for(const h of holes)sh.holes.push(new THREE.Path(h.map(([x,y])=>new THREE.Vector2(x,y))));
+  const depth=Math.max(1e-3,y1-y0-bevel*2);
+  const g=new THREE.ExtrudeGeometry(sh,{depth,bevelEnabled:bevel>0,bevelThickness:bevel,bevelSize:bevel,bevelSegments:2,curveSegments:1,steps:1});
+  g.rotateX(Math.PI/2);g.translate(0,y1-bevel,0);const out=tint(g,hex);if(sideHex)sideTint(out,sideHex);return out;}
+// 立面（法線不朝上的面）改用較深的顏色：頂面與立面做出明度差
+// 立面再加由下往上的明暗層次（底部約暗 22%，像黏土模型的接地陰影），讓側牆不像平塗的 CAD 面
+function sideTint(g,hex){const n=g.getAttribute('normal'),c=g.getAttribute('color'),p=g.getAttribute('position');col.set(hex);
+  let y0=1e9,y1=-1e9;for(let i=0;i<p.count;i++){const y=p.getY(i);if(y<y0)y0=y;if(y>y1)y1=y;}const hh=Math.max(1e-6,y1-y0);
+  for(let i=0;i<n.count;i++)if(n.getY(i)<0.55){const k=0.78+0.22*Math.sqrt(clamp((p.getY(i)-y0)/hh,0,1));c.setXYZ(i,col.r*k,col.g*k,col.b*k);}c.needsUpdate=true;return g;}
+// 只乘明暗、不換色（給逐段上色的牆用）：立面由下往上 0.8→1
+function aoGrad(g,y0,y1){const n=g.getAttribute('normal'),c=g.getAttribute('color'),p=g.getAttribute('position'),hh=Math.max(1e-6,y1-y0);
+  for(let i=0;i<n.count;i++)if(n.getY(i)<0.55){const k=0.8+0.2*Math.sqrt(clamp((p.getY(i)-y0)/hh,0,1));c.setXYZ(i,c.getX(i)*k,c.getY(i)*k,c.getZ(i)*k);}c.needsUpdate=true;return g;}
+// 只有上表面的平面（用於地面層，法線朝上）
+function flat(pts,y,hex,holes=[]){const contour=pts.map(([x,yy])=>new THREE.Vector2(x,yy)),hs=holes.map(h=>h.map(([x,yy])=>new THREE.Vector2(x,yy)));
+  const tris=THREE.ShapeUtils.triangulateShape(contour,hs),all=contour.concat(...hs),pos=[];
+  for(const [a,b,c] of tris){const A=all[a],Bv=all[b],Cv=all[c],cr=(Bv.x-A.x)*(Cv.y-A.y)-(Bv.y-A.y)*(Cv.x-A.x);
+    const order=cr<0?[A,Bv,Cv]:[A,Cv,Bv];for(const v of order)pos.push(v.x,y,v.y);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();return tint(g,hex);}
+// 沿折線的牆（miter 法線），y0..y1，半寬 hw；colorAt(i) 決定第 i 段顏色
+function ribbon(pts,closed,hw,y0,y1,colorAt,ch=0){const n=pts.length,nm=[];
+  for(let i=0;i<n;i++){const pv=pts[closed?(i-1+n)%n:Math.max(0,i-1)],nx=pts[closed?(i+1)%n:Math.min(n-1,i+1)];
+    let dx=nx[0]-pv[0],dy=nx[1]-pv[1];const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;nm.push([-dy,dx]);}
+  const pos=[],colr=[];const push=(q,c)=>{for(const v of q){pos.push(v[0],v[1],v[2]);colr.push(c.r,c.g,c.b);}};
+  const quad=(a,b,c,d,cc)=>push([a,b,c,a,c,d],cc);
+  const segs=closed?n:n-1;
+  for(let i=0;i<segs;i++){const j=(i+1)%n,a=pts[i],b=pts[j];col.set(colorAt(i));const cc=col.clone();
+    const ao=[a[0]+nm[i][0]*hw,a[1]+nm[i][1]*hw],ai=[a[0]-nm[i][0]*hw,a[1]-nm[i][1]*hw],bo=[b[0]+nm[j][0]*hw,b[1]+nm[j][1]*hw],bi=[b[0]-nm[j][0]*hw,b[1]-nm[j][1]*hw];
+    const V=(p,y)=>[p[0],y,p[1]];
+    if(ch>0){   // 倒角：側面到 y1−ch，再斜到內縮 ch 的頂面（黏土的圓邊感；ch 很小，平面位置不變）
+      const k=(hw-ch)/hw,AO=[a[0]+nm[i][0]*hw*k,a[1]+nm[i][1]*hw*k],AI=[a[0]-nm[i][0]*hw*k,a[1]-nm[i][1]*hw*k],BO=[b[0]+nm[j][0]*hw*k,b[1]+nm[j][1]*hw*k],BI=[b[0]-nm[j][0]*hw*k,b[1]-nm[j][1]*hw*k],ym=y1-ch;
+      quad(V(AI,y1),V(AO,y1),V(BO,y1),V(BI,y1),cc);
+      quad(V(ao,ym),V(bo,ym),V(BO,y1),V(AO,y1),cc);
+      quad(V(bi,ym),V(ai,ym),V(AI,y1),V(BI,y1),cc);
+      quad(V(ao,y0),V(bo,y0),V(bo,ym),V(ao,ym),cc);
+      quad(V(bi,y0),V(ai,y0),V(ai,ym),V(bi,ym),cc);
+    }else{
+    quad(V(ai,y1),V(ao,y1),V(bo,y1),V(bi,y1),cc);          // top
+    quad(V(ao,y0),V(bo,y0),V(bo,y1),V(ao,y1),cc);          // side
+    quad(V(bi,y0),V(ai,y0),V(ai,y1),V(bi,y1),cc);}         // side
+    if(!closed&&i===0)quad(V(ai,y0),V(ao,y0),V(ao,y1),V(ai,y1),cc);
+    if(!closed&&i===segs-1)quad(V(bo,y0),V(bi,y0),V(bi,y1),V(bo,y1),cc);}
+  // 繞向：法線取 (−dy, dx)，上表面朝上、兩側朝外、端蓋朝前後（已推導），不需要事後翻正
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colr,3));
+  g.computeVertexNormals();return g;}
+
+const solidParts=[],groundParts=[];   // 兩個合併 mesh：會投影的建物、只接受陰影的地面
+const lineSegs={pos:[],col:[]};
+function addLine(flatPts,y,hex,closed=false){col.set(hex);const n=flatPts.length/2;for(let i=0;i<(closed?n:n-1);i++){const j=(i+1)%n;
+  lineSegs.pos.push(flatPts[i*2],y,flatPts[i*2+1],flatPts[j*2],y,flatPts[j*2+1]);lineSegs.col.push(col.r,col.g,col.b,col.r,col.g,col.b);}}
+
+// 零件庫（每種幾何一個 InstancedMesh，setColorAt 上色）
+class Parts{constructor(geo,mat,{cast=true,receive=true}={}){this.geo=geo;this.mat=mat;this.items=[];this.cast=cast;this.receive=receive;}
+  add(m4,hex){this.items.push([m4.clone(),hex]);}
+  build(){const n=Math.max(1,this.items.length),m=new THREE.InstancedMesh(this.geo,this.mat,n);m.count=this.items.length;
+    this.items.forEach(([mm,h],i)=>{m.setMatrixAt(i,mm);m.setColorAt(i,col.set(h));});
+    if(m.instanceColor)m.instanceColor.needsUpdate=true;m.instanceMatrix.needsUpdate=true;m.castShadow=this.cast;m.receiveShadow=this.receive;m.frustumCulled=false;scene.add(m);this.mesh=m;return m;}}
+const clayMat=()=>new THREE.MeshStandardMaterial({roughness:.78,metalness:0});
+const _m4=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_v=new THREE.Vector3(),_s=new THREE.Vector3();
+function mat4(x,y,z,yaw=0,sx=1,sy=1,sz=1){_q.setFromEuler(_e.set(0,yaw,0));return _m4.compose(_v.set(x,y,z),_q,_s.set(sx,sy,sz));}
+// 平面線段 (a→b) 上放一個盒子：長 = |ab|，盒子本地 +x 沿 ab
+function boxAlong(parts,a,b,y0,y1,thick,hex,extra=0){const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);const yaw=-Math.atan2(dy,dx);
+  parts.add(mat4((a[0]+b[0])/2,(y0+y1)/2,(a[1]+b[1])/2,yaw,L+extra,y1-y0,thick),hex);}
+
+// =====================================================================
+// 6. 建場景
+// =====================================================================
+const built={};   // 給測試讀的建構結果
+function buildWorld(){
+  const boxParts=new Parts(new RoundedBoxGeometry(1,1,1,2,0.12),clayMat());
+  const cylParts=new Parts(new THREE.CylinderGeometry(1,1,1,12),clayMat());
+
+  // ---- 6.1 底座（微縮模型檯面）與巨蛋屋頂環 ----
+  const cx=(B.all[0]+B.all[2])/2,cz=(B.all[1]+B.all[3])/2;
+  let R=0;for(const f of [M.wall,M.b1Band,M.b2Band])for(const [x,y] of pairs(f))R=Math.max(R,Math.hypot(x-cx,y-cz));
+  const baseR=R+0.9;built.baseR=baseR;
+  const disc=[];for(let i=0;i<96;i++){const a=i/96*Math.PI*2;disc.push([cx+Math.cos(a)*baseR,cz+Math.sin(a)*baseR]);}
+  groundParts.push(slab(disc,-0.36,-0.04,C.wood));
+  groundParts.push(slab(disc.map(([x,y])=>[cx+(x-cx)*.997,cz+(y-cz)*.997]),-0.05,0,'#f2e6da'));
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(R+0.35,0.05,8,160),new THREE.MeshBasicMaterial({color:'#b9aea4',transparent:true,opacity:.28,depthWrite:false}));
+  ring.rotation.x=Math.PI/2;ring.position.set(cx,1.25,cz);scene.add(ring);
+  const ring2=new THREE.Mesh(new THREE.TorusGeometry(R+0.35,0.018,6,160),ring.material);ring2.rotation.x=Math.PI/2;ring2.position.set(cx,0.02,cz);scene.add(ring2);
+
+  // ---- 6.2 球場地面：草皮（牆內）、活動地墊（base.field[0]，cream 細格紋貼圖）、本壘端紅土示意 ----
+  const wallPts=pairs(M.wall);
+  groundParts.push(flat(wallPts,0.004,C.grass));
+  const fieldPts=pairs(M.base.field[0]);
+  const HOME=[Math.max(...fieldPts.map(p=>p[0])),0];  // 地墊東端尖點＝本壘位置（示意）
+  built.home=HOME;
+  buildMat(fieldPts,HOME);
+  // 本壘後方的紅土圓（在地墊外的草皮上）
+  const dirt=[];for(let i=0;i<40;i++){const a=i/40*Math.PI*2;dirt.push([HOME[0]+0.15+Math.cos(a)*0.62,Math.sin(a)*0.62]);}
+  groundParts.push(flat(dirt,0.006,'#dcae8c'));
+
+  // ---- 6.3 走道地面：B2 走廊、樓梯平台、沿牆通道、場內 westEdge 通道帶、西一入口門洞地面 ----
+  // B2 地面用稍冷的淺灰，和外圈暖色檯面分開；樓梯落地平台同色系略深
+  // B2 板只高 0.006：門洞地面（0.018）和它的邊緣立面拉開距離，避免 B2 外框線透過門洞地面閃爍
+  groundParts.push(slab(pairs(M.b2Band),0,0.006,'#e2dfd9'));
+  groundParts.push(slab(pairs(M.stairBand),0,0.014,'#d9d5ce'));
+  groundParts.push(flat(pairs(M.walkBand),0.016,C.brick));
+  groundParts.push(flat(pairs(M.laneBand),0.016,'#eadfd2'));
+  groundParts.push(flat(pairs(M.gate.band),0.018,'#d9c6ae'));   // 門洞地面：較深的地坪色，和牆頂黃色分開
+  // 門前隊伍六條導引線（前三條白、靠場側；後三條藍、靠外側），opacity .35
+  buildGateLanes();
+
+  // ---- 6.4 全壘打牆：沿 map.wall 擠出；外野段深綠＋頂緣黃；西一入口處挖開 ----
+  buildWall(wallPts,HOME);
+
+  // ---- 6.5 B1 外野看台（階梯）、走道、B1 走廊與短柱、樓梯 ----
+  buildStands(boxParts,cylParts);
+  buildStair();
+
+  // ---- 6.6 甲舞台 ----
+  buildStage();
+
+  // ---- 6.7 中央平台、法師區、場邊柱 ----
+  const L0=M.labels.find(l=>l.s==='中央平台'),LF=M.labels.find(l=>l.s==='法師區');   // 位置取自 map.labels
+  boxParts.add(mat4(L0.X,0.05,L0.Y,0,0.8,0.1,0.8),'#efe2d4');
+  boxParts.add(mat4(L0.X,0.12,L0.Y,0,0.3,0.06,0.3),C.yellow);
+  boxParts.add(mat4(LF.X,0.04,LF.Y,0,0.42,0.08,1.1),'#eadbc9');
+  for(const pl of M.pillars)cylParts.add(mat4(pl.X,0.2,pl.Y,0,pl.r*.7,0.4,pl.r*.7),'#d8cabd');
+
+  // ---- 6.8 淡線：場內座位格（base.rows）、中央平台圓環與通道弧線（base.mid）、法師區座位圓等（base.stage 其餘）、地墊外框 ----
+  for(const l of M.base.rows)addLine(l,0.013,'#d9c8b6');
+  for(const l of M.base.mid)addLine(l,0.013,'#cdb9a6');
+  for(const l of M.base.stage)if(!isWestStage(l))addLine(l,0.013,'#d6b49e');
+  addLine(M.base.field[1],0.013,'#d8c6b4',true);
+  // 第 4 階段（主持人裁決）：西班場內座位區鋪淡色區塊——每個 field 座位一格（格距 0.1316，方塊半寬 0.066，相鄰幾乎相接），
+  // 形狀照座位本身（不是凸包，不會蓋到 laneBand 通道），合併進地面 mesh（不加 draw call）
+  {const pos=[],h=0.0115,q=0.066;for(const p of P){const x=p.field.X,z=p.field.Y;pos.push(x-q,h,z-q,x-q,h,z+q,x+q,h,z+q,x-q,h,z-q,x+q,h,z+q,x+q,h,z-q);}
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();groundParts.push(tint(g,'#f0d9c3'));}
+
+  // ---- 6.9 場內其他班（data.others，3,679 位）：靜態，身體＋頭兩個零件，淡色，面向 DONE_FACING ----
+  buildOthers();
+  // ---- 6.10 本班 1,609 位小人（第 4 節） ----
+  buildPeople();
+
+  // ---- 合併 ----
+  const solid=new THREE.Mesh(BGU.mergeGeometries(solidParts,false),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.78}));
+  solid.castShadow=true;solid.receiveShadow=true;scene.add(solid);
+  const ground=new THREE.Mesh(BGU.mergeGeometries(groundParts,false),new THREE.MeshStandardMaterial({vertexColors:true,roughness:.78}));
+  ground.receiveShadow=true;scene.add(ground);
+  const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(lineSegs.pos,3));lg.setAttribute('color',new THREE.Float32BufferAttribute(lineSegs.col,3));
+  scene.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.8,depthWrite:false})));
+  boxParts.build();cylParts.build();
+  built.solidTris=solid.geometry.getAttribute('position').count/3;
+  buildLabels();
+}
+
+function isWestStage(l){let mx=-1e9;for(let i=0;i<l.length;i+=2)mx=Math.max(mx,l[i]);return mx<-4.5;}
+
+function buildMat(fieldPts,HOME){
+  const b=bounds(fieldPts,0),ppu=56,w=Math.ceil((b[2]-b[0])*ppu),h=Math.ceil((b[3]-b[1])*ppu);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');
+  const X=x=>(x-b[0])*ppu,Y=y=>(y-b[1])*ppu;
+  g.fillStyle='#fbf1e8';g.fillRect(0,0,w,h);
+  g.strokeStyle='rgba(176,150,128,.18)';g.lineWidth=1;
+  for(let x=Math.ceil(b[0]/.25)*.25;x<b[2];x+=.25){g.beginPath();g.moveTo(X(x),0);g.lineTo(X(x),h);g.stroke();}
+  for(let y=Math.ceil(b[1]/.25)*.25;y<b[3];y+=.25){g.beginPath();g.moveTo(0,Y(y));g.lineTo(w,Y(y));g.stroke();}
+  // 本壘端：淡淡的內野紅土扇形（±45°、半徑≈29 m）與壘包（間距 27.43 m）示意
+  const u=D.meta.mPerUnit,rFan=29/u,base=27.43/u;
+  g.save();g.globalAlpha=.32;g.fillStyle='#d79a72';g.beginPath();g.moveTo(X(HOME[0]),Y(0));g.arc(X(HOME[0]),Y(0),rFan*ppu,Math.PI-Math.PI/4,Math.PI+Math.PI/4);g.closePath();g.fill();g.restore();
+  g.save();g.globalAlpha=.55;g.fillStyle='#fffdf9';g.strokeStyle='#c98b66';g.lineWidth=1.5;
+  const bases=[[HOME[0],0],[HOME[0]-base*Math.SQRT1_2,base*Math.SQRT1_2],[HOME[0]-base*Math.SQRT2,0],[HOME[0]-base*Math.SQRT1_2,-base*Math.SQRT1_2]];
+  g.beginPath();bases.forEach((p,i)=>i?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1])));g.closePath();g.stroke();
+  for(const p of bases){g.save();g.translate(X(p[0]),Y(p[1]));g.rotate(Math.PI/4);g.fillRect(-.05*ppu,-.05*ppu,.1*ppu,.1*ppu);g.strokeRect(-.05*ppu,-.05*ppu,.1*ppu,.1*ppu);g.restore();}
+  g.restore();
+  const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+  const geo=flat(fieldPts,0.009,'#ffffff');geo.deleteAttribute('color');
+  const p=geo.getAttribute('position'),uv=new Float32Array(p.count*2);
+  for(let i=0;i<p.count;i++){uv[i*2]=(p.getX(i)-b[0])/(b[2]-b[0]);uv[i*2+1]=1-(p.getZ(i)-b[1])/(b[3]-b[1]);}
+  geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:tex,roughness:.78}));mesh.receiveShadow=true;scene.add(mesh);
+}
+
+// 門前隊伍：先鋪一塊略深的暖色地墊框出排隊空間（六條導引線的凸包外擴 0.09），
+// 再畫六條有寬度的貼地帶（opacity .35）；cream 三條先墊一圈較深的 stone 描邊，才看得出來。
+function buildGateLanes(){const pos=[],colr=[];
+  const all=M.gateLanes.flatMap(l=>pairs(l)),hull=convexHull(all),mat=offsetPoly(hull,0.09);
+  groundParts.push(flat(mat,0.0135,'#d3c2af'));built.queueMat=mat;
+  const strip=(pts,hw,y,hex)=>{col.set(hex);const n=pts.length,nm=[];
+    for(let i=0;i<n;i++){const pv=pts[Math.max(0,i-1)],nx=pts[Math.min(n-1,i+1)];let dx=nx[0]-pv[0],dy=nx[1]-pv[1];const L=Math.hypot(dx,dy)||1;nm.push([-dy/L*hw,dx/L*hw]);}
+    for(let i=0;i<n-1;i++){const a=pts[i],b=pts[i+1],na=nm[i],nb=nm[i+1];
+      const q=[[a[0]+na[0],y,a[1]+na[1]],[a[0]-na[0],y,a[1]-na[1]],[b[0]-nb[0],y,b[1]-nb[1]],[b[0]+nb[0],y,b[1]+nb[1]]];
+      for(const k of [0,2,1,0,3,2])pos.push(...q[k]),colr.push(col.r,col.g,col.b);}};
+  M.gateLanes.forEach((l,j)=>{const pts=pairs(l);if(j<3)strip(pts,0.024,0.019,'#8f7b6a');strip(pts,0.016,0.02,j<3?C.cream:C.blueCoat);});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colr,3));g.computeVertexNormals();
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.35,depthWrite:false,side:THREE.DoubleSide}));m.renderOrder=2;scene.add(m);built.gateLanes=M.gateLanes.length;}
+
+// 線段 (a,b) 與折線的交點參數
+function segPolyHit(a,b,pts,closed){let best=null;const n=pts.length;for(let i=0;i<(closed?n:n-1);i++){const c=pts[i],d=pts[(i+1)%n];
+  const r=[b[0]-a[0],b[1]-a[1]],s=[d[0]-c[0],d[1]-c[1]],den=r[0]*s[1]-r[1]*s[0];if(Math.abs(den)<1e-12)continue;
+  const t=((c[0]-a[0])*s[1]-(c[1]-a[1])*s[0])/den,u=((c[0]-a[0])*r[1]-(c[1]-a[1])*r[0])/den;if(t>=0&&t<=1&&u>=0&&u<=1&&(!best||t<best.t))best={t,i,u,p:[a[0]+r[0]*t,a[1]+r[1]*t]};}return best;}
+
+function buildWall(wallPts,HOME){
+  // 外野段：從本壘看出去 ±45° 之內（兩支界外標竿之間）
+  const outfield=p=>Math.abs(p[1])<=HOME[0]-p[0];
+  // 細分成 ≤0.08 的小段，挖掉落在西一入口門洞（gate.band）內的段
+  const band=pairs(M.gate.band),fine=[];
+  for(let i=0;i<wallPts.length;i++){const a=wallPts[i],b=wallPts[(i+1)%wallPts.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(L/0.08));
+    for(let k=0;k<n;k++)fine.push(lerp2(a,b,k/n));}
+  const keep=fine.map((p,i)=>{const q=fine[(i+1)%fine.length],m=lerp2(p,q,.5);return !pip(m[0],m[1],band);});
+  // 以第一個被挖掉的段為起點，把保留的段切成連續的 run（開放折線）
+  let start=keep.indexOf(false);const runs=[];
+  if(start<0){runs.push({pts:fine,closed:true});}
+  else{let cur=null;for(let k=1;k<=fine.length;k++){const i=(start+k)%fine.length;if(keep[i]){if(!cur){cur=[fine[i]];runs.push({pts:cur,closed:false});}cur.push(fine[(i+1)%fine.length]);}else cur=null;}}
+  built.wallRuns=runs.length;built.wallGap=start>=0;built.wallRunPts=runs.map(r=>({pts:r.pts,closed:r.closed}));
+  for(const r of runs){const segOut=i=>outfield(lerp2(r.pts[i],r.pts[(i+1)%r.pts.length],.5));
+    solidParts.push(aoGrad(ribbon(r.pts,r.closed,0.035,0,WALL_H,i=>segOut(i)?C.wall:'#7f978b'),0,WALL_H));
+    solidParts.push(ribbon(r.pts,r.closed,0.042,WALL_H,WALL_H+0.022,i=>segOut(i)?C.yellow:'#e9e1d6',0.012));}
+  // 門洞：兩側短牆（沿 band 長邊，從牆線到門框）＋ 4 扇門框（原座標，牆內約 0.39）
+  // 資料的路線（外側三條隊伍）在門框前就往南轉，從南側短牆的位置斜穿出去，也貼著門框柱走過。路線不能動，
+  // 所以落地的牆身與門柱只放在「和全部 path 線段保持肩寬＋牆半寬＋餘裕」的地方；其餘改成架在頭頂上的橫樑
+  // （下緣 GATE_BEAM_Y，高於小人 K=1 時的頭頂），頂緣黃條照舊連續，看起來仍是一個門洞。
+  const [b0,b1,b2,b3]=band;built.gateSolids=[];built.gateBeams=[];built.doorPostsOmitted=[];
+  for(const [o,i] of [[b0,b1],[b3,b2]]){const hit=segPolyHit(o,i,wallPts,true);const from=hit?hit.p:o;
+    built.gateDepth=(built.gateDepth||[]).concat(Math.hypot(i[0]-from[0],i[1]-from[1]));
+    // 短牆從主牆頂緣（半寬 0.042）外側接起，不和主牆／頂緣重疊（避免共面閃爍）；頂緣高度與主牆一致
+    const L=Math.hypot(i[0]-from[0],i[1]-from[1]),st=lerp2(from,i,Math.min(0.5,0.042/L)),s0=Math.min(0.5,0.034/L);
+    // 落地牆身能延伸到哪裡（二分搜尋；線段越長、離路線越近，單調）
+    const need=FIG_SHOULDER+0.037+GATE_MARGIN,ok=s=>pathClear(lerp2(from,i,s0),lerp2(from,i,s))>=need;
+    let sEnd;if(ok(1))sEnd=1;else if(!ok(s0+1e-4))sEnd=s0;else{let lo=s0,hi=1;for(let k=0;k<30;k++){const m=(lo+hi)/2;if(ok(m))lo=m;else hi=m;}sEnd=lo;}
+    const A=lerp2(from,i,s0),E=lerp2(from,i,sEnd);
+    if(sEnd>s0+0.02/L){solidParts.push(ribbon([A,E],false,0.03,0,WALL_H,()=>C.wall));built.gateSolids.push({a:A,b:E,hw:0.037,y0:0});}
+    if(sEnd<1){solidParts.push(ribbon([sEnd>s0+0.02/L?E:A,i],false,0.03,GATE_BEAM_Y,WALL_H,()=>C.wall));built.gateBeams.push({a:sEnd>s0+0.02/L?E:A,b:i,y0:GATE_BEAM_Y});}
+    solidParts.push(ribbon([st,i],false,0.037,WALL_H,WALL_H+0.022,()=>C.yellow,0.011));}
+  const doorParts=new Parts(new THREE.BoxGeometry(1,1,1),clayMat());
+  for(const d of M.gate.doors){const a=[d[0],d[1]],b=[d[2],d[3]];
+    for(const p of [a,b]){if(pathClear(p,p)>=FIG_SHOULDER+0.015*Math.SQRT2+GATE_MARGIN){doorParts.add(mat4(p[0],WALL_H*.5,p[1],0,0.03,WALL_H,0.03),C.coral);built.gateSolids.push({a:p,b:p,hw:0.015*Math.SQRT2,y0:0});}
+      else built.doorPostsOmitted.push(p);}
+    boxAlong(doorParts,a,b,WALL_H-0.03,WALL_H,0.03,C.coral,0.03);}
+  doorParts.build();built.doors=M.gate.doors.length;
+}
+// 全部 path 線段到平面線段 (a,b) 的最近距離（建場景時用；bbox 先篩）
+const FIG_SHOULDER=0.022,GATE_MARGIN=0.005,GATE_BEAM_Y=0.2;
+function segSegDist(p,q,a,b){const d1=[q[0]-p[0],q[1]-p[1]],d2=[b[0]-a[0],b[1]-a[1]],den=d1[0]*d2[1]-d1[1]*d2[0];
+  if(Math.abs(den)>1e-15){const t=((a[0]-p[0])*d2[1]-(a[1]-p[1])*d2[0])/den,u=((a[0]-p[0])*d1[1]-(a[1]-p[1])*d1[0])/den;if(t>=0&&t<=1&&u>=0&&u<=1)return 0;}
+  const ps=(x,s,e)=>{const dx=e[0]-s[0],dy=e[1]-s[1],L=dx*dx+dy*dy;let f=L?((x[0]-s[0])*dx+(x[1]-s[1])*dy)/L:0;f=Math.max(0,Math.min(1,f));return Math.hypot(x[0]-s[0]-dx*f,x[1]-s[1]-dy*f);};
+  return Math.min(ps(p,a,b),ps(q,a,b),ps(a,p,q),ps(b,p,q));}
+function pathClear(a,b,R=0.3){const x0=Math.min(a[0],b[0])-R,x1=Math.max(a[0],b[0])+R,y0=Math.min(a[1],b[1])-R,y1=Math.max(a[1],b[1])+R;let best=R;
+  for(const p of P){const q=p.path;for(let j=0;j<q.length-1;j++){const s=q[j],e=q[j+1];
+    if(Math.max(s[0],e[0])<x0||Math.min(s[0],e[0])>x1||Math.max(s[1],e[1])<y0||Math.min(s[1],e[1])>y1)continue;
+    const d=segSegDist(s,e,a,b);if(d<best)best=d;}}return best;}
+
+// ---- 看台：每區 poly = 前 7 點內弧（靠球場）＋ 後 7 點外弧（反向）；以 (u,v) 參數化 ----
+function standFrame(s){const pts=pairs(s.poly),I=pts.slice(0,7),O=pts.slice(7).reverse();return {sec:s.sec,I,O};}
+function uvPt(S,u,v){const k=Math.min(S.I.length-2,Math.floor(u)),f=u-k;return lerp2(lerp2(S.I[k],S.I[k+1],f),lerp2(S.O[k],S.O[k+1],f),v);}
+function invUV(S,x,y){let best=1e9,bu=0,bv=0;for(let u=0;u<=S.I.length-1+1e-9;u+=0.02){const k=Math.min(S.I.length-2,Math.floor(u)),f=u-k;
+  const i=lerp2(S.I[k],S.I[k+1],f),o=lerp2(S.O[k],S.O[k+1],f),dx=o[0]-i[0],dy=o[1]-i[1],L=dx*dx+dy*dy,v=((x-i[0])*dx+(y-i[1])*dy)/L,d=Math.abs((x-i[0])*dy-(y-i[1])*dx)/Math.sqrt(L);
+  if(d<best){best=d;bu=u;bv=v;}}return [bu,bv,best];}
+function buildStands(boxParts,cylParts){
+  const frames=M.stands.map(standFrame);built.stands={};
+  const seatsBySec={};for(const s of D.restSeats)(seatsBySec[s.sec]||(seatsBySec[s.sec]=[])).push(s);
+  const stepH={};   // sec → {bd:[v 邊界], h:[每排高度]}
+  for(const S of frames){const max=MAXPAI[S.sec],vs={};
+    for(const s of seatsBySec[S.sec]){const [,v]=invUV(S,s.X,s.Y);(vs[s.pai]||(vs[s.pai]=[])).push(v);s._v=v;}
+    const med=[];for(let pai=1;pai<=max;pai++){const a=(vs[pai]||[]).slice().sort((x,y)=>x-y);med[pai]=a.length?a[a.length>>1]:(pai-.5)/max;}
+    const bd=[0];for(let pai=1;pai<max;pai++)bd.push((med[pai]+med[pai+1])/2);bd.push(1);
+    const hs=[];for(let pai=1;pai<=max;pai++)hs.push(seatH(S.sec,pai));
+    stepH[S.sec]={bd,h:hs,med};
+    for(let k=0;k<max;k++){const v0=bd[k],v1=bd[k+1],poly=[];for(let u=0;u<=6;u++)poly.push(uvPt(S,u,v0));for(let u=6;u>=0;u--)poly.push(uvPt(S,u,v1));
+      solidParts.push(slab(poly,0,hs[k],k%2?'#cdbeb0':'#d6c8bb',[],0.006,'#ad9b8b'));}
+    built.stands[S.sec]={max,bd,med,h:hs};}
+  // 區與區之間的走道（階梯），高度取兩區同一 v 的較低者
+  const hAt=(sec,v)=>{const s=stepH[sec];for(let k=0;k<s.h.length;k++)if(v<=s.bd[k+1]+1e-9)return s.h[k];return H1;};
+  for(let i=0;i<frames.length-1;i++){const A=frames[i],Bf=frames[i+1],n=14;
+    for(let k=0;k<n;k++){const v0=k/n,v1=(k+1)/n,vm=(v0+v1)/2,h=Math.min(hAt(A.sec,vm),hAt(Bf.sec,vm));
+      const a0=uvPt(A,6,v0),a1=uvPt(A,6,v1),b0=uvPt(Bf,0,v0),b1=uvPt(Bf,0,v1);
+      solidParts.push(slab([a0,a1,b1,b0],0,h,'#cfc0b2',[],0.005,'#a89686'));}}
+  // 座椅：restSeats 每席一個小坐墊；藍椅、工作席、保留席用不同色
+  const seatParts=new Parts(new THREE.BoxGeometry(1,1,1),clayMat(),{cast:false});
+  for(const s of D.restSeats){const h=seatH(s.sec,s.pai),yaw=yawFromPlanDeg(s.theta+180);
+    const hex=s.reserved?'#e9b9a2':s.kind==='blue'?'#a9b6db':s.kind==='work'?'#e6d58f':'#efe6dc';
+    seatParts.add(mat4(s.X,h+0.01,s.Y,yaw,0.04,0.02,0.035),hex);}
+  seatParts.build();built.seats=D.restSeats.length;
+  // B1 走廊：b1Band 板（高 H1），前 28 點是靠看台的內緣，後 28 點是外緣
+  const band=pairs(M.b1Band),half=band.length/2,inner=band.slice(0,half),outer=band.slice(half).reverse();
+  // 走廊板：頂面略暖略亮、側面加深，外緣一條細 wood 收邊
+  solidParts.push(slab(band,H1-0.05,H1,'#e3d4c2',[],0.005,'#a99583'));   // 頂面正好 H1（主持人裁決 3）
+  solidParts.push(ribbon(outer,false,0.012,H1-0.05,H1+0.012,()=>C.wood));
+  // 看台外緣到走廊之間的平台（不蓋到看台座位）：內緣逐點往原點方向補到最近看台外弧
+  const outerArcs=frames.map(S=>S.O);const conc=[];
+  for(const p of inner){let d=1e9;for(const O of outerArcs)d=Math.min(d,polylineDist(p[0],p[1],O,false));
+    const r=Math.hypot(p[0],p[1]),off=d<0.9?clamp(d+0.02,0.03,0.6):0.03;conc.push([p[0]-p[0]/r*off,p[1]-p[1]/r*off]);}
+  solidParts.push(slab(inner.concat(conc.slice().reverse()),H1-0.06,H1,'#dccdbd',[],0.004,'#a99583'));
+  // 這條平台在看台南端（139 以南）外伸較寬：寬度 > 0.2 的地方，每隔約 0.45 在中線下補一根短柱
+  built.concColumns=0;{let accC=1e9;for(let i=0;i<inner.length;i++){const p=inner[i],q=conc[i],w=Math.hypot(p[0]-q[0],p[1]-q[1]);
+    if(i)accC+=Math.hypot(p[0]-inner[i-1][0],p[1]-inner[i-1][1]);
+    if(w>0.2&&accC>=0.45){const m=lerp2(p,q,.6);cylParts.add(mat4(m[0],(H1-0.06)/2,m[1],0,0.026,H1-0.06,0.026),'#bcaa9b');built.concColumns++;accC=0;}}}
+  // 走廊下的短柱（自己生成，不用 map.pillars）：沿 b1Corridor 每 0.9 一對
+  const cl=pairs(M.b1Corridor);let acc=0.45;built.b1Columns=0;
+  for(let i=0;i<cl.length-1;i++){const a=cl[i],b=cl[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    while(acc<=L){const p=lerp2(a,b,acc/L),nx=-(b[1]-a[1])/L,ny=(b[0]-a[0])/L;
+      for(const s of [-0.13,0.13])cylParts.add(mat4(p[0]+nx*s,(H1-0.05)/2,p[1]+ny*s,0,0.03,H1-0.05,0.03),'#bcaa9b');built.b1Columns+=2;acc+=0.9;}
+    acc-=L;}
+  // 主持人裁決（第 1 階段 5）：走廊東端（145 區北端）斜切的板角懸空 → 在端面兩個角與中點下補短柱（往板內縮 0.07）
+  {const ends=[inner[0],outer[0]],c0=lerp2(inner[0],outer[0],.5),nx=inner[1][0]-inner[0][0],ny=inner[1][1]-inner[0][1],nl=Math.hypot(nx,ny)||1;
+   for(const q of [...ends.map(e=>lerp2(e,c0,0.25)),c0])cylParts.add(mat4(q[0]+nx/nl*0.07,(H1-0.05)/2,q[1]+ny/nl*0.07,0,0.03,H1-0.05,0.03),'#bcaa9b');built.b1EndColumns=3;}
+  built.stepH=stepH;
+}
+
+// ---- 樓梯：map.stairTreads 的踏階；A 路（東半）與 B 路（西半）各自的下降剖面 ----
+function buildStair(){
+  const tr=M.stairTreads.map(l=>l[1]),xW=M.stairTreads[0][0],xE=M.stairTreads[0][2],xMid=(xW+xE)/2;
+  // 由資料推得每一路樓梯起點與轉角的 Y（第一位 A／B 路的人）
+  const prof={};for(const L of ['A','B']){const i=P.findIndex(p=>p.lane===L),h=HT[i],a=P[i].path;prof[L]={y0:a[h.k][1],y1:a[h.kEnd][1],x:a[h.k][0]};}
+  built.stairProfile=prof;built.treadTops={};built.stairXMid=xMid;
+  const hLane=(L,y)=>clamp(H1*(prof[L].y1-y)/(prof[L].y1-prof[L].y0),0,H1);
+  const pitch=(tr[tr.length-1]-tr[0])/(tr.length-1);
+  for(const L of ['A','B']){const xs=prof[L].x>xMid?[xMid,xE]:[xW,xMid];const ys=tr.slice();
+    while(ys[ys.length-1]+pitch<prof[L].y1+1e-9)ys.push(ys[ys.length-1]+pitch);   // B 路下到 Y 0.571：照同一踏距補踏階
+    let prev=N.STAIR_TOP.Y;built['treads'+L]=ys.length;const list=built.treadTops[L]=[];
+    // 踏階頂＝該踏階中點的「腳底高度」（線性高度＋FOOT_LIFT）：腳底與踏階頂的差落在 ±半級（原本取下坡端，人永遠浮在踏階上 0–1 級）
+    for(const y of ys){const hm=hLane(L,(prev+y)/2),h=hm+FOOT_LIFT*(1-hm/H1);if(hm<=0.004){prev=y;continue;}list.push([prev,y,h]);
+      // 踏階：圓角盒，頂面亮、立面暗（明度差讓踏階讀得出來）
+      const g=new RoundedBoxGeometry(xs[1]-xs[0]-0.006,h,y-prev+0.004,1,0.006);g.translate((xs[0]+xs[1])/2,h/2,(prev+y)/2);
+      solidParts.push(sideTint(tint(g,'#e6dbcf'),'#9f8d7d'));prev=y;}}
+}
+
+// ---- 甲舞台：base.stage 中 X < −4.5 的 322 個框 → 面域 → 避開通道 → 拉伸成平台 ----
+function buildStage(){
+  const st=M.base.stage.filter(isWestStage);built.stageCount=st.length;
+  const RES=0.025,GROW=0.15;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const l of st)for(let i=0;i<l.length;i+=2){x0=Math.min(x0,l[i]);x1=Math.max(x1,l[i]);y0=Math.min(y0,-Math.abs(l[i+1]));y1=Math.max(y1,Math.abs(l[i+1]));}
+  x0-=.6;y0-=.6;x1+=.6;y1+=.6;const W=Math.ceil((x1-x0)/RES)+1,H=Math.ceil((y1-y0)/RES)+1,NN=W*H;
+  const gi=x=>Math.round((x-x0)/RES),gj=y=>Math.round((y-y0)/RES);
+  const rast=(arr,ax,ay,bx,by)=>{const L=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.ceil(L/(RES*.5)));for(let k=0;k<=n;k++){const i=gi(ax+(bx-ax)*k/n),j=gj(ay+(by-ay)*k/n);if(i>=0&&j>=0&&i<W&&j<H)arr[j*W+i]=1;}};
+  // (1) 線稿：base.stage 是 CAD 線（多數是開放折線，不是封閉框），北翼外緣缺線 → 用 Y 鏡射補齊（舞台南北對稱）
+  const seed=new Uint8Array(NN);
+  for(const l of st)for(let i=0;i+3<l.length;i+=2){rast(seed,l[i],l[i+1],l[i+2],l[i+3]);rast(seed,l[i],-l[i+1],l[i+2],-l[i+3]);}
+  // (2) 形態學閉合：線稿膨脹 GROW → 由外框灌水找外部 → 外部再膨脹回來（不是凸包）
+  const d1=dt(seed,W,H),dil=new Uint8Array(NN);for(let k=0;k<NN;k++)dil[k]=d1[k]<=GROW/RES?1:0;
+  const ext=new Uint8Array(NN),q=[];const push=k=>{if(!ext[k]&&!dil[k]){ext[k]=1;q.push(k);}};
+  for(let i=0;i<W;i++){push(i);push((H-1)*W+i);}for(let j=0;j<H;j++){push(j*W);push(j*W+W-1);}
+  while(q.length){const k=q.pop(),i=k%W;if(i>0)push(k-1);if(i<W-1)push(k+1);if(k>=W)push(k-W);if(k<NN-W)push(k+W);}
+  const d2=dt(ext,W,H),mask=new Uint8Array(NN);for(let k=0;k<NN;k++)mask[k]=d2[k]>(GROW+0.02)/RES?1:0;
+  // (3) 避開 walkBand、laneBand、westEdge（≥ STAGE_CLEAR＋格點誤差），以及全部人的 path 與其他班位置
+  const avoid=new Uint8Array(NN);
+  for(const f of [M.walkBand,M.laneBand]){const pts=pairs(f),bb=bounds(pts,0);
+    for(let j=Math.max(0,gj(bb[1])-1);j<=Math.min(H-1,gj(bb[3])+1);j++)for(let i=Math.max(0,gi(bb[0])-1);i<=Math.min(W-1,gi(bb[2])+1);i++)if(pip(x0+i*RES,y0+j*RES,pts))avoid[j*W+i]=1;
+    for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];rast(avoid,a[0],a[1],b[0],b[1]);}}
+  {const w=pairs(M.westEdge);for(let i=0;i<w.length-1;i++)rast(avoid,w[i][0],w[i][1],w[i+1][0],w[i+1][1]);}
+  const walk=new Uint8Array(NN);const inG=(x,y)=>x>x0&&x<x1&&y>y0&&y<y1;
+  for(const p of P){const a=p.path;for(let i=0;i<a.length;i++){if(inG(a[i][0],a[i][1])||(i&&inG(a[i-1][0],a[i-1][1])))i?rast(walk,a[i-1][0],a[i-1][1],a[i][0],a[i][1]):rast(walk,a[i][0],a[i][1],a[i][0],a[i][1]);}}
+  for(const o of D.others)if(inG(o.X,o.Y))rast(walk,o.X,o.Y,o.X,o.Y);
+  const da=dt(avoid,W,H),dw=dt(walk,W,H);
+  // 多留 SMOOTH_M 的餘量：之後的 Chaikin 平滑在凹角會往外補一點，不能因此吃進緩衝區
+  const SMOOTH_M=0.05;
+  for(let k=0;k<NN;k++)if(da[k]<=(STAGE_CLEAR+0.05+SMOOTH_M)/RES||dw[k]<=(0.1+SMOOTH_M)/RES)mask[k]=0;
+  for(let i=0;i<W;i++){mask[i]=0;mask[(H-1)*W+i]=0;}for(let j=0;j<H;j++){mask[j*W]=0;mask[j*W+W-1]=0;}
+  // (3b) playground #23：東側階梯（STAIR，第 3.2 節）另外照線稿做成一階一階的踏面（見 (5b)），台面扣掉整個階梯帶 Ω。
+  //      Ω 內不再挖路線：資料讓靠舞台的兩路走上 1–3 階，踏面照線稿畫、不挖；Ω 以外的台面照舊挖讓路線與通道（上面的 da／dw）。
+  if(STAIR.N>1){const O=STAIR.omega,ob=bounds(O,0);
+    for(let j=Math.max(0,gj(ob[1])-1);j<=Math.min(H-1,gj(ob[3])+1);j++)for(let i=Math.max(0,gi(ob[0])-1);i<=Math.min(W-1,gi(ob[2])+1);i++)if(pip(x0+i*RES,y0+j*RES,O))mask[j*W+i]=0;}
+  // (4) 等值線（marching squares）→ 先粗簡化去掉格點鋸齒 → Chaikin 平滑 3 次 → 再簡化 → 外框／洞
+  const loops=marching(mask,W,H).map(L=>L.map(([i,j])=>[x0+i*RES,y0+j*RES])).map(L=>rdpClosed(chaikin(rdpClosed(L,0.03),3),0.004)).filter(L=>Math.abs(polyArea(L))>0.02);
+  // (4b) 台面靠階梯那一邊貼齊第 N 條階梯線（格點＋平滑的誤差約 ±0.02，會蓋住或露出最上一階）：Y 在第 N 條線範圍內、X 離它 −0.035…+0.05 的頂點移到線上
+  let snapped=0;if(STAIR.N>1){const cN=STAIR.chains[STAIR.N-1];for(const L of loops)for(const v of L)if(v[1]>=cN.y0&&v[1]<cN.y1){const xn=STAIR.xAt(cN,v[1]);if(v[0]>xn-0.035&&v[0]<xn+0.05){v[0]=xn;snapped++;}}}
+  built.stageSnapped=snapped;
+  const depth=loops.map((L,i)=>loops.reduce((n,M2,j)=>n+(j!==i&&pip(L[0][0],L[0][1],M2)?1:0),0));
+  const shapes=[];loops.forEach((L,i)=>{if(depth[i]%2===0)shapes.push({outer:L,holes:[],area:Math.abs(polyArea(L))});});
+  loops.forEach((L,i)=>{if(depth[i]%2===1){let best=null;for(const s of shapes)if(pip(L[0][0],L[0][1],s.outer)&&(!best||s.area<best.area))best=s;if(best)best.holes.push(L);}});
+  built.stageLoops=shapes.map(s=>({outer:s.outer,holes:s.holes}));
+  built.stageArea=shapes.reduce((a,s)=>a+s.area-s.holes.reduce((b,h)=>b+Math.abs(polyArea(h)),0),0);
+  for(const s of shapes)solidParts.push(slab(s.outer,0,STAGE_H,'#f3cdb8',s.holes,0.012));
+  // (5b) 東側階梯的踏面：第 k 階（k＝1..N−1）是第 k、k+1 條階梯線之間的帶，頂面高 STAIR.top(k)（往西一階高一級，第 N 條線以西是台面）。
+  //      頂面深淺交替、立面較深，踏階讀得出來；立面只露出一級的高度（東邊低一級的踏面擋住下面）
+  built.stageTreads=[];
+  for(const T of STAIR.treads){solidParts.push(slab(T.poly,0,T.top,T.k%2?'#f6d8c6':'#efc8b1',[],0,'#c48d72'));built.stageTreads.push({k:T.k,top:+T.top.toFixed(5),poly:T.poly});}
+  built.stair={N:STAIR.N,rise:+STAIR.rise.toFixed(5),box:STAIR.box.map(v=>+v.toFixed(3))};
+  // 舞台線稿：階梯線畫在它西側那一階的頂面邊緣（第 N 條＝台面）；南端連接兩條階梯線的短邊畫在那一階的頂面；
+  // 其餘：兩端與中點都在平台內 → 畫在台面上；其他（含西緣的小格框）畫成地面淡線，讓輪廓仍和平面圖一致
+  const kp=q=>q[0].toFixed(4)+','+q[1].toFixed(4),lineK=new Map();
+  STAIR.pl.forEach((a,i)=>{const k=STAIR.member.get(i);if(k){lineK.set(a.map(kp).join(';'),k);lineK.set(a.slice().reverse().map(kp).join(';'),k);}});
+  const endK=new Map();STAIR.chains.forEach((c,i)=>endK.set(kp(c.pts[c.pts.length-1]),i+1));
+  const inStage=(x,y)=>shapes.some(s=>pip(x,y,s.outer)&&!s.holes.some(h=>pip(x,y,h)));let onTop=0,onGround=0,onStep=0;
+  for(const l of st){const a0=pairs(l),k=lineK.get(a0.map(kp).join(';')),ka=endK.get(kp(a0[0])),kb=endK.get(kp(a0[a0.length-1]));
+    if(k){addLine(l,STAIR.top(k)+0.003,'#d99a7b');onStep++;continue;}
+    if(ka&&kb&&Math.abs(ka-kb)===1){addLine(l,STAIR.top(Math.min(ka,kb))+0.003,'#d99a7b');onStep++;continue;}
+    for(let i=0;i+3<l.length;i+=2){const a=[l[i],l[i+1]],b=[l[i+2],l[i+3]],m=lerp2(a,b,.5);
+    if(inStage(...a)&&inStage(...b)&&inStage(...m)){addLine([...a,...b],STAGE_H+0.003,'#d99a7b');onTop++;}else{addLine([...a,...b],0.013,'#d6b49e');onGround++;}}}
+  built.stageLines={onTop,onGround,onStep};
+  // 背板：平台外框中「背對球場、朝外野牆」的邊，立一排半透明低矮背板（高 0.3）
+  const panelMat=new THREE.MeshStandardMaterial({color:C.glass,roughness:.78,transparent:true,opacity:.42,depthWrite:false});
+  const panels=new Parts(new THREE.BoxGeometry(1,1,1),panelMat,{cast:false,receive:false});
+  // 先挑出朝外野牆的邊，再把相隔 < 0.3（沿輪廓弧長）的段接起來、丟掉總長 < 0.2 的零碎段，避免斷成好幾截
+  built.backRuns=[];
+  for(const s of shapes){const L=s.outer,n=L.length,len=[],sel=[];
+    for(let i=0;i<n;i++){const a=L[i],b=L[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);len.push(l);if(l<1e-6){sel.push(null);continue;}
+      const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];let nn=[dy/l,-dx/l];if(pip(m[0]+nn[0]*0.02,m[1]+nn[1]*0.02,L))nn=[-nn[0],-nn[1]];
+      const r=Math.hypot(m[0],m[1]);sel.push((nn[0]*m[0]+nn[1]*m[1])/r>=0.6);}
+    for(let i=0;i<n;i++)if(sel[i]===null)sel[i]=sel[(i-1+n)%n]||false;
+    if(sel.every(Boolean)||!sel.some(Boolean))continue;
+    // 依迴圈找連續段（從一個未選的邊之後開始）
+    const s0=sel.indexOf(false),runs=[];let cur=null;
+    for(let k=1;k<=n;k++){const i=(s0+k)%n;if(sel[i]){if(!cur){cur={i0:i,edges:[]};runs.push(cur);}cur.edges.push(i);}else cur=null;}
+    // 接起小缺口
+    for(let r=0;r<runs.length-1;){const A=runs[r],Bn=runs[r+1],gap=[];for(let i=(A.edges[A.edges.length-1]+1)%n;i!==Bn.edges[0];i=(i+1)%n)gap.push(i);
+      if(gap.reduce((t,i)=>t+len[i],0)<0.3){A.edges.push(...gap,...Bn.edges);runs.splice(r+1,1);}else r++;}
+    for(const R of runs){const tot=R.edges.reduce((t,i)=>t+len[i],0);if(tot<0.2)continue;built.backRuns.push(+tot.toFixed(3));
+      for(const i of R.edges){const a=L[i],b=L[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1],l=len[i];if(l<0.005)continue;
+        const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];let nn=[dy/l,-dx/l];if(pip(m[0]+nn[0]*0.02,m[1]+nn[1]*0.02,L))nn=[-nn[0],-nn[1]];
+        const inset=0.03;boxAlong(panels,[a[0]-nn[0]*inset,a[1]-nn[1]*inset],[b[0]-nn[0]*inset,b[1]-nn[1]*inset],STAGE_H,STAGE_H+0.3,0.018,C.glass,0.01);}}}
+  panels.build();panels.mesh.renderOrder=3;built.backPanels=panels.items.length;built.backboardMat=panelMat;built.backboardOpacity=panelMat.opacity;
+  built.stageMask={W,H,x0,y0,RES};
+}
+// 兩趟 chamfer 距離轉換（格點單位）
+function dt(src,W,H){const NN=W*H,d=new Float32Array(NN);for(let k=0;k<NN;k++)d[k]=src[k]?0:1e9;
+  const nb=[[-1,0,1],[0,-1,1],[-1,-1,1.4142],[1,-1,1.4142],[-2,-1,2.2361],[-1,-2,2.2361],[1,-2,2.2361],[2,-1,2.2361]];
+  for(let j=0;j<H;j++)for(let i=0;i<W;i++){let v=d[j*W+i];if(v===0)continue;for(const [di,dj,c] of nb){const a=i+di,b=j+dj;if(a<0||b<0||a>=W||b>=H)continue;const w=d[b*W+a]+c;if(w<v)v=w;}d[j*W+i]=v;}
+  for(let j=H-1;j>=0;j--)for(let i=W-1;i>=0;i--){let v=d[j*W+i];if(v===0)continue;for(const [di,dj,c] of nb){const a=i-di,b=j-dj;if(a<0||b<0||a>=W||b>=H)continue;const w=d[b*W+a]+c;if(w<v)v=w;}d[j*W+i]=v;}
+  return d;}
+// marching squares（二值格點，邊中點），回傳封閉迴圈（格點座標）
+function marching(v,W,H){const adj=new Map();const link=(a,b)=>{(adj.get(a)||adj.set(a,[]).get(a)).push(b);(adj.get(b)||adj.set(b,[]).get(b)).push(a);};
+  for(let j=0;j<H-1;j++)for(let i=0;i<W-1;i++){const tl=v[j*W+i],tr=v[j*W+i+1],br=v[(j+1)*W+i+1],bl=v[(j+1)*W+i],c=tl*8+tr*4+br*2+bl;if(c===0||c===15)continue;
+    const T=(j*W+i)*2,Bm=((j+1)*W+i)*2,Lf=(j*W+i)*2+1,Rt=(j*W+i+1)*2+1;
+    switch(c){case 1:case 14:link(Lf,Bm);break;case 2:case 13:link(Bm,Rt);break;case 3:case 12:link(Lf,Rt);break;case 4:case 11:link(T,Rt);break;
+      case 6:case 9:link(T,Bm);break;case 7:case 8:link(Lf,T);break;case 5:link(T,Rt);link(Lf,Bm);break;case 10:link(Lf,T);link(Bm,Rt);break;}}
+  const pt=id=>{const base=id>>1,i=base%W,j=(base-i)/W;return (id&1)?[i,j+.5]:[i+.5,j];};
+  const seen=new Set(),loops=[];
+  for(const s of adj.keys()){if(seen.has(s))continue;const L=[];let prev=-1,cur=s;
+    while(cur!==undefined&&!seen.has(cur)){seen.add(cur);L.push(pt(cur));const nb=adj.get(cur);const nx=nb[0]!==prev?nb[0]:nb[1];prev=cur;cur=nx;}
+    if(L.length>2)loops.push(L);}
+  return loops;}
+
+// ---- 人形（第 1 階段簡化：身體＋頭；第 2 階段換成完整 chibi） ----
+function buildOthers(){
+  const body=new THREE.CylinderGeometry(0.019,0.022,0.082,7,1),head=new THREE.IcosahedronGeometry(0.028,1);   // 淡色背景人：低面數
+  const ob=new Parts(body,clayMat(),{cast:false}),oh=new Parts(head,clayMat(),{cast:false});
+  const rnd=mulberry32(20261023),yaw=yawFromPlanDeg(DONE_FACING);
+  for(const o of D.others){const s=1+(rnd()*2-1)*0.03;ob.add(mat4(o.X,0.05*s,o.Y,yaw,1,s,1),'#ddd5cd');oh.add(mat4(o.X,0.112*s,o.Y,yaw,1,1,1),'#efe5dc');}
+  ob.build();oh.build();built.others=D.others.length;}
+// ---- 本班 1,609 位小人（第 4 節）：大頭 chibi，每種零件一個 InstancedMesh（DynamicDrawUsage、frustumCulled=false） ----
+// 尺寸（world 單位）：總高 0.14、頭高 0.056（40%）、肩寬 0.044（≤ 0.045）。站姿腳底在本地 y=0、臉朝本地 +z。
+const FIG={legL:0.044,legR:0.0066,hipX:0.0076,bodyR:0.0145,bodyLen:0.026,bodyY:0.066,armR:0.0045,armL:0.033,armX:0.0175,shoulderY:0.087,
+  headR:0.028,headY:0.112,headSX:0.80,headSZ:0.9,bandY:0.071,bandH:0.015,shadowR:0.03,seatHip:0.022};
+// 大隊 1–9 粉彩（身上色帶）：單一來源是 :root 的 --dadui-1…9；讀不到時用同值備援
+const DADUI_COLORS=(()=>{const fb=['#f19a9a','#f5b77c','#eedc6e','#a9d37f','#7fcdb8','#86bde6','#a3a2e6','#cf9be0','#f09cc4'];
+  try{const cs=getComputedStyle(document.documentElement);return fb.map((c,k)=>cs.getPropertyValue('--dadui-'+(k+1)).trim()||c);}catch(e){return fb;}})();
+const HAIR=['#3b2a22','#4a3428','#2c2320','#5e4130','#6b5045','#82603f'];
+const SKIN=['#f4d9c4','#efcfb5','#e9c6a8','#f6dfcd'];
+const PANTS='#5d524c';
+const GAIT_HZ=2.0,PH_MAX=0.8,YAW_MAX=deg(12),DT_DIR=0.05;
+const ST_CODE={seated:0,walk:1,wait:2,enter:3,done:4};
+const people={};   // meshes 與每人狀態陣列
+function buildPeople(){
+  const n=P.length,mk=(geo,mat,name)=>{const m=new THREE.InstancedMesh(geo,mat,n);m.name='fig-'+name;m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);m.frustumCulled=false;m.castShadow=false;m.receiveShadow=false;scene.add(m);return m;};
+  const mat=()=>new THREE.MeshStandardMaterial({roughness:.78,metalness:0});
+  // 幾何：腿與手臂的原點在髖／肩（往下長），之後只要繞本地 x 轉就是擺動
+  const leg=new THREE.CylinderGeometry(FIG.legR*0.92,FIG.legR,FIG.legL,6,1);leg.translate(0,-FIG.legL/2,0);
+  const arm=new THREE.CylinderGeometry(FIG.armR,FIG.armR*0.9,FIG.armL,5,1);arm.translate(0,-FIG.armL/2,0);
+  const body=new THREE.CapsuleGeometry(FIG.bodyR,FIG.bodyLen,2,7);
+  const head=new THREE.SphereGeometry(FIG.headR,9,7);head.scale(FIG.headSX,1,FIG.headSZ);
+  // 髮殼：上半球（稍大一圈），往後偏一點，留出臉
+  const hair=new THREE.SphereGeometry(FIG.headR*1.07,9,4,0,Math.PI*2,0,Math.PI*0.52);hair.scale(FIG.headSX,1,FIG.headSZ);hair.rotateX(-0.28);hair.translate(0,0.002,-0.003);
+  const band=new THREE.CylinderGeometry(FIG.bodyR+0.0022,FIG.bodyR+0.0022,FIG.bandH,10,1,true);
+  const shadow=new THREE.CircleGeometry(FIG.shadowR,10);shadow.rotateX(-Math.PI/2);
+  const shadowMat=new THREE.MeshBasicMaterial({color:0x2a201b,transparent:true,opacity:.22,depthWrite:false});
+  const bandMat=mat();bandMat.side=THREE.DoubleSide;
+  Object.assign(people,{
+    legL:mk(leg,mat(),'legL'),legR:mk(leg,mat(),'legR'),armL:mk(arm,mat(),'armL'),armR:mk(arm,mat(),'armR'),
+    body:mk(body,mat(),'body'),band:mk(band,bandMat,'band'),head:mk(head,mat(),'head'),hair:mk(hair,mat(),'hair'),shadow:mk(shadow,shadowMat,'shadow')});
+  people.shadow.renderOrder=1;
+  people.arrs={};for(const k of ['legL','legR','armL','armR','body','band','head','hair','shadow'])people.arrs[k]=people[k].instanceMatrix.array;
+  people.st=new Uint8Array(n).fill(255);people.yaw=new Float32Array(n);people.ph=new Float32Array(n);people.gait=new Float32Array(n);
+  people.sz=new Float32Array(n);people.settle=new Uint8Array(n);people.K=-1;
+  people.px=new Float32Array(n);people.pz=new Float32Array(n);people.h=new Float32Array(n);people.gr=new Uint8Array(n);   // 最後寫入的平面位置與高度（絲帶、點選、跟隨共用，不重算 pos）
+  people.seatYaw=new Float32Array(n);people.doneYaw=yawFromPlanDeg(DONE_FACING);
+  const rnd=mulberry32(1609);   // 只用在外觀：髮色、膚色、身高 ±3%（不影響位置）
+  P.forEach((p,i)=>{people.sz[i]=1+(rnd()*2-1)*0.03;const hair=HAIR[Math.floor(rnd()*HAIR.length)],skin=SKIN[Math.floor(rnd()*SKIN.length)];
+    const coat=p.costume==='白'?C.cream:C.blueCoat,dd=DADUI_COLORS[(p.dadui-1)%9];
+    people.legL.setColorAt(i,col.set(PANTS));people.legR.setColorAt(i,col);
+    people.armL.setColorAt(i,col.set(coat));people.armR.setColorAt(i,col);people.body.setColorAt(i,col);
+    people.band.setColorAt(i,col.set(dd));people.head.setColorAt(i,col.set(skin));people.hair.setColorAt(i,col.set(hair));
+    people.seatYaw[i]=yawFromPlanDeg(seatTheta(p)+180);   // restSeats.theta 朝外 → 面向 theta+180°（朝球場）
+    people.yaw[i]=people.seatYaw[i];people.ph[i]=(i*0.7)%(Math.PI*2);});
+  for(const k of ['legL','legR','armL','armR','body','band','head','hair'])people[k].instanceColor.needsUpdate=true;
+  // 原色備份（跟隨時同列混 coral、其他人淡化，解除時還原）
+  people.baseCol={};for(const k of TINT_PARTS)people.baseCol[k]=Float32Array.from(people[k].instanceColor.array);
+  built.peopleParts=9;}
+// 寫一個零件的 instance 矩陣：T(P)·Ry(yaw)·S(1,K,1)·T(l)·Rx(θ)（手算，免配置）
+function wPart(arr,o,px,py,pz,ca,sa,K,lx,ly,lz,th){const ct=Math.cos(th),st=Math.sin(th);
+  arr[o]=ca;arr[o+1]=0;arr[o+2]=-sa;arr[o+3]=0;
+  arr[o+4]=st*sa;arr[o+5]=K*ct;arr[o+6]=st*ca;arr[o+7]=0;
+  arr[o+8]=ct*sa;arr[o+9]=-K*st;arr[o+10]=ct*ca;arr[o+11]=0;
+  arr[o+12]=lx*ca+lz*sa+px;arr[o+13]=K*ly+py;arr[o+14]=-lx*sa+lz*ca+pz;arr[o+15]=1;}
+// 樓梯上的人：假影子貼在腳下那一級踏階的頂面（只影響影子的 y；位置、高度不變）。不在踏階上時回傳 -1
+function treadTopAt(x,y){const L=x>built.stairXMid?(built.stairProfile.A.x>built.stairXMid?'A':'B'):(built.stairProfile.A.x>built.stairXMid?'B':'A'),a=built.treadTops[L];
+  for(let j=0;j<a.length;j++)if(y>a[j][0]&&y<=a[j][1])return a[j][2];return -1;}
+// 某人在 t 之前最後一段有位移的 path 方向（只在 seek 定格且當下站住時用，代替「上一幀的 yaw」）
+function lastDirYaw(p,t){const a=p.path;let lo=0,hi=a.length-1;if(t<=a[0][2])hi=1;else if(t>=a[hi][2])lo=hi-1;else while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}
+  for(let j=lo;j>=0;j--){const dx=a[j+1][0]-a[j][0],dy=a[j+1][1]-a[j][1];if(Math.hypot(dx,dy)>1e-4)return Math.atan2(dx,dy);}
+  for(let j=lo;j<a.length-1;j++){const dx=a[j+1][0]-a[j][0],dy=a[j+1][1]-a[j][1];if(Math.hypot(dx,dy)>1e-4)return Math.atan2(dx,dy);}return 0;}
+const wrapPi=a=>{a=(a+Math.PI)%(Math.PI*2);if(a<0)a+=Math.PI*2;return a-Math.PI;};
+function zoomK(){if(activeCam!==camera)return people.K>0?people.K:1;const d=camera.position.distanceTo(controls.target);return Math.round(clamp(d/14,1,2.2)*50)/50;}
+// 更新小人。dtAnim＝動畫時間增量（播放時）；snap＝定格（seek、拖曳進度條）：朝向直接到位、全部重寫。
+// 每幀只寫 walk／wait／enter 的人；seated、done 只在狀態改變（或鏡頭距離改變高度倍率）時寫一次。
+function updatePeople(t,dtAnim,snap){const n=P.length,K=zoomK(),kChanged=K!==people.K;people.K=K;
+  const pm=people,arrs=pm.arrs;   // 各零件的 instanceMatrix.array（buildPeople 建一次，每幀不配置）
+  let wrote=0,settling=0;const spd=D.meta.speedUnitPerSec;
+  for(let i=0;i<n;i++){const p=P[i],sc=ST_CODE[state(p,t)],prev=pm.st[i];
+    const moving=sc===1||sc===2||sc===3;
+    if(!moving&&!snap&&!kChanged&&sc===prev&&!pm.settle[i])continue;
+    pm.st[i]=sc;wrote++;
+    const xy=pos(p,t);let px=xy[0],pz=xy[1],h=heightAt(i,t,xy),gait=0,yaw=pm.yaw[i],seatedPose=false;
+    if(sc===0){yaw=pm.seatYaw[i];seatedPose=true;pm.settle[i]=0;}
+    else if(sc===4){const tgt=pm.doneYaw;   // 入座後面向 DONE_FACING（甲舞台）；從行走轉過去時也限速 12°/幀
+      if(snap||prev===255){yaw=tgt;pm.settle[i]=0;}else{const d=wrapPi(tgt-yaw);yaw+=clamp(d,-YAW_MAX,YAW_MAX);pm.settle[i]=Math.abs(d)>YAW_MAX?1:0;if(pm.settle[i])settling++;}}
+    else{const a=pos(p,t+DT_DIR),b=pos(p,t-DT_DIR),dx=a[0]-b[0],dz=a[1]-b[1],dist=Math.hypot(dx,dz);
+      gait=clamp(dist/(2*DT_DIR)/spd,0,1);
+      if(dist>=1e-4){const tgt=Math.atan2(dx,dz);if(snap||prev===255)yaw=tgt;else yaw+=clamp(wrapPi(tgt-yaw),-YAW_MAX,YAW_MAX);}
+      else if(snap||prev===255)yaw=lastDirYaw(p,t);   // 站住：保留上一個 yaw；定格時沒有「上一個」，用最後一段位移方向
+      pm.settle[i]=0;}
+    yaw=wrapPi(yaw);pm.yaw[i]=yaw;pm.gait[i]=gait;pm.px[i]=px;pm.pz[i]=pz;pm.h[i]=h;
+    const gr=sc!==0&&t>=HT[i].tE;pm.gr[i]=gr?1:0;   // 下樓之後（地面層）：h 是舞台階梯的階高（不在階梯上是 0）
+    // 步伐相位：依動畫時間推進，每幀增量上限 0.8 rad；定格時給確定的相位（依 t 與人），姿勢可重現
+    if(snap)pm.ph[i]=((t*Math.PI*2*GAIT_HZ)+i*0.7)%(Math.PI*2);
+    else if(gait>0)pm.ph[i]=(pm.ph[i]+Math.min(dtAnim*Math.PI*2*GAIT_HZ*gait,PH_MAX))%(Math.PI*2);
+    const ph=pm.ph[i],sw=Math.sin(ph),leg=0.55*gait*sw,arm=0.45*gait*sw,bob=Math.abs(sw)*0.006*gait;
+    const ca=Math.cos(yaw),sa=Math.sin(yaw),Ks=K*pm.sz[i],o=i*16;
+    // 地面層（含舞台階梯）：腳底＝FOOT_LIFT＋階高，正好踩在踏面頂（STAIR.top(n)）；其餘照第 1 節（B1 到 B2 之間線性）
+    let py=gr?FOOT_LIFT+h:h+FOOT_LIFT*(1-h/H1),up=0,yS=seatedPose?h:py;
+    if(h>0&&h<H1&&!seatedPose){const tt=t>=HT[i].tS&&t<=HT[i].tE?treadTopAt(px,pz):-1;if(tt>=0)yS=tt;}
+    // 坐姿：髖落在坐墊頂（h+seatHip），身體下移、腿往前伸。高度倍率 K 以髖為原點（髖固定在 h+seatHip，只放大髖以上與往前伸的腿）；站姿以腳底為原點
+    if(seatedPose){py=h+FIG.seatHip*(1-Ks);up=FIG.seatHip-FIG.legL;}
+    const yB=py+bob*K;
+    wPart(arrs.shadow,o,px,yS+0.002,pz,ca,sa,1,0,0,0,0);
+    if(seatedPose){wPart(arrs.legL,o,px,py,pz,ca,sa,Ks,FIG.hipX,FIG.seatHip,0,-1.3);wPart(arrs.legR,o,px,py,pz,ca,sa,Ks,-FIG.hipX,FIG.seatHip,0,-1.22);}
+    else{wPart(arrs.legL,o,px,yB,pz,ca,sa,Ks,FIG.hipX,FIG.legL,0,leg);wPart(arrs.legR,o,px,yB,pz,ca,sa,Ks,-FIG.hipX,FIG.legL,0,-leg);}
+    const armBase=seatedPose?-0.35:0;
+    wPart(arrs.armL,o,px,yB,pz,ca,sa,Ks,FIG.armX,FIG.shoulderY+up,0,armBase-arm);
+    wPart(arrs.armR,o,px,yB,pz,ca,sa,Ks,-FIG.armX,FIG.shoulderY+up,0,armBase+arm);
+    wPart(arrs.body,o,px,yB,pz,ca,sa,Ks,0,FIG.bodyY+up,0,0);
+    wPart(arrs.band,o,px,yB,pz,ca,sa,Ks,0,FIG.bandY+up,0,0);
+    wPart(arrs.head,o,px,yB,pz,ca,sa,Ks,0,FIG.headY+up,0,0);
+    wPart(arrs.hair,o,px,yB,pz,ca,sa,Ks,0,FIG.headY+up,0,0);}
+  if(wrote)for(const k of ['legL','legR','armL','armR','body','band','head','hair','shadow'])pm[k].instanceMatrix.needsUpdate=true;
+  people.lastWrote=wrote;
+  updateRibbon(t);   // 絲帶跟著同一組位置（只讀 walk／wait／enter 的人）
+  return settling;}
+// 測試用：座位高度與朝向（第 1 階段的 seated() 介面）
+function seatedInfo(){return {pos:P.map((p,i)=>[p.rest.X,heightAt(i,0),p.rest.Y]),yaw:Array.from(people.seatYaw)};}
+const seatIndex=new Map(D.restSeats.map(s=>[s.sec+'|'+s.pai+'|'+s.no,s]));
+function seatTheta(p){const s=seatIndex.get(p.rest.sec+'|'+p.rest.pai+'|'+p.rest.no);return s?s.theta:Math.atan2(p.rest.Y,p.rest.X)*180/Math.PI;}
+
+// =====================================================================
+// 6b. 第 3 階段：隊伍絲帶、同列混色、跟隨、點選、搜尋、清單、小人卡片、計數卡
+// =====================================================================
+const TINT_PARTS=['legL','legR','armL','armR','body','band','head','hair'];
+const ST_WALK=1,ST_WAIT=2,ST_ENTER=3;
+const LANE_NAME={A:'A 路（白衣・靠看台）',B:'B 路（藍衣・外側）'};   // 原樣取自 core.js
+const BY_ID=new Map(P.map((p,i)=>[p.id,i]));
+const LIES=[...new Set(P.map(p=>p.lie))].sort((a,b)=>a-b);
+// 每一列「尚未 done 的第一人」：同列依 t.arrive 排序（入座順序），取第一個 t.arrive > t 的人
+const LIE_ORDER=new Map(LIES.map(l=>[l,Int32Array.from(P.map((p,i)=>i).filter(i=>P[i].lie===l).sort((a,b)=>P[a].t.arrive-P[b].t.arrive||a-b))]));
+const GROUP_OF_LIE=new Map();for(const g of D.groups)for(const l of g.columns)GROUP_OF_LIE.set(l,g);
+const lieName=l=>{const g=GROUP_OF_LIE.get(l);return g?`${g.costume} ${g.dadui}・列 ${l}`:`列 ${l}`;};
+function rowHead(lie,t){const a=LIE_ORDER.get(lie);for(let k=0;k<a.length;k++)if(P[a[k]].t.arrive>t)return a[k];return -1;}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---- 隊伍絲帶（第 5 節）：做法參考 console.html 的列線 ----
+// 分組 key＝列（lie）｜狀態；排序：walk 依 laneIdx、wait 依 t.assembly、enter 依 t.gate；相鄰兩人連起來，距離超過門檻就斷開。
+// 排序鍵都是每人固定的資料，所以預先把「依列、再依排序鍵」的順序排好（每個狀態一份），每幀只要照順序掃一遍、挑出目前在該狀態的人。
+// 貼地半透明帶（opacity .35），兩個 Mesh、每個像素只被其中一層蓋到一次（實際不透明度就是 .35，不會疊深）：
+//  L[1]「帶身」：衣色（cream／#6f7fb5）的實色帶；
+//  L[0]「帶緣」：帶身兩側的細邊（白衣用 wood、藍衣同衣色）＋鏈兩端的圓頭（半圓帶身＋半圓細邊），讀起來是一條有邊、有圓頭的實體帶子，而不是一片陰影。
+// 流動淡紋只在播放時貼上（對比很低），暫停時是實色。
+// 頂點緩衝預先配到最大值（每人最多出現在一條鏈上一次），每幀只改位置並 setDrawRange，不重建 geometry。
+const RIB={on:true,gap:{[ST_WALK]:1.0,[ST_WAIT]:0.3,[ST_ENTER]:1.0},period:0.42,flow:0.9,built:false,
+  hwF:0.02,hwFMax:0.032,edge:0.006,edgeMax:0.008,capN:8,capCh:1024};   // 帶身半寬、細邊寬（K>1 時乘 K，加總上限 0.04＝門前隊伍左右間距的一半）
+const RIB_STATES=[ST_WALK,ST_WAIT,ST_ENTER];
+function buildRibbon(){const n=P.length;
+  const ord=key=>Int32Array.from(P.map((p,i)=>i).sort((a,b)=>P[a].lie-P[b].lie||key(P[a])-key(P[b])||a-b));
+  RIB.ord={[ST_WALK]:ord(p=>p.laneIdx),[ST_WAIT]:ord(p=>p.t.assembly),[ST_ENTER]:ord(p=>p.t.gate)};
+  // 樓梯上會在兩人之間補「踏階折點」（每個立面兩點），所以點數上限＝人數＋預留（實際樓梯上同時最多幾十人、每路約 20 級）
+  const NP=RIB.cap=n+4096;
+  RIB.cx=new Float32Array(NP);RIB.cz=new Float32Array(NP);RIB.cy=new Float32Array(NP);RIB.cc=new Uint8Array(NP);RIB.cp=new Uint8Array(NP);RIB.brk=new Int32Array(512);RIB.nbrk=0;
+  RIB.nx=new Float32Array(NP);RIB.nz=new Float32Array(NP);RIB.uu=new Float32Array(NP);   // 每點的 miter 法向量（已乘 miter 倍率）與弧長
+  // 所有踏階邊界（兩路各一份，排序、去重）
+  {const set=new Set();for(const L of ['A','B'])for(const q of built.treadTops[L]||[]){set.add(q[0]);set.add(q[1]);}const zs=Float64Array.from([...set].sort((x,y)=>x-y));
+   const x0=Math.min(M.stairTreads[0][0],M.stairTreads[0][2]),x1=Math.max(M.stairTreads[0][0],M.stairTreads[0][2]);
+   RIB.stair={zs,zTop:zs[0],x0,x1,xs:[x0,x1,built.stairXMid]};RIB.ss=new Float64Array(zs.length+4);}
+  // 流動紋（沿鏈的弧長重複，對比很低）：只在播放時貼上；暫停或 reduced-motion 時換成 1×1 白貼圖（同一種 map，不會重新編譯 shader）
+  const cv=document.createElement('canvas');cv.width=64;cv.height=4;const g=cv.getContext('2d'),gr=g.createLinearGradient(0,0,64,0);
+  gr.addColorStop(0,'#ffffff');gr.addColorStop(.55,'#ffffff');gr.addColorStop(.78,'#dedede');gr.addColorStop(1,'#ffffff');g.fillStyle=gr;g.fillRect(0,0,64,4);
+  const tex=new THREE.CanvasTexture(cv);tex.wrapS=THREE.RepeatWrapping;tex.colorSpace=THREE.SRGBColorSpace;RIB.tex=tex;
+  const t0=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);t0.colorSpace=THREE.SRGBColorSpace;t0.needsUpdate=true;RIB.tex0=t0;
+  const cols={w:col.set(C.cream).toArray(),b:col.set(C.blueCoat).toArray(),ew:col.set(C.wood).toArray(),eb:col.set(C.blueCoat).toArray()};RIB.cols=cols;
+  const CN=RIB.capN,capV=2*((CN+2)+2*(CN+1)),capI=2*(CN*3+CN*6);   // 每條鏈兩個圓頭：帶身扇形（中心＋N+1）、細邊環（2×(N+1)）
+  const mk=(vpp,ipp,extraV,extraI,ro,name)=>{const NV=NP*vpp+extraV,geo=new THREE.BufferGeometry(),pos=new Float32Array(NV*3),cl=new Float32Array(NV*3),uv=new Float32Array(NV*2),idx=new Uint32Array(NP*ipp+extraI);
+    const dyn=a=>a.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position',dyn(new THREE.BufferAttribute(pos,3)));geo.setAttribute('color',dyn(new THREE.BufferAttribute(cl,3)));geo.setAttribute('uv',dyn(new THREE.BufferAttribute(uv,2)));
+    geo.setIndex(dyn(new THREE.BufferAttribute(idx,1)));geo.setDrawRange(0,0);
+    const mat=new THREE.MeshBasicMaterial({vertexColors:true,map:t0,transparent:true,opacity:.35,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true,toneMapped:false,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2});
+    const m=new THREE.Mesh(geo,mat);m.name=name;m.frustumCulled=false;m.renderOrder=ro;scene.add(m);
+    return {geo,m,pos,cl,uv,idx,pf:new Uint8Array(NP),NV,nv:0,ni:0};};
+  RIB.L=[mk(4,12,RIB.capCh*capV,RIB.capCh*capI,1,'ribbon-edge'),mk(2,6,0,0,2,'ribbon')];RIB.built=true;RIB.segs=0;RIB.chains=0;}
+// 播放中（且非 reduced-motion）才貼流動紋
+function ribMap(){if(!RIB.built)return;const t=(playing&&!RM)?RIB.tex:RIB.tex0;for(let j=0;j<2;j++)if(RIB.L[j].m.material.map!==t){RIB.L[j].m.material.map=t;dirty=true;}}
+// 一條鏈（m 點）：先算每點的 miter 法向量與弧長，再寫帶身、帶緣與兩端圓頭
+function emitChain(m){const {cx,cz,cy,cc,nx,nz,uu,cols}=RIB,F=RIB.L[1],E=RIB.L[0],hF=RIB.hwFE,hO=hF+RIB.edgeE;
+  if(F.nv+2*m>F.NV||E.nv+4*m>E.NV)return;   // 超過預先配置的容量就不畫這條（不會發生；保險）
+  let u=0;
+  for(let k=0;k<m;k++){let ax=0,az=0,bx=0,bz=0,la=0,lb=0;
+    if(k>0){ax=cx[k]-cx[k-1];az=cz[k]-cz[k-1];la=Math.hypot(ax,az);const l=la||1;ax/=l;az/=l;u+=la;}
+    if(k<m-1){bx=cx[k+1]-cx[k];bz=cz[k+1]-cz[k];lb=Math.hypot(bx,bz);const l=lb||1;bx/=l;bz/=l;}
+    let tx=ax+bx,tz=az+bz,tl=Math.hypot(tx,tz);if(tl<1e-6){tx=lb>0?bx:ax;tz=lb>0?bz:az;tl=Math.hypot(tx,tz)||1;}tx/=tl;tz/=tl;
+    // 踏階立面的垂直段（同一平面點、兩個高度）長度為 0：不做 miter（否則會被當成 90° 轉角加寬）
+    const mi=(k>0&&k<m-1&&la>1e-6&&lb>1e-6)?1/Math.max(0.6,tx*bx+tz*bz):1;nx[k]=-tz*mi;nz[k]=tx*mi;uu[k]=u/RIB.period;}
+  // 帶身（L[1]）：每點 2 個頂點
+  {const pos=F.pos,cl=F.cl,uv=F.uv,idx=F.idx,base=F.nv;
+   for(let k=0;k<m;k++){const v=base+2*k,ox=nx[k]*hF,oz=nz[k]*hF;
+     pos[v*3]=cx[k]+ox;pos[v*3+1]=cy[k];pos[v*3+2]=cz[k]+oz;pos[v*3+3]=cx[k]-ox;pos[v*3+4]=cy[k];pos[v*3+5]=cz[k]-oz;
+     F.pf[v>>1]=RIB.cp[k];   // 這個點是人（1）還是踏階折點（0）；測試用
+     const c=cc[k]?cols.b:cols.w;cl[v*3]=cl[v*3+3]=c[0];cl[v*3+1]=cl[v*3+4]=c[1];cl[v*3+2]=cl[v*3+5]=c[2];
+     uv[v*2]=uv[v*2+2]=uu[k];uv[v*2+1]=0;uv[v*2+3]=1;
+     if(k>0){const a=v-2,j=F.ni;idx[j]=a;idx[j+1]=v;idx[j+2]=a+1;idx[j+3]=a+1;idx[j+4]=v;idx[j+5]=v+1;F.ni+=6;}}
+   F.nv+=2*m;}
+  // 帶緣（L[0]）：每點 4 個頂點（外 +、內 +、內 −、外 −），兩側各一條細帶，和帶身不重疊
+  {const pos=E.pos,cl=E.cl,uv=E.uv,idx=E.idx,base=E.nv;
+   for(let k=0;k<m;k++){const v=base+4*k,c=cc[k]?cols.eb:cols.ew;
+     for(let j=0;j<4;j++){const s=j===0?hO:j===1?hF:j===2?-hF:-hO,w=v+j;pos[w*3]=cx[k]+nx[k]*s;pos[w*3+1]=cy[k];pos[w*3+2]=cz[k]+nz[k]*s;cl[w*3]=c[0];cl[w*3+1]=c[1];cl[w*3+2]=c[2];uv[w*2]=uu[k];uv[w*2+1]=j<2?0:1;}
+     if(k>0){const a=v-4;let j=E.ni;
+       idx[j]=a;idx[j+1]=v;idx[j+2]=a+1;idx[j+3]=a+1;idx[j+4]=v;idx[j+5]=v+1;j+=6;
+       idx[j]=a+2;idx[j+1]=v+2;idx[j+2]=a+3;idx[j+3]=a+3;idx[j+4]=v+2;idx[j+5]=v+3;E.ni+=12;}}
+   E.nv+=4*m;}
+  // 圓頭：鏈的兩端各一個半圓（帶身色扇形＋細邊色半環），也放在 L[0]
+  ribCap(0,m,-1,hF,hO);ribCap(m-1,m,1,hF,hO);}
+function ribCap(k,m,sgn,hF,hO){const {cx,cz,cy,cc,cols}=RIB,E=RIB.L[0],N=RIB.capN;
+  // 端點的切線：沿鏈找第一段有平面長度的（踏階立面的垂直段長度為 0）
+  let tx=0,tz=0;for(let s=1;s<m;s++){const a=sgn<0?0:m-1,b=sgn<0?s:m-1-s;tx=cx[a]-cx[b];tz=cz[a]-cz[b];if(tx*tx+tz*tz>1e-10)break;}
+  const tl=Math.hypot(tx,tz);if(tl<1e-5)return;tx/=tl;tz/=tl;   // (tx,tz)：指向鏈外
+  const need=(N+2)+2*(N+1);if(E.nv+need>E.NV||E.ni+N*9>E.idx.length)return;
+  const nx=-tz,nz=tx,x=cx[k],z=cz[k],y=cy[k],cf=cc[k]?cols.b:cols.w,ce=cc[k]?cols.eb:cols.ew,u=RIB.uu[k],pos=E.pos,cl=E.cl,uv=E.uv,idx=E.idx;
+  const put=(w,px,pz,c,v)=>{pos[w*3]=px;pos[w*3+1]=y;pos[w*3+2]=pz;cl[w*3]=c[0];cl[w*3+1]=c[1];cl[w*3+2]=c[2];uv[w*2]=u;uv[w*2+1]=v;};
+  const c0=E.nv;put(c0,x,z,cf,.5);
+  for(let j=0;j<=N;j++){const th=j*Math.PI/N,dx=nx*Math.cos(th)+tx*Math.sin(th),dz=nz*Math.cos(th)+tz*Math.sin(th);
+    put(c0+1+j,x+dx*hF,z+dz*hF,cf,.5);put(c0+N+2+2*j,x+dx*hF,z+dz*hF,ce,.5);put(c0+N+3+2*j,x+dx*hO,z+dz*hO,ce,.5);}
+  let i=E.ni;
+  for(let j=0;j<N;j++){idx[i++]=c0;idx[i++]=c0+1+j;idx[i++]=c0+2+j;
+    const a=c0+N+2+2*j,b=a+2;idx[i++]=a;idx[i++]=b;idx[i++]=a+1;idx[i++]=a+1;idx[i++]=b;idx[i++]=b+1;}
+  E.ni=i;E.nv+=need;}
+let _ribM=0,_ribMp=0;   // 目前這條鏈的點數（含踏階折點）、人數
+function ribFlush(){if(_ribMp>=2){emitChain(_ribM);RIB.segs+=_ribMp-1;RIB.chains++;}_ribM=0;_ribMp=0;}   // segs＝人與人之間的連線數（不含踏階折點）
+function updateRibbon(t){if(!RIB.built)return;
+  // 鏡頭拉遠時（高度倍率 K>1）絲帶也加寬，總覽時才看得到；帶身＋細邊半寬上限 0.04（門前隊伍左右間距 0.08，不會互相重疊）
+  const K=people.K>0?people.K:1;RIB.hwFE=Math.min(RIB.hwF*K,RIB.hwFMax);RIB.edgeE=Math.min(RIB.edge*K,RIB.edgeMax);
+  for(let j=0;j<2;j++){const L=RIB.L[j];L.nv=0;L.ni=0;L.m.visible=RIB.on;}
+  RIB.segs=0;RIB.chains=0;RIB.nbrk=0;
+  if(!RIB.on)return;
+  const pm=people,st=pm.st,{cx,cz,cy,cc,cp}=RIB;let lastI=-1;
+  for(let si=0;si<RIB_STATES.length;si++){const s=RIB_STATES[si],ord=RIB.ord[s],thr=RIB.gap[s];let lie=-1;_ribM=0;_ribMp=0;
+    for(let k=0;k<ord.length;k++){const i=ord[k];if(st[i]!==s)continue;const p=P[i],x=pm.px[i],z=pm.pz[i];
+      if(_ribM>0&&(p.lie!==lie||Math.hypot(x-cx[_ribM-1],z-cz[_ribM-1])>thr))ribFlush();
+      const h=pm.h[i],g=pm.gr[i],tt=!g&&h>0&&h<H1&&built.treadTops?treadTopAt(x,z):-1;   // 樓梯上：貼著腳下那一級踏階的頂面（和假影子一樣）
+      // 地面層（playground #23：含舞台東側階梯）：腳底（FOOT_LIFT＋階高）上方 0.005；不在階梯上就是原本的 0.022
+      const y=tt>=0?tt+0.004:g?FOOT_LIFT+h+0.005:h+0.022*(1-h/H1)+0.004*(h/H1),c=p.costume==='白'?0:1;
+      // 相鄰兩人在不同級（或一人在走廊／B2、一人在樓梯）：沿線段在每個踏階邊界補兩點（上一級頂→下一級頂），絲帶平貼踏面、在立面垂直折下，不再斜穿踏階
+      if(_ribM>0&&_ribM<RIB.cap-1&&(tt>=0||RIB.cs||Math.abs(y-cy[_ribM-1])>0.03)){const mb=stairBridge(_ribM,x,z,y,c);if(mb<0){ribFlush();if(RIB.nbrk<RIB.brk.length){RIB.brk[RIB.nbrk++]=lastI;RIB.brk[RIB.nbrk++]=i;}}else _ribM=mb;}
+      lie=p.lie;if(_ribM<RIB.cap){cx[_ribM]=x;cz[_ribM]=z;cy[_ribM]=y;cc[_ribM]=c;cp[_ribM]=1;_ribM++;_ribMp++;}RIB.cs=tt>=0;lastI=i;}
+    ribFlush();}
+  for(let j=0;j<2;j++){const L=RIB.L[j];L.geo.setDrawRange(0,L.ni);const a=L.geo.attributes;a.position.needsUpdate=a.color.needsUpdate=a.uv.needsUpdate=true;L.geo.index.needsUpdate=true;}}
+// 在鏈的第 m−1 點與新點 (x1,z1,y1) 之間補折點；回傳新的點數。
+// 地表高度 RIB_H(x,z)：樓梯頂（STAIR_TOP 的踏階邊界）以北＝B1 走廊；踏階寬度內＝腳下那一級的頂；其餘＝B2 地面。
+// 線段跨過的每一條「高度會變」的線（踏階邊界 z、樓梯左右緣 x、A／B 兩路中線 x）都補兩點（變化前、變化後的高度），
+// 所以絲帶平貼每一級踏面、在立面（或樓梯側緣）垂直折下，不再斜穿踏階。
+function ribSurf(x,z){const S=RIB.stair;if(z<S.zTop)return H1+0.004;if(x>=S.x0&&x<=S.x1){const t=treadTopAt(x,z);if(t>=0)return t+0.004;}return 0.022;}
+// 任何一處垂直落差超過一級多（RIB_JUMP）＝這段線是從樓梯側面切過去（例如下完樓梯已轉角的人連到還在樓梯上的人）：回傳 −1，呼叫端在這裡斷開絲帶，讓小人本身表現接續。
+const RIB_JUMP=0.12;
+function stairBridge(m,x1,z1,y1,c){const m0=m,{cx,cz,cy,cc,cp}=RIB,S=RIB.stair,x0=cx[m-1],z0=cz[m-1],dx=x1-x0,dz=z1-z0,len=Math.hypot(dx,dz);if(len<1e-6)return m;
+  const ux=dx/len,uz=dz/len,ss=RIB.ss;let n=0;
+  if(Math.abs(dz)>1e-9)for(let j=0;j<S.zs.length;j++){const s=(S.zs[j]-z0)/dz;if(s>1e-6&&s<1-1e-6)ss[n++]=s;}
+  if(Math.abs(dx)>1e-9)for(const xv of S.xs){const s=(xv-x0)/dx;if(s>1e-6&&s<1-1e-6)ss[n++]=s;}
+  if(!n)return m;
+  for(let a=1;a<n;a++){const v=ss[a];let b=a-1;while(b>=0&&ss[b]>v){ss[b+1]=ss[b];b--;}ss[b+1]=v;}   // 插入排序（不配置）
+  for(let k=0;k<n;k++){const x=x0+dx*ss[k],z=z0+dz*ss[k],yb=ribSurf(x-ux*1e-4,z-uz*1e-4),ya=ribSurf(x+ux*1e-4,z+uz*1e-4);if(Math.abs(ya-yb)<1e-3)continue;if(Math.abs(ya-yb)>RIB_JUMP)return -1;
+    if(m+2>=RIB.cap-1)break;
+    const o=ya<yb?0.005:-0.005;   // 垂直段放在較低那一側的上方一點（較高那一級的方塊會蓋住正好在邊界上的面）
+    cx[m]=x+ux*o;cz[m]=z+uz*o;cy[m]=yb;cc[m]=c;cp[m]=0;m++;cx[m]=x+ux*o;cz[m]=z+uz*o;cy[m]=ya;cc[m]=c;cp[m]=0;m++;}
+  return m;}
+function setRibbon(on){RIB.on=!!on;$('#ribbon-tg').setAttribute('aria-pressed',String(RIB.on));updateRibbon(simT);dirty=true;
+  try{localStorage.setItem('dome.ribbon',RIB.on?'1':'0');}catch(e){}}
+
+// ---- 同列混 coral 25%、其他人淡到 50%（跟隨時）；解除時還原原色 ----
+// 同列：全部零件（腿、手臂、身體、大隊色帶、頭、髮）都往 coral 混 25%（照 SPEC 字面，整個人一起偏暖）。
+// 其他人：混 50%（InstancedMesh 沒有逐實例透明度，用往底色混色表示「淡到 50%」）。膚色與衣服混向場景底色 #efe6dd；
+// 頭髮混向較深的中性灰褐 #b9aea4，淡化後仍比膚色深，不會像一群光頭人偶（比例仍是 50%）。
+const _fade=new THREE.Color('#efe6dd'),_fadeHair=new THREE.Color('#b9aea4'),_coral=new THREE.Color(C.coral);
+function applyTint(lie){for(const k of TINT_PARTS){const a=people[k].instanceColor.array,b=people.baseCol[k],fd=k==='hair'?_fadeHair:_fade;
+    for(let i=0;i<P.length;i++){const o=i*3;
+      if(lie==null){a[o]=b[o];a[o+1]=b[o+1];a[o+2]=b[o+2];}
+      else if(P[i].lie===lie){a[o]=b[o]+(_coral.r-b[o])*.25;a[o+1]=b[o+1]+(_coral.g-b[o+1])*.25;a[o+2]=b[o+2]+(_coral.b-b[o+2])*.25;}
+      else{a[o]=b[o]+(fd.r-b[o])*.5;a[o+1]=b[o+1]+(fd.g-b[o+1])*.5;a[o+2]=b[o+2]+(fd.b-b[o+2])*.5;}}
+    people[k].instanceColor.needsUpdate=true;}
+  people.tintLie=lie;}
+
+// ---- 跟隨（列／個人） ----
+// 跟隨列：鏡頭鎖定該列尚未 done 的第一人，offset (0.9, 1.1, 1.3) 平滑跟著；那人入座後自動換下一位。跟隨個人：鎖定那個人。
+// 跟隨中：同列小人混 coral、其他淡化；隊頭與目前跟隨的人頭上掛 CSS2D pill；背板淡出。Esc、拖曳鏡頭（按下指標）、滾輪、Shift+方向鍵、切鏡頭都會解除。
+const FOLLOW_OFF=new THREE.Vector3(0.9,1.1,1.3);
+let follow=null;   // {mode:'row'|'person', lie, i（個人）, cur（目前鏡頭鎖定的人）}
+const _ft=new THREE.Vector3(),_fp=new THREE.Vector3();
+let pillHead=null,pillMe=null,bbAlpha=1;
+function buildPills(){const mk=cls=>{const el=document.createElement('div');el.className='pill '+cls;const o=new CSS2DObject(el);o.center.set(0.5,1);o.visible=false;scene.add(o);return {o,el};};
+  pillHead=mk('head');pillMe=mk('me');}
+function personTop(i,v){const K=people.K>0?people.K:1;return v.set(people.px[i],people.h[i]+(FIG.headY+FIG.headR)*K*people.sz[i]+0.035,people.pz[i]);}
+function followTarget(){if(!follow)return -1;if(follow.mode==='person')return follow.i;const h=rowHead(follow.lie,simT);return h>=0?h:LIE_ORDER.get(follow.lie)[LIE_ORDER.get(follow.lie).length-1];}
+function setFollow(f){const was=follow;follow=f||null;cancelFlight();
+  if(follow){if(activeCam!==camera)setTop(false);follow.cur=-1;document.querySelectorAll('#cams .chip').forEach(x=>x.setAttribute('aria-pressed','false'));}
+  const lie=follow?follow.lie:null;if(people.tintLie!==lie)applyTint(lie);
+  updatePills();syncFollowUi();
+  // 訊息列跟著目前的跟隨狀態（點畫面上的人、Esc、拖曳鏡頭解除時都會更新；錯誤訊息只留到下一次跟隨改變）
+  if(was||follow){setMsg(!follow?MSG_DEFAULT:follow.mode==='row'?`跟隨 ${lieName(follow.lie)}：鏡頭鎖定這一列還沒入座的第一位。`:`跟隨 ${P[follow.i].id}（${lieName(follow.lie)}）。`);
+    // 主持人裁決（第 3 階段）：跟隨對象被其他方式改變（點人、清單、卡片、Esc、拖曳）時，搜尋框跟著更新成目前跟隨的對象（解除時清空），不和訊息列矛盾
+    $('#q').value=!follow?'':follow.mode==='row'?`列 ${follow.lie}`:P[follow.i].id;}
+  if(follow){const i=followTarget();follow.cur=i;if(i>=0)showCard(i);}
+  dirty=true;return !!was;}
+function updatePills(){if(!pillHead)return;
+  if(!follow){pillHead.o.visible=pillMe.o.visible=false;return;}
+  const head=rowHead(follow.lie,simT),me=follow.mode==='person'?follow.i:-1;
+  if(head>=0){pillHead.o.visible=true;personTop(head,pillHead.o.position);const tx=follow.mode==='row'?`隊頭・${lieName(follow.lie)}`:'隊頭';if(pillHead.el.textContent!==tx)pillHead.el.textContent=tx;}else pillHead.o.visible=false;
+  if(me>=0&&me!==head){pillMe.o.visible=true;personTop(me,pillMe.o.position);const tx='跟隨・'+P[me].id;if(pillMe.el.textContent!==tx)pillMe.el.textContent=tx;}
+  else if(me>=0&&me===head){pillMe.o.visible=false;const tx='隊頭・跟隨 '+P[me].id;if(pillHead.el.textContent!==tx)pillHead.el.textContent=tx;}
+  else pillMe.o.visible=false;}
+// 每幀：平滑移動鏡頭；回傳是否還需要 render
+function stepFollow(dt){let need=false;
+  // 背板：跟隨模式時淡出
+  const bb=built.backboardMat;if(bb){const tgt=follow?0:1;if(bbAlpha!==tgt){bbAlpha=RM?tgt:clamp(bbAlpha+Math.sign(tgt-bbAlpha)*dt*3,0,1);if(Math.abs(bbAlpha-tgt)<1e-3)bbAlpha=tgt;
+      bb.opacity=built.backboardOpacity*bbAlpha;bb.visible=bbAlpha>0.01;need=true;}}
+  if(!follow||activeCam!==camera)return need;
+  const i=followTarget();if(i<0)return need;
+  if(i!==follow.cur){follow.cur=i;if(follow.mode==='row')showCard(i);}
+  _ft.set(people.px[i],people.arrs.body[i*16+13],people.pz[i]);   // 鎖定身體中心
+  _ft.add(viewShift(_vsD.copy(FOLLOW_OFF).normalize(),FOLLOW_OFF.length(),_vsO));   // 跟隨的人落在可視區中心（不被右側欄、卡片、HUD 蓋住）
+  _fp.copy(_ft).add(FOLLOW_OFF);
+  // clampPan 把 target 夾在 y 0–1.5、x/z 在 B.all 內；可視區中心偏上時 _ft.y 會小於 0，兩邊會互相拉扯、永遠收斂不了。
+  // 相機位置不動，把看向的點沿「相機→_ft」的視線滑到夾限之內：視線方向不變，畫面完全相同（只有環繞半徑變短）。
+  clampFollowTarget(_fp,_ft);
+  const k=RM?1:1-Math.exp(-dt*4.5),d=camera.position.distanceTo(_fp)+controls.target.distanceTo(_ft);
+  if(d>1e-4){controls.target.lerp(_ft,k);camera.position.lerp(_fp,k);need=true;}
+  if(need||playing)updatePills();return need;}
+function clampFollowTarget(c,t){const b=B.all;let s=1;
+  const lim=(v0,v1,lo,hi)=>{if(v1<lo&&v0>lo)s=Math.min(s,(v0-lo)/(v0-v1));else if(v1>hi&&v0<hi)s=Math.min(s,(hi-v0)/(v1-v0));};
+  lim(c.y,t.y,0,1.5);lim(c.x,t.x,b[0],b[2]);lim(c.z,t.z,b[1],b[3]);
+  if(s<1)t.set(c.x+(t.x-c.x)*s,c.y+(t.y-c.y)*s,c.z+(t.z-c.z)*s);
+  t.set(clamp(t.x,b[0],b[2]),clamp(t.y,0,1.5),clamp(t.z,b[1],b[3]));}
+
+// ---- 點選：不對 InstancedMesh 做 raycast；把每人的位置投影到螢幕，取距離點擊點 12px 內最近的人 ----
+const _pv=new THREE.Matrix4();
+function pickAt(sx,sy){const cam=activeCam,W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight,e=_pv.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse).elements,body=people.arrs.body;
+  let best=-1,bd=12*12;
+  for(let i=0;i<P.length;i++){const x=people.px[i],y=body[i*16+13],z=people.pz[i];
+    const w=e[3]*x+e[7]*y+e[11]*z+e[15];if(w<=1e-6)continue;
+    const nx=(e[0]*x+e[4]*y+e[8]*z+e[12])/w,ny=(e[1]*x+e[5]*y+e[9]*z+e[13])/w,nz=(e[2]*x+e[6]*y+e[10]*z+e[14])/w;if(nz<-1||nz>1)continue;
+    const dx=(nx+1)/2*W-sx,dy=(1-ny)/2*H-sy,dd=dx*dx+dy*dy;if(dd<=bd){bd=dd;best=i;}}
+  return best;}
+function initPicking(){const el=renderer.domElement;let down=null;
+  el.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,id:e.pointerId};if(follow)setFollow(null);if(activeCam===camera)pressCam(null);},{passive:true});   // 一按下指標就解除跟隨（點到人會在放開時重新跟隨那個人）
+  el.addEventListener('wheel',()=>{if(follow)setFollow(null);},{passive:true});
+  el.addEventListener('pointerup',e=>{if(!down||down.id!==e.pointerId)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(moved>6)return;
+    const r=el.getBoundingClientRect();activeCam.updateMatrixWorld();const i=pickAt(e.clientX-r.left,e.clientY-r.top);
+    if(i>=0)selectPerson(i,true);});
+  el.addEventListener('pointercancel',()=>{down=null;});}
+function selectPerson(i,doFollow){if(doFollow)setFollow({mode:'person',lie:P[i].lie,i});else showCard(i);if(isSheet())closeList();}
+
+// ---- 小人卡片 ----
+// 六步「起 → 出 → 走 → 集 → 進 → 到」：各步的時間邊界照 me.html 的 stepsFor（出口＝t.leave+0.8；走＝第一個落在 B1 走廊 0.35 內的 path 點）
+function distSegMe(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy||1;const k=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l));return Math.hypot(ax+dx*k-px,ay+dy*k-py);}
+function nearPoly(x,y,flat,r){for(let i=0;i+3<flat.length;i+=2)if(distSegMe(x,y,flat[i],flat[i+1],flat[i+2],flat[i+3])<r)return true;return false;}
+function stepsOf(p){const s=p.t,ex=EXIT_BY_SEC.get(p.exit);let tExit=null;for(const q of p.path)if(q[2]>=s.leave+.01&&nearPoly(q[0],q[1],M.b1Corridor,.35)){tExit=q[2];break;}
+  if(tExit==null)tExit=s.leave+Math.hypot(p.rest.X-ex.entry[0],p.rest.Y-ex.entry[1])/(D.meta.speedUnitPerSec||1.1);
+  return [{k:'起',h:'離座',t:s.leave},{k:'出',h:'出口',t:s.leave+.8},{k:'走',h:'走廊與樓梯',t:tExit},{k:'集',h:'門前隊伍',t:s.assembly},{k:'進',h:'進場',t:s.enter},{k:'到',h:'到位',t:s.arrive}];}
+const STEP_TXT={'-1':'還在休息區座位上，輪到才起身。','0':'從座位起身，走向出口。','1':'走出看台出口，上 B1 走廊。','2':'沿 B1 走廊走，下樓梯到 B2，不停。','3':'在牆外門前隊伍等候。','4':'和同一排六人並肩轉進西一入口。','5':'到場內位置，面向甲舞台。'};
+// playground #23：「集」「進」兩步的說明照新版 me.html（每個大隊排滿門前隊伍才出發、進門後在沿牆迴廊停好等下一大隊排滿）；
+// 步驟的時間邊界 me.html 沒有改（迴廊候隊在「進」這一步裡），「進」的說明再依 t.holdStart／t.holdEnd 分成三段
+function stepTxt(k,p,t){const s=p.t,nx=p.dadui+1,hold=s.holdStart!=null;
+  if(k===3)return `在牆外門前隊伍等候：要等整個大隊排滿才出發，之後一排緊跟一排${hold?`；進門後在沿牆迴廊停好，等大隊 ${nx} 排滿再進列`:''}。`;
+  if(k===4){if(!hold)return '和同一排六人並肩轉進西一入口，沿牆迴廊直接北行（最後一個大隊不停），到列區南緣梯次進列。';
+    if(t<s.holdStart)return '和同一排六人並肩轉進西一入口，沿牆迴廊走到停的位置。';
+    if(t<s.holdEnd)return `在沿牆迴廊停好，等大隊 ${nx} 排滿門前隊伍再走。`;
+    return '迴廊放行：整排沿舞台邊北行（靠舞台的兩路會走上幾階階梯），到列區南緣梯次進列。';}
+  return STEP_TXT[String(k)];}
+const stepSub=(k,p,t)=>k!==4||p.t.holdStart==null?0:t<p.t.holdStart?1:t<p.t.holdEnd?2:3;
+const card={i:-1,steps:null,cur:-2,sub:-1,bd:new Float64Array(6)};
+// 判斷「目前步驟」用的單調邊界（資料的邊界照 me.html 不改）：53 人的「走」（進到 B1 走廊）早於「出」（leave+0.8），
+// 直接用會從「起」跳到「走」、「出」永遠不亮。邊界不晚於前一步時，改成前一步邊界＋0.15，讓每一步都會依序亮起；點步驟跳時間也用這組。
+const STEP_GAP=0.15;
+function showCard(i){const p=P[i],c=$('#card');card.i=i;card.steps=stepsOf(p);card.cur=-2;
+  for(let k=0;k<6;k++){const t=card.steps[k].t;card.bd[k]=k>0&&!(t>card.bd[k-1])?card.bd[k-1]+STEP_GAP:t;}
+  $('#c-id').textContent=p.id;
+  const g=GROUP_OF_LIE.get(p.lie),dd=DADUI_COLORS[(p.dadui-1)%9],ex=EXIT_BY_SEC.get(p.exit);
+  $('#c-tags').innerHTML=`<span class="tag"><i style="background:${p.costume==='白'?C.cream:C.blueCoat}"></i>${esc(p.costume)}衣</span><span class="tag"><i style="background:${dd}"></i>大隊 ${p.dadui}</span><span class="tag">列 ${p.lie}</span><span class="tag">${esc(p.a)}</span>`;
+  const rows=[['休息區',`${p.rest.sec} 區 ${p.rest.pai} 排 ${p.rest.no} 號`],['出口',`${p.exit} 出口${ex?'（'+ex.stairLabel+'）':''}`],['樓梯路',LANE_NAME[p.lane]||p.lane],
+    ['西一入口路',`第 ${p.gateLane+1} 路（北數）・第 ${p.slot+1} 位`],['場內位置',`列 ${p.lie} 排 ${p.pai}`]];
+  $('#c-dl').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+  $('#route').innerHTML=card.steps.map((s,k)=>`<li><button type="button" data-k="${k}" aria-label="第 ${k+1} 步 ${s.k}：${s.h}（跳到這一步）">${s.k}</button></li>`).join('');
+  $('#route-lbl').innerHTML=card.steps.map(s=>`<span>${s.h}</span>`).join('');
+  c.hidden=false;c.setAttribute('aria-label','小人卡片：'+p.id);vcInvalidate();
+  if(isSheet()){closeList();document.body.classList.add('sheet-open');}
+  syncFollowUi();updateCardStep();syncListFold();layoutPanels();dirty=true;}
+function closeCard(){vcInvalidate();$('#card').hidden=true;$('#card').classList.remove('full');card.i=-1;document.body.classList.toggle('sheet-open',$('#list').classList.contains('open'));listUserOpen=false;syncListFold();layoutPanels();dirty=true;}
+function updateCardStep(){if(card.i<0)return;let cur=-1;for(let k=0;k<6;k++)if(simT>=card.bd[k]-.01)cur=k;const sub=stepSub(cur,P[card.i],simT);if(cur===card.cur&&sub===card.sub)return;card.cur=cur;card.sub=sub;
+  $('#route').querySelectorAll('li').forEach((li,k)=>{li.classList.toggle('now',k===cur);li.classList.toggle('past',k<cur);const b=li.firstChild;if(k===cur)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});
+  $('#route-lbl').querySelectorAll('span').forEach((s,k)=>s.classList.toggle('now',k===cur));
+  $('#step-now').textContent=(cur>=0?`${card.steps[cur].k}・${card.steps[cur].h}：`:'就座：')+stepTxt(cur,P[card.i],simT);}
+function syncFollowUi(){const i=card.i,f=follow;
+  const fp=!!(f&&f.mode==='person'&&f.i===i),fr=!!(f&&f.mode==='row'&&i>=0&&P[i].lie===f.lie);
+  const b1=$('#c-follow'),b2=$('#c-row');b1.setAttribute('aria-pressed',String(fp));b1.textContent=fp?'停止跟隨':'跟隨此人';
+  b2.setAttribute('aria-pressed',String(fr));b2.textContent=fr?'停止跟隨列':'跟隨這一列';
+  for(const b of document.querySelectorAll('#groups .lies .btn'))b.setAttribute('aria-pressed',String(!!(f&&f.mode==='row'&&+b.dataset.lie===f.lie)));}
+
+// ---- 計數卡：counts(t, persons) ----
+const COUNT_KEYS=[['seated','就座'],['walk','走路中'],['wait','門前隊伍'],['enter','進場中'],['done','已入座']];
+const CNT_EL={n:[],p:[],b:[],box:null};   // 計數卡的 DOM 節點（建一次，更新時不再 querySelector）
+function buildCounts(){const dl=$('#counts-dl'),bar=$('#counts .cbar');
+  dl.innerHTML=COUNT_KEYS.map(([k,l])=>`<div style="--k:var(--st-${k})"><dt>${l}</dt><dd><span class="big-n" data-n="${k}">0</span><small data-p="${k}">0%</small></dd></div>`).join('');
+  bar.innerHTML=COUNT_KEYS.map(([k])=>`<i data-b="${k}" style="background:var(--st-${k});width:0"></i>`).join('');
+  CNT_EL.box=$('#counts');for(const [k] of COUNT_KEYS){CNT_EL.n.push($(`#counts [data-n="${k}"]`));CNT_EL.p.push($(`#counts [data-p="${k}"]`));CNT_EL.b.push($(`#counts [data-b="${k}"]`));}}
+// 每幀先用 updatePeople 剛算好的 people.st（同一次 state(p,t)）累加進預先配置的陣列，只有人數變了才呼叫 counts(t, persons) 更新畫面（每幀不配置）
+const _cnt=new Int32Array(5),_cntPrev=new Int32Array(5).fill(-1);
+function updateCounts(){_cnt.fill(0);const st=people.st;for(let i=0;i<st.length;i++){const v=st[i];if(v<5)_cnt[v]++;}
+  let same=true;for(let k=0;k<5;k++)if(_cnt[k]!==_cntPrev[k]){same=false;_cntPrev[k]=_cnt[k];}if(same)return;
+  // SPEC 第 6 節指定用 counts(t, persons)：只在人數改變時呼叫（它回傳一個新物件，和 pos() 同類的已接受配置）；DOM 節點已快取
+  const c=counts(simT,P),N=P.length;let al='人數：';
+  for(let j=0;j<COUNT_KEYS.length;j++){const k=COUNT_KEYS[j][0],v=c[k],pc=v/N*100;CNT_EL.n[j].textContent=v>=1000?Math.floor(v/1000)+','+String(v%1000).padStart(3,'0'):String(v);CNT_EL.p[j].textContent=(pc>0&&pc<1?'<1':Math.round(pc))+'%';CNT_EL.b[j].style.width=pc+'%';al+=(j?'、':'')+COUNT_KEYS[j][1]+' '+v;}
+  CNT_EL.box.setAttribute('aria-label',al);}
+
+// ---- 清單（大隊 1–9 × 白／藍，details 展開各列）與搜尋 ----
+function buildList(){MSG_DEFAULT=$('#search-msg').textContent;const box=$('#groups'),gs=D.groups.slice().sort((a,b)=>a.dadui-b.dadui||(a.costume==='白'?0:1)-(b.costume==='白'?0:1));
+  const cnt=new Map();for(const p of P)cnt.set(p.lie,(cnt.get(p.lie)||0)+1);
+  box.innerHTML=gs.map(g=>`<details data-g="${esc(g.key)}"><summary><span class="dd" style="background:${DADUI_COLORS[(g.dadui-1)%9]}"></span><span class="coat" style="background:${g.costume==='白'?C.cream:C.blueCoat}"></span>大隊 ${g.dadui}・${esc(g.costume)}衣 <small>${g.population} 人・${g.lane} 路</small></summary>
+    <div class="lies">${g.columns.map(l=>`<button class="btn" type="button" data-lie="${l}" aria-pressed="false"><span>${esc(g.costume)} ${g.dadui}・列 ${l}</span><small>${cnt.get(l)||0} 人</small></button>`).join('')}</div></details>`).join('');
+  box.addEventListener('click',e=>{const b=e.target.closest('.lies .btn');if(!b)return;const lie=+b.dataset.lie;
+    if(follow&&follow.mode==='row'&&follow.lie===lie){setFollow(null);return;}
+    setFollow({mode:'row',lie});if(isSheet())closeList();});
+  $('#search').addEventListener('submit',e=>{e.preventDefault();doSearch($('#q').value);});
+  $('#ribbon-tg').onclick=()=>setRibbon(!RIB.on);
+  $('#card-close').onclick=()=>{setFollow(null);closeCard();};
+  $('#c-follow').onclick=()=>{const i=card.i;if(i<0)return;if(follow&&follow.mode==='person'&&follow.i===i)setFollow(null);else setFollow({mode:'person',lie:P[i].lie,i});};
+  $('#c-row').onclick=()=>{const i=card.i;if(i<0)return;const lie=P[i].lie;if(follow&&follow.mode==='row'&&follow.lie===lie)setFollow(null);else setFollow({mode:'row',lie});};
+  $('#route').addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(!b||card.i<0)return;seekTo(card.bd[+b.dataset.k]+0.02);});
+  $('#list-btn').onclick=()=>{if(!isSheet()){listPref=false;listUserOpen=true;saveListPref();syncListFold();$('#q').focus({preventScroll:true});return;}
+    if($('#list').classList.contains('open'))closeList();else openList();};
+  $('#list-fold').onclick=()=>{listPref=true;listUserOpen=false;saveListPref();syncListFold();$('#list-btn').focus({preventScroll:true});};
+  $('#list-close').onclick=()=>closeList();
+  for(const el of [$('#list .handle'),$('#card .handle')])dragSheet(el);}
+let MSG_DEFAULT='';
+function setMsg(t,err){const m=$('#search-msg');m.textContent=t;m.classList.toggle('err',!!err);}
+// 全形數字轉半形；接受「列 14 排 7」「14-7」「14 7」「14排7」；只有列就跟隨整列
+const NOTFOUND=`西一＋桃竹只有第 ${LIES[0]}–${LIES[LIES.length-1]} 列，每列最多 ${Math.max(...[...LIE_ORDER.values()].map(a=>a.length))} 位`;
+function parseQuery(raw){const s=String(raw??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－–—]/g,'-').trim();
+  let m=/^列?\s*(\d{1,3})\s*(?:列)?\s*(?:排|-|,|，|、|\/|\s)\s*(?:排\s*)?(\d{1,3})\s*(?:排|號)?$/.exec(s);if(m)return {lie:+m[1],pai:+m[2]};
+  m=/^列?\s*(\d{1,3})\s*列?$/.exec(s);if(m)return {lie:+m[1]};return null;}
+function doSearch(raw){const q=parseQuery(raw);
+  if(!q){setMsg('看不懂這個寫法；請輸入「列 14 排 7」、「14-7」或「列 14」。',true);return false;}
+  if(!LIE_ORDER.has(q.lie)){setMsg(NOTFOUND+'。',true);return false;}
+  if(q.pai==null){setFollow({mode:'row',lie:q.lie});if(isSheet())closeList();return true;}
+  const i=BY_ID.get(q.lie+'-'+q.pai);
+  if(i==null){const ps=P.filter(p=>p.lie===q.lie).map(p=>p.pai);setMsg(`${NOTFOUND}；第 ${q.lie} 列是排 ${Math.min(...ps)}–${Math.max(...ps)}。`,true);return false;}
+  setFollow({mode:'person',lie:q.lie,i});if(isSheet())closeList();return true;}
+
+// ---- 版面：卡片、清單位置；手機 bottom sheet（同時只開一個） ----
+const SHEET_MQ=matchMedia('(max-width: 800px), (max-height: 500px)');   // 和 CSS 的手機版同一個條件（含手機橫拿）
+const isSheet=()=>SHEET_MQ.matches;
+// 手機橫拿：sheet 改成左右側欄（見 CSS），可視區的計算跟著改
+const SIDE_MQ=matchMedia('(max-height: 500px) and (orientation: landscape)');
+const isSide=()=>SIDE_MQ.matches;
+function openList(){vcInvalidate();if(!isSheet())return;if(card.i>=0)closeCard();$('#list').classList.add('open');$('#list-btn').setAttribute('aria-expanded','true');document.body.classList.add('sheet-open');$('#list-close').hidden=false;layoutPanels();dirty=true;}
+function closeList(){vcInvalidate();$('#list').classList.remove('open','full');$('#list-btn').setAttribute('aria-expanded','false');document.body.classList.toggle('sheet-open',card.i>=0&&isSheet());layoutPanels();dirty=true;}
+// 把手（第 4 階段）：往上拉 40px → sheet 拉到全螢幕；往下拉 60px → 全螢幕時回到原高度，原高度時關閉；點一下（或鍵盤）在原高度／全螢幕之間切換
+function setSheetFull(sheet,on){if(sheet.classList.contains('full')===!!on)return;sheet.classList.toggle('full',!!on);
+  const h=sheet.querySelector('.handle'),nm=sheet.id==='list'?'清單':'卡片';if(h)h.setAttribute('aria-label',on?`放下${nm}（往下拉回原高度）`:`拉高${nm}（往下拉關閉）`);
+  if(h)h.setAttribute('aria-expanded',String(!!on));vcInvalidate();layoutPanels();dirty=true;}
+function dragSheet(h){let y0=null,dragged=false;const sheet=h.closest('#card,#list');
+  h.addEventListener('pointerdown',e=>{y0=e.clientY;dragged=false;h.setPointerCapture(e.pointerId);});
+  h.addEventListener('pointermove',e=>{if(y0==null)return;const dy=e.clientY-y0;if(Math.abs(dy)>=4)dragged=true;sheet.style.transform=dy>0?`translateY(${dy}px)`:'';});
+  const end=e=>{if(y0==null)return;const dy=e.clientY-y0;y0=null;sheet.style.transform='';if(!dragged)return;
+    if(dy<-40)setSheetFull(sheet,true);
+    else if(dy>60){if(sheet.classList.contains('full'))setSheetFull(sheet,false);else if(sheet.id==='list')closeList();else{setFollow(null);closeCard();}}};
+  h.addEventListener('pointerup',end);h.addEventListener('pointercancel',()=>{y0=null;sheet.style.transform='';});
+  h.addEventListener('click',()=>{if(dragged){dragged=false;return;}setSheetFull(sheet,!sheet.classList.contains('full'));});}
+// ---- 桌面：右側清單可收合（偏好記在 localStorage dome.listCollapsed）----
+// 收合後右側只剩計數卡和一顆「清單」鈕。卡片開著、畫面寬度不到 LIST_AUTO_W 時自動收合（不改偏好；按「清單」鈕可暫時打開，關卡片後恢復自動）。
+// 收合狀態改變時重算 uiInsets／visibleCenter（vcInvalidate），跟隨與特寫的目標落在真正看得到的區域。
+const LIST_AUTO_W=1180;
+let listPref=false,listUserOpen=false;
+try{listPref=localStorage.getItem('dome.listCollapsed')==='1';}catch(e){}
+function saveListPref(){try{localStorage.setItem('dome.listCollapsed',listPref?'1':'0');}catch(e){}}
+function listCollapsed(){if(isSheet())return false;const W=$('#app').clientWidth;return listPref||(card.i>=0&&W<LIST_AUTO_W&&!listUserOpen);}
+function syncListFold(){const c=listCollapsed(),b=document.body;if(b.classList.contains('list-collapsed')===c)return;
+  const ls=$('#list');if(c&&ls.contains(document.activeElement))$('#list-btn').focus({preventScroll:true});
+  b.classList.toggle('list-collapsed',c);if(!isSheet())$('#list-btn').setAttribute('aria-expanded',String(!c));
+  vcInvalidate();layoutPanels();dirty=true;}
+function layoutPanels(){vcInvalidate();const root=document.documentElement.style,H=$('#app').clientHeight,br=$('#brand').getBoundingClientRect(),ct=$('#counts').getBoundingClientRect();
+  const hud=$('#hud').getBoundingClientRect(),cm=$('#cams').getBoundingClientRect(),top=Math.min(hud.top,cm.height?cm.top:hud.top);
+  root.setProperty('--panel-bottom',Math.max(16,H-top+10)+'px');
+  root.setProperty('--card-top',(br.bottom+10)+'px');
+  root.setProperty('--counts-top',(br.bottom+8)+'px');
+  root.setProperty('--list-top',(isSheet()?0:ct.bottom+10)+'px');
+  // 手機 sheet 放在章節 chip 列上方（chip 列一直留著）；橫拿時的側欄只讓開 HUD（chip 列會讓到另一側）
+  root.setProperty('--sheet-bottom',Math.max(0,H-top+8)+'px');
+  root.setProperty('--side-bottom',Math.max(0,H-hud.top+8)+'px');}
+
+// ---- 標籤（CSS2D） ----
+// 每個標籤有優先序；每次 render 後做螢幕空間避讓（見 layoutLabels）
+// SEC_LABEL_OUT：只用在總覽 fit（區號讓開走廊後大約落在看台外緣往外 1.0 處，fit 時留位置）（收尾回合起區號改用 avoid＋引線，alts／base／maxOff 目前沒有標籤使用，保留為通用機制）
+const labelList=[],SEC_LABEL_OUT=1.0;
+// opt.avoid：不能被這個標籤蓋住的 world 點（取其螢幕外框）；opt.push：蓋到時往哪個 world 方向在螢幕上讓開
+function label(text,x,y,z,cls,pri=50,opt={}){const el=document.createElement('div');el.className='lbl '+(cls||'');el.textContent=text;const o=new CSS2DObject(el);o.position.set(x,y,z);scene.add(o);
+  const L={o,el,pri,dir:/\bdir\b/.test(cls||''),avoid:opt.avoid||null,push:opt.push||null,alts:opt.alts||null,base:opt.base||null,maxOff:opt.maxOff||1e9,maxPush:opt.maxPush||1e9,downFirst:!!opt.downFirst,pushOnly:!!opt.pushOnly,heads:!!opt.heads,r0:[0,0,0,0],r1:[0,0,0,0],h0:false,vis:false,tx:'',leader:null,lead:null,far:false};
+  // 第 4 階段：有 avoid 的標籤（樓梯、西一入口）錨在物體本身；被推開時畫一條引線指回錨點，推太遠（maxPush px）就不顯示
+  if(L.avoid){const ld=document.createElement('div');ld.className='leader hid';ld.setAttribute('aria-hidden','true');labelsEl.appendChild(ld);L.leader=ld;}
+  labelList.push(L);return o;}
+function buildLabels(){
+  // 區號：奇數區優先（擠的時候先留 139、141、143、145）
+  // labelXY 在 B1 走廊板的內緣，走廊上的人（離它 0.1、0.3）會被區號 pill 蓋住；沿徑向往外推到走廊板外緣之外（仍在走廊側）。
+  // 推出去後在畫面邊緣放不下時（例如總覽時畫面頂端的 143、144），改用備用錨點：看台最上排內側（蓋到的是就座的人，不是走廊上的人流）。
+  // 主持人裁決（收尾回合）：特寫時區號貼在看台外緣、不壓人頭。錨點改在 labelXY（看台外緣＝B1 走廊板內緣，SPEC 第 2 節「標在看台外緣（走廊側）」），
+  // 避讓框是該區前方的一段走廊（內緣到外緣＋0.03、沿切線 ±0.2、高度 H1 到頭頂 H1+0.2，約 K=1.4 的頭頂）：蓋到走廊（上面有人在走）就只往外（離球場）讓開，
+  // 引線指回看台外緣；讓開超過 120px 就不顯示。不再用看台最上排的備用錨點（那會壓在就座者頭上）。
+  for(const s of M.stands){const q=s.labelXY,r=Math.hypot(q[0],q[1])||1,ux=q[0]/r,uz=q[1]/r,tx=-uz,tz=ux;
+    const h=segPolyHit([q[0]+ux*0.02,q[1]+uz*0.02],[q[0]+ux*1.6,q[1]+uz*1.6],B1BAND,true),w=h?Math.hypot(h.p[0]-q[0],h.p[1]-q[1]):0.45;
+    const av=[];for(const d of [0,w+0.03])for(const k of [-0.2,0.2])for(const y of [H1,H1+0.2])av.push(V3(q[0]+ux*d+tx*k,y,q[1]+uz*d+tz*k));
+    label(s.sec,q[0],H1+0.05,q[1],'sec',(+s.sec)%2?80:78,{avoid:av,push:V3(ux,0,uz),pushOnly:true,maxPush:140});}   // 收尾回合（審查後）：120 → 140px，桌面離座特寫改成 fit 樓梯後主角 139 要推約 122px
+  // map.labels：方位標籤沿資料給的方向推到檯面外緣（資料點在看台旁，會壓到區號）；其餘照原座標
+  const cx=(B.all[0]+B.all[2])/2,cz=(B.all[1]+B.all[3])/2;
+  for(const l of M.labels){const dir=/^[東西南北]\(/.test(l.s);
+    if(dir){const dx=l.X-cx,dz=l.Y-cz,r=Math.hypot(dx,dz)||1,rr=Math.max(r,built.baseR+0.75);   /* 推到底盤木邊之外（主持人裁決：不要壓在木邊上） */label(l.s,cx+dx/r*rr,0.02,cz+dz/r*rr,'dir',40);}
+    else if(/^西班/.test(l.s)){const f=B.field,cx2=(f[0]+f[2])/2;   // 西班：移到座位區外緣（南側，備用北側），不蓋住入座人群（主持人裁決）
+      label(l.s,cx2,0.2,f[3]+0.05,'',60,{alts:[V3(cx2,0.2,f[1]-0.05)]});}
+    else label(l.s,l.X,0.25,l.Y,'',60);}   // 平面標籤（西班、東班…）坐在人群上：用不透明度 .82 的一般底，60% 的 soft 底會被人群花紋吃掉
+  // 西一入口：GATE6 正好是門前隊伍的隊頭；改錨在門洞外端的南側（B2 走廊上沒有路線的那一邊），不蓋住隊伍
+  {const g=pairs(M.gate.band),c=g.reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]),o=lerp2(g[0],g[3],.5),sm=lerp2(g[3],g[2],.5);
+   let dx=sm[0]-c[0],dy=sm[1]-c[1];const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
+   // 第 4 階段：錨點改在門洞本身（gate.band 中心、牆頂上方），避開門洞與隊頭（GATE6 一小圈），被推開時用引線指回門洞（主持人裁決：近距離錨在門洞或加引線）
+   // 審查 rv14：錨點原本在 gate.band 中心（牆線外側的地面上方），引線看起來指向牆外的空地；改成門洞在牆線上的缺口中點（band 兩條長邊與 map.wall 的交點），高度在牆頂
+   {const wp=pairs(M.wall),h1=segPolyHit(g[0],g[1],wp,true),h2=segPolyHit(g[3],g[2],wp,true);if(h1&&h2){c[0]=(h1.p[0]+h2.p[0])/2;c[1]=(h1.p[1]+h2.p[1])/2;}}
+   built.gateLabelXY=c;const av=[];for(const q of g)for(const y of [0,WALL_H+0.05])av.push(V3(q[0],y,q[1]));for(const [ox,oz] of [[-.25,-.25],[.25,-.25],[-.25,.25],[.25,.25]])av.push(V3(N.GATE6.X+ox,0.16,N.GATE6.Y+oz));
+   label('西一入口',c[0],WALL_H,c[1],'key',100,{avoid:av,push:V3(-0.45,0,0.9),maxPush:340,downFirst:true,heads:true});}   // 直式先試螢幕正下方：往西南推時引線會斜穿往門口走的隊伍（審查 rv15）
+  // 樓梯：錨在踏階西緣外側（離球場的一側）、約 H1 高；若在畫面上仍蓋到踏階，就沿「往西」的螢幕方向讓開（見 layoutLabels）
+  {const xW=M.stairTreads[0][0],xE=M.stairTreads[0][2],y0=N.STAIR_TOP.Y,y1=Math.max(N.STAIR_BOT.Y,built.stairProfile.B.y1)+0.08,ym=(y0+y1)/2;
+   const avoid=[];for(const x of [xW,xE])for(const z of [y0,y1])for(const y of [0,H1])avoid.push(V3(x,y,z));
+   label('樓梯',(xW+xE)/2,H1*0.55,ym,'soft',79,{avoid,push:V3(-1,0,0),maxPush:160,heads:true});}   // 錨在踏階中心；讓開後用引線指回（主持人裁決：限制推移距離或加引線）
+  // B1 走廊：錨在 141 與 142 之間的走廊上，往外推離區號
+  const b1=pairs(M.b1Corridor),sA=M.stands.find(s=>s.sec==='141'),sB=M.stands.find(s=>s.sec==='142');
+  const mid=lerp2(sA.labelXY,sB.labelXY,.5);let best=b1[0];for(const q of b1)if(Math.hypot(q[0]-mid[0],q[1]-mid[1])<Math.hypot(best[0]-mid[0],best[1]-mid[1]))best=q;
+  {const dx=best[0]-cx,dz=best[1]-cz,r=Math.hypot(dx,dz);label('B1 走廊',best[0]+dx/r*1.75,H1+0.05,best[1]+dz/r*1.75,'soft',70,{alts:[1.3,0.95].map(k=>V3(best[0]+dx/r*k,H1+0.05,best[1]+dz/r*k))});}
+  const b2=pairs(M.b2Corridor),m2=b2[Math.round(b2.length*.32)];label('B2 走廊',m2[0]-0.45,0.12,m2[1],'soft',70);
+}
+// 螢幕空間避讓：
+//  (1) 方位標籤部分超出畫面就貼齊邊緣；
+//  (2) 有 avoid 的標籤（樓梯）若蓋到它標示的物體，就沿 push 方向在螢幕上讓開；
+//  (3) 其他標籤只要有一部分超出畫面（內縮 g）就隱藏——錨點在資料座標上，硬推回畫面會指錯位置；
+//  (4) 依優先序把和高優先標籤或 UI 卡片重疊的標籤藏起來。
+const _uiEls=()=>[...document.querySelectorAll('#app>.ui'),...(pillHead?[pillHead,pillMe].filter(q=>q.o.visible).map(q=>q.el):[])];
+const _lp=new THREE.Vector3(),_lq=new THREE.Vector3();
+function scr(v,W,H){_lp.copy(v).project(activeCam);return [(_lp.x+1)/2*W,(1-_lp.y)/2*H,_lp.z];}
+const hit=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
+const shiftR=(r,dx,dy)=>({left:r.left+dx,right:r.right+dx,top:r.top+dy,bottom:r.bottom+dy,width:r.width,height:r.height});
+// 審查 rv15（SPEC 第 8 節）：播放中鏡頭沒動、版面沒變、沒有跟隨 pill 時，避讓結果和上一幀相同——
+// 只把上一次的位移補回（CSS2DRenderer 每幀會重寫 transform），不讀 getBoundingClientRect、不配置陣列與閉包
+let llVer=0,llUntil=0,_llVer=-1,_llW=0,_llH=0,_llCam=null;const _llM=new Float64Array(32);
+// 收尾回合（審查）：地標標籤（樓梯、西一入口，opt.heads）也不壓人頭——和區號同一套「讓開＋引線、推太遠就隱藏」，
+// 禁區除了物體外框，再加上所有小人頭頂的投影點。頭的螢幕座標存在預先配置的陣列裡（每次重算一次，不配置）。
+let _hdN=0;const _hd=new Float32Array(2*4096);
+function projHeads(W,H){const a=people&&people.arrs&&people.arrs.head;_hdN=0;if(!a)return;const n=Math.min(P.length,4096);
+  for(let i=0;i<n;i++){_lp.set(a[i*16+12],a[i*16+13],a[i*16+14]).project(activeCam);if(_lp.z>1)continue;_hd[2*_hdN]=(_lp.x+1)/2*W;_hd[2*_hdN+1]=(1-_lp.y)/2*H;_hdN++;}}
+function headIn(l,t,r,b){for(let k=0;k<_hdN;k++){const x=_hd[2*k],y=_hd[2*k+1];if(x>l&&x<r&&y>t&&y<b)return true;}return false;}
+const headInR=(q,p=1)=>headIn(q.left-p,q.top-p,q.right+p,q.bottom+p);
+function layoutLabelsCached(W,H){const now=performance.now();if(now<llUntil||_llVer!==llVer||W!==_llW||H!==_llH||_llCam!==activeCam)return false;
+  if(pillHead&&(pillHead.o.visible||pillMe.o.visible))return false;
+  const a=activeCam.matrixWorld.elements,b=activeCam.projectionMatrix.elements;for(let k=0;k<16;k++)if(a[k]!==_llM[k]||b[k]!==_llM[16+k])return false;
+  // 鏡頭沒動但人在走：地標標籤原位的「有沒有人頭」改變了，或顯示中的標籤底下走進了人頭，就整個重算
+  let hp=false;for(let i=0;i<labelList.length;i++){const L=labelList[i];if(!L.heads)continue;if(!hp){projHeads(W,H);hp=true;}
+    if(headIn(L.r0[0]-1,L.r0[1]-1,L.r0[2]+1,L.r0[3]+1)!==L.h0)return false;if(L.vis&&headIn(L.r1[0]-1,L.r1[1]-1,L.r1[2]+1,L.r1[3]+1))return false;}
+  for(let i=0;i<labelList.length;i++){const L=labelList[i];if(L.tx)L.el.style.transform+=L.tx;}
+  return true;}
+function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8;if(layoutLabelsCached(W,H))return -1;
+  _llVer=llVer;_llW=W;_llH=H;_llCam=activeCam;{const a=activeCam.matrixWorld.elements,b=activeCam.projectionMatrix.elements;for(let k=0;k<16;k++){_llM[k]=a[k];_llM[16+k]=b[k];}}
+  for(const L of labelList)L.tx='';
+  const occ=[];
+  for(const e of _uiEls()){if(!e)continue;const r=e.getBoundingClientRect();if(r.width&&r.height)occ.push([r.left,r.top,r.right,r.bottom]);}
+  // 跟隨 pill 下方就是被跟隨的人（近景約 100px 高）：pill 的佔位往下延伸，區號等標籤不壓在被跟隨的人身上（審查 rv14）
+  if(pillHead)for(const q of [pillHead,pillMe])if(q.o.visible){const r=q.el.getBoundingClientRect();if(r.width&&r.height)occ.push([r.left-24,r.top,r.right+24,r.bottom+130]);}
+  // 主持人裁決（收尾回合）：方位標籤只在總覽與俯視顯示——俯視鏡頭，或相機距離 ≥ 總覽距離的 0.8（拉近、特寫、跟隨時都隱藏）
+  const showDir=activeCam!==camera||camera.position.distanceTo(controls.target)>=0.8*homeDist();
+  const items=[];for(const L of labelList){L.el.classList.remove('hid');if(L.el.style.display==='none'||(L.dir&&!showDir)){if(L.dir)L.el.classList.add('hid');if(L.leader)L.leader.classList.add('hid');L.lead=null;continue;}items.push(L);}
+  const rects=items.map(L=>L.el.getBoundingClientRect());
+  projHeads(W,H);   // 地標標籤與方位標籤微移都要用
+  const move=(i,dx,dy)=>{const s=` translate(${dx}px,${dy}px)`;items[i].el.style.transform+=s;items[i].tx+=s;rects[i]=shiftR(rects[i],dx,dy);};
+  items.forEach((L,i)=>{const r=rects[i];L.far=false;
+    if(L.dir){const dx=r.left<g?g-r.left:r.right>W-g?(W-g)-r.right:0,dy=r.top<g?g-r.top:r.bottom>H-g?(H-g)-r.bottom:0;
+      // 只把「部分超出」（還有一部分在畫面內）的方位標籤推回畫面內；整個在畫面外的不動（等於不顯示）
+      if((dx||dy)&&r.right>0&&r.left<W&&r.bottom>0&&r.top<H)move(i,dx,dy);return;}
+    const tooFar=L.base&&(()=>{const b=scr(L.base,W,H);return b[2]<1&&Math.hypot((r.left+r.right)/2-b[0],(r.top+r.bottom)/2-b[1])>L.maxOff;})();
+    if(L.alts&&(tooFar||r.left<g||r.top<g||r.right>W-g||r.bottom>H-g)){const a=scr(L.o.position,W,H);let moved=false;
+      for(const v of L.alts){const b=scr(v,W,H),q=shiftR(r,b[0]-a[0],b[1]-a[1]);if(b[2]<1&&q.left>=g&&q.top>=g&&q.right<=W-g&&q.bottom<=H-g){move(i,b[0]-a[0],b[1]-a[1]);moved=true;break;}}
+      if(tooFar&&!moved)L.far=true;return;}
+    if(L.avoid){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9,behind=false;for(const v of L.avoid){const q=scr(v,W,H);if(q[2]>1)behind=true;x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}
+      const box={left:x0-4,right:x1+4,top:y0-4,bottom:y1+4};
+      L.lead=null;L.far=false;
+      const bad=q=>hit(q,box)||(L.heads&&headInR(q));
+      if(L.heads){L.r0[0]=r.left;L.r0[1]=r.top;L.r0[2]=r.right;L.r0[3]=r.bottom;L.h0=headInR(r);}
+      if(!behind&&bad(r)){const a=scr(L.o.position,W,H),b=scr(_lq.copy(L.o.position).add(L.push),W,H);let ux=b[0]-a[0],uy=b[1]-a[1];const ul=Math.hypot(ux,uy);
+        if(ul<1e-3){ux=-1;uy=0;}else{ux/=ul;uy/=ul;}
+        // 依序試：push 方向、反方向、螢幕上、螢幕下；取第一個讓開後仍完整在畫面內的
+        const uiN=occ.length,inV=q=>q.left>=g&&q.top>=g&&q.right<=W-g&&q.bottom<=H-g&&!occ.slice(0,uiN).some(o=>q.left<o[2]&&q.right>o[0]&&q.top<o[3]&&q.bottom>o[1]);let pick=null,good=null;   // 讓開後也不能壓在 UI 面板下（rv14）。pg23 第二輪：四個方向都試，取推最短的那個（手機迴廊候隊特寫往下推會橫越 240px 的隊伍）
+        for(const [vx,vy] of (L.pushOnly?[[ux,uy]]:camera.aspect<1&&L.downFirst?[[0,1],[ux,uy],[-ux,-uy],[0,-1]]:[[ux,uy],[-ux,-uy],[0,-1],[0,1]])){let t=0;while(t<400&&bad(shiftR(r,vx*t,vy*t)))t+=2;if(t>=400)continue;const c=[vx*t,vy*t];if(!pick)pick=c;if(inV(shiftR(r,c[0],c[1]))&&Math.hypot(c[0],c[1])<=L.maxPush&&(!good||Math.hypot(c[0],c[1])<Math.hypot(good[0],good[1])))good=c;}if(good)pick=good;   // 收尾回合（審查）：取第一個「在畫面內且不超過 maxPush」的方向；原本只看在畫面內，桌面門洞特寫時往西南推 >340px 就整個隱藏，往下其實 ~220px 就放得下
+        if(!pick){L.far=true;return;}const pd=Math.hypot(pick[0],pick[1]);if(pd>L.maxPush){L.far=true;return;}
+        move(i,pick[0],pick[1]);if(pd>10)L.lead=[a[0],a[1]];}}});
+  const order=items.map((L,i)=>i).sort((a,b)=>items[b].pri-items[a].pri);const pad=3;let hidden=0;
+  const coll=b=>occ.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]);
+  for(const i of order){let r=rects[i],box=[r.left-pad,r.top-pad,r.right+pad,r.bottom+pad];
+    const off=r.right<0||r.left>W||r.bottom<0||r.top>H;
+    // 收尾回合（審查後）：方位標籤只是大略方向，被區號等標籤壓住時先上下微移（≤60px，移過去不能壓人頭）再決定隱藏；手機直式總覽的「西」原本被 139 蓋掉，總覽就沒有任何方位標籤
+    if(items[i].dir&&!off&&coll(box))for(const d of [-12,12,-24,24,-36,36,-48,48,-60,60]){const b=[box[0],box[1]+d,box[2],box[3]+d];if(b[1]+pad>=g&&b[3]-pad<=H-g&&!coll(b)&&!headIn(b[0],b[1],b[2],b[3])){move(i,0,d);r=rects[i];box=b;break;}}
+    const partial=!off&&!items[i].dir&&(r.left<g||r.top<g||r.right>W-g||r.bottom>H-g);
+    if(items[i].far||partial||(!off&&occ.some(o=>box[0]<o[2]&&box[2]>o[0]&&box[1]<o[3]&&box[3]>o[1]))){items[i].el.classList.add('hid');hidden++;continue;}
+    occ.push(box);}
+  for(let i=0;i<items.length;i++){const L=items[i];if(!L.heads)continue;const r=rects[i];L.vis=!L.el.classList.contains('hid');L.r1[0]=r.left;L.r1[1]=r.top;L.r1[2]=r.right;L.r1[3]=r.bottom;}
+  for(const L of labelList)if(L.heads&&!items.includes(L))L.vis=false;
+  // 引線：從錨點畫到標籤外框最近的點（標籤被藏起來或沒被推開時不畫）
+  for(let i=0;i<items.length;i++){const L=items[i];if(!L.leader)continue;const ld=L.leader;
+    const rr=rects[i];if(!L.lead||L.el.classList.contains('hid')||rr.right<0||rr.left>W||rr.bottom<0||rr.top>H){ld.classList.add('hid');continue;}
+    const r=rects[i],[ax,ay]=L.lead,tx=clamp(ax,r.left+4,r.right-4),ty=clamp(ay,r.top+3,r.bottom-3),len=Math.hypot(tx-ax,ty-ay);
+    if(len<4){ld.classList.add('hid');continue;}
+    ld.classList.remove('hid');ld.style.width=len.toFixed(1)+'px';ld.style.transform=`translate(${ax.toFixed(1)}px,${(ay-0.75).toFixed(1)}px) rotate(${Math.atan2(ty-ay,tx-ax).toFixed(4)}rad)`;}
+  return hidden;}
+
+// =====================================================================
+// 7. 相機：自動 fit、平移限制、特寫飛行
+// =====================================================================
+// 可視矩形：扣掉左上品牌卡與底部鏡頭列（px）。品牌卡用「讓開左側」或「讓開上方」兩種，取 fit 後畫面較大的那個。
+function uiInsets(){const W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight,gap=10;
+  const br=$('#brand').getBoundingClientRect(),cm=$('#cams').getBoundingClientRect(),hd=$('#hud').getBoundingClientRect(),ct=$('#counts').getBoundingClientRect(),ls=$('#list').getBoundingClientRect();
+  const top=Math.min(cm.height?cm.top:H,hd.height?hd.top:H),bottom=Math.max(gap,H-top+gap);
+  // 第 3 階段：桌面右側欄（計數卡＋清單）佔住右邊；手機計數條在品牌卡下方、橫跨全寬
+  if(isSide()){const t=Math.max(br.bottom,ct.height?ct.bottom:0)+gap,cd=$('#card'),lo=$('#list').classList.contains('open');
+    const l=!cd.hidden&&cd.getBoundingClientRect().width?cd.getBoundingClientRect().right+gap:gap,r=lo&&ls.width?W-ls.left+gap:gap;return [{l,t,r,b:bottom,W,H}];}
+  if(isSheet()){const t=Math.max(br.bottom,ct.height?ct.bottom:0)+gap;return [{l:gap,t,r:gap,b:bottom,W,H}];}
+  const rx=Math.min(ct.width?ct.left:W,ls.width?ls.left:W),r=Math.max(gap,W-rx+gap);
+  // 清單收合：右邊只剩計數卡（＋清單鈕），可用「讓開上方（品牌卡、計數卡）的全寬」
+  if(!ls.width){const lb=$('#list-btn').getBoundingClientRect(),tt=Math.max(br.bottom,ct.bottom,lb.height?lb.bottom:0)+gap;
+    return [{l:gap,t:tt,r:gap,b:bottom},{l:br.right+gap,t:gap,r,b:bottom}].map(o=>({...o,W,H}));}
+  return [{l:gap,t:br.bottom+gap,r,b:bottom},{l:br.right+gap,t:gap,r,b:bottom}].map(o=>({...o,W,H}));}
+// 用投影外框把一組點（world 座標）fit 進可視矩形 rect；dir＝target→相機的方向；padX/padY 是給標籤寬度留的 px
+function fitPoints(pts,dir,rect,padX=0,padY=0){
+  const d=dir.clone().normalize(),cam=camera.clone();cam.aspect=rect.W/rect.H;cam.updateProjectionMatrix();
+  const xl=-1+2*(rect.l+padX)/rect.W,xr=1-2*(rect.r+padX)/rect.W,yt=1-2*(rect.t+padY)/rect.H,yb=-1+2*(rect.b+padY)/rect.H;
+  const rw=xr-xl,rh=yt-yb,rcx=(xl+xr)/2,rcy=(yt+yb)/2,_p=new THREE.Vector3();
+  const measure=(t,dist)=>{cam.position.copy(t).addScaledVector(d,dist);cam.lookAt(t);cam.updateMatrixWorld();cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const c of pts){_p.copy(c).project(cam);if(_p.z>1||_p.z<-1)return {x0:-1e9,x1:1e9,y0:-1e9,y1:1e9};   // 點在相機後面：視為放不下
+      x0=Math.min(x0,_p.x);x1=Math.max(x1,_p.x);y0=Math.min(y0,_p.y);y1=Math.max(y1,_p.y);}return {x0,x1,y0,y1};};
+  const solve=t=>{let lo=0.5,hi=300;for(let k=0;k<40;k++){const mid=(lo+hi)/2,r=measure(t,mid);if((r.x1-r.x0)>rw||(r.y1-r.y0)>rh)lo=mid;else hi=mid;}return hi;};
+  const c0=pts.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/pts.length);
+  const tgt=new THREE.Vector3(c0.x,0.25,c0.z);let dist=solve(tgt);
+  for(let it=0;it<6;it++){const r=measure(tgt,dist),ex=(r.x0+r.x1)/2-rcx,ey=(r.y0+r.y1)/2-rcy;
+    const right=new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld,0),up=new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld,1),h=Math.tan(deg(cam.fov/2))*dist;
+    tgt.addScaledVector(right,ex*h*cam.aspect).addScaledVector(up,ey*h);
+    tgt.addScaledVector(d,-(tgt.y-0.25)/d.y);   // 沿視線拉回地面附近（螢幕位置不變）
+    dist=solve(tgt);}
+  return {pos:tgt.clone().addScaledVector(d,dist),target:tgt,dist};}
+// 在兩種讓開品牌卡的可視矩形中取畫面較大（距離較近）的
+function fitBest(pts,dir,padX,padY){let best=null;for(const r of uiInsets()){const v=fitPoints(pts,dir,r,padX,padY);if(!best||v.dist<best.dist)best=v;}return best;}
+const dirFrom=(dirH,polar)=>new THREE.Vector3(Math.sin(polar)*dirH[0],Math.cos(polar),Math.sin(polar)*dirH[1]);
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+// 總覽 fit 的點（主持人裁決 4，修正 SPEC 第 3 節「fit B.west」）：B.west 含 b2Corridor 一路延伸到 (−0.4, 10.9) 的無用段，
+// 手機上會把路線擠得很小。改成 fit「實際用到的路線範圍」：全部 persons 的 path 點＋看台＋西班場內座位，
+// 取平面凸包（不是軸向外框，避免斜看時角點撐大畫面）外擴 0.15。看台、走廊段（t.stair 之前的點）放在 H1，其餘在地面。
+function westPts(){const flatPts=[],hi=[];
+  for(const s of M.stands)for(const q of pairs(s.poly)){flatPts.push(q);hi.push(q);}
+  P.forEach((p,i)=>{const a=p.path,k=HT[i].k;for(let j=0;j<a.length;j++){const q=[a[j][0],a[j][1]];flatPts.push(q);if(j<=k)hi.push(q);}flatPts.push([p.field.X,p.field.Y]);});
+  const hull=offsetPoly(convexHull(flatPts),0.15),hullHi=offsetPoly(convexHull(hi),0.15);
+  built.routeHull=hull.length;
+  // 看台外緣的區號標籤錨點也放進來（略高於標籤），總覽時看台與區號不會被推到畫面頂端（原本 142／145 離頂端約 18px）
+  const secs=M.stands.map(s=>{const q=s.labelXY,r=Math.hypot(q[0],q[1])||1;return V3(q[0]+q[0]/r*SEC_LABEL_OUT,H1+HOME_LABEL_LIFT,q[1]+q[1]/r*SEC_LABEL_OUT);});
+  return [...hull.map(([x,y])=>V3(x,0,y)),...hullHi.map(([x,y])=>V3(x,H1,y)),...secs];}
+const HOME_LABEL_LIFT=0.6;
+let WEST_PTS=null,WEST_HALF=null,_homeDist=0;const HOME_DIR_P=[Math.sin(deg(35)),Math.cos(deg(35))];
+// 主持人裁決（收尾回合，手機總覽小人太小 → 採 (a)）：直式螢幕的總覽只 fit 路線的西半段——
+// 看台（7 區，H1）、樓梯、B2 門前隊伍（gateLanes）、西一入口（gate.band）、沿牆通道（walkBand）、laneBand 與西班座位
+// （收尾回合審查後改成全部場內座位，見下）；不再用全部 path 的凸包、也不再為區號標籤錨點留位置（區號放不下時依優先序隱藏）。高度倍率上限不變（2.2）。
+function westHalfPts(){const fl=(f,y)=>pairs(f).map(([x,z])=>V3(x,y,z)),out=[];
+  for(const s of M.stands)out.push(...fl(s.poly,H1));
+  out.push(...fl(M.stairBand,H1),...fl(M.stairBand,0));
+  for(const l of M.gateLanes)out.push(...fl(l,0));
+  out.push(...fl(M.gate.band,0),...fl(M.walkBand,0),...fl(M.laneBand,0));
+  // 收尾回合（審查）：原本只取座位外框中線以西的場內位置，座位塊東側 156/1,609 個座位（約 10%）在畫面外；裁決列的是「西班座位」，
+  // 改成全部場內座位的凸包外擴 0.12（地面與坐姿頭頂兩層），終點整塊都在畫面內
+  const fh=offsetPoly(convexHull(P.map(p=>[p.field.X,p.field.Y])),0.12);for(const [x,z] of fh)out.push(V3(x,0.02,z),V3(x,0.14,z));
+  return out;}
+function homeDist(){return _homeDist||(_homeDist=homeView().dist||1);}
+// 橫式：從東南上方看向西北；直式：從南方往北看（南北長軸變成畫面深度）
+function homeView(){const portrait=camera.aspect<1;WEST_PTS=WEST_PTS||westPts();
+  // 標籤寬度：區號、樓梯、B2 走廊等錨點貼著外框，留半個標籤寬
+  if(portrait){WEST_HALF=WEST_HALF||westHalfPts();// 方位從正南往東偏 35°、俯角 62°（第 4 階段是 25°、56°，更早是正南、42°）：路線是西北→東南的 L 形，偏東一點讓它沿畫面深度排開、寬度變窄（直式畫面是寬度先滿），
+    // 實測（390×844）門前隊伍的小人頭高約 5 px → 約 9 px（掃描結果記在 NOTES）。仍是「從南方往北看」（特寫用的 SOUTH 偏東約 16°）。
+    // 收尾回合（審查）：fit 加入整塊座位後頭高 8.8→7.2 px；掃描方位 15–45°、俯角參數 50–66° 後改成偏東 35°、62°，頭高回到約 8.5 px（NOTES）
+    return fitBest(WEST_HALF,dirFrom(HOME_DIR_P,deg(62)),20,10);}
+  return fitBest(WEST_PTS,dirFrom([Math.SQRT1_2,Math.SQRT1_2],deg(50)),36,14);}
+function clampPan(){const t=controls.target,b=B.all;const nx=clamp(t.x,b[0],b[2]),nz=clamp(t.z,b[1],b[3]),ny=clamp(t.y,0,1.5);
+  if(nx!==t.x||nz!==t.z||ny!==t.y){const dx=nx-t.x,dy=ny-t.y,dz=nz-t.z;t.set(nx,ny,nz);camera.position.x+=dx;camera.position.y+=dy;camera.position.z+=dz;}}
+let reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
+// RM 只由 rmSync() 更新。Chromium 在頁面自己讀 .matches 時會先更新快取，接著的 change 事件就不會送出；
+// 所以除了監聽 change，loop() 每幀也比對一次（rAF 一直在跑），不同就套用同一套處理。其他地方一律讀 RM。
+let RM=reduceMotion.matches;
+function rmSync(){const m=reduceMotion.matches;if(m===RM)return;RM=m;
+  if(m){setPlaying(false);if(flight){camera.position.copy(flight.tp);controls.target.copy(flight.tt);controls.update();flight=null;}}ribMap();dirty=true;}
+function flyTo(v,ms=800){cancelFlight();if(RM||ms<=0){camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();dirty=true;return;}
+  flight={t0:performance.now(),ms,fp:camera.position.clone(),ft:controls.target.clone(),tp:v.pos.clone(),tt:v.target.clone()};dirty=true;}
+function cancelFlight(){if(flight){flight=null;}}
+function stepFlight(now){if(!flight)return false;const k=clamp((now-flight.t0)/flight.ms,0,1),e=easeInOutCubic(k);
+  camera.position.lerpVectors(flight.fp,flight.tp,e);controls.target.lerpVectors(flight.ft,flight.tt,e);camera.lookAt(controls.target);if(k>=1)flight=null;return true;}
+// 特寫目標（全部由資料推導）
+// 折線從起點起依弧長取前 frac 的點（含終點的內插點）
+function arcHead(flatPts,frac){const pts=pairs(flatPts);let tot=0;for(let i=0;i<pts.length-1;i++)tot+=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);
+  const out=[pts[0]];let acc=0;for(let i=0;i<pts.length-1;i++){const L=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);
+    if(acc+L>=tot*frac){out.push(lerp2(pts[i],pts[i+1],(tot*frac-acc)/L));return out;}acc+=L;out.push(pts[i+1]);}return out;}
+function closeView(xz,y,dist,polar,dirH){const t=new THREE.Vector3(xz[0],y,xz[1]);
+  // 預設從場內（原點方向）偏南看過去
+  let d=dirH;if(!d){const v=[-xz[0],-xz[1]+4],L=Math.hypot(v[0],v[1])||1;d=[v[0]/L,v[1]/L];}
+  const dir=new THREE.Vector3(Math.sin(polar)*d[0],Math.cos(polar),Math.sin(polar)*d[1]);
+  t.add(viewShift(dir,dist,new THREE.Vector3()));   // 第 3 階段：目標放在右側欄與底部 HUD 以外的可視區中間
+  return {pos:t.clone().addScaledVector(dir,dist),target:t};}
+// 可視區（扣掉右側欄、開著的卡片、底部 HUD／鏡頭列或手機 sheet、手機上方的品牌卡＋計數條）中心相對畫面中心的偏移（px）
+// 結果快取：只在版面改變（layoutPanels、resize、卡片／清單開關、面板 ResizeObserver）時重算；跟隨每幀不再讀版面、不配置物件
+let _vc=null;const vcInvalidate=()=>{_vc=null;llVer++;llUntil=performance.now()+400;};   // 版面改變也讓標籤避讓重算（之後 400ms 每幀都重算，等 .15s 的 transition 跑完）
+function visibleCenter(){if(_vc)return _vc;const W=renderer.domElement.clientWidth,H=renderer.domElement.clientHeight,R=s=>{const e=$(s);if(!e||e.hidden)return null;const r=e.getBoundingClientRect();return r.width&&r.height?r:null;};
+  let l=0,r=0,t=0,b=0;const hud=R('#hud'),cm=R('#cams');b=H-Math.min(hud?hud.top:H,cm?cm.top:H);
+  if(isSide()){const ct=R('#counts'),br=R('#brand'),cd=R('#card'),ls=R('#list');t=Math.max(ct?ct.bottom:0,br?br.bottom:0);if(cd)l=cd.right;if(ls&&$('#list').classList.contains('open'))r=W-ls.left;}
+  else if(isSheet()){const ct=R('#counts');t=ct?ct.bottom:0;for(const s of ['#card','#list']){const q=R(s);if(q)b=Math.max(b,H-q.top);}}
+  else{const ct=R('#counts'),ls=R('#list'),cd=R('#card');
+    if(ls){r=W-Math.min(ct?ct.left:W,ls.left);}else if(ct)t=ct.bottom;   // 清單收合：右邊只剩上方的計數卡，可視區改成「計數卡以下的全寬」
+    if(cd)l=cd.right;}
+  return (_vc={dx:(l+(W-r))/2-W/2,dy:(t+(H-b))/2-H/2,W,H});}
+// 讓「看向的點」偏移，使 world 點出現在可視區中心：dir＝target→相機、dist＝距離；寫進 out 並回傳
+function viewShift(dir,dist,out){const {dx,dy,W,H}=visibleCenter(),hh=Math.tan(deg(camera.fov/2))*dist,wpp=2*hh/H;   // 每 px 的 world 長度
+  const right=_vsR.set(0,1,0).cross(dir).normalize(),up=_vsU.copy(dir).cross(right).normalize();
+  return out.copy(right).multiplyScalar(-dx*wpp).addScaledVector(up,dy*wpp);}
+const _vsR=new THREE.Vector3(),_vsU=new THREE.Vector3(),_vsO=new THREE.Vector3(),_vsD=new THREE.Vector3();
+function shots(){
+  const st=M.stands.map(s=>({s,c:pairs(s.poly).reduce((a,p)=>[a[0]+p[0]/14,a[1]+p[1]/14],[0,0])}));
+  // STAIR_TOP 上方（北側）最近的看台
+  const above=st.filter(o=>o.c[1]<N.STAIR_TOP.Y).sort((a,b)=>Math.hypot(a.c[0]-N.STAIR_TOP.X,a.c[1]-N.STAIR_TOP.Y)-Math.hypot(b.c[0]-N.STAIR_TOP.X,b.c[1]-N.STAIR_TOP.Y))[0];
+  const ex=D.exits.find(e=>e.sec===above.s.sec)||D.exits[0];
+  // 直式畫面：每個特寫改成「以特寫目標為中心的一小組資料點」做投影外框 fit，方位從南往北看（略偏東），通道與隊伍沿畫面深度延伸
+  const fl=(f,y=0)=>pairs(f).map(([x,z])=>V3(x,y,z)),sq=(c,r,y=0)=>[V3(c[0]-r,y,c[1]-r),V3(c[0]+r,y,c[1]-r),V3(c[0]-r,y,c[1]+r),V3(c[0]+r,y,c[1]+r)];
+  const ST=N.STAIR_TOP,SB=N.STAIR_BOT,SOUTH=[0.28,0.96],STAIR_B2_LEN=1.0;
+  const treadBox=()=>{const xW=M.stairTreads[0][0],xE=M.stairTreads[0][2],y1=Math.max(SB.Y,built.stairProfile.B.y1),o=[];for(const x of [xW,xE])for(const z of [ST.Y,y1])for(const y of [0,H1])o.push(V3(x,y,z));return o;};
+  const focus={
+    // 收尾回合：手機離座特寫要同時看到出口與樓梯——加上整組踏階（0／H1 外框，含 B 路補階到轉角）
+    // 收尾回合（最終審查）：章節時間維持 t0，但最早離座的是 142（大隊 1 藍衣，6.73 起），139 要到 9.85、140 要到 59.4——
+    // 只框 139 時特寫裡沒有任何走路的人。再加上 t0 後 3 秒內離座的人，從各自出口到樓梯頂（HT.k）的 B1 走廊路徑（地面與頭頂兩層），
+    // 和他們出口的位置，第一批離座的人就在可視區內
+    exit:()=>{const o=[...fl(above.s.poly,H1),V3(ex.entry[0],H1,ex.entry[1]),V3(ST.X,H1,ST.Y),V3(SB.X,0,SB.Y),...treadBox()],t0=D.meta.t0,seen=new Set();
+      P.forEach((p,i)=>{if(p.t.leave>t0+3)return;const e=EXIT_BY_SEC.get(p.exit);if(e&&!seen.has(p.exit)){seen.add(p.exit);o.push(V3(e.entry[0],H1,e.entry[1]),V3(e.entry[0],H1+0.25,e.entry[1]));}
+        const a=p.path;for(let j=0;j<=HT[i].k&&j<a.length;j++)if(a[j][2]>=p.t.leave+0.8)o.push(V3(a[j][0],H1,a[j][1]),V3(a[j][0],H1+0.25,a[j][1]));});
+      return o;},
+    // 樓梯：只取踏階（含 B 路補階到轉角）的 0／H1 外框、STAIR_TOP／STAIR_BOT，加一小圈邊距 → 踏階約佔畫面寬 40%
+    stair:()=>{const xW=M.stairTreads[0][0],xE=M.stairTreads[0][2],y1=Math.max(SB.Y,built.stairProfile.B.y1),c=[(xW+xE)/2,(ST.Y+y1)/2],o=[];
+      for(const x of [xW,xE])for(const z of [ST.Y,y1])for(const y of [0,H1])o.push(V3(x,y,z));
+      // 審查 rv15：再加 A／B 兩路下樓後 B2 路徑的前 0.5 單位（依弧長），樓梯底與 B2 起步段留在章節列與 HUD 上方
+      // 收尾回合：樓梯下方的路線要完整留在 HUD 上方——B2 段加長到 1.0 單位（依弧長）
+      for(const L of ['A','B']){const i=P.findIndex(p=>p.lane===L),a=P[i].path;let acc=0;for(let j=HT[i].kEnd;j<a.length-1&&acc<STAIR_B2_LEN;j++){acc+=Math.hypot(a[j+1][0]-a[j][0],a[j+1][1]-a[j][1]);o.push(V3(a[j+1][0],0,a[j+1][1]));}}
+      // 收尾回合（審查）：桌面版樓梯頂（B1 走廊上正要下樓的人）的頭被畫面上緣切掉——加入兩路踏上樓梯前 0.5 單位（依弧長）的 B1 路徑與樓梯頂，高度到頭頂（H1+0.25）
+      for(const L of ['A','B']){const i=P.findIndex(p=>p.lane===L),a=P[i].path;let acc=0;for(let j=HT[i].k;j>0&&acc<0.5;j--){acc+=Math.hypot(a[j][0]-a[j-1][0],a[j][1]-a[j-1][1]);o.push(V3(a[j-1][0],H1+0.25,a[j-1][1]));}}
+      return [...o,V3(ST.X,H1,ST.Y),V3(ST.X,H1+0.25,ST.Y),V3(SB.X,0,SB.Y),...sq(c,0.5)];},
+    // 橫式門前隊伍（審查 rv15）：原本目標固定在 GATE6、只取 fit 的距離，六條導引線往北（畫面右側）延伸到清單底下。
+    // 改成直接用這組點的投影外框 fit（目標＝扣掉面板後可視矩形的中心），整條隊伍從隊頭到隊尾都在面板外
+    // 收尾回合：門前隊伍特寫要同時看到西一入口與隊尾——再加上章節時間當下全部 wait（門前隊伍）的人的位置（隊尾不靠導引線長度猜）
+    queue:()=>{const t=CHAPTERS.find(c=>c.key==='queue').t,o=[...M.gateLanes.flatMap(l=>fl(l)),...fl(M.gate.band),...fl(M.gate.band,WALL_H),V3(N.GATE6_IN.X,0,N.GATE6_IN.Y)];
+      for(const p of P)if(state(p,t)==='wait'){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}return o;},
+    // 第 4 階段「穿過西一入口」：門洞（gate.band）、牆外隊頭 GATE6、牆內 GATE6_IN，加上進門後最前面一小段沿牆通道
+    // 收尾回合：手機要看到入口內側與沿牆通道起點——加上 insideWalk 從入口起前 20%（依弧長，外擴通道半寬 0.22）
+    gate:()=>[...fl(M.gate.band),...fl(M.gate.band,WALL_H),V3(N.GATE6.X,0,N.GATE6.Y),V3(N.GATE6_IN.X,0,N.GATE6_IN.Y),...sq(lerp2([N.GATE6.X,N.GATE6.Y],[N.GATE6_IN.X,N.GATE6_IN.Y],.5),0.75),...arcHead(M.insideWalk,0.2).flatMap(q=>sq(q,0.22))],
+    // playground #23 迴廊候隊：資料讓整個大隊停在沿牆迴廊（隊頭在北轉前、往回排到門洞附近），所以 fit 門洞＋整條 insideWalk（每點外擴通道半寬）
+    // ＋章節時間當下正在迴廊停的人（地面與頭頂）。原本「沿牆通道」只 fit 門洞＋insideWalk 前 50%（審查 rv14／rv15），停在後半段的人會在畫面外
+    hold:()=>{const t=CHAPTERS.find(c=>c.key==='hold').t,o=[...fl(M.gate.band),...fl(M.gate.band,WALL_H),...pairs(M.insideWalk).flatMap(q=>sq(q,0.22))];
+      for(const p of P)if(p.t.holdStart!=null&&t>=p.t.holdStart&&t<p.t.holdEnd){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}return o;},
+    // playground #23 北行進列：舞台東側整組階梯（踏面外框，地面與台面兩層）、大隊 1 的北行與進列路段（迴廊之後，從各人 path 取點）、
+    // 章節時間當下北行進列的人（地面與頭頂）。主角是走上階梯的第 1、2 路與分出後梯次進列的人
+    north:()=>{const t=CHAPTERS.find(c=>c.key==='north').t,o=[];for(const [x,z] of STAIR.omega)o.push(V3(x,0,z),V3(x,STAGE_H,z));
+      for(const p of P){if(p.dadui!==1)continue;if(state(p,t)==='enter'&&marchTau(p,t)>=M.march.stageTau[1]){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}}
+      return o;},
+    // 入座：整個西班（全部人的場內位置，不只 WEST_N 周圍）fit 進扣掉面板的可視矩形（審查 rv14：原本座位區下半被 HUD／章節列蓋住）
+    seat:()=>[...P.map(p=>V3(p.field.X,0.12,p.field.Y)),V3(N.WEST_N.X,0,N.WEST_N.Y)],
+  };
+  const pv=(k,polar)=>fitBest(focus[k](),dirFrom(SOUTH,polar),24,12);
+  const portrait=()=>camera.aspect<1;
+  // 橫式特寫：構圖照第 1 階段（目標點、俯角、方位、距離都從資料推得），第 4 階段加一道保險——距離至少要讓該特寫的資料點整組 fit 進
+  // 「扣掉品牌卡、右側欄、卡片、HUD」的可視矩形（fitBest），主角不會被任何面板蓋住（主持人裁決）；目標仍由 closeView 放在可視區中心
+  const hDir=(xz,dirH)=>{if(dirH){const L=Math.hypot(dirH[0],dirH[1]);return [dirH[0]/L,dirH[1]/L];}const v=[-xz[0],-xz[1]+4],L=Math.hypot(v[0],v[1])||1;return [v[0]/L,v[1]/L];};
+  const lv=(k,xz,y,dist,polar,dirH)=>{const d=hDir(xz,dirH),fit=fitBest(focus[k](),dirFrom(d,polar),24,12);return closeView(xz,y,Math.max(dist,fit.dist),polar,d);};
+  // 迴廊候隊的方位：直式＝從迴廊末端往門洞看（相機在末端那一側，往南 SOUTH 偏一半，避免從場內正面看時牆擋住迴廊），迴廊沿畫面深度延伸；
+  // 橫式＝從場內東北方往西南看向牆（迴廊沿畫面橫向展開，近處的舞台南翼落在畫面下緣）
+  const holdDirP=()=>{const h=pairs(M.insideWalk),a=h[0],b=h[h.length-1];let x=(b[0]-a[0]),z=(b[1]-a[1]);const L=Math.hypot(x,z)||1;x=x/L+SOUTH[0];z=z/L+SOUTH[1];const L2=Math.hypot(x,z)||1;return [x/L2,z/L2];};
+  const FIELD_C=(()=>{const b=bounds(P.map(p=>[p.field.X,p.field.Y]),0);return [(b[0]+b[2])/2,(b[1]+b[3])/2];})();
+  return {
+    _fit:(k,d,p)=>fitBest(focus[k](),dirFrom(hDir(null,d),deg(p)),24,12),   // 測試用：任意方位／俯角的 fit（不套用）
+    home:{name:'總覽',view:()=>homeView()},
+    // 收尾回合（審查）：橫式離座原本目標固定在看台與出口之間（基準距離 7.5），樓梯被切在畫面左緣；改成和直式一樣用 exit 這組點（看台、出口、整組踏階）的投影外框 fit，
+    // 目標＝扣掉面板的可視矩形中心，139 出口與整段樓梯都在清單左側。方位與俯角不變
+    exit:{name:'看台出口',view:()=>portrait()?pv('exit',deg(50)):fitBest(focus.exit(),dirFrom(hDir(lerp2(above.c,ex.entry,.45)),deg(52)),24,12)},
+    // 收尾回合：橫式也改成直接用資料點的投影外框 fit（目標＝扣掉面板的可視矩形中心），樓梯下方 1.0 單位的路線不會落到 HUD 下
+    stair:{name:'樓梯',view:()=>portrait()?pv('stair',deg(55)):fitBest(focus.stair(),dirFrom(hDir(null,[0.82,0.57]),deg(55)),24,16)},
+    queue:{name:'門前隊伍',view:()=>portrait()?pv('queue',deg(50)):fitBest(focus.queue(),dirFrom(hDir(null,[0.9,-0.15]),deg(50)),24,12)},
+    // 收尾回合：橫式也直接用資料點的投影外框 fit（目標＝扣掉面板的可視矩形中心）；原本目標固定在 GATE_MID，844×390 時入口內側的通道起點會落到面板下
+    // pg23 第二輪審查：直式改從正南、俯角 46°——原本（SOUTH、48°）左轉進門洞時螢幕上前後排距 ÷ 同排間距只有 1.48，排看起來像一路一路（tests/pg23/ranks.js）
+    gate:{name:'西一入口',view:()=>portrait()?fitBest(focus.gate(),dirFrom([0,1],deg(46)),24,12):fitBest(focus.gate(),dirFrom(hDir(null,[0.93,0.37]),deg(48)),24,12)},
+    // pg23 第二輪審查：直式俯角 50° → 42°（更接近俯視），停在門洞附近的排前後距才 ≥ 同排間距 1.5 倍（原本 1.34）
+    hold:{name:'沿牆迴廊',view:()=>portrait()?fitBest(focus.hold(),dirFrom(holdDirP(),deg(42)),24,12):fitBest(focus.hold(),dirFrom(hDir(null,[0.55,-0.83]),deg(50)),24,12)},
+    // 北行進列：橫式從東方（略偏南）往西看，北行沿畫面橫向、舞台階梯的立面朝向鏡頭；直式同一側（見下）
+    // pg23 第二輪審查：直式原本從南往北看（北行沿畫面深度），手機上前後排距只有同排間距的 1.13 倍、看起來像六路縱隊；
+    // 改成和橫式同一側（東方略偏南）、俯角 44°，行進方向橫過畫面（tests/pg23/scan.js 掃描方位／俯角的結果記在 NOTES）
+    north:{name:'舞台階梯',view:()=>portrait()?fitBest(focus.north(),dirFrom(hDir(null,[0.96,0.28]),deg(44)),24,12):fitBest(focus.north(),dirFrom(hDir(null,[0.96,0.28]),deg(52)),24,12)},
+    seat:{name:'入座',view:()=>portrait()?pv('seat',deg(52)):lv('seat',FIELD_C,0.1,6,deg(52),[0.6,0.8])},
+  };}
+let SHOTS;
+
+// =====================================================================
+// 8. 迴圈與尺寸
+// =====================================================================
+function resize(){vcInvalidate();_homeDist=0;syncListFold();const w=stageEl.clientWidth||innerWidth,h=stageEl.clientHeight||innerHeight;renderer.setSize(w,h,false);labelRenderer.setSize(w,h);
+  camera.aspect=w/h;camera.updateProjectionMatrix();dirty=true;}
+let frames=0,lastRenderMs=0,lastNow=null,settling=0;
+function render(){const t0=performance.now();renderer.render(scene,activeCam);labelRenderer.render(scene,activeCam);layoutLabels();lastRenderMs=performance.now()-t0;frames++;}
+// 只在播放、飛行、互動（或小人還在轉向、鏡頭距離改變高度倍率）時 render；dt 上限 .08
+function loop(now){requestAnimationFrame(loop);rmSync();
+  const dt=lastNow==null?0:Math.min(0.08,Math.max(0,(now-lastNow)/1000));lastNow=now;
+  if(stepFlight(now))dirty=true;
+  if(playing){const dA=dt*speed;simT=Math.min(T_END,simT+dA);settling=updatePeople(simT,dA,false);updateHud();dirty=true;if(simT>=T_END)setPlaying(false);
+    if(RIB.tex&&RIB.on&&!RM)RIB.tex.offset.x=(RIB.tex.offset.x+dA*RIB.flow)%1;}   // 絲帶往隊頭方向流動（reduced-motion 時不流動）
+  if(stepFollow(dt))dirty=true;
+  if(activeCam===camera&&controls.update())dirty=true;
+  // 鏡頭這一幀移動後（跟隨、飛行、拖曳）高度倍率 K 可能變了：render 前重算，不讓任何一幀用上一幀的 K（播放中的 settling 已由上面的 updatePeople 處理）
+  if((!playing&&settling>0)||zoomK()!==people.K){settling=updatePeople(simT,0,false);if(follow)updatePills();dirty=true;}
+  if(dirty){dirty=false;render();}}
+
+// ---- 播放（第 6 節）：時間 t 從 0 到 meta.tEnd；進度一律用百分比，不顯示秒數 ----
+const T_END=D.meta.tEnd,SPEEDS=[0.5,1,2,4];
+let simT=D.meta.t0,playing=false,speed=1;
+const PLAY_ICO='M6 4l10 6-10 6z',PAUSE_ICO='M5 4h3.6v12H5zM11.4 4H15v12h-3.6z';
+function setPlaying(on){if(on&&simT>=T_END-1e-6)seekTo(D.meta.t0);playing=!!on;
+  const b=$('#play');b.setAttribute('aria-pressed',String(playing));b.setAttribute('aria-label',playing?'暫停':'播放');$('#play-ico').setAttribute('d',playing?PAUSE_ICO:PLAY_ICO);ribMap();dirty=true;}
+function setSpeed(v){speed=v;for(const b of document.querySelectorAll('#speeds .btn'))b.setAttribute('aria-pressed',String(+b.dataset.v===v));
+  const s1=$('#speed1');s1.textContent=(v===0.5?'0.5':v)+'×';s1.setAttribute('aria-label','播放速度 '+v+' 倍，按一下切換');}
+function seekTo(t){simT=clamp(t,0,T_END);settling=updatePeople(simT,0,true);updateHud();dirty=true;}
+const pctOf=t=>clamp(t/T_END,0,1)*100;
+let hudPct=-1,hudPhase=null,hudShort=null;
+function updateHud(){const f=pctOf(simT),v=Math.round(f*10);
+  if(v!==hudPct){hudPct=v;const sc=$('#scrub');sc.value=String(v);const pr=Math.floor(f)+'%';
+    sc.setAttribute('aria-valuetext','進度 '+pr);$('#fill').style.width=f+'%';$('#knob').style.left=f+'%';$('#pct').innerHTML=Math.floor(f)+'<small>%</small>';}
+  let ph=D.phases[D.phases.length-1];for(const q of D.phases)if(simT>=q.t0&&simT<q.t1){ph=q;break;}
+  // data.phases 的最後一段一直到 tEnd；樓梯走完之後改用從資料推得的補充說明（不改 data.phases 的色段）
+  if(ph===D.phases[D.phases.length-1])for(const q of PHASE_TAIL)if(simT>=q.t0)ph=q;
+  // pg23 第二輪審查：data.phases 的文字太長（桌面 528px 放進 521px 被截斷）。HUD 改顯示頁面自己從 state 與時間推得的短標籤（phaseShort），
+  // data.phases（與補充說明）的完整文字放在 title，並列在說明視窗裡
+  if(ph!==hudPhase){hudPhase=ph;$('#phase').title=ph.label;}
+  const sh=phaseShort(simT);if(sh!==hudShort){hudShort=sh;$('#phase').textContent=sh;}
+  updateCounts();updateCardStep();updateChapterCur();if(follow)updatePills();}
+// 短標籤：最前面（編號最小、還沒全部入座）的大隊與下一個已經起身的大隊，各自「走得最前面的人」在哪一段：
+// 離座（樓梯段之前）→ 下樓梯（樓梯段到排進門前隊伍）→ 門前隊伍（wait）→ 進場（enter，到迴廊前）→ 迴廊候隊（t.holdStart–t.holdEnd）
+// → 北行進列（τ ≥ map.march.stageTau[1]）→ 入座（done）。全部還在座位上＝「休息區就座」，全部入座＝「全部入座」
+const PH_NAME=['就座','離座','下樓梯','門前隊伍','進場','迴廊候隊','北行進列','入座'];
+function stageOf(p,i,t){const s=state(p,t);if(s==='seated')return 0;if(s==='walk')return t<HT[i].tS?1:2;if(s==='wait')return 3;if(s==='done')return 7;
+  if(p.t.holdStart!=null&&t>=p.t.holdStart&&t<p.t.holdEnd)return 5;return marchTau(p,t)>=M.march.stageTau[1]?6:4;}
+const _phMax=new Int8Array(10),_phMin=new Int8Array(10);
+function phaseShort(t){_phMax.fill(-1);_phMin.fill(9);for(let i=0;i<P.length;i++){const d=P[i].dadui,g=stageOf(P[i],i,t);if(g<7&&g>_phMax[d])_phMax[d]=g;if(g<_phMin[d])_phMin[d]=g;}
+  let lead=0;for(let d=1;d<=9;d++)if(_phMin[d]<7){lead=d;break;}
+  if(!lead)return '全部入座';if(_phMax[lead]<=0)return '休息區就座';
+  const one=d=>`大隊 ${d} ${PH_NAME[_phMax[d]]}`;const nx=lead+1<=9&&_phMax[lead+1]>0?lead+1:0;
+  return nx?`${one(lead)}・${one(nx)}`:one(lead);}
+// 補充階段：最後一人下完樓梯／最後一人過西一入口／全部入座（時間都從 persons 推得）
+const PHASE_TAIL=(()=>{let s=0,g=0;for(const p of D.persons){s=Math.max(s,p.t.stair);g=Math.max(g,p.t.gate);}
+  return [{t0:s,label:'樓梯已走完；最後一個大隊排滿門前隊伍、穿過西一入口'},{t0:g,label:'最後一排已過西一入口，沿牆迴廊北行、入座'},{t0:D.meta.tEnd,label:'全部入座'}].filter(q=>q.t0>D.phases[D.phases.length-1].t0);})();
+function buildHud(){
+  // 階段色段（data.phases）
+  const tr=$('#track'),fill=$('#fill');
+  for(const q of D.phases){const d=document.createElement('div');d.className='ph '+q.key;d.style.left=pctOf(q.t0)+'%';d.style.width=(pctOf(q.t1)-pctOf(q.t0))+'%';d.title=q.label;tr.insertBefore(d,fill);}
+  // 大隊刻度：每個大隊 1 個，取白藍兩路中較早的 tStairFirst
+  const tk=$('#ticks'),by={};for(const g of D.groups)by[g.dadui]=Math.min(by[g.dadui]??1e9,g.tStairFirst);
+  built.daduiTicks=Object.keys(by).length;
+  for(const [d,t] of Object.entries(by).sort((a,b)=>a[0]-b[0])){const i=document.createElement('i');i.style.left=pctOf(t)+'%';i.style.background='var(--dadui-'+((d-1)%9+1)+')';i.style.opacity='1';
+    const b=document.createElement('b');b.style.left=pctOf(t)+'%';b.textContent=d;tk.append(i,b);}
+  {const c=document.createElement('b');c.className='cap';c.textContent='大隊';tk.appendChild(c);}   // 刻度數字的意思（放右端：大隊 9 在 80%，右側有空位）
+  $('#scrub').setAttribute('aria-describedby','phase ticks-desc');
+  // 速度
+  const sp=$('#speeds');for(const v of SPEEDS){const b=document.createElement('button');b.className='btn';b.type='button';b.dataset.v=v;b.textContent=(v===0.5?'0.5':v)+'×';b.onclick=()=>setSpeed(v);sp.appendChild(b);}
+  $('#speed1').onclick=()=>setSpeed(SPEEDS[(SPEEDS.indexOf(speed)+1)%SPEEDS.length]);
+  $('#play').onclick=()=>setPlaying(!playing);
+  // 進度條：拖曳時暫停，放開後恢復原本的播放狀態
+  const sc=$('#scrub');let resume=null;
+  const grab=()=>{if(resume===null){resume=playing;if(playing)setPlaying(false);}};
+  const release=()=>{if(resume!==null){const r=resume;resume=null;if(r)setPlaying(true);}};
+  sc.addEventListener('pointerdown',grab);sc.addEventListener('input',()=>{grab();seekTo(+sc.value/1000*T_END);});
+  sc.addEventListener('change',release);sc.addEventListener('pointerup',release);sc.addEventListener('pointercancel',release);sc.addEventListener('blur',release);
+  setSpeed(1);
+  // 底部 HUD 高度 → 鏡頭列擺在它上面
+  const hud=$('#hud');const setH=()=>document.documentElement.style.setProperty('--hud-h',hud.getBoundingClientRect().height+'px');new ResizeObserver(setH).observe(hud);setH();}
+
+// ---- 章節鈕（第 6 節；第 4 階段取代第 1 階段的鏡頭列）：時間全部從資料推導，按下就跳到該時間並飛到對應的特寫 ----
+// 「總覽」與「俯視」保留在章節列的兩端（只換鏡頭、不改時間）
+// 主持人裁決（收尾回合）：章節時間仍「從資料推導」，但改成「主角有人」的時刻——
+// 每個章節在 [SPEC 原始時間 t0, t0 + 20] 內、以 0.05 為步長取樣，算主角區域（該特寫要呈現的路段）內的人數，
+// 取大隊 1 人數最多的時刻（同數時取全體人數較多者，再同數取較早者）。離座、全部入座維持原值。
+// 主角區域（全部由資料定義）：
+//   下樓梯＝正在樓梯段上（HT 的 tS ≤ t < tE，即 t.stair 到 L 形轉角前一點，和第 1 節高度分段同一段）；
+//   門前隊伍＝state 是 wait；
+//   穿過西一入口＝state 是 enter 且 pos 在 map.gate.band（門洞地面）內；
+//   （playground #23 起）迴廊候隊＝t.holdStart ≤ t < t.holdEnd（資料的迴廊候隊時段：整排停在沿牆迴廊，state 仍是 enter）；
+//   北行進列＝state 是 enter，且已走過沿牆迴廊（中心線時間 τ ≥ map.march.stageTau[1]＝北轉起點；τ＝t − t.enter − 已停的時間），
+//   包括沿舞台階梯北行與分出後的梯次進列。
+//   舊的「沿牆通道」（大隊 1 第一人 t.gate + 1 起、insideWalk 前 50%）在資料加入迴廊候隊後改成上面兩章（見 NOTES「playground #23 更新」）。
+// 同一套計算在 tests/fin/chapter-times.js 用 node 獨立重算（結果寫 tests/fin/chapter-times.result.json，記在 NOTES）。
+// 中心線時間 τ（相對 t.enter，不含迴廊停的時間）：同一大隊每排的速度剖面相同，只差 t.enter 與停的時段（build/march.py）
+function marchTau(p,t){const s=p.t;let w=0;if(s.holdStart!=null&&t>s.holdStart)w=Math.min(t,s.holdEnd)-s.holdStart;return t-s.enter-w;}
+const CHAP_WIN=20,CHAP_STEP=0.05;
+function chapterPeak(key,t0){const GB=pairs(M.gate.band);
+  const inReg={stair:(p,i,t)=>t>=HT[i].tS&&t<HT[i].tE,
+    queue:(p,i,t)=>state(p,t)==='wait',
+    gate:(p,i,t)=>{if(state(p,t)!=='enter')return false;const q=pos(p,t);return pip(q[0],q[1],GB);},
+    hold:(p,i,t)=>p.t.holdStart!=null&&t>=p.t.holdStart&&t<p.t.holdEnd,
+    north:(p,i,t)=>state(p,t)==='enter'&&marchTau(p,t)>=M.march.stageTau[1]}[key];
+  let best=null,a0=0,n0=0;const S=Math.round(CHAP_WIN/CHAP_STEP);
+  // pg23 第二輪審查：北行進列的大隊 1 在整排都過了北轉之後、第一人入座之前一直是 186 人（同數），取最早的時刻時還沒有人分出；
+  // 所以北行進列在「大隊 1 人數」之後先比「大隊 1 已分出（t ≥ t.split，開始梯次進列）的人數」，多的優先，再比全體、再取較早。其他章節 sp 恆為 0，規則不變
+  const spl=key==='north';
+  for(let s=0;s<=S;s++){const t=+(t0+s*CHAP_STEP).toFixed(4);let a=0,n=0,sp=0;for(let i=0;i<P.length;i++)if(inReg(P[i],i,t)){n++;if(P[i].dadui===1){a++;if(spl&&t>=P[i].t.split)sp++;}}
+    if(s===0){a0=a;n0=n;}if(!best||a>best.a||(a===best.a&&(sp>best.sp||(sp===best.sp&&n>best.n))))best={t,a,n,sp};}
+  return {t:best.t,t0,d1:best.a,n:best.n,d1At0:a0,nAt0:n0,split:best.sp};}
+const CHAPTERS=(()=>{let h1=1e9,e1=1e9;for(const p of P)if(p.dadui===1){if(p.t.holdStart!=null){h1=Math.min(h1,p.t.holdStart);e1=Math.min(e1,p.t.holdEnd);}}
+  const pk=(key,t0)=>{const r=chapterPeak(key,t0);return {t:r.t,t0,peak:r};};
+  return [{key:'leave',name:'離座',full:'離座',t:D.meta.t0,t0:D.meta.t0,shot:'exit'},
+    {key:'stair',name:'下樓梯',full:'下樓梯',...pk('stair',D.groups[0].tStairFirst),shot:'stair'},
+    {key:'queue',name:'門前隊伍',full:'牆外門前隊伍（舞台後方）',...pk('queue',D.groups[0].tAssembly),shot:'queue'},
+    {key:'gate',name:'穿過西一入口',full:'穿過西一入口',...pk('gate',D.meta.tGateStart),shot:'gate'},
+    // playground #23：沿牆通道 → 迴廊候隊（原始時間＝大隊 1 第一個 t.holdStart）＋北行進列（原始時間＝大隊 1 第一個 t.holdEnd，迴廊放行）
+    {key:'hold',name:'迴廊候隊',full:'沿牆迴廊候隊（停好等下一大隊排滿）',...pk('hold',h1),shot:'hold'},
+    {key:'north',name:'北行進列',full:'沿舞台階梯北行、梯次進列',...pk('north',e1),shot:'north'},
+    {key:'done',name:'全部入座',full:'全部入座',t:D.meta.tEnd,t0:D.meta.tEnd,shot:'seat'}];})();
+let chapCur=-2;
+function pressCam(b){for(const x of $('#cams').querySelectorAll('.chip'))x.setAttribute('aria-pressed',String(x===b));}
+function goChapter(k){const c=CHAPTERS[k];setFollow(null);setTop(false);seekTo(c.t);flyTo(SHOTS[c.shot].view());pressCam($(`#cams [data-chap="${k}"]`));
+  if(isSheet()&&$('#list').classList.contains('open'))closeList();return c.t;}
+// 目前所在的章節（依時間；最後一個 t ≤ 目前時間的章節）：chip 下緣一個小點
+function updateChapterCur(){let k=-1;for(let j=0;j<CHAPTERS.length;j++)if(simT>=CHAPTERS[j].t-1e-6)k=j;if(k===chapCur)return;chapCur=k;
+  $('#cams').querySelectorAll('[data-chap]').forEach(b=>{const on=+b.dataset.chap===k;b.classList.toggle('cur',on);if(on)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');});}
+function buildCams(){const nav=$('#cams');
+  const mk=(html,lab)=>{const b=document.createElement('button');b.className='chip';b.type='button';b.innerHTML=html;if(lab)b.setAttribute('aria-label',lab);b.setAttribute('aria-pressed','false');nav.appendChild(b);return b;};
+  const home=mk('總覽','總覽鏡頭（不改時間）');home.dataset.shot='home';home.setAttribute('aria-pressed','true');
+  home.onclick=()=>{setFollow(null);setTop(false);if(isSheet()&&$('#list').classList.contains('open'))closeList();flyTo(SHOTS.home.view());pressCam(home);};
+  CHAPTERS.forEach((c,k)=>{const b=mk(`<span class="n" aria-hidden="true">${k+1}</span>${c.name}`,`章節 ${k+1}：${c.full}（跳到這個時間，鏡頭飛到特寫）`);b.dataset.chap=k;b.dataset.shot=c.shot;b.title=c.full;
+    b.onclick=()=>{goChapter(k);b.scrollIntoView({block:'nearest',inline:'nearest'});};});
+  const t=mk('俯視','俯視（正上方，北朝上）');t.classList.add('sep');
+  t.onclick=()=>{const on=activeCam!==orthoCam;if(on)setFollow(null);setTop(on);pressCam(on?t:null);};
+  // 可橫捲時，在還有內容的一側漸隱
+  const fade=()=>{const max=nav.scrollWidth-nav.clientWidth;nav.classList.toggle('fade-l',max>1&&nav.scrollLeft>1);nav.classList.toggle('fade-r',max>1&&nav.scrollLeft<max-1);};
+  nav.addEventListener('scroll',fade,{passive:true});new ResizeObserver(fade).observe(nav);fade();}
+let _rb=null;function routeBounds(){if(_rb)return _rb;const pts=[...M.stands.flatMap(s=>pairs(s.poly)),...pairs(M.b1Band),...pairs(M.stairBand)];
+  for(const p of P){for(const q of p.path)pts.push(q);pts.push([p.field.X,p.field.Y]);}return (_rb=bounds(pts,.3));}
+// 正上方的 Orthographic 鏡頭（北朝上、東在右）；b 給定時用 core.js View.fit 的換算（pad 像素）
+// 不指定 pad 時：fit 進扣掉品牌卡與鏡頭列的可視矩形（兩種讓法取比例尺較大者），並把外框置中在該矩形
+function setTop(on,b,pad){if(!on){activeCam=camera;controls.enabled=true;dirty=true;return;}
+  const w=renderer.domElement.clientWidth,h=renderer.domElement.clientHeight;
+  // 直式（手機）俯視：只 fit 實際路線範圍（看台、B1 走廊、樓梯、全部 path 點、西班座位），整個球場放不下又留一大片空白（主持人裁決）
+  b=b||(camera.aspect<1?routeBounds():bounds([...pairs(M.wall),...M.stands.flatMap(s=>pairs(s.poly)),...pairs(M.b1Band),...pairs(M.b2Band),...pairs(M.stairBand)],.3));
+  const rects=pad!=null?[{l:pad,t:pad,r:pad,b:pad}]:uiInsets().map(r=>({l:r.l+30,t:r.t+12,r:r.r+30,b:r.b+12}));   // 左右多留標籤半寬
+  let s=0,R=null;for(const r of rects){const k=Math.min((w-r.l-r.r)/(b[2]-b[0]),(h-r.t-r.b)/(b[3]-b[1]));if(k>s){s=k;R=r;}}
+  const cx=(b[0]+b[2])/2-((R.l+(w-R.r))/2-w/2)/s,cy=(b[1]+b[3])/2-((R.t+(h-R.b))/2-h/2)/s;
+  Object.assign(orthoCam,{left:-w/2/s,right:w/2/s,top:h/2/s,bottom:-h/2/s,near:0.1,far:100});orthoCam.updateProjectionMatrix();
+  orthoCam.position.set(cx,40,cy);orthoCam.up.set(0,0,-1);orthoCam.lookAt(cx,0,cy);orthoCam.updateMatrixWorld();
+  activeCam=orthoCam;controls.enabled=false;dirty=true;return {s,cx,cy};}
+
+// ---- 首次說明（第 7 節）：第一次進入顯示 3 步驟說明，看過後用 localStorage dome.help 記住（讀寫包 try/catch）；品牌卡的「?」可再打開 ----
+// 第一次進入時說明蓋在場景上：自動播放延到按「開始看」之後才開始（否則讀說明時人已經走掉一段）；reduced-motion 時照樣不自動播放
+const HELP_KEY='dome.help';let helpPrevFocus=null,helpAutoplay=false;
+function helpSeen(){try{return localStorage.getItem(HELP_KEY)==='1';}catch(e){return false;}}
+const helpOpen=()=>!$('#help').hidden;
+function openHelp(){if(helpOpen())return;helpPrevFocus=document.activeElement;$('#help').hidden=false;$('#help-btn').setAttribute('aria-expanded','true');$('#help-go').focus({preventScroll:true});}
+function closeHelp(){if(!helpOpen())return;$('#help').hidden=true;$('#help-btn').setAttribute('aria-expanded','false');try{localStorage.setItem(HELP_KEY,'1');}catch(e){}
+  const f=helpPrevFocus&&helpPrevFocus.isConnected&&helpPrevFocus!==document.body?helpPrevFocus:$('#help-btn');try{f.focus({preventScroll:true});}catch(e){}
+  if(helpAutoplay){helpAutoplay=false;if(!RM)setPlaying(true);}}
+function buildHelp(){$('#help-disc').textContent=$('#disclaimer').textContent;
+  // 進度條色段（data.phases）與補充說明的完整文字（HUD 只顯示短標籤）
+  $('#help-phases').innerHTML='<strong>進度條的階段（資料原文）</strong>'+[...D.phases.map(q=>q.label),...PHASE_TAIL.map(q=>q.label)].map((x,k)=>`<span class="ph-i">${k+1}. ${esc(x)}</span>`).join('');
+  $('#help-go').onclick=closeHelp;$('#help-x').onclick=closeHelp;$('#help-btn').onclick=openHelp;
+  $('#help').addEventListener('pointerdown',e=>{if(e.target.id==='help')closeHelp();});
+  // 焦點留在說明框裡（Tab 在框內循環）
+  $('#help').addEventListener('keydown',e=>{if(e.key!=='Tab')return;const f=[...$('#help').querySelectorAll('button')],i=f.indexOf(document.activeElement);
+    e.preventDefault();f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus();});}
+
+// 鍵盤（第 7 節）：空白鍵播放／暫停；←→ 跳 1%；Shift＋方向鍵旋轉鏡頭；Esc 關說明、解除跟隨或關閉卡片
+// 空白鍵：播放／暫停（焦點在文字輸入框時除外）；←→：跳 1%
+// 文字輸入框：可以打字的 input（text、search…；不含 range、checkbox、button 類）、textarea、contenteditable
+const NON_TEXT_INPUT=/^(range|checkbox|radio|button|submit|reset|color|file|image)$/;
+function isTextField(el){if(!el)return false;if(el.isContentEditable)return true;const tag=el.tagName;if(tag==='TEXTAREA')return true;return tag==='INPUT'&&!NON_TEXT_INPUT.test((el.type||'text').toLowerCase());}
+// 按鈕與 summary 的「按下」發生在空白鍵的 keyup：keydown 已經切換過播放，keyup 也要擋掉，否則會同時觸發該按鈕
+addEventListener('keyup',e=>{if(e.key===' '&&!e.shiftKey&&!e.altKey&&!e.metaKey&&!e.ctrlKey&&!isTextField(e.target)&&!helpOpen()&&window.__dome&&window.__dome.ready)e.preventDefault();});
+addEventListener('keydown',e=>{if(!window.__dome||!window.__dome.ready)return;const tg=e.target,tag=tg&&tg.tagName,isScrub=tg&&tg.id==='scrub';
+  if(helpOpen()){if(e.key==='Escape'){e.preventDefault();closeHelp();}return;}   // 說明開著時只處理 Esc（其餘鍵留給說明框）
+  // 進度條（range input）本身不用空白鍵：點過進度條、焦點留在上面時，空白鍵仍是播放／暫停
+  // Esc：解除跟隨；沒有跟隨時關閉卡片；再按一次關閉手機清單
+  if(e.key==='Escape'){if(follow){setFollow(null);e.preventDefault();return;}if(card.i>=0){closeCard();e.preventDefault();return;}if($('#list').classList.contains('open')){closeList();e.preventDefault();}return;}
+  // 主持人裁決（收尾回合）：空白鍵除了焦點在文字輸入框以外，一律切換播放／暫停；在 button／summary／checkbox 上先 preventDefault
+  // （不讓按鈕被「按下」、details 被展開），按住不放的連發只吃掉、不再切換
+  if(e.key===' '&&!e.shiftKey&&!e.altKey&&!e.metaKey&&!e.ctrlKey&&!isTextField(tg)){e.preventDefault();if(!e.repeat)setPlaying(!playing);return;}
+  if(!e.shiftKey&&!e.altKey&&!e.metaKey&&!e.ctrlKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')&&(isScrub||!/^(INPUT|TEXTAREA|SELECT)$/.test(tag||''))){
+    e.preventDefault();seekTo(simT+(e.key==='ArrowRight'?1:-1)*T_END/100);return;}});
+addEventListener('keydown',e=>{if(!controls||activeCam!==camera||helpOpen())return;
+  // 焦點在輸入框（進度條除外）時，Shift＋方向鍵是選取文字，不攔截（審查 rv14）
+  const tg=e.target,tag=tg&&tg.tagName;if(tg&&tg.id!=='scrub'&&/^(INPUT|TEXTAREA|SELECT)$/.test(tag||''))return;
+  if(e.shiftKey&&e.key.startsWith('Arrow')){e.preventDefault();pressCam(null);cancelFlight();if(follow)setFollow(null);
+  const off=camera.position.clone().sub(controls.target),sph=new THREE.Spherical().setFromVector3(off);
+  if(e.key==='ArrowLeft')sph.theta+=deg(6);if(e.key==='ArrowRight')sph.theta-=deg(6);if(e.key==='ArrowUp')sph.phi=Math.max(controls.minPolarAngle,sph.phi-deg(4));if(e.key==='ArrowDown')sph.phi=Math.min(controls.maxPolarAngle,sph.phi+deg(4));
+  camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sph));controls.update();dirty=true;}});
+
+// =====================================================================
+// 9. 啟動
+// =====================================================================
+try{
+  initRenderer();initLights();
+  const t0=performance.now();buildWorld();const buildMs=performance.now()-t0;
+  buildRibbon();buildPills();
+  try{if(localStorage.getItem('dome.ribbon')==='0')RIB.on=false;}catch(e){}
+  $('#ribbon-tg').setAttribute('aria-pressed',String(RIB.on));
+  SHOTS=shots();buildCams();buildHud();buildCounts();buildList();buildHelp();initPicking();
+  // 聲明（第 0 節）：桌面預設展開在品牌卡上；手機預設收合（說明框裡也有一份）
+  if(!isSheet())$('#disc-box').open=true;
+  layoutPanels();for(const el of ['#brand','#counts','#hud','#cams'])new ResizeObserver(()=>{layoutPanels();dirty=true;}).observe($(el));
+  for(const el of ['#card','#list'])new ResizeObserver(()=>{vcInvalidate();dirty=true;}).observe($(el));
+  SHEET_MQ.addEventListener('change',()=>{if(!isSheet())closeList();document.body.classList.remove('list-collapsed');syncListFold();layoutPanels();});
+  SIDE_MQ.addEventListener('change',()=>{vcInvalidate();layoutPanels();dirty=true;});
+  syncListFold();
+  resize();new ResizeObserver(resize).observe(stageEl);
+  const v=homeView();camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();
+  seekTo(D.meta.t0);
+  render();
+  const ld=$('#loader');ld.classList.add('done');ld.setAttribute('aria-busy','false');
+  requestAnimationFrame(loop);
+  // 載入後從 meta.t0 自動播放（1×）；reduced-motion 時不自動播放。第一次進入先顯示說明，按「開始看」後才開始播放
+  if(!helpSeen()){helpAutoplay=true;openHelp();}
+  else if(!RM)setPlaying(true);
+  // reduced-motion 的 change 事件即時切換：切到 reduce 時暫停播放、飛行中的鏡頭直接到位、絲帶停止流動；切回來不自動播放
+  reduceMotion.addEventListener('change',rmSync);
+  window.__dome={ready:true,
+    // 第 9 節測試介面：seek 會暫停、跳到 t、立即 render；worldXZ 讀小人影子零件 instanceMatrix 的平移；state 是目前時間的狀態
+    seek(t){helpAutoplay=false;setPlaying(false);seekTo(+t);render();dirty=false;return simT;},
+    worldXZ(i){const a=people.shadow.instanceMatrix.array;return [a[i*16+12],a[i*16+14]];},
+    state(i){return state(P[i],simT);},
+    debug:{H1,ROW_DROP,DONE_FACING,buildMs,
+      time:()=>simT,isPlaying:()=>playing,play:()=>setPlaying(true),pause:()=>setPlaying(false),setSpeed,speed:()=>speed,
+      // 推進 n 幀（每幀 dt 秒，照播放的規則：限速轉向、相位上限），用來驗證步伐與朝向，不靠真實播放
+      step:(n,dt)=>{let w=0;for(let k=0;k<n;k++){simT=Math.min(T_END,simT+dt*speed);settling=updatePeople(simT,dt*speed,false);w+=people.lastWrote;}updateHud();render();return w/n;},
+      fig:i=>{const o=i*16,g=k=>Array.from(people[k].instanceMatrix.array.slice(o,o+16));return {yaw:people.yaw[i],gait:people.gait[i],ph:people.ph[i],st:people.st[i],K:people.K,sz:people.sz[i],shadow:g('shadow'),legL:g('legL'),legR:g('legR'),body:g('body'),head:g('head')};},
+      timeUpdate:(n,dt)=>{const ts=[];for(let k=0;k<n;k++){const a=performance.now();simT=Math.min(T_END,simT+dt);updatePeople(simT,dt,false);ts.push(+(performance.now()-a).toFixed(2));}return {ms:ts,wrote:people.lastWrote};},
+      setCam:(pos,tgt)=>{setTop(false);cancelFlight();camera.position.fromArray(pos);controls.target.fromArray(tgt);controls.update();updatePeople(simT,0,true);render();return zoomK();},
+      FIG,heightAtT:i=>heightAt(i,simT),hudPct:()=>$('#scrub').value/10,
+      heightAt,pos:(i,t)=>pos(P[i],t),state:(i,t)=>state(P[i],t),counts:t=>counts(t,P),
+      ht:i=>({tL:HT[i].tL,tH:HT[i].tH,tS:HT[i].tS,tE:HT[i].tE,k:HT[i].k,kH:HT[i].kH,kEnd:HT[i].kEnd,h0:HT[i].h0}),
+      built:()=>({...built,backboardMat:undefined,stepH:undefined}),
+      // playground #23：舞台東側階梯（第 3.2 節）。stepAt＝往東數跨過幾條階梯線；top(n)＝第 n 階踏面頂；foot(i)＝目前腳底高度（影子零件 y − 0.002）；ground(i)＝是否在地面層（下樓之後）
+      stair:()=>({N:STAIR.N,rise:STAIR.rise,box:STAIR.box,chains:STAIR.chains.map(c=>({y0:c.y0,y1:c.y1,n:c.pts.length}))}),stepAt:(x,y)=>STAIR.stepAt(x,y),stairTop:n=>STAIR.top(n),
+      foot:i=>people.arrs.shadow[i*16+13]-0.002,ground:i=>!!people.gr[i],treadTopAt:(x,y)=>treadTopAt(x,y),stageLoops:()=>built.stageLoops,stepH:()=>built.stepH,
+      seated:()=>seatedInfo(),
+      info:()=>{renderer.info.reset();renderer.render(scene,activeCam);const r={calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures};return r;},
+      timeRenders:n=>{const ts=[],gl=renderer.getContext(),px=new Uint8Array(4);for(let i=0;i<n;i++){const a=performance.now();renderer.render(scene,activeCam);labelRenderer.render(scene,activeCam);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);ts.push(+(performance.now()-a).toFixed(1));}return ts;},
+      setTop:(on,b,pad)=>{const r=setTop(on,b,pad);render();return r;},
+      // 直接指定俯視換算（與 core.js View 相同：像素 = (X − cx)·s + w/2，(Y − cy)·s + h/2）
+      setTopSC:(s,cx,cy)=>{const w=renderer.domElement.clientWidth,h=renderer.domElement.clientHeight;Object.assign(orthoCam,{left:-w/2/s,right:w/2/s,top:h/2/s,bottom:-h/2/s});orthoCam.updateProjectionMatrix();
+        orthoCam.position.set(cx,40,cy);orthoCam.up.set(0,0,-1);orthoCam.lookAt(cx,0,cy);orthoCam.updateMatrixWorld();activeCam=orthoCam;controls.enabled=false;render();return true;},
+      view:k=>{setTop(false);const v=SHOTS[k].view();camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();if(zoomK()!==people.K)updatePeople(simT,0,false);render();return {pos:v.pos.toArray(),target:v.target.toArray()};},
+      fly:k=>flyTo(SHOTS[k].view()),
+      viewDir:(k,d,p)=>{const v=SHOTS._fit(k,d,p);return {pos:v.pos.toArray(),target:v.target.toArray()};},
+      camera:()=>({pos:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov,aspect:camera.aspect}),
+      project:(x,y,z)=>{const p=new THREE.Vector3(x,y,z).project(activeCam);return [(p.x+1)/2*renderer.domElement.clientWidth,(1-p.y)/2*renderer.domElement.clientHeight,p.z];},
+      render:()=>render(),
+      // 第 3 階段
+      ribbon:()=>({on:RIB.on,segs:RIB.segs,chains:RIB.chains,idxOutline:RIB.L[0].ni,idxFill:RIB.L[1].ni,cap:RIB.L[1].idx.length,offset:RIB.tex.offset.x,
+        pos:(()=>{const L=RIB.L[1],o=[];for(let k=0;k<L.nv>>1;k++)if(L.pf[k])for(let j=0;j<6;j++)o.push(L.pos[k*6+j]);return o;})(),   // 只有人的點（踏階折點另計）
+        nPts:RIB.L[1].nv>>1,brk:Array.from(RIB.brk.subarray(0,RIB.nbrk)),posAll:Array.from(RIB.L[1].pos.subarray(0,RIB.L[1].nv*3)),idx:Array.from(RIB.L[1].idx.subarray(0,RIB.L[1].ni)),geoId:RIB.L[1].geo.id,posBuf:RIB.L[1].geo.attributes.position.array===RIB.L[1].pos}),
+      setRibbon:on=>{setRibbon(on);render();return RIB.on;},
+      follow:()=>follow?{mode:follow.mode,lie:follow.lie,i:follow.mode==='person'?follow.i:-1,cur:follow.cur}:null,
+      setFollow:f=>{setFollow(f);return !!follow;},
+      followStep:(n,dt)=>{for(let k=0;k<n;k++){stepFollow(dt);controls.update();if(zoomK()!==people.K){updatePeople(simT,0,false);updatePills();}}render();return {cam:camera.position.toArray(),target:controls.target.toArray()};},
+      rowHead:(lie,t)=>rowHead(lie,t??simT),
+      pick:(x,y)=>{activeCam.updateMatrixWorld();return pickAt(x,y);},
+      search:q=>{const r=doSearch(q);return {ok:r,msg:$('#search-msg').textContent,follow:follow?{mode:follow.mode,lie:follow.lie,i:follow.i??-1}:null};},
+      parseQuery,
+      card:()=>({i:card.i,open:!$('#card').hidden,cur:card.cur,steps:card.steps&&card.steps.map(s=>({k:s.k,t:s.t})),bd:Array.from(card.bd),text:$('#card').innerText}),
+      tint:i=>{const o=i*3,g=k=>Array.from(people[k].instanceColor.array.slice(o,o+3)),gb=k=>Array.from(people.baseCol[k].slice(o,o+3));return {body:g('body'),base:gb('body'),head:g('head'),headBase:gb('head'),hair:g('hair'),hairBase:gb('hair'),leg:g('legL'),legBase:gb('legL'),lie:people.tintLie};},
+      pills:()=>[pillHead,pillMe].map(q=>({vis:q.o.visible,text:q.el.textContent,pos:q.o.position.toArray()})),
+      backboard:()=>({opacity:built.backboardMat.opacity,visible:built.backboardMat.visible}),
+      counts:()=>({...Object.fromEntries(COUNT_KEYS.map(([k])=>[k,+$(`#counts [data-n="${k}"]`).textContent.replace(/,/g,'')]))}),
+      personScreen:i=>{activeCam.updateMatrixWorld();const v=new THREE.Vector3(people.px[i],people.arrs.body[i*16+13],people.pz[i]).project(activeCam);return [(v.x+1)/2*renderer.domElement.clientWidth,(1-v.y)/2*renderer.domElement.clientHeight];},
+      uiInsets:()=>uiInsets(),visibleCenter:()=>visibleCenter(),
+      timeRibbon:n=>{const ts=[];for(let k=0;k<n;k++){const a=performance.now();updateRibbon(simT);ts.push(+(performance.now()-a).toFixed(3));}return ts;},
+      timePick:n=>{const ts=[];activeCam.updateMatrixWorld();for(let k=0;k<n;k++){const a=performance.now();pickAt(200+k,300);ts.push(+(performance.now()-a).toFixed(3));}return ts;},
+      // 第 4 階段：不再暴露 scene／renderer 本體，只留測試要讀的數字
+      frames:()=>renderer.info.render.frame,ribbonMapIsData:()=>!!RIB.L[1].m.material.map.isDataTexture,
+      chapters:()=>CHAPTERS.map(c=>({key:c.key,name:c.name,t:c.t,t0:c.t0,peak:c.peak||null,shot:c.shot})),chapter:k=>goChapter(k),chapterCur:()=>chapCur,
+      help:()=>({open:helpOpen(),seen:helpSeen()}),flight:()=>!!flight,sheet:()=>({card:$('#card').classList.contains('full'),list:$('#list').classList.contains('full')}),
+      labels:()=>labelList.map(L=>({text:L.el.textContent,hid:L.el.classList.contains('hid'),rect:(r=>[r.left,r.top,r.right,r.bottom])(L.el.getBoundingClientRect()),lead:L.leader?!L.leader.classList.contains('hid'):null,far:L.far})),
+      breakdown:()=>{const out=[];scene.traverse(o=>{if(!o.geometry)return;const g=o.geometry,n=(g.index?g.index.count:g.getAttribute('position').count)/(o.isLineSegments?2:3),k=o.isInstancedMesh?o.count:1;out.push({type:o.type,per:Math.round(n),count:k,total:Math.round(n*k)});});return out.sort((a,b)=>b.total-a.total);},
+    }};
+}catch(e){console.error(e);window.__domeFail(e&&e.message||e);}
+</script>
+</body>
+</html>

@@ -36,6 +36,7 @@
 | `handout.html` 講義 | 幹部（印 A3） | 六個關鍵時刻 |
 | `captain.html` 口令卡 | 大隊長（手機） | 逐大隊八個口令（含門前隊伍出發）與六列狀態 |
 | `exit.html` 出口帶隊卡 | 休息區出口幹部 | 逐出口由上排往下的帶隊順序、換口與空檔、整張座位圖 |
+| `diorama.html` 3D 模型 | 所有人（說明用） | 黏土微縮模型 3D 動畫：1,609 人從看台下樓、門前隊伍、整排轉彎進門、迴廊候隊、北行進列；章節、跟隨一列或一個人、搜尋列排。需要 WebGL，three.js 從 cdn.jsdelivr.net 載入。這個檔由 pichiu/workshop `cases/taipei-dome-diorama/diorama.src.html` 以 `python3 -I inline.py --pages` 產生，不要直接改 |
 
 `seats.csv` 一人一列，欄位同 2c；「集結區」欄一律「門前隊伍（B2）」。
 

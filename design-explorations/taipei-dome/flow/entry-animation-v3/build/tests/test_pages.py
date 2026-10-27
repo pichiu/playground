@@ -6,7 +6,7 @@ def test_index_overview(open_page):
     pg, errs, perrs = open_page('index.html', 1280)
     pg.wait_for_selector('[data-checks] .ok', timeout=20000)
     assert not errs and not perrs, (errs, perrs)
-    assert pg.locator('nav.dome-nav a').count() == 7 and pg.locator('a[href="seats.csv"]').count() == 1
+    assert pg.locator('nav.dome-nav a').count() == 8 and pg.locator('a[href="seats.csv"]').count() == 1
     assert pg.locator('[data-lane-table] tbody tr').count() == 2
     assert pg.locator('[data-lane-table] tbody tr').first.locator('td').count() == 6     # 路名 + 4 段 + 合計
     assert pg.locator('[data-stair-order] [data-dadui]').count() == 9
