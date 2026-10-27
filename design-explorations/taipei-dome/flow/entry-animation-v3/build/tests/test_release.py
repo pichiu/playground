@@ -1,7 +1,10 @@
 """發行：首頁兩張進場動線卡、2c 資料與建置不動、全站連結、README 在、追蹤檔可重現。"""
 import hashlib
+import json
 import re
 import subprocess
+
+import inline
 
 BASE_2C = 'd9af8c5'   # 2c 最後一次刻意改資料與建置（10/23 code review：分兩出口的列、保留席由資料提供）；之後 2c 不動
 
@@ -58,6 +61,45 @@ def test_tracked_outputs_match_pipeline(root, pipeline):
     tmp, _ = pipeline
     for name in ['data.json', 'seats.csv']:
         assert hashlib.sha256((tmp / name).read_bytes()).hexdigest() == hashlib.sha256((root / name).read_bytes()).hexdigest(), name
+
+
+def test_diorama_matches_src(root):
+    """追蹤的 diorama.html 必須就是 build/diorama.src.html 以 inline.py 重新產生的結果（逐位元相同）。"""
+    want = hashlib.sha256(inline.pages_html().encode('utf-8')).hexdigest()
+    assert hashlib.sha256((root / 'diorama.html').read_bytes()).hexdigest() == want, 'diorama.html 不是最新的：請在 build/ 執行 python3 -I inline.py'
+
+
+def test_diorama_copied_engine_matches_core(root):
+    """src 裡「原樣複製自 core.js」的引擎函式（artifact 版沒有 core.js 可用）必須仍逐字存在於 core.js。"""
+    core = (root / 'core.js').read_text(encoding='utf-8')
+    src = (root / 'build' / 'diorama.src.html').read_text(encoding='utf-8').split('\n')
+    for head in ('const pairs=', 'function bounds(', 'function pos(', 'function state(', 'function counts('):
+        line = next(l for l in src if l.startswith(head))
+        assert line in core, f'diorama.src.html 的 {head} 和 core.js 不同，請重新複製'
+
+
+DOME_DATA_TAG = '<script type="application/json" id="dome-data">'
+
+
+def _embedded(html):
+    assert html.count(DOME_DATA_TAG) == 1                        # 資料只內嵌一次
+    return html.partition(DOME_DATA_TAG)[2].partition('</script>')[0]
+
+
+def test_diorama_artifact_build(root):
+    """artifact 版：data.json 原文內嵌（解析回來相同）。"""
+    text = (root / 'data.json').read_text(encoding='utf-8')
+    blob = _embedded(inline.artifact_html(str(root / 'data.json')))
+    assert '<' not in blob and json.loads(blob) == json.loads(text)
+
+
+def test_diorama_artifact_escapes_script_breakers(tmp_path):
+    """含 "</script>"、"<!--<script" 的字串不能讓內嵌的 script 提早結束。"""
+    data = {'note': '</script><!--<script>x</script>', 'n': [1, 2]}
+    p = tmp_path / 'd.json'
+    p.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+    html = inline.artifact_html(str(p))
+    assert '<!--' not in _embedded(html) and json.loads(_embedded(html)) == data
 
 
 def test_hub_v3_card_copy_current(root):                 # review：首頁卡不得留著不集結版本的說法

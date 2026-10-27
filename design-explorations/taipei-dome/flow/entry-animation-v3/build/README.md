@@ -7,7 +7,10 @@ cd build
 python3 plan.py  base.json plan.json                           # §3.1–3.3：兩路交錯、出口坐滿就換、出口 FIFO 配座（秒級）
 python3 build.py base.json plan.json ../data.json ../seats.csv  # §3.4–3.6：路線、一個時鐘的拉式排程、整排並肩（§3.4c）、碰撞避讓、meta.checks（約 2 分鐘）
 python3 check.py ../data.json                                   # §4：檢核全部從 persons / restSeats 重算並與 meta.checks 比對；未通過 exit 1
+python3 -I inline.py                                            # 3D 模型頁：由 diorama.src.html 產生 ../diorama.html（改 src 後要重跑）
 ```
+
+3D 模型頁另可產生 claude.ai artifact 版（內嵌 data.json，不進 git）：`python3 -I inline.py --artifact OUT.html [../data.json]`。
 
 `§` 指設計文件 `docs/superpowers/specs/2026-10-22-entry-plan-v3-design.md`。`plan.json` 是中間檔，不進 git。`build.py --no-avoid` 跳過避撞與檢核。
 
@@ -23,7 +26,9 @@ python3 check.py ../data.json                                   # §4：檢核�
 | `check.py` | `check_all(data)` 與 CLI；整排並肩與迴廊候隊在 `staging / formation / wheel / lane_map / geometry` |
 | `collide.py` | 2c 的 `collisions`，加上 `seated_hits`（走動中的人與已到位的人） |
 | `geo.py` | 與 2c 相同 |
-| `tests/` | pytest：排位、路線、時鐘、檢核（含竄改偵測）、Review Focus、八個頁面（Playwright，含 3D 模型 diorama.html）、發行（首頁卡、2c 不動、追蹤檔與管線輸出逐位元相同） |
+| `diorama.src.html` | 3D 模型頁（`../diorama.html`）的原始碼：Three.js 0.160.0、黏土微縮模型；資料位置是 `__DATA__`。沒有內嵌資料時改用 core.js 的 `Dome.load()` 讀 data.json |
+| `inline.py` | 由 `diorama.src.html` 產生頁面版 `../diorama.html`（預設）或 artifact 版（`--artifact`，內嵌資料） |
+| `tests/` | pytest：排位、路線、時鐘、檢核（含竄改偵測）、Review Focus、八個頁面（Playwright，含 3D 模型 diorama.html）、發行（首頁卡、2c 不動、追蹤檔與管線輸出逐位元相同、diorama.html 與 src 重新產生的結果相同） |
 
 ## 依賴
 
