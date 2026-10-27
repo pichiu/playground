@@ -1,5 +1,6 @@
 """發行：首頁兩張進場動線卡、2c 資料與建置不動、全站連結、README 在、追蹤檔可重現。"""
 import hashlib
+import json
 import re
 import subprocess
 
@@ -58,6 +59,21 @@ def test_tracked_outputs_match_pipeline(root, pipeline):
     tmp, _ = pipeline
     for name in ['data.json', 'seats.csv']:
         assert hashlib.sha256((tmp / name).read_bytes()).hexdigest() == hashlib.sha256((root / name).read_bytes()).hexdigest(), name
+
+
+def test_diorama_matches_src(root):
+    """追蹤的 diorama.html 必須就是 build/diorama.src.html 以 inline.py 重新產生的結果（改了 src 忘了重跑就會失敗）。"""
+    import inline
+    assert inline.pages_html() == (root / 'diorama.html').read_text(encoding='utf-8')
+
+
+def test_diorama_artifact_build(root, tmp_path):
+    """artifact 版：資料剛好內嵌一次、"</" 已跳脫，解析回來和 data.json 相同。"""
+    import inline
+    html = inline.artifact_html(str(root / 'data.json'))
+    i = html.index('<script type="application/json" id="dome-data">') + len('<script type="application/json" id="dome-data">')
+    blob = html[i:html.index('</script>', i)]
+    assert '</' not in blob and json.loads(blob) == json.loads((root / 'data.json').read_text(encoding='utf-8'))
 
 
 def test_hub_v3_card_copy_current(root):                 # review：首頁卡不得留著不集結版本的說法

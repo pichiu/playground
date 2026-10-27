@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="icon" href="data:,">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<!-- 由 pichiu/workshop cases/taipei-dome-diorama/diorama.src.html 以 `python3 -I inline.py --pages` 產生；要改請改那邊的 src 再重新產生，不要直接改這個檔。資料讀同資料夾的 data.json。 -->
+<!-- 由 build/diorama.src.html 以 `python3 -I build/inline.py` 產生；要改請改 src 再重新產生，不要直接改這個檔。資料讀同資料夾的 data.json。 -->
 <title>入經藏進場模型</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
@@ -602,7 +602,7 @@ const yawFromPlanDeg=phiDeg=>Math.PI/2-deg(phiDeg);
 // 3. 資料
 // =====================================================================
 let D,P,B;
-// 資料來源：artifact 版由 inline.py 內嵌在 #dome-data；playground 頁面版（inline.py --pages）不內嵌，
+// 資料來源：artifact 版（build/inline.py --artifact）內嵌在 #dome-data；頁面版（build/inline.py，輸出 ../diorama.html）不內嵌，
 // 改用同資料夾 core.js 的 Dome.load() 讀 data.json，和版本 3 其他七頁同一份資料。
 // 第三輪決定 3C：「其他頁面」選單。頁面清單就是 core.js 的 Dome.NAV（頁面版一定有 core.js）。
 // 目前這頁（diorama.html）打勾、加 aria-current、不是連結。
