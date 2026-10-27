@@ -1,4 +1,4 @@
-// 版本 3 七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
+// 版本 3 八頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
 (function(){
 'use strict';
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
@@ -38,7 +38,7 @@ function fail(err){let b=document.getElementById('dome-err');if(!b){b=document.c
   b.textContent='';const m=document.createElement('b');m.textContent=err.message;const c=document.createElement('code');c.textContent='python3 -m http.server';   // 訊息可能含網址參數：一律當文字，不當 HTML
   b.append(m,'。這些頁面讀同一份 data.json，需要經由網頁伺服器開啟（GitHub Pages 或 ',c,'）；網路斷線時重新整理即可重試。');}
 
-// 八頁同一條導覽列（3D 模型 diorama.html 不顯示這條列，只在品牌卡放回總覽的連結）。mount 未給時放在 body 最前面；console 等滿版頁把它掛在自己的角落。
+// 八頁同一條導覽列（3D 模型 diorama.html 不顯示這條列，改由品牌卡的「其他頁面」選單列出 Dome.NAV）。mount 未給時放在 body 最前面；console 等滿版頁把它掛在自己的角落。
 const NAV=[['index.html','總覽'],['console.html','指揮台'],['me.html','我的路'],['score.html','總譜'],['handout.html','講義'],['captain.html','口令卡'],['exit.html','出口卡'],['diorama.html','3D 模型']];
 function nav(current,mount){if(!document.getElementById('dome-nav-style')){const s=document.createElement('style');s.id='dome-nav-style';
   s.textContent='.dome-nav{display:flex;flex-wrap:wrap;gap:2px 4px;align-items:center;font:13px/1.4 "Noto Sans TC",system-ui,sans-serif}.dome-nav a{color:var(--dim,#8fa29f);text-decoration:none;padding:4px 8px;border-radius:6px}.dome-nav a:hover{color:var(--ink,#e9efe9)}.dome-nav a[aria-current=page]{color:var(--ink,#e9efe9);font-weight:700;background:var(--line,var(--rule,rgba(128,128,128,.18)))}.dome-nav.bar{padding:8px max(12px,env(safe-area-inset-left));border-bottom:1px solid var(--line,var(--rule,#22302f))}@media print{.dome-nav{display:none}}';
@@ -79,5 +79,5 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
-window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,esc,View,pairs,LANE_NAME};
+window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,esc,View,pairs,LANE_NAME,NAV};
 })();

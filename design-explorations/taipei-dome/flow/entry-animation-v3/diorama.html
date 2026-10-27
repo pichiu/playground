@@ -106,13 +106,12 @@ button{font:inherit;color:inherit}
 #brand{left:var(--gutter-l);top:max(16px, env(safe-area-inset-top, 0px));width:min(340px, calc(100vw - var(--gutter-l) - var(--gutter-r)));border-radius:18px;padding:16px 18px 14px}
 #brand h1{margin:6px 0 2px;font:900 30px/1.1 var(--font);letter-spacing:.06em}
 #brand .sub{margin:0;font:500 13px/1.5 var(--font);color:var(--muted)}
-/* 第三輪決定 3C：「其他頁面」選單（取代原本的 #pages-link 文字連結） */
+/* 第三輪決定 3C：品牌卡的「其他頁面」選單 */
 #pages-btn{position:absolute;top:10px;right:60px;width:44px;height:44px;min-width:44px;padding:0;border-radius:999px}
 #pages-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
 #pages-btn[aria-expanded="true"]{background:var(--chip-pressed);color:var(--chip-pressed-text);border-color:var(--chip-pressed)}
 body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
 #pages-menu{z-index:40;width:min(244px, calc(100vw - var(--gutter-l) - var(--gutter-r)));max-height:calc(100% - 32px);overflow:auto;overscroll-behavior:contain;padding:6px;border-radius:16px;background:var(--panel-solid);color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow-card)}
-#pages-menu[hidden],#pages-btn[hidden]{display:none}
 #pages-menu .pm-h{padding:8px 10px 6px;font:700 10px/1.2 var(--mono);letter-spacing:2px;color:var(--accent-text)}
 #pages-menu ul{list-style:none;margin:0;padding:0}
 #pages-menu a,#pages-menu .cur{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px 0 8px;border-radius:10px;font:600 14px/1.3 var(--font);color:var(--text);text-decoration:none}
@@ -351,8 +350,11 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
   body.sheet-open #counts .big-n{font-size:15px}
   body.sheet-open #list-btn{min-height:44px}
   /* 收成一行的品牌卡（約 40px 高）裡，? 鈕縮成 34px 並垂直置中，不再掛出卡片下緣；用 ::before 把點擊範圍補回 44px（審查 rv14） */
-  body.sheet-open #help-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:50%;right:6px;transform:translateY(-50%);font-size:13px}
-  body.sheet-open #help-btn::before{content:'';position:absolute;inset:-5px}
+  /* 縮小版的 ? 與「其他頁面」鈕（sheet 開著、手機橫拿 body.side）共用這一條；下面各處只放位置 */
+  :is(body.sheet-open,body.side) :is(#help-btn,#pages-btn){width:34px;height:34px;min-width:34px;min-height:34px;font-size:13px}
+  :is(body.sheet-open,body.side) :is(#help-btn,#pages-btn)::before{content:'';position:absolute;inset:-5px}
+  :is(body.sheet-open,body.side) #pages-btn svg{width:15px;height:15px}
+  body.sheet-open #help-btn{top:50%;right:6px;transform:translateY(-50%)}
   #card .handle::before,#list .handle::before{content:'';display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:9px auto 0}
   #list .lh{padding-top:2px}
   /* sheet 開著時章節 chip 列照樣留在底部（SPEC 第 7 節「底部固定保留」）：sheet 改放在 chip 列上方（--sheet-bottom 由 layoutPanels 算） */
@@ -373,9 +375,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
   #help-btn{top:6px;right:6px}
   #pages-btn{top:6px;right:56px}
   body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:92px}
-  body.sheet-open #pages-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:50%;right:50px;transform:translateY(-50%)}
-  body.sheet-open #pages-btn::before{content:'';position:absolute;inset:-5px}
-  body.sheet-open #pages-btn svg{width:15px;height:15px}
+  body.sheet-open #pages-btn{top:50%;right:50px;transform:translateY(-50%)}
   #cams .chip{padding:0 13px}
 }
 /* 手機橫拿（高 ≤ 500）：品牌卡收成一行（大標＋聲明），計數條放在品牌卡右邊同一列；
@@ -386,11 +386,8 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
   #brand h1,body.sheet-open #brand h1{margin:0;font-size:20px;padding-right:0}
   #brand details{margin:0;border:0;padding:0}
   #brand details[open]{flex-basis:100%;border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
-  #help-btn,body.sheet-open #help-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:6px;right:6px;transform:none;font-size:13px}
-  #help-btn::before{content:'';position:absolute;inset:-5px}
-  #pages-btn,body.sheet-open #pages-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:6px;right:50px;transform:none}
-  #pages-btn::before{content:'';position:absolute;inset:-5px}
-  #pages-btn svg{width:15px;height:15px}
+  #help-btn,body.sheet-open #help-btn{top:6px;right:6px;transform:none}
+  #pages-btn,body.sheet-open #pages-btn{top:6px;right:50px;transform:none}
   body.has-pages #brand,body.has-pages.sheet-open #brand{width:276px;padding-right:92px}
   body.has-pages #brand h1{padding-right:0}
   body.has-pages #counts{left:calc(var(--gutter-l) + 286px)}
@@ -607,32 +604,34 @@ const yawFromPlanDeg=phiDeg=>Math.PI/2-deg(phiDeg);
 let D,P,B;
 // 資料來源：artifact 版由 inline.py 內嵌在 #dome-data；playground 頁面版（inline.py --pages）不內嵌，
 // 改用同資料夾 core.js 的 Dome.load() 讀 data.json，和版本 3 其他七頁同一份資料。
-// 第三輪決定 3C：「其他頁面」選單。頁面清單從 core.js 的 Dome.nav 產生（render 到不掛上文件的元素再讀連結）；
-// 沒有 Dome.nav 時用和 core.js NAV 相同的備用清單。目前這頁（diorama.html）打勾、加 aria-current、不是連結。
-const PAGES_SELF='diorama.html',PAGES_FALLBACK=[['index.html','總覽'],['console.html','指揮台'],['me.html','我的路'],['score.html','總譜'],['handout.html','講義'],['captain.html','口令卡'],['exit.html','出口卡'],['diorama.html','3D 模型']];
-function pagesList(){try{if(window.Dome&&typeof Dome.nav==='function'){const box=document.createElement('div'),el=Dome.nav(PAGES_SELF,box)||box;
-    const a=[...el.querySelectorAll('a[href]')].map(x=>[x.getAttribute('href'),x.textContent.trim()]);if(a.length)return a;}}catch(e){}
-  return PAGES_FALLBACK;}
+// 第三輪決定 3C：「其他頁面」選單。頁面清單就是 core.js 的 Dome.NAV（頁面版一定有 core.js）。
+// 目前這頁（diorama.html）打勾、加 aria-current、不是連結。
+const PAGES_SELF='diorama.html';
 const pmOpen=()=>!$('#pages-menu').hidden;
 const pmItems=()=>[...$('#pages-list').querySelectorAll('a,.cur')];
-function pmRelayout(){try{llVer++;llUntil=performance.now()+400;dirty=true;}catch(e){}}   // 標籤避讓把選單當成 UI 面板（標籤躲到選單後面）
-function pmPlace(){const m=$('#pages-menu'),b=$('#pages-btn').getBoundingClientRect(),W=innerWidth,H=innerHeight,cs=getComputedStyle(document.documentElement);
-  const gl=parseFloat(cs.getPropertyValue('--gutter-l'))||16,gr=16,w=m.offsetWidth;
+// 標籤避讓把選單當成 UI 面板（標籤躲到選單後面）：開關時只讓版面版本號 +1，下一次 layoutLabels 重算。
+// 選單沒有 transition，不需要 vcInvalidate 那段 400ms 停用快取。try：載入中（llVer 還沒宣告）就點按鈕時不出錯。
+function pmRelayout(){try{llVer++;dirty=true;}catch(e){}}
+// 實際的左右 gutter：--gutter-l/r 是 max(16px, env(...)) 字串，parseFloat 會得到 NaN，所以用探針元素量解析後的 padding。
+function pmGutters(){const p=document.createElement('div');p.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-left:var(--gutter-l);padding-right:var(--gutter-r)';
+  document.body.append(p);const cs=getComputedStyle(p),g=[parseFloat(cs.paddingLeft),parseFloat(cs.paddingRight)].map(v=>Number.isFinite(v)?v:16);p.remove();return g;}
+function pmPlace(){const m=$('#pages-menu'),b=$('#pages-btn').getBoundingClientRect(),W=innerWidth,H=innerHeight,[gl,gr]=pmGutters(),w=m.offsetWidth;
   m.style.left=Math.round(Math.max(gl,Math.min(b.right-w,W-gr-w)))+'px';m.style.top=Math.round(b.bottom+8)+'px';m.style.maxHeight=Math.max(120,Math.floor(H-b.bottom-8-16))+'px';}
 function openPagesMenu(focus){const m=$('#pages-menu');if(!pmOpen()){m.hidden=false;$('#pages-btn').setAttribute('aria-expanded','true');pmPlace();pmRelayout();}
   const it=pmItems();if(focus==='first'&&it[0])it[0].focus();else if(focus==='last'&&it.length)it[it.length-1].focus();}
 function closePagesMenu(ret){if(!pmOpen())return;$('#pages-menu').hidden=true;$('#pages-btn').setAttribute('aria-expanded','false');pmRelayout();if(ret)$('#pages-btn').focus();}
-function setupPagesMenu(){const btn=$('#pages-btn'),ul=$('#pages-list');if(!btn||!ul)return;
-  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  ul.innerHTML=pagesList().map(([h,l])=>h===PAGES_SELF
+function setupPagesMenu(){const btn=$('#pages-btn'),ul=$('#pages-list'),menu=$('#pages-menu');if(!btn||!ul||!Array.isArray(Dome.NAV))return;
+  const esc=Dome.esc,inPm=t=>t===btn||menu.contains(t);
+  ul.innerHTML=Dome.NAV.map(([h,l])=>h===PAGES_SELF
     ?`<li><span class="cur" aria-current="page" tabindex="-1"><svg class="ck" viewBox="0 0 18 18" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>${esc(l)}<span class="vh">（目前頁面）</span></span></li>`
     :`<li><a href="${esc(h)}" tabindex="-1"><svg class="ck" viewBox="0 0 18 18" aria-hidden="true"></svg>${esc(l)}</a></li>`).join('');
   btn.hidden=false;document.body.classList.add('has-pages');
   btn.addEventListener('click',e=>{if(pmOpen())closePagesMenu(false);else openPagesMenu(e.detail===0?'first':null);});   // 鍵盤（Enter）開啟時焦點進到第一項
   // 鍵盤：全域 keydown（空白鍵播放、左右鍵跳 1%、Esc 解除跟隨）之前先攔截
-  addEventListener('keydown',e=>{if(!window.__dome||!window.__dome.ready||helpOpen())return;const t=e.target,inM=$('#pages-menu').contains(t),onB=t===btn;
+  addEventListener('keydown',e=>{if(!window.__dome||!window.__dome.ready||helpOpen())return;const t=e.target,inM=menu.contains(t),onB=t===btn;
     if(!pmOpen()){if(onB&&(e.key===' '||e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopImmediatePropagation();openPagesMenu(e.key==='ArrowUp'?'last':'first');}return;}
-    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();closePagesMenu(true);return;}
+    // Esc：一定關選單；焦點在選單或按鈕上才吃掉這個鍵並把焦點還給按鈕，焦點在別處（例如 #q）時照樣交給全域處理（解除跟隨等）
+    if(e.key==='Escape'){if(inM||onB){e.preventDefault();e.stopImmediatePropagation();closePagesMenu(true);}else closePagesMenu(false);return;}
     if(!inM&&!onB)return;
     const it=pmItems(),k=it.indexOf(document.activeElement);
     if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Home'||e.key==='End'){e.preventDefault();e.stopImmediatePropagation();
@@ -640,9 +639,13 @@ function setupPagesMenu(){const btn=$('#pages-btn'),ul=$('#pages-list');if(!btn|
     if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();e.stopImmediatePropagation();return;}
     if(e.key===' '){e.preventDefault();e.stopImmediatePropagation();if(onB)closePagesMenu(false);else if(t.tagName==='A')t.click();return;}
     if(e.key==='Tab'&&inM){e.preventDefault();e.stopImmediatePropagation();closePagesMenu(false);(e.shiftKey?btn:$('#help-btn')).focus();}},true);
-  addEventListener('keyup',e=>{if(e.key===' '&&(e.target===btn||$('#pages-menu').contains(e.target)))e.stopImmediatePropagation();},true);
+  // 空白鍵的 keyup 也要 preventDefault：按鈕在 keyup 才觸發 click 的瀏覽器，否則會在 keydown 關掉後又被 click 打開
+  addEventListener('keyup',e=>{if(e.key===' '&&inPm(e.target)){e.preventDefault();e.stopImmediatePropagation();}},true);
+  // 焦點離開按鈕＋選單（Tab 出去、點到別處）就關閉
+  const fo=e=>{if(pmOpen()&&!(e.relatedTarget&&inPm(e.relatedTarget)))closePagesMenu(false);};
+  btn.addEventListener('focusout',fo);menu.addEventListener('focusout',fo);
   // 點選單與按鈕以外的地方就關閉（不搶焦點）；視窗尺寸改變也關閉
-  document.addEventListener('pointerdown',e=>{if(pmOpen()&&!$('#pages-menu').contains(e.target)&&!btn.contains(e.target))closePagesMenu(false);},true);
+  document.addEventListener('pointerdown',e=>{if(pmOpen()&&!inPm(e.target)&&!btn.contains(e.target))closePagesMenu(false);},true);
   addEventListener('resize',()=>closePagesMenu(false));}
 async function readData(){const el=document.getElementById('dome-data'),txt=el?el.textContent.trim():'';
   if(txt)return JSON.parse(txt);
@@ -1644,6 +1647,7 @@ const SHEET_MQ=matchMedia('(max-width: 800px), (max-height: 500px)');   // 和 C
 const isSheet=()=>SHEET_MQ.matches;
 // 手機橫拿：sheet 改成左右側欄（見 CSS），可視區的計算跟著改
 const SIDE_MQ=matchMedia('(max-height: 500px) and (orientation: landscape)');
+const syncSide=()=>document.body.classList.toggle('side',SIDE_MQ.matches);syncSide();   // CSS 的縮小版 ? 與選單鈕用 body.side 判定手機橫拿
 const isSide=()=>SIDE_MQ.matches;
 function openList(){vcInvalidate();if(!isSheet())return;if(card.i>=0)closeCard();$('#list').classList.add('open');$('#list-btn').setAttribute('aria-expanded','true');document.body.classList.add('sheet-open');$('#list-close').hidden=false;layoutPanels();dirty=true;}
 function closeList(){vcInvalidate();$('#list').classList.remove('open','full');$('#list-btn').setAttribute('aria-expanded','false');document.body.classList.toggle('sheet-open',card.i>=0&&isSheet());layoutPanels();dirty=true;}
@@ -1687,7 +1691,7 @@ function layoutPanels(){vcInvalidate();const root=document.documentElement.style
 const labelList=[],SEC_LABEL_OUT=1.0;
 // opt.avoid：不能被這個標籤蓋住的 world 點（取其螢幕外框）；opt.push：蓋到時往哪個 world 方向在螢幕上讓開
 function label(text,x,y,z,cls,pri=50,opt={}){const el=document.createElement('div');el.className='lbl '+(cls||'');el.textContent=text;const o=new CSS2DObject(el);o.position.set(x,y,z);scene.add(o);
-  const L={o,el,pri,dir:/\bdir\b/.test(cls||''),avoid:opt.avoid||null,push:opt.push||null,alts:opt.alts||null,base:opt.base||null,maxOff:opt.maxOff||1e9,maxPush:opt.maxPush||1e9,downFirst:!!opt.downFirst,pushOnly:!!opt.pushOnly,heads:!!opt.heads,nearGate:opt.nearGate||null,seg:null,r0:[0,0,0,0],r1:[0,0,0,0],h0:false,vis:false,tx:'',leader:null,lead:null,far:false};
+  const L={o,el,pri,dir:/\bdir\b/.test(cls||''),avoid:opt.avoid||null,push:opt.push||null,alts:opt.alts||null,base:opt.base||null,maxOff:opt.maxOff||1e9,maxPush:opt.maxPush||1e9,downFirst:!!opt.downFirst,pushOnly:!!opt.pushOnly,heads:!!opt.heads,nearGate:opt.nearGate||null,seg:null,ng:false,ngT:0,r0:[0,0,0,0],r1:[0,0,0,0],h0:false,vis:false,tx:'',leader:null,lead:null,far:false};
   // 第 4 階段：有 avoid 的標籤（樓梯、西一入口）錨在物體本身；被推開時畫一條引線指回錨點，推太遠（maxPush px）就不顯示
   if(L.avoid){const ld=document.createElement('div');ld.className='leader hid';ld.setAttribute('aria-hidden','true');labelsEl.appendChild(ld);L.leader=ld;}
   labelList.push(L);return o;}
@@ -1743,59 +1747,93 @@ const shiftR=(r,dx,dy)=>({left:r.left+dx,right:r.right+dx,top:r.top+dy,bottom:r.
 // 審查 rv15（SPEC 第 8 節）：播放中鏡頭沒動、版面沒變、沒有跟隨 pill 時，避讓結果和上一幀相同——
 // 只把上一次的位移補回（CSS2DRenderer 每幀會重寫 transform），不讀 getBoundingClientRect、不配置陣列與閉包
 let llVer=0,llUntil=0,_llVer=-1,_llW=0,_llH=0,_llCam=null;const _llM=new Float64Array(32);
-// 收尾回合（審查）：地標標籤（樓梯、西一入口，opt.heads）也不壓人頭——和區號同一套「讓開＋引線、推太遠就隱藏」，
-// 禁區除了物體外框，再加上所有小人頭頂的投影點。頭的螢幕座標存在預先配置的陣列裡（每次重算一次，不配置）。
-let _hdN=0;const _hd=new Float32Array(2*4096);
-function projHeads(W,H){const a=people&&people.arrs&&people.arrs.head;_hdN=0;if(!a)return;const n=Math.min(P.length,4096);
-  for(let i=0;i<n;i++){_lp.set(a[i*16+12],a[i*16+13],a[i*16+14]).project(activeCam);if(_lp.z>1)continue;_hd[2*_hdN]=(_lp.x+1)/2*W;_hd[2*_hdN+1]=(1-_lp.y)/2*H;_hdN++;}}
-function headIn(l,t,r,b){for(let k=0;k<_hdN;k++){const x=_hd[2*k],y=_hd[2*k+1];if(x>l&&x<r&&y>t&&y<b)return true;}return false;}
-const headInR=(q,p=1)=>headIn(q.left-p,q.top-p,q.right+p,q.bottom+p);
+// PR #24 審查：頭與身體中心共用一套螢幕點 helper。每次避讓（含快取檢查）用一個合併的 view-projection 矩陣 _vp 直接算（不配置，和 pickAt 的 _pv 同法），
+// 頭、身體各自最多投影一次，再分到 PT_CELL（32px）的螢幕格子；矩形／線段查詢只看重疊的格子，結果和逐點全掃相同（格子外的點本來就不會命中；畫面外的點歸到最邊的格子）。
+const PT_CELL=32,_vp=new THREE.Matrix4();
+const mkPts=()=>({xy:new Float32Array(2*4096),n:0,ci:new Int32Array(4096),cs:new Int32Array(1),cu:new Int32Array(1),gw:1,gh:1});
+const _HD=mkPts(),_BD=mkPts();let _ppGen=0,_ppW=0,_ppH=0;
+function ppBegin(W,H){_vp.multiplyMatrices(activeCam.projectionMatrix,activeCam.matrixWorldInverse);_ppW=W;_ppH=H;_ppGen++;}
+const _cl=(v,n)=>v<0?0:v>=n?n-1:v;
+// 世界座標 → 螢幕（px）：寫到 out[0..1]；在相機後方（或遠平面外）回傳 false（和 Vector3.project 的 z>1 判定相同）
+function vpProj(x,y,z,out){const e=_vp.elements,w=e[3]*x+e[7]*y+e[11]*z+e[15];if(!(w>0)||(e[2]*x+e[6]*y+e[10]*z+e[14])/w>1)return false;
+  out[0]=((e[0]*x+e[4]*y+e[8]*z+e[12])/w+1)/2*_ppW;out[1]=(1-(e[1]*x+e[5]*y+e[9]*z+e[13])/w)/2*_ppH;return true;}
+const _v2=new Float64Array(2);
+function projPts(S,a){S.n=0;S.gen=_ppGen;if(!a)return;const n=Math.min(P.length,4096),xy=S.xy;
+  for(let i=0;i<n;i++){const o=i*16;if(!vpProj(a[o+12],a[o+13],a[o+14],_v2))continue;xy[2*S.n]=_v2[0];xy[2*S.n+1]=_v2[1];S.n++;}
+  const gw=Math.max(1,Math.ceil(_ppW/PT_CELL)),gh=Math.max(1,Math.ceil(_ppH/PT_CELL)),nc=gw*gh;S.gw=gw;S.gh=gh;
+  if(S.cs.length<nc+1){S.cs=new Int32Array(nc+1);S.cu=new Int32Array(nc);}else S.cs.fill(0,0,nc+1);
+  const cs=S.cs,cu=S.cu,ci=S.ci,cell=k=>_cl(Math.floor(xy[2*k+1]/PT_CELL),gh)*gw+_cl(Math.floor(xy[2*k]/PT_CELL),gw);
+  for(let k=0;k<S.n;k++)cs[cell(k)+1]++;
+  for(let c=0;c<nc;c++){cs[c+1]+=cs[c];cu[c]=cs[c];}
+  for(let k=0;k<S.n;k++)ci[cu[cell(k)]++]=k;}
+const needHeads=()=>{if(_HD.gen!==_ppGen)projPts(_HD,people&&people.arrs&&people.arrs.head);};
+const needBodies=()=>{if(_BD.gen!==_ppGen)projPts(_BD,people&&people.arrs&&people.arrs.body);};
+// 開區間矩形 (l,t)–(r,b) 內有沒有點
+function ptsInRect(S,l,t,r,b){if(!S.n)return false;const gw=S.gw,gh=S.gh,x0=_cl(Math.floor(l/PT_CELL),gw),x1=_cl(Math.floor(r/PT_CELL),gw),y0=_cl(Math.floor(t/PT_CELL),gh),y1=_cl(Math.floor(b/PT_CELL),gh),cs=S.cs,ci=S.ci,xy=S.xy;
+  for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){const c=cy*gw+cx;for(let j=cs[c],je=cs[c+1];j<je;j++){const k=ci[j],x=xy[2*k],y=xy[2*k+1];if(x>l&&x<r&&y>t&&y<b)return true;}}
+  return false;}
+const ptsInR=(S,q,p)=>ptsInRect(S,q.left-p,q.top-p,q.right+p,q.bottom+p);
+// 線段 d px 內有沒有點（距離用 distSegMe）
+function ptsNearSeg(S,x1,y1,x2,y2,d){if(!S.n)return false;const gw=S.gw,gh=S.gh,x0=_cl(Math.floor((Math.min(x1,x2)-d)/PT_CELL),gw),xe=_cl(Math.floor((Math.max(x1,x2)+d)/PT_CELL),gw),
+    y0=_cl(Math.floor((Math.min(y1,y2)-d)/PT_CELL),gh),ye=_cl(Math.floor((Math.max(y1,y2)+d)/PT_CELL),gh),cs=S.cs,ci=S.ci,xy=S.xy;
+  for(let cy=y0;cy<=ye;cy++)for(let cx=x0;cx<=xe;cx++){const c=cy*gw+cx;for(let j=cs[c],je=cs[c+1];j<je;j++){const k=ci[j];if(distSegMe(xy[2*k],xy[2*k+1],x1,y1,x2,y2)<d)return true;}}
+  return false;}
+// 收尾回合（審查）：地標標籤（樓梯、西一入口，opt.heads）也不壓人頭——禁區除了物體外框，再加上所有小人頭頂的投影點
+const headIn=(l,t,r,b)=>ptsInRect(_HD,l,t,r,b);
+const headInR=(q,p=1)=>ptsInR(_HD,q,p);
 // 第三輪決定 2C：近距離的「西一入口」另外看身體中心（引線不能穿過人：頭或身體中心離線段 < GATE_SEG_PX 都算）
-let _bdN=0;const _bd=new Float32Array(2*4096);
-function projBodies(W,H){const a=people&&people.arrs&&people.arrs.body;_bdN=0;if(!a)return;const n=Math.min(P.length,4096);
-  for(let i=0;i<n;i++){_lp.set(a[i*16+12],a[i*16+13],a[i*16+14]).project(activeCam);if(_lp.z>1)continue;_bd[2*_bdN]=(_lp.x+1)/2*W;_bd[2*_bdN+1]=(1-_lp.y)/2*H;_bdN++;}}
-const GATE_SEG_PX=8,GATE_NEAR=0.6,GATE_MAX_PX=170;
-function ptsNearSeg(arr,n,x1,y1,x2,y2,d){const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy,lo=Math.min(x1,x2)-d,hi=Math.max(x1,x2)+d,to=Math.min(y1,y2)-d,bo=Math.max(y1,y2)+d;
-  for(let k=0;k<n;k++){const x=arr[2*k],y=arr[2*k+1];if(x<lo||x>hi||y<to||y>bo)continue;let t=l2?((x-x1)*dx+(y-y1)*dy)/l2:0;t=t<0?0:t>1?1:t;if(Math.hypot(x-x1-t*dx,y-y1-t*dy)<d)return true;}return false;}
-const bodyInR=(q,p)=>{for(let k=0;k<_bdN;k++){const x=_bd[2*k],y=_bd[2*k+1];if(x>q.left-p&&x<q.right+p&&y>q.top-p&&y<q.bottom+p)return true;}return false;};
-const segBlocked=s=>ptsNearSeg(_hd,_hdN,s[0],s[1],s[2],s[3],GATE_SEG_PX)||ptsNearSeg(_bd,_bdN,s[0],s[1],s[2],s[3],GATE_SEG_PX);
+const GATE_SEG_PX=8,GATE_NEAR=0.6,GATE_MAX_PX=170,GATE_PAD=4,GATE_RETRY_S=0.5;
+const segBlocked=s=>ptsNearSeg(_HD,s[0],s[1],s[2],s[3],GATE_SEG_PX)||ptsNearSeg(_BD,s[0],s[1],s[2],s[3],GATE_SEG_PX);
+const gateBoxBlocked=(l,t,r,b)=>ptsInRect(_HD,l-GATE_PAD,t-GATE_PAD,r+GATE_PAD,b+GATE_PAD)||ptsInRect(_BD,l-GATE_PAD,t-GATE_PAD,r+GATE_PAD,b+GATE_PAD);   // 不壓人頭，也不坐在人身上（身體中心）
 // 引線終點＝標籤外框上離錨點最近的點（和畫引線的算法相同）
 const leadEnd=(ax,ay,r)=>[clamp(ax,r.left+4,r.right-4),clamp(ay,r.top+3,r.bottom-3)];
 // 近距離判定：透視相機到門洞（牆頂）的距離 < 總覽距離 × GATE_NEAR（總覽與俯視、遠景維持原本的四方向避讓）
 const _gn=new THREE.Vector3();
 const gateNear=L=>!!L.nearGate&&activeCam===camera&&camera.position.distanceTo(_gn.set(L.nearGate.c[0],WALL_H,L.nearGate.c[1]))<GATE_NEAR*homeDist();
-// 候選位置（world）：門洞牆頂往牆外 d、沿牆 s、牆頂上方 h；依螢幕距離由近到遠試，第一個「外框不壓人頭、引線不穿過人、在畫面內、不在面板下」的就用
+// 候選位置（world）：門洞牆頂往牆外 d、沿牆 s、牆頂上方 h；依螢幕距離由近到遠試，第一個「外框不壓人、引線不穿過人、在畫面內、不在面板下」的就用
 const GATE_CANDS=(()=>{const o=[];for(let d=0;d<=1.21;d+=0.15)for(let s=-0.9;s<=0.91;s+=0.15)for(const h of [0.08,0.2,0.35,0.5,0.7,0.9])o.push([d,s,h]);return o;})();
+const _gcN=GATE_CANDS.length,_gcM=new Float64Array(_gcN),_gcX=new Float64Array(_gcN),_gcY=new Float64Array(_gcN),_gcI=new Int32Array(_gcN);
+// 候選的 world 座標只算一次（每個 nearGate 標籤一份）
+function gateCandsWorld(NG){if(NG.w)return NG.w;const [cx,cz]=NG.c,[ox,oz]=NG.o,ax=-oz,az=ox,w=new Float64Array(3*_gcN);
+  GATE_CANDS.forEach(([d,s,h],k)=>{w[3*k]=cx+ox*d+ax*s;w[3*k+1]=WALL_H+h;w[3*k+2]=cz+oz*d+az*s;});return NG.w=w;}
 function layoutLabelsCached(W,H){const now=performance.now();if(now<llUntil||_llVer!==llVer||W!==_llW||H!==_llH||_llCam!==activeCam)return false;
   if(pillHead&&(pillHead.o.visible||pillMe.o.visible))return false;
   const a=activeCam.matrixWorld.elements,b=activeCam.projectionMatrix.elements;for(let k=0;k<16;k++)if(a[k]!==_llM[k]||b[k]!==_llM[16+k])return false;
   // 鏡頭沒動但人在走：地標標籤原位的「有沒有人頭」改變了，或顯示中的標籤底下走進了人頭，就整個重算
-  let hp=false;for(let i=0;i<labelList.length;i++){const L=labelList[i];if(!L.heads)continue;if(!hp){projHeads(W,H);hp=true;}
-    if(headIn(L.r0[0]-1,L.r0[1]-1,L.r0[2]+1,L.r0[3]+1)!==L.h0)return false;if(L.vis&&headIn(L.r1[0]-1,L.r1[1]-1,L.r1[2]+1,L.r1[3]+1))return false;
-    if(L.vis&&L.seg){projBodies(W,H);if(segBlocked(L.seg))return false;}}
+  let pp=false;for(let i=0;i<labelList.length;i++){const L=labelList[i];if(!L.heads)continue;if(!pp){ppBegin(W,H);needHeads();pp=true;}
+    if(headIn(L.r0[0]-1,L.r0[1]-1,L.r0[2]+1,L.r0[3]+1)!==L.h0)return false;
+    if(L.ng){   // 近距離「西一入口」：用和 layoutGateNear 相同的外擴（GATE_PAD）重驗頭與身體中心，再驗引線；因為放不下而隱藏時，每播放 GATE_RETRY_S 秒重試一次（人群走過後會再出現）
+      if(L.vis){needBodies();if(gateBoxBlocked(L.r1[0],L.r1[1],L.r1[2],L.r1[3])||(L.seg&&segBlocked(L.seg)))return false;}
+      else if(Math.abs(simT-L.ngT)>=GATE_RETRY_S)return false;}
+    else if(L.vis&&headIn(L.r1[0]-1,L.r1[1]-1,L.r1[2]+1,L.r1[3]+1))return false;}
   for(let i=0;i<labelList.length;i++){const L=labelList[i];if(L.tx)L.el.style.transform+=L.tx;}
   return true;}
 // 第三輪決定 2C：近距離的「西一入口」。標籤本來置中在錨點 A（門洞牆頂）；試 GATE_CANDS，取螢幕上最近的可行位置（≤ GATE_MAX_PX），引線指回 A。
-// 可行：外框（外擴 4px）內沒有人頭與身體中心、外框不蓋住 A（外擴 GATE_SEG_PX，讓引線看得到）、引線 GATE_SEG_PX 內沒有頭或身體中心、完整在畫面內、不在 UI 面板下。都不行就隱藏。
-function layoutGateNear(L,i,r,W,H,g,occ,move){projBodies(W,H);const A=scr(L.o.position,W,H),[cx,cz]=L.nearGate.c,[ox,oz]=L.nearGate.o,ax=-oz,az=ox;
-  if(L.heads){L.r0[0]=r.left;L.r0[1]=r.top;L.r0[2]=r.right;L.r0[3]=r.bottom;L.h0=headInR(r);}
-  // 引線起點：門洞缺口中點，或缺口兩側牆角（牆頂黃條上緣）；人走過缺口中間時，改從牆角指過去
-  const an=L.nearGate.an.map(([x,z])=>scr(_lq.set(x,WALL_H+0.022,z),W,H)).filter(q=>q[2]<=1);
-  const cs=[];for(const [d,s,h] of GATE_CANDS){const q=scr(_lq.set(cx+ox*d+ax*s,WALL_H+h,cz+oz*d+az*s),W,H);if(q[2]>1)continue;const dx=q[0]-A[0],dy=q[1]-A[1],m=Math.hypot(dx,dy);if(m<=GATE_MAX_PX)cs.push([m,dx,dy]);}
-  cs.sort((a,b)=>a[0]-b[0]);const P2=GATE_SEG_PX;
-  // 先只用缺口中點當起點找一輪，找不到才改用牆角
-  for(const set of [an.slice(0,1),an.slice(1)])for(const [m,dx,dy] of cs){const q=shiftR(r,dx,dy);
+// 可行：外框（外擴 GATE_PAD）內沒有人頭與身體中心、外框不蓋住引線起點（外擴 GATE_SEG_PX，讓引線看得到）、引線 GATE_SEG_PX 內沒有頭或身體中心、完整在畫面內、不在 UI 面板下。都不行就隱藏。
+// 引線起點：門洞缺口中點優先；任何候選都無法從中點拉線時，才改用缺口兩側牆角（牆頂黃條上緣）——一輪掃完，各自記住最近的可行候選。
+function layoutGateNear(L,i,r,W,H,g,occ,move){needBodies();const NG=L.nearGate,wc=gateCandsWorld(NG);L.ng=true;L.ngT=simT;
+  if(!vpProj(L.o.position.x,L.o.position.y,L.o.position.z,_v2)){L.far=true;return;}const Ax=_v2[0],Ay=_v2[1];
+  const an=[];for(const [x,z] of NG.an)if(vpProj(x,WALL_H+0.022,z,_v2))an.push([_v2[0],_v2[1]]);
+  let nc=0;for(let k=0;k<_gcN;k++){if(!vpProj(wc[3*k],wc[3*k+1],wc[3*k+2],_v2))continue;const dx=_v2[0]-Ax,dy=_v2[1]-Ay,m=Math.hypot(dx,dy);
+    if(m<=GATE_MAX_PX){_gcM[k]=m;_gcX[k]=dx;_gcY[k]=dy;_gcI[nc++]=k;}}
+  const idx=_gcI.subarray(0,nc).sort((a,b)=>_gcM[a]-_gcM[b]||a-b),P2=GATE_SEG_PX;
+  // UI 面板外擴 4px（優先序那一輪的 pad 3 再多 1px），放好之後不會在那裡被面板藏掉
+  const oc=occ.map(o=>({left:o[0]-4,top:o[1]-4,right:o[2]+4,bottom:o[3]+4}));
+  let r0=null,r1=null;   // 缺口中點、牆角各自最近的可行候選 [dx,dy,引線]
+  for(let n=0;n<nc&&!r0;n++){const k=idx[n],dx=_gcX[k],dy=_gcY[k],q=shiftR(r,dx,dy);
     if(q.left<g||q.top<g||q.right>W-g||q.bottom>H-g)continue;
-    if(headInR(q,4)||bodyInR(q,4))continue;   // 不壓人頭，也不坐在人身上（身體中心）
-    if(occ.some(o=>q.left-4<o[2]&&q.right+4>o[0]&&q.top-4<o[3]&&q.bottom+4>o[1]))continue;   // 和優先序那一輪相同（外擴 pad 3）再多 1px，不會在那裡被面板藏掉
-    let best=null;for(const a of set){if(a[0]>q.left-P2&&a[0]<q.right+P2&&a[1]>q.top-P2&&a[1]<q.bottom+P2)continue;   // 外框不蓋住起點（引線要看得到）
-      const e=leadEnd(a[0],a[1],q),sg=[a[0],a[1],e[0],e[1]],len=Math.hypot(e[0]-a[0],e[1]-a[1]);if((!best||len<best[0])&&!segBlocked(sg))best=[len,sg];}
-    if(!best)continue;
-    move(i,dx,dy);L.lead=[best[1][0],best[1][1]];L.seg=best[1];return;}
-  L.far=true;}
+    if(gateBoxBlocked(q.left,q.top,q.right,q.bottom))continue;
+    if(oc.some(o=>hit(q,o)))continue;
+    let bj=null;for(let j=0;j<an.length;j++){if(j>0&&r1)break;const a=an[j];
+      if(a[0]>q.left-P2&&a[0]<q.right+P2&&a[1]>q.top-P2&&a[1]<q.bottom+P2)continue;   // 外框不蓋住起點（引線要看得到）
+      const e=leadEnd(a[0],a[1],q),sg=[a[0],a[1],e[0],e[1]];if(segBlocked(sg))continue;
+      if(j===0){r0=[dx,dy,sg];break;}const len=Math.hypot(e[0]-a[0],e[1]-a[1]);if(!bj||len<bj[0])bj=[len,sg];}
+    if(bj&&!r1)r1=[dx,dy,bj[1]];}
+  const res=r0||r1;if(!res){L.far=true;return;}
+  move(i,res[0],res[1]);L.lead=[res[2][0],res[2][1]];L.seg=res[2];}
 function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8;if(layoutLabelsCached(W,H))return -1;
   _llVer=llVer;_llW=W;_llH=H;_llCam=activeCam;{const a=activeCam.matrixWorld.elements,b=activeCam.projectionMatrix.elements;for(let k=0;k<16;k++){_llM[k]=a[k];_llM[16+k]=b[k];}}
-  for(const L of labelList)L.tx='';
+  for(const L of labelList){L.tx='';L.ng=false;}
   const occ=[];
   for(const e of _uiEls()){if(!e)continue;const r=e.getBoundingClientRect();if(r.width&&r.height)occ.push([r.left,r.top,r.right,r.bottom]);}
   // 跟隨 pill 下方就是被跟隨的人（近景約 100px 高）：pill 的佔位往下延伸，區號等標籤不壓在被跟隨的人身上（審查 rv14）
@@ -1804,7 +1842,7 @@ function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8
   const showDir=activeCam!==camera||camera.position.distanceTo(controls.target)>=0.8*homeDist();
   const items=[];for(const L of labelList){L.el.classList.remove('hid');if(L.el.style.display==='none'||(L.dir&&!showDir)){if(L.dir)L.el.classList.add('hid');if(L.leader)L.leader.classList.add('hid');L.lead=null;continue;}items.push(L);}
   const rects=items.map(L=>L.el.getBoundingClientRect());
-  projHeads(W,H);   // 地標標籤與方位標籤微移都要用
+  ppBegin(W,H);needHeads();   // 地標標籤與方位標籤微移都要用（身體中心只在近距離西一入口時才投影）
   const move=(i,dx,dy)=>{const s=` translate(${dx}px,${dy}px)`;items[i].el.style.transform+=s;items[i].tx+=s;rects[i]=shiftR(rects[i],dx,dy);};
   items.forEach((L,i)=>{const r=rects[i];L.far=false;
     if(L.dir){const dx=r.left<g?g-r.left:r.right>W-g?(W-g)-r.right:0,dy=r.top<g?g-r.top:r.bottom>H-g?(H-g)-r.bottom:0;
@@ -1817,9 +1855,9 @@ function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8
     if(L.avoid){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9,behind=false;for(const v of L.avoid){const q=scr(v,W,H);if(q[2]>1)behind=true;x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}
       const box={left:x0-4,right:x1+4,top:y0-4,bottom:y1+4};
       L.lead=null;L.far=false;L.seg=null;
+      if(L.heads){L.r0[0]=r.left;L.r0[1]=r.top;L.r0[2]=r.right;L.r0[3]=r.bottom;L.h0=headInR(r);}
       if(!behind&&gateNear(L)){layoutGateNear(L,i,r,W,H,g,occ,move);return;}
       const bad=q=>hit(q,box)||(L.heads&&headInR(q));
-      if(L.heads){L.r0[0]=r.left;L.r0[1]=r.top;L.r0[2]=r.right;L.r0[3]=r.bottom;L.h0=headInR(r);}
       if(!behind&&bad(r)){const a=scr(L.o.position,W,H),b=scr(_lq.copy(L.o.position).add(L.push),W,H);let ux=b[0]-a[0],uy=b[1]-a[1];const ul=Math.hypot(ux,uy);
         if(ul<1e-3){ux=-1;uy=0;}else{ux/=ul;uy/=ul;}
         // 依序試：push 方向、反方向、螢幕上、螢幕下；取第一個讓開後仍完整在畫面內的
@@ -2248,7 +2286,7 @@ try{
   layoutPanels();for(const el of ['#brand','#counts','#hud','#cams'])new ResizeObserver(()=>{layoutPanels();dirty=true;}).observe($(el));
   for(const el of ['#card','#list'])new ResizeObserver(()=>{vcInvalidate();dirty=true;}).observe($(el));
   SHEET_MQ.addEventListener('change',()=>{if(!isSheet())closeList();document.body.classList.remove('list-collapsed');syncListFold();layoutPanels();});
-  SIDE_MQ.addEventListener('change',()=>{vcInvalidate();layoutPanels();dirty=true;});
+  SIDE_MQ.addEventListener('change',()=>{syncSide();vcInvalidate();layoutPanels();dirty=true;});
   syncListFold();
   resize();new ResizeObserver(resize).observe(stageEl);
   const v=homeView();camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();
@@ -2318,6 +2356,8 @@ try{
       frames:()=>renderer.info.render.frame,ribbonMapIsData:()=>!!RIB.L[1].m.material.map.isDataTexture,
       chapters:()=>CHAPTERS.map(c=>({key:c.key,name:c.name,t:c.t,t0:c.t0,peak:c.peak||null,shot:c.shot})),chapter:k=>goChapter(k),chapterCur:()=>chapCur,
       help:()=>({open:helpOpen(),seen:helpSeen()}),flight:()=>!!flight,sheet:()=>({card:$('#card').classList.contains('full'),list:$('#list').classList.contains('full')}),
+      // 完整重算一次標籤避讓的時間（ms，n 次的中位數；每次先讓版面版本號 +1 跳過快取）
+      layoutMs:(n=15)=>{const a=[];for(let k=0;k<n;k++){llVer++;const t=performance.now();layoutLabels();a.push(performance.now()-t);}a.sort((x,y)=>x-y);return {med:a[n>>1],min:a[0],max:a[n-1]};},
       labels:()=>labelList.map(L=>({text:L.el.textContent,hid:L.el.classList.contains('hid'),rect:(r=>[r.left,r.top,r.right,r.bottom])(L.el.getBoundingClientRect()),lead:L.leader?!L.leader.classList.contains('hid'):null,far:L.far,seg:L.leader&&!L.leader.classList.contains('hid')?L.drawn:null,near:L.nearGate?gateNear(L):null})),
       breakdown:()=>{const out=[];scene.traverse(o=>{if(!o.geometry)return;const g=o.geometry,n=(g.index?g.index.count:g.getAttribute('position').count)/(o.isLineSegments?2:3),k=o.isInstancedMesh?o.count:1;out.push({type:o.type,per:Math.round(n),count:k,total:Math.round(n*k)});});return out.sort((a,b)=>b.total-a.total);},
     }};

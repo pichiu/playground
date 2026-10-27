@@ -47,7 +47,7 @@ def test_no_dangling_links(root):   # 掃 taipei-dome 下所有 html 的相對 h
 
 
 def test_no_2c_wording_in_pages(root):
-    for name in ['index.html', 'console.html', 'me.html', 'score.html', 'handout.html', 'captain.html', 'exit.html', 'core.js']:
+    for name in ['index.html', 'console.html', 'me.html', 'score.html', 'handout.html', 'captain.html', 'exit.html', 'diorama.html', 'core.js']:
         text = (root / name).read_text(encoding='utf-8')
         text = text.replace('../entry-animation/index.html">2c 總覽', '')
         assert not re.search(r'(?<![\w#])2c(?!\w)', text), name
