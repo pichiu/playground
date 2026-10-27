@@ -106,8 +106,21 @@ button{font:inherit;color:inherit}
 #brand{left:var(--gutter-l);top:max(16px, env(safe-area-inset-top, 0px));width:min(340px, calc(100vw - var(--gutter-l) - var(--gutter-r)));border-radius:18px;padding:16px 18px 14px}
 #brand h1{margin:6px 0 2px;font:900 30px/1.1 var(--font);letter-spacing:.06em}
 #brand .sub{margin:0;font:500 13px/1.5 var(--font);color:var(--muted)}
-#pages-link{display:inline-block;margin-top:2px;font:600 12.5px/1.5 var(--font);color:var(--accent-text)}
-#pages-link:focus-visible{outline:3px solid var(--coral);outline-offset:2px;border-radius:4px}
+/* 第三輪決定 3C：「其他頁面」選單（取代原本的 #pages-link 文字連結） */
+#pages-btn{position:absolute;top:10px;right:60px;width:44px;height:44px;min-width:44px;padding:0;border-radius:999px}
+#pages-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+#pages-btn[aria-expanded="true"]{background:var(--chip-pressed);color:var(--chip-pressed-text);border-color:var(--chip-pressed)}
+body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
+#pages-menu{z-index:40;width:min(244px, calc(100vw - var(--gutter-l) - var(--gutter-r)));max-height:calc(100% - 32px);overflow:auto;overscroll-behavior:contain;padding:6px;border-radius:16px;background:var(--panel-solid);color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow-card)}
+#pages-menu[hidden],#pages-btn[hidden]{display:none}
+#pages-menu .pm-h{padding:8px 10px 6px;font:700 10px/1.2 var(--mono);letter-spacing:2px;color:var(--accent-text)}
+#pages-menu ul{list-style:none;margin:0;padding:0}
+#pages-menu a,#pages-menu .cur{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px 0 8px;border-radius:10px;font:600 14px/1.3 var(--font);color:var(--text);text-decoration:none}
+#pages-menu a:hover{background:var(--chip-hover)}
+#pages-menu a:focus-visible,#pages-menu .cur:focus-visible{outline:3px solid var(--coral);outline-offset:-3px}
+#pages-menu .ck{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#pages-menu .cur{background:var(--chip);color:var(--accent-text);cursor:default}
+#pages-menu .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 #brand details{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 #brand summary{cursor:pointer;font:600 12px/1.4 var(--font);color:var(--muted);min-height:28px;display:flex;align-items:center;gap:8px;list-style:none}
 /* display:flex 會拿掉瀏覽器的展開三角形：自己畫一個 chevron（和清單的 details 同一種），收合時也看得出可以點開（審查 rv14） */
@@ -358,6 +371,11 @@ button{font:inherit;color:inherit}
   /* 主持人裁決「sheet 往上拉到全螢幕」：卡片也維持全高，內容下方的空白就是 sheet 內的留白（rv15 撤回 rv14 的 height:auto） */
   #card .handle,#list .handle{width:100%;border:0;background:none;padding:0;min-height:22px}
   #help-btn{top:6px;right:6px}
+  #pages-btn{top:6px;right:56px}
+  body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:92px}
+  body.sheet-open #pages-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:50%;right:50px;transform:translateY(-50%)}
+  body.sheet-open #pages-btn::before{content:'';position:absolute;inset:-5px}
+  body.sheet-open #pages-btn svg{width:15px;height:15px}
   #cams .chip{padding:0 13px}
 }
 /* 手機橫拿（高 ≤ 500）：品牌卡收成一行（大標＋聲明），計數條放在品牌卡右邊同一列；
@@ -370,6 +388,12 @@ button{font:inherit;color:inherit}
   #brand details[open]{flex-basis:100%;border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
   #help-btn,body.sheet-open #help-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:6px;right:6px;transform:none;font-size:13px}
   #help-btn::before{content:'';position:absolute;inset:-5px}
+  #pages-btn,body.sheet-open #pages-btn{width:34px;height:34px;min-width:34px;min-height:34px;top:6px;right:50px;transform:none}
+  #pages-btn::before{content:'';position:absolute;inset:-5px}
+  #pages-btn svg{width:15px;height:15px}
+  body.has-pages #brand,body.has-pages.sheet-open #brand{width:276px;padding-right:92px}
+  body.has-pages #brand h1{padding-right:0}
+  body.has-pages #counts{left:calc(var(--gutter-l) + 286px)}
   #counts{top:max(16px, env(safe-area-inset-top, 0px));left:calc(var(--gutter-l) + 242px);right:calc(var(--gutter-r) + 54px);width:auto;padding:6px 12px}
   #list,#card{top:max(16px, env(safe-area-inset-top, 0px));bottom:var(--side-bottom,80px);height:auto;border-radius:18px}
   #card{left:var(--gutter-l);right:auto;width:min(340px, 46vw)}
@@ -395,13 +419,16 @@ button{font:inherit;color:inherit}
     <div class="eyebrow">B1 看台 → B2 → 西一入口</div>
     <h1>入經藏</h1>
     <p class="sub">進場微縮模型・版本 3 兩路直進</p>
-    <a id="pages-link" href="index.html" hidden>← 版本 3 總覽與其他頁面</a>
+    <!-- 第三輪決定 3C：「其他頁面」選單鈕（只在 playground 頁面版、資料由 Dome.load 讀入時顯示；artifact 版沒有其他頁） -->
+    <button id="pages-btn" class="btn" type="button" aria-label="其他頁面" title="其他頁面" aria-controls="pages-menu" aria-expanded="false" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg></button>
     <button id="help-btn" class="btn" type="button" aria-label="說明：怎麼看這個模型" aria-controls="help" aria-expanded="false">?</button>
     <details id="disc-box">
       <summary>聲明<span class="hint">（點開）</span></summary>
       <p class="note" id="disclaimer">動畫時間是節奏示意，不是現場秒數；座位、看台、通道、舞台、高度與小人大小都是示意，碰撞檢查是圖面點距、不是人體寬度。實際依企劃現場指示。</p>
     </details>
   </section>
+
+  <nav id="pages-menu" class="ui" aria-label="進場動線版本 3 各頁" hidden><div class="pm-h" aria-hidden="true">版本 3 各頁</div><ul id="pages-list"></ul></nav>
 
   <nav id="cams" class="ui glass" aria-label="章節與鏡頭"></nav>
 
@@ -580,9 +607,46 @@ const yawFromPlanDeg=phiDeg=>Math.PI/2-deg(phiDeg);
 let D,P,B;
 // 資料來源：artifact 版由 inline.py 內嵌在 #dome-data；playground 頁面版（inline.py --pages）不內嵌，
 // 改用同資料夾 core.js 的 Dome.load() 讀 data.json，和版本 3 其他七頁同一份資料。
+// 第三輪決定 3C：「其他頁面」選單。頁面清單從 core.js 的 Dome.nav 產生（render 到不掛上文件的元素再讀連結）；
+// 沒有 Dome.nav 時用和 core.js NAV 相同的備用清單。目前這頁（diorama.html）打勾、加 aria-current、不是連結。
+const PAGES_SELF='diorama.html',PAGES_FALLBACK=[['index.html','總覽'],['console.html','指揮台'],['me.html','我的路'],['score.html','總譜'],['handout.html','講義'],['captain.html','口令卡'],['exit.html','出口卡'],['diorama.html','3D 模型']];
+function pagesList(){try{if(window.Dome&&typeof Dome.nav==='function'){const box=document.createElement('div'),el=Dome.nav(PAGES_SELF,box)||box;
+    const a=[...el.querySelectorAll('a[href]')].map(x=>[x.getAttribute('href'),x.textContent.trim()]);if(a.length)return a;}}catch(e){}
+  return PAGES_FALLBACK;}
+const pmOpen=()=>!$('#pages-menu').hidden;
+const pmItems=()=>[...$('#pages-list').querySelectorAll('a,.cur')];
+function pmRelayout(){try{llVer++;llUntil=performance.now()+400;dirty=true;}catch(e){}}   // 標籤避讓把選單當成 UI 面板（標籤躲到選單後面）
+function pmPlace(){const m=$('#pages-menu'),b=$('#pages-btn').getBoundingClientRect(),W=innerWidth,H=innerHeight,cs=getComputedStyle(document.documentElement);
+  const gl=parseFloat(cs.getPropertyValue('--gutter-l'))||16,gr=16,w=m.offsetWidth;
+  m.style.left=Math.round(Math.max(gl,Math.min(b.right-w,W-gr-w)))+'px';m.style.top=Math.round(b.bottom+8)+'px';m.style.maxHeight=Math.max(120,Math.floor(H-b.bottom-8-16))+'px';}
+function openPagesMenu(focus){const m=$('#pages-menu');if(!pmOpen()){m.hidden=false;$('#pages-btn').setAttribute('aria-expanded','true');pmPlace();pmRelayout();}
+  const it=pmItems();if(focus==='first'&&it[0])it[0].focus();else if(focus==='last'&&it.length)it[it.length-1].focus();}
+function closePagesMenu(ret){if(!pmOpen())return;$('#pages-menu').hidden=true;$('#pages-btn').setAttribute('aria-expanded','false');pmRelayout();if(ret)$('#pages-btn').focus();}
+function setupPagesMenu(){const btn=$('#pages-btn'),ul=$('#pages-list');if(!btn||!ul)return;
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  ul.innerHTML=pagesList().map(([h,l])=>h===PAGES_SELF
+    ?`<li><span class="cur" aria-current="page" tabindex="-1"><svg class="ck" viewBox="0 0 18 18" aria-hidden="true"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>${esc(l)}<span class="vh">（目前頁面）</span></span></li>`
+    :`<li><a href="${esc(h)}" tabindex="-1"><svg class="ck" viewBox="0 0 18 18" aria-hidden="true"></svg>${esc(l)}</a></li>`).join('');
+  btn.hidden=false;document.body.classList.add('has-pages');
+  btn.addEventListener('click',e=>{if(pmOpen())closePagesMenu(false);else openPagesMenu(e.detail===0?'first':null);});   // 鍵盤（Enter）開啟時焦點進到第一項
+  // 鍵盤：全域 keydown（空白鍵播放、左右鍵跳 1%、Esc 解除跟隨）之前先攔截
+  addEventListener('keydown',e=>{if(!window.__dome||!window.__dome.ready||helpOpen())return;const t=e.target,inM=$('#pages-menu').contains(t),onB=t===btn;
+    if(!pmOpen()){if(onB&&(e.key===' '||e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();e.stopImmediatePropagation();openPagesMenu(e.key==='ArrowUp'?'last':'first');}return;}
+    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();closePagesMenu(true);return;}
+    if(!inM&&!onB)return;
+    const it=pmItems(),k=it.indexOf(document.activeElement);
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Home'||e.key==='End'){e.preventDefault();e.stopImmediatePropagation();
+      const n=it.length,j=e.key==='Home'?0:e.key==='End'?n-1:e.key==='ArrowDown'?(k<0?0:(k+1)%n):(k<0?n-1:(k-1+n)%n);it[j].focus();return;}
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();e.stopImmediatePropagation();return;}
+    if(e.key===' '){e.preventDefault();e.stopImmediatePropagation();if(onB)closePagesMenu(false);else if(t.tagName==='A')t.click();return;}
+    if(e.key==='Tab'&&inM){e.preventDefault();e.stopImmediatePropagation();closePagesMenu(false);(e.shiftKey?btn:$('#help-btn')).focus();}},true);
+  addEventListener('keyup',e=>{if(e.key===' '&&(e.target===btn||$('#pages-menu').contains(e.target)))e.stopImmediatePropagation();},true);
+  // 點選單與按鈕以外的地方就關閉（不搶焦點）；視窗尺寸改變也關閉
+  document.addEventListener('pointerdown',e=>{if(pmOpen()&&!$('#pages-menu').contains(e.target)&&!btn.contains(e.target))closePagesMenu(false);},true);
+  addEventListener('resize',()=>closePagesMenu(false));}
 async function readData(){const el=document.getElementById('dome-data'),txt=el?el.textContent.trim():'';
   if(txt)return JSON.parse(txt);
-  if(window.Dome&&Dome.load){const l=document.getElementById('pages-link');if(l)l.hidden=false;return (await Dome.load()).D;}
+  if(window.Dome&&Dome.load){setupPagesMenu();return (await Dome.load()).D;}
   throw new Error('頁面沒有內嵌資料，也沒有載入 core.js');}
 try{
   D=await readData();
@@ -1623,7 +1687,7 @@ function layoutPanels(){vcInvalidate();const root=document.documentElement.style
 const labelList=[],SEC_LABEL_OUT=1.0;
 // opt.avoid：不能被這個標籤蓋住的 world 點（取其螢幕外框）；opt.push：蓋到時往哪個 world 方向在螢幕上讓開
 function label(text,x,y,z,cls,pri=50,opt={}){const el=document.createElement('div');el.className='lbl '+(cls||'');el.textContent=text;const o=new CSS2DObject(el);o.position.set(x,y,z);scene.add(o);
-  const L={o,el,pri,dir:/\bdir\b/.test(cls||''),avoid:opt.avoid||null,push:opt.push||null,alts:opt.alts||null,base:opt.base||null,maxOff:opt.maxOff||1e9,maxPush:opt.maxPush||1e9,downFirst:!!opt.downFirst,pushOnly:!!opt.pushOnly,heads:!!opt.heads,r0:[0,0,0,0],r1:[0,0,0,0],h0:false,vis:false,tx:'',leader:null,lead:null,far:false};
+  const L={o,el,pri,dir:/\bdir\b/.test(cls||''),avoid:opt.avoid||null,push:opt.push||null,alts:opt.alts||null,base:opt.base||null,maxOff:opt.maxOff||1e9,maxPush:opt.maxPush||1e9,downFirst:!!opt.downFirst,pushOnly:!!opt.pushOnly,heads:!!opt.heads,nearGate:opt.nearGate||null,seg:null,r0:[0,0,0,0],r1:[0,0,0,0],h0:false,vis:false,tx:'',leader:null,lead:null,far:false};
   // 第 4 階段：有 avoid 的標籤（樓梯、西一入口）錨在物體本身；被推開時畫一條引線指回錨點，推太遠（maxPush px）就不顯示
   if(L.avoid){const ld=document.createElement('div');ld.className='leader hid';ld.setAttribute('aria-hidden','true');labelsEl.appendChild(ld);L.leader=ld;}
   labelList.push(L);return o;}
@@ -1650,9 +1714,12 @@ function buildLabels(){
    let dx=sm[0]-c[0],dy=sm[1]-c[1];const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
    // 第 4 階段：錨點改在門洞本身（gate.band 中心、牆頂上方），避開門洞與隊頭（GATE6 一小圈），被推開時用引線指回門洞（主持人裁決：近距離錨在門洞或加引線）
    // 審查 rv14：錨點原本在 gate.band 中心（牆線外側的地面上方），引線看起來指向牆外的空地；改成門洞在牆線上的缺口中點（band 兩條長邊與 map.wall 的交點），高度在牆頂
-   {const wp=pairs(M.wall),h1=segPolyHit(g[0],g[1],wp,true),h2=segPolyHit(g[3],g[2],wp,true);if(h1&&h2){c[0]=(h1.p[0]+h2.p[0])/2;c[1]=(h1.p[1]+h2.p[1])/2;}}
+   const jambs=[];{const wp=pairs(M.wall),h1=segPolyHit(g[0],g[1],wp,true),h2=segPolyHit(g[3],g[2],wp,true);if(h1&&h2){c[0]=(h1.p[0]+h2.p[0])/2;c[1]=(h1.p[1]+h2.p[1])/2;jambs.push(h1.p,h2.p);}}
    built.gateLabelXY=c;const av=[];for(const q of g)for(const y of [0,WALL_H+0.05])av.push(V3(q[0],y,q[1]));for(const [ox,oz] of [[-.25,-.25],[.25,-.25],[-.25,.25],[.25,.25]])av.push(V3(N.GATE6.X+ox,0.16,N.GATE6.Y+oz));
-   label('西一入口',c[0],WALL_H,c[1],'key',100,{avoid:av,push:V3(-0.45,0,0.9),maxPush:340,downFirst:true,heads:true});}   // 直式先試螢幕正下方：往西南推時引線會斜穿往門口走的隊伍（審查 rv15）
+   // 第三輪決定 2C：近距離（門前隊伍、穿過西一入口、迴廊候隊特寫與類似的手動拉近）時改用 nearGate：標籤放在門洞上方、牆外（門前隊伍來的 B2 那一側），
+   // 不壓人頭、引線 6px 內沒有人（頭或身體中心）；附近找不到就隱藏。out＝GATE6_IN → GATE6（牆內 → 牆外）
+   const ox=N.GATE6.X-N.GATE6_IN.X,oz=N.GATE6.Y-N.GATE6_IN.Y,ol=Math.hypot(ox,oz)||1;
+   label('西一入口',c[0],WALL_H,c[1],'key',100,{avoid:av,push:V3(-0.45,0,0.9),maxPush:340,downFirst:true,heads:true,nearGate:{c:[c[0],c[1]],o:[ox/ol,oz/ol],an:[[c[0],c[1]],...jambs.map(q=>[q[0],q[1]])]}});}   // 直式先試螢幕正下方：往西南推時引線會斜穿往門口走的隊伍（審查 rv15）
   // 樓梯：錨在踏階西緣外側（離球場的一側）、約 H1 高；若在畫面上仍蓋到踏階，就沿「往西」的螢幕方向讓開（見 layoutLabels）
   {const xW=M.stairTreads[0][0],xE=M.stairTreads[0][2],y0=N.STAIR_TOP.Y,y1=Math.max(N.STAIR_BOT.Y,built.stairProfile.B.y1)+0.08,ym=(y0+y1)/2;
    const avoid=[];for(const x of [xW,xE])for(const z of [y0,y1])for(const y of [0,H1])avoid.push(V3(x,y,z));
@@ -1683,14 +1750,49 @@ function projHeads(W,H){const a=people&&people.arrs&&people.arrs.head;_hdN=0;if(
   for(let i=0;i<n;i++){_lp.set(a[i*16+12],a[i*16+13],a[i*16+14]).project(activeCam);if(_lp.z>1)continue;_hd[2*_hdN]=(_lp.x+1)/2*W;_hd[2*_hdN+1]=(1-_lp.y)/2*H;_hdN++;}}
 function headIn(l,t,r,b){for(let k=0;k<_hdN;k++){const x=_hd[2*k],y=_hd[2*k+1];if(x>l&&x<r&&y>t&&y<b)return true;}return false;}
 const headInR=(q,p=1)=>headIn(q.left-p,q.top-p,q.right+p,q.bottom+p);
+// 第三輪決定 2C：近距離的「西一入口」另外看身體中心（引線不能穿過人：頭或身體中心離線段 < GATE_SEG_PX 都算）
+let _bdN=0;const _bd=new Float32Array(2*4096);
+function projBodies(W,H){const a=people&&people.arrs&&people.arrs.body;_bdN=0;if(!a)return;const n=Math.min(P.length,4096);
+  for(let i=0;i<n;i++){_lp.set(a[i*16+12],a[i*16+13],a[i*16+14]).project(activeCam);if(_lp.z>1)continue;_bd[2*_bdN]=(_lp.x+1)/2*W;_bd[2*_bdN+1]=(1-_lp.y)/2*H;_bdN++;}}
+const GATE_SEG_PX=8,GATE_NEAR=0.6,GATE_MAX_PX=170;
+function ptsNearSeg(arr,n,x1,y1,x2,y2,d){const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy,lo=Math.min(x1,x2)-d,hi=Math.max(x1,x2)+d,to=Math.min(y1,y2)-d,bo=Math.max(y1,y2)+d;
+  for(let k=0;k<n;k++){const x=arr[2*k],y=arr[2*k+1];if(x<lo||x>hi||y<to||y>bo)continue;let t=l2?((x-x1)*dx+(y-y1)*dy)/l2:0;t=t<0?0:t>1?1:t;if(Math.hypot(x-x1-t*dx,y-y1-t*dy)<d)return true;}return false;}
+const bodyInR=(q,p)=>{for(let k=0;k<_bdN;k++){const x=_bd[2*k],y=_bd[2*k+1];if(x>q.left-p&&x<q.right+p&&y>q.top-p&&y<q.bottom+p)return true;}return false;};
+const segBlocked=s=>ptsNearSeg(_hd,_hdN,s[0],s[1],s[2],s[3],GATE_SEG_PX)||ptsNearSeg(_bd,_bdN,s[0],s[1],s[2],s[3],GATE_SEG_PX);
+// 引線終點＝標籤外框上離錨點最近的點（和畫引線的算法相同）
+const leadEnd=(ax,ay,r)=>[clamp(ax,r.left+4,r.right-4),clamp(ay,r.top+3,r.bottom-3)];
+// 近距離判定：透視相機到門洞（牆頂）的距離 < 總覽距離 × GATE_NEAR（總覽與俯視、遠景維持原本的四方向避讓）
+const _gn=new THREE.Vector3();
+const gateNear=L=>!!L.nearGate&&activeCam===camera&&camera.position.distanceTo(_gn.set(L.nearGate.c[0],WALL_H,L.nearGate.c[1]))<GATE_NEAR*homeDist();
+// 候選位置（world）：門洞牆頂往牆外 d、沿牆 s、牆頂上方 h；依螢幕距離由近到遠試，第一個「外框不壓人頭、引線不穿過人、在畫面內、不在面板下」的就用
+const GATE_CANDS=(()=>{const o=[];for(let d=0;d<=1.21;d+=0.15)for(let s=-0.9;s<=0.91;s+=0.15)for(const h of [0.08,0.2,0.35,0.5,0.7,0.9])o.push([d,s,h]);return o;})();
 function layoutLabelsCached(W,H){const now=performance.now();if(now<llUntil||_llVer!==llVer||W!==_llW||H!==_llH||_llCam!==activeCam)return false;
   if(pillHead&&(pillHead.o.visible||pillMe.o.visible))return false;
   const a=activeCam.matrixWorld.elements,b=activeCam.projectionMatrix.elements;for(let k=0;k<16;k++)if(a[k]!==_llM[k]||b[k]!==_llM[16+k])return false;
   // 鏡頭沒動但人在走：地標標籤原位的「有沒有人頭」改變了，或顯示中的標籤底下走進了人頭，就整個重算
   let hp=false;for(let i=0;i<labelList.length;i++){const L=labelList[i];if(!L.heads)continue;if(!hp){projHeads(W,H);hp=true;}
-    if(headIn(L.r0[0]-1,L.r0[1]-1,L.r0[2]+1,L.r0[3]+1)!==L.h0)return false;if(L.vis&&headIn(L.r1[0]-1,L.r1[1]-1,L.r1[2]+1,L.r1[3]+1))return false;}
+    if(headIn(L.r0[0]-1,L.r0[1]-1,L.r0[2]+1,L.r0[3]+1)!==L.h0)return false;if(L.vis&&headIn(L.r1[0]-1,L.r1[1]-1,L.r1[2]+1,L.r1[3]+1))return false;
+    if(L.vis&&L.seg){projBodies(W,H);if(segBlocked(L.seg))return false;}}
   for(let i=0;i<labelList.length;i++){const L=labelList[i];if(L.tx)L.el.style.transform+=L.tx;}
   return true;}
+// 第三輪決定 2C：近距離的「西一入口」。標籤本來置中在錨點 A（門洞牆頂）；試 GATE_CANDS，取螢幕上最近的可行位置（≤ GATE_MAX_PX），引線指回 A。
+// 可行：外框（外擴 4px）內沒有人頭與身體中心、外框不蓋住 A（外擴 GATE_SEG_PX，讓引線看得到）、引線 GATE_SEG_PX 內沒有頭或身體中心、完整在畫面內、不在 UI 面板下。都不行就隱藏。
+function layoutGateNear(L,i,r,W,H,g,occ,move){projBodies(W,H);const A=scr(L.o.position,W,H),[cx,cz]=L.nearGate.c,[ox,oz]=L.nearGate.o,ax=-oz,az=ox;
+  if(L.heads){L.r0[0]=r.left;L.r0[1]=r.top;L.r0[2]=r.right;L.r0[3]=r.bottom;L.h0=headInR(r);}
+  // 引線起點：門洞缺口中點，或缺口兩側牆角（牆頂黃條上緣）；人走過缺口中間時，改從牆角指過去
+  const an=L.nearGate.an.map(([x,z])=>scr(_lq.set(x,WALL_H+0.022,z),W,H)).filter(q=>q[2]<=1);
+  const cs=[];for(const [d,s,h] of GATE_CANDS){const q=scr(_lq.set(cx+ox*d+ax*s,WALL_H+h,cz+oz*d+az*s),W,H);if(q[2]>1)continue;const dx=q[0]-A[0],dy=q[1]-A[1],m=Math.hypot(dx,dy);if(m<=GATE_MAX_PX)cs.push([m,dx,dy]);}
+  cs.sort((a,b)=>a[0]-b[0]);const P2=GATE_SEG_PX;
+  // 先只用缺口中點當起點找一輪，找不到才改用牆角
+  for(const set of [an.slice(0,1),an.slice(1)])for(const [m,dx,dy] of cs){const q=shiftR(r,dx,dy);
+    if(q.left<g||q.top<g||q.right>W-g||q.bottom>H-g)continue;
+    if(headInR(q,4)||bodyInR(q,4))continue;   // 不壓人頭，也不坐在人身上（身體中心）
+    if(occ.some(o=>q.left-4<o[2]&&q.right+4>o[0]&&q.top-4<o[3]&&q.bottom+4>o[1]))continue;   // 和優先序那一輪相同（外擴 pad 3）再多 1px，不會在那裡被面板藏掉
+    let best=null;for(const a of set){if(a[0]>q.left-P2&&a[0]<q.right+P2&&a[1]>q.top-P2&&a[1]<q.bottom+P2)continue;   // 外框不蓋住起點（引線要看得到）
+      const e=leadEnd(a[0],a[1],q),sg=[a[0],a[1],e[0],e[1]],len=Math.hypot(e[0]-a[0],e[1]-a[1]);if((!best||len<best[0])&&!segBlocked(sg))best=[len,sg];}
+    if(!best)continue;
+    move(i,dx,dy);L.lead=[best[1][0],best[1][1]];L.seg=best[1];return;}
+  L.far=true;}
 function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8;if(layoutLabelsCached(W,H))return -1;
   _llVer=llVer;_llW=W;_llH=H;_llCam=activeCam;{const a=activeCam.matrixWorld.elements,b=activeCam.projectionMatrix.elements;for(let k=0;k<16;k++){_llM[k]=a[k];_llM[16+k]=b[k];}}
   for(const L of labelList)L.tx='';
@@ -1714,7 +1816,8 @@ function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8
       if(tooFar&&!moved)L.far=true;return;}
     if(L.avoid){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9,behind=false;for(const v of L.avoid){const q=scr(v,W,H);if(q[2]>1)behind=true;x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);}
       const box={left:x0-4,right:x1+4,top:y0-4,bottom:y1+4};
-      L.lead=null;L.far=false;
+      L.lead=null;L.far=false;L.seg=null;
+      if(!behind&&gateNear(L)){layoutGateNear(L,i,r,W,H,g,occ,move);return;}
       const bad=q=>hit(q,box)||(L.heads&&headInR(q));
       if(L.heads){L.r0[0]=r.left;L.r0[1]=r.top;L.r0[2]=r.right;L.r0[3]=r.bottom;L.h0=headInR(r);}
       if(!behind&&bad(r)){const a=scr(L.o.position,W,H),b=scr(_lq.copy(L.o.position).add(L.push),W,H);let ux=b[0]-a[0],uy=b[1]-a[1];const ul=Math.hypot(ux,uy);
@@ -1736,11 +1839,11 @@ function layoutLabels(){const W=labelsEl.clientWidth,H=labelsEl.clientHeight,g=8
   for(let i=0;i<items.length;i++){const L=items[i];if(!L.heads)continue;const r=rects[i];L.vis=!L.el.classList.contains('hid');L.r1[0]=r.left;L.r1[1]=r.top;L.r1[2]=r.right;L.r1[3]=r.bottom;}
   for(const L of labelList)if(L.heads&&!items.includes(L))L.vis=false;
   // 引線：從錨點畫到標籤外框最近的點（標籤被藏起來或沒被推開時不畫）
-  for(let i=0;i<items.length;i++){const L=items[i];if(!L.leader)continue;const ld=L.leader;
+  for(let i=0;i<items.length;i++){const L=items[i];if(!L.leader)continue;const ld=L.leader;L.drawn=null;
     const rr=rects[i];if(!L.lead||L.el.classList.contains('hid')||rr.right<0||rr.left>W||rr.bottom<0||rr.top>H){ld.classList.add('hid');continue;}
-    const r=rects[i],[ax,ay]=L.lead,tx=clamp(ax,r.left+4,r.right-4),ty=clamp(ay,r.top+3,r.bottom-3),len=Math.hypot(tx-ax,ty-ay);
+    const r=rects[i],[ax,ay]=L.lead,[tx,ty]=leadEnd(ax,ay,r),len=Math.hypot(tx-ax,ty-ay);
     if(len<4){ld.classList.add('hid');continue;}
-    ld.classList.remove('hid');ld.style.width=len.toFixed(1)+'px';ld.style.transform=`translate(${ax.toFixed(1)}px,${(ay-0.75).toFixed(1)}px) rotate(${Math.atan2(ty-ay,tx-ax).toFixed(4)}rad)`;}
+    L.drawn=[ax,ay,tx,ty];ld.classList.remove('hid');ld.style.width=len.toFixed(1)+'px';ld.style.transform=`translate(${ax.toFixed(1)}px,${(ay-0.75).toFixed(1)}px) rotate(${Math.atan2(ty-ay,tx-ax).toFixed(4)}rad)`;}
   return hidden;}
 
 // =====================================================================
@@ -2215,7 +2318,7 @@ try{
       frames:()=>renderer.info.render.frame,ribbonMapIsData:()=>!!RIB.L[1].m.material.map.isDataTexture,
       chapters:()=>CHAPTERS.map(c=>({key:c.key,name:c.name,t:c.t,t0:c.t0,peak:c.peak||null,shot:c.shot})),chapter:k=>goChapter(k),chapterCur:()=>chapCur,
       help:()=>({open:helpOpen(),seen:helpSeen()}),flight:()=>!!flight,sheet:()=>({card:$('#card').classList.contains('full'),list:$('#list').classList.contains('full')}),
-      labels:()=>labelList.map(L=>({text:L.el.textContent,hid:L.el.classList.contains('hid'),rect:(r=>[r.left,r.top,r.right,r.bottom])(L.el.getBoundingClientRect()),lead:L.leader?!L.leader.classList.contains('hid'):null,far:L.far})),
+      labels:()=>labelList.map(L=>({text:L.el.textContent,hid:L.el.classList.contains('hid'),rect:(r=>[r.left,r.top,r.right,r.bottom])(L.el.getBoundingClientRect()),lead:L.leader?!L.leader.classList.contains('hid'):null,far:L.far,seg:L.leader&&!L.leader.classList.contains('hid')?L.drawn:null,near:L.nearGate?gateNear(L):null})),
       breakdown:()=>{const out=[];scene.traverse(o=>{if(!o.geometry)return;const g=o.geometry,n=(g.index?g.index.count:g.getAttribute('position').count)/(o.isLineSegments?2:3),k=o.isInstancedMesh?o.count:1;out.push({type:o.type,per:Math.round(n),count:k,total:Math.round(n*k)});});return out.sort((a,b)=>b.total-a.total);},
     }};
 }catch(e){console.error(e);window.__domeFail(e&&e.message||e);}

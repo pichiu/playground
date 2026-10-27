@@ -22,8 +22,8 @@ def test_diorama_loads_shared_data(open_page):
             out.push(Math.hypot(a[0] - b[0], a[1] - b[1])); } }
         return { n: P.length, max: Math.max(...out), k: out.length }; }''')
     assert r['n'] == 1609 and r['k'] > 60 and r['max'] < 1e-4, r
-    link = pg.locator('#pages-link')
-    assert link.is_visible() and link.get_attribute('href') == 'index.html'
+    # 原本的 #pages-link 文字連結改成品牌卡裡的「其他頁面」選單鈕（見 test_diorama_pages_menu）
+    assert pg.locator('#pages-btn').is_visible() and pg.locator('#pages-link').count() == 0
     body = pg.inner_text('body')
     assert not re.search(r'\d{1,2}:\d\d', body) and '分鐘' not in body
 
@@ -38,3 +38,44 @@ def test_nav_links_to_diorama(open_page):
     pg, *_ = open_page('index.html', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert pg.locator('nav.dome-nav a[href="diorama.html"]').inner_text() == '3D 模型'
+
+
+def test_diorama_pages_menu(open_page):
+    """品牌卡的「其他頁面」選單：列出版本 3 的 8 頁（和 core.js NAV 相同）、目前頁打勾不是連結、鍵盤可操作、總覽連結可用。"""
+    pg, errs, perrs = open_page('diorama.html', 1280, 800)
+    _ready(pg)
+    if pg.locator('#help').is_visible():      # 第一次進來會先顯示說明
+        pg.click('#help-go')
+    btn = pg.get_by_role('button', name='其他頁面')
+    assert btn.is_visible() and btn.get_attribute('aria-expanded') == 'false'
+    box = btn.bounding_box()
+    assert box['width'] >= 44 and box['height'] >= 44, box
+    menu = pg.locator('#pages-menu')
+    assert menu.is_hidden()
+    btn.focus()
+    pg.keyboard.press('Enter')
+    assert menu.is_visible() and btn.get_attribute('aria-expanded') == 'true'
+    items = pg.evaluate("""() => [...document.querySelectorAll('#pages-list li')].map(li => {
+        const a = li.querySelector('a'), c = li.querySelector('[aria-current]');
+        return { href: a ? a.getAttribute('href') : null, text: (a || c).textContent.trim(), cur: c ? c.getAttribute('aria-current') : null }; })""")
+    nav = pg.evaluate("""() => { const box = document.createElement('div'); Dome.nav('diorama.html', box);
+        return [...box.querySelectorAll('a')].map(a => [a.getAttribute('href'), a.textContent]); }""")
+    assert len(items) == 8 == len(nav), items
+    assert [i['text'].replace('（目前頁面）', '') for i in items] == [n[1] for n in nav]
+    cur = [i for i in items if i['cur']]
+    assert len(cur) == 1 and cur[0]['cur'] == 'page' and cur[0]['href'] is None and cur[0]['text'].startswith('3D 模型'), cur
+    assert pg.locator('#pages-list [aria-current="page"] svg.ck path').count() == 1      # 打勾
+    assert [i['href'] for i in items if i['href']] == [n[0] for n in nav if n[0] != 'diorama.html']
+    # 鍵盤：Enter 開啟後焦點在第一項，↓ 下一項，Esc 關閉並回到按鈕
+    assert pg.evaluate('document.activeElement.textContent.trim()') == '總覽'
+    pg.keyboard.press('ArrowDown')
+    assert pg.evaluate('document.activeElement.textContent.trim()') == '指揮台'
+    pg.keyboard.press('Escape')
+    assert menu.is_hidden() and pg.evaluate("document.activeElement.id") == 'pages-btn'
+    # 總覽連結可用
+    btn.click()
+    with pg.expect_navigation(url='**/index.html', timeout=60000):
+        pg.locator('#pages-list a[href="index.html"]').click()
+    pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+    assert pg.locator('nav.dome-nav a[aria-current="page"]').inner_text() == '總覽'
+    assert not errs and not perrs, (errs, perrs)
