@@ -554,7 +554,7 @@ const $ = s => document.querySelector(s);
 
 // =====================================================================
 // 1. 引擎：以下 pairs / bounds / pos / state / counts / dataset 的 B 範圍
-//    原樣複製自 design-explorations/taipei-dome/flow/entry-animation-v3/core.js（版本 3 七頁共用引擎）
+//    原樣複製自 ../core.js（版本 3 各頁共用引擎；tests/test_release.py 檢查仍逐字相同）
 // =====================================================================
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
 function bounds(pts,pad=.6){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const [x,y] of pts){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y;}return [a-pad,b-pad,c+pad,d+pad];}

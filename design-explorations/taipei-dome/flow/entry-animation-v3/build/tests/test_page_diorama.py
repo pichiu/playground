@@ -1,4 +1,4 @@
-"""3D 模型頁（diorama.html）：由 pichiu/workshop 的 diorama.src.html 以 inline.py --pages 產生，讀同一份 data.json。
+"""3D 模型頁（diorama.html）：由 build/diorama.src.html 以 python3 -I build/inline.py 產生，讀同一份 data.json。
 需要 WebGL（SwiftShader）與 cdn.jsdelivr.net 的 three.js；SwiftShader 每幀約 1 秒，所以等待時間放寬。"""
 import functools
 import re
