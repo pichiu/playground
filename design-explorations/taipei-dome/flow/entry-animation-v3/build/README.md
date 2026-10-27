@@ -23,7 +23,7 @@ python3 check.py ../data.json                                   # §4：檢核�
 | `check.py` | `check_all(data)` 與 CLI；整排並肩與迴廊候隊在 `staging / formation / wheel / lane_map / geometry` |
 | `collide.py` | 2c 的 `collisions`，加上 `seated_hits`（走動中的人與已到位的人） |
 | `geo.py` | 與 2c 相同 |
-| `tests/` | pytest：排位、路線、時鐘、檢核（含竄改偵測）、Review Focus、七個頁面（Playwright）、發行（首頁卡、2c 不動、追蹤檔與管線輸出逐位元相同） |
+| `tests/` | pytest：排位、路線、時鐘、檢核（含竄改偵測）、Review Focus、八個頁面（Playwright，含 3D 模型 diorama.html）、發行（首頁卡、2c 不動、追蹤檔與管線輸出逐位元相同） |
 
 ## 依賴
 

@@ -18,7 +18,7 @@ def test_console(open_page):
     pg.click('[data-lane="B"]')
     assert pg.get_attribute('[data-lane="B"]', 'aria-pressed') == 'false'
     assert pg.locator('nav.dome-nav a[aria-current="page"]').inner_text() == '指揮台'
-    assert pg.locator('body > nav.dome-nav a').count() == 7
+    assert pg.locator('body > nav.dome-nav a').count() == 8
     pg.evaluate('window.__seek(120)')
     pg.wait_for_function('document.getElementById("clock").textContent.endsWith("%")', timeout=5000)
     assert pg.locator('#cues li').count() > 0
