@@ -536,6 +536,25 @@ const STAGE_H = 0.12;        // 甲舞台平台高
 const STAGE_CLEAR = 0.15;    // 平台離 walkBand / laneBand / westEdge 的最小緩衝
 // 地面層的鋪面高約 0.006–0.018：人在地面（h=0）時腳底抬 0.017，在 B1（h=H1）時正好踩在 H1，中間線性（playground #23 移到檔頭：舞台階梯的踏面高也從這裡起算）
 const FOOT_LIFT = 0.017;
+// 舞台、伸展台、中央平台照企劃 3D 圖（從 5F 最高看台往舞台看）的層次：線稿裡每一條階梯線＝一級，級高一律 STEP_RISE
+// （東側 11 階把台前平台 STAGE_H 平均分成 11 級，約 7 cm）。各面的高度＝從地面往上數跨過幾條階梯線（base.stage 那一組線；base.mid 是同一組階梯往內偏 0.027 的線）：
+//   甲舞台：下段 11 階 → 台前平台 STAGE_H（白色弧帶）→ 上段 5 階 → 主台面 STAGE_TOP_H（LED 牆前、紅色方塊所在）
+//   伸展台：兩側各 7 階 → 台面 RUNWAY_H；靠舞台那一端是一段斜坡，升到台前平台 STAGE_H（線稿裡 X −5.98..−5.06 的長方形）
+//   中央平台：外圈 7 階（接伸展台）＋ 4 階 → 環狀平台 PLATFORM_H（＝STAGE_H）→ 內圈 3 階 → 中央圓台 PLATFORM_TOP_H
+// 附圖比例的核對見 NOTES：主台面約 1.3 m、伸展台約 0.6 m（低於台前平台，附圖裡伸展台的白色台面也比舞台前緣低）。
+const STAGE_K = 11, STAGE_TOP_K = 16, RUNWAY_K = 7, PLATFORM_K = 11, PLATFORM_TOP_K = 14;   // 各面在第幾級（從地面數跨過幾條階梯線）
+const STEP_RISE = (STAGE_H - FOOT_LIFT) / STAGE_K;
+const levelTop = k => FOOT_LIFT + k * STEP_RISE;          // 第 k 級的頂面高（STAGE_H＝levelTop(STAGE_K)）
+const STAGE_TOP_H = levelTop(STAGE_TOP_K);
+const RUNWAY_H = levelTop(RUNWAY_K);
+const PLATFORM_H = levelTop(PLATFORM_K);
+const PLATFORM_TOP_H = levelTop(PLATFORM_TOP_K);
+// 主 LED 牆（資料裡沒有，照附圖）：沿舞台西緣的弧（base.stage 西緣弧線擬合的圓，圓心約 (−0.34, 0)、半徑 8.28）往內縮到 LED_R，
+// 立在主台面上、背對全壘打牆；寬度到上段 5 階的兩端（|Y| ≤ LED_Y），牆高 LED_H（附圖牆高約為寬的 1/5 → 6 單位寬 × 0.2 ≈ 1.2，約 9 m）
+const LED_R = 8.0, LED_Y = 3.0, LED_H = 1.2;
+const LED_POST_H = 1.45, LED_POST_W = 0.25;           // 兩側黑色立柱（附圖比牆高約兩成）
+const LED_SIDE = [3.38, 4.7], LED_SIDE_Y = [0.4, 1.25];   // 側邊螢幕：沿同一個圓，|Y| 範圍與離地高度（橘上紫下）
+const LED_FADE = 0.12;       // 擋住路線時的不透明度
 const WALL_H = 0.25;         // 全壘打牆高
 const C = { cream:'#fff8f4', coral:'#db6a41', ink:'#211d1d', stone:'#c5b5a7', yellow:'#fcea8b', green:'#71806a',
   glass:'#86a8a6', wood:'#b48560', teal:'#3e7c8c', grass:'#9cc27a', wall:'#3f6f5a', brick:'#e4d6c3', blueCoat:'#6f7fb5' };
@@ -745,7 +764,8 @@ function initRenderer(){
   controls.minPolarAngle=deg(20);controls.maxPolarAngle=deg(65);
   controls.minDistance=1.2;controls.maxDistance=70;
   controls.screenSpacePanning=false;
-  controls.addEventListener('change',()=>{clampPan();dirty=true;});
+  controls.addEventListener('change',()=>{clampPan();dirty=true;LED.camDirty=true;});
+  controls.addEventListener('start',()=>setLedMode('free'));   // 使用者自己轉、拉鏡頭：LED 牆改由遮擋檢查決定
   renderer.domElement.addEventListener('pointerdown',cancelFlight,{passive:true});
   renderer.domElement.addEventListener('wheel',cancelFlight,{passive:true});
 }
@@ -886,17 +906,17 @@ function buildWorld(){
   // ---- 6.6 甲舞台 ----
   buildStage();
 
-  // ---- 6.7 中央平台、法師區、場邊柱 ----
-  const L0=M.labels.find(l=>l.s==='中央平台'),LF=M.labels.find(l=>l.s==='法師區');   // 位置取自 map.labels
-  boxParts.add(mat4(L0.X,0.05,L0.Y,0,0.8,0.1,0.8),'#efe2d4');
-  boxParts.add(mat4(L0.X,0.12,L0.Y,0,0.3,0.06,0.3),C.yellow);
+  // ---- 6.7 法師區、場邊柱（中央平台與伸展台在 6.6 的 buildRunwayPlatform） ----
+  const LF=M.labels.find(l=>l.s==='法師區');   // 位置取自 map.labels
   boxParts.add(mat4(LF.X,0.04,LF.Y,0,0.42,0.08,1.1),'#eadbc9');
   for(const pl of M.pillars)cylParts.add(mat4(pl.X,0.2,pl.Y,0,pl.r*.7,0.4,pl.r*.7),'#d8cabd');
 
   // ---- 6.8 淡線：場內座位格（base.rows）、中央平台圓環與通道弧線（base.mid）、法師區座位圓等（base.stage 其餘）、地墊外框 ----
   for(const l of M.base.rows)addLine(l,0.013,'#d9c8b6');
-  for(const l of M.base.mid)addLine(l,0.013,'#cdb9a6');
-  for(const l of M.base.stage)if(!isWestStage(l))addLine(l,0.013,'#d6b49e');
+  // base.mid 是舞台、伸展台、中央平台階梯線往內偏 0.027 的那一組：落在實體上的段不畫（實體上已經畫了 base.stage 那一組），其餘照舊畫在地面
+  // base.stage 其餘（伸展台兩側、中央平台的圓、法師區…）：底下有實體就畫在實體頂面（取兩級交界的高的那一邊），否則畫在地面
+  for(const l of M.base.mid)for(let i=0;i+3<l.length;i+=2){const a=[l[i],l[i+1]],b=[l[i+2],l[i+3]];if(SOLIDS.topAt(...lerp2(a,b,.5))<=0)addLine([...a,...b],0.013,'#cdb9a6');}
+  for(const l of M.base.stage)if(!isWestStage(l))lineOnSolids(l);
   addLine(M.base.field[1],0.013,'#d8c6b4',true);
   // 第 4 階段（主持人裁決）：西班場內座位區鋪淡色區塊——每個 field 座位一格（格距 0.1316，方塊半寬 0.066，相鄰幾乎相接），
   // 形狀照座位本身（不是凸包，不會蓋到 laneBand 通道），合併進地面 mesh（不加 draw call）
@@ -1109,8 +1129,10 @@ function buildStage(){
   const d2=dt(ext,W,H),mask=new Uint8Array(NN);for(let k=0;k<NN;k++)mask[k]=d2[k]>(GROW+0.02)/RES?1:0;
   // (3) 避開 walkBand、laneBand、westEdge（≥ STAGE_CLEAR＋格點誤差），以及全部人的 path 與其他班位置
   const avoid=new Uint8Array(NN);
-  for(const f of [M.walkBand,M.laneBand]){const pts=pairs(f),bb=bounds(pts,0);
-    for(let j=Math.max(0,gj(bb[1])-1);j<=Math.min(H-1,gj(bb[3])+1);j++)for(let i=Math.max(0,gi(bb[0])-1);i<=Math.min(W-1,gi(bb[2])+1);i++)if(pip(x0+i*RES,y0+j*RES,pts))avoid[j*W+i]=1;
+  // 多邊形 O 內（外框 ±1 格）的格點設成 v
+  const fillPoly=(m,O,v)=>{const ob=bounds(O,0);
+    for(let j=Math.max(0,gj(ob[1])-1);j<=Math.min(H-1,gj(ob[3])+1);j++)for(let i=Math.max(0,gi(ob[0])-1);i<=Math.min(W-1,gi(ob[2])+1);i++)if(pip(x0+i*RES,y0+j*RES,O))m[j*W+i]=v;};
+  for(const f of [M.walkBand,M.laneBand]){const pts=pairs(f);fillPoly(avoid,pts,1);
     for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];rast(avoid,a[0],a[1],b[0],b[1]);}}
   {const w=pairs(M.westEdge);for(let i=0;i<w.length-1;i++)rast(avoid,w[i][0],w[i][1],w[i+1][0],w[i+1][1]);}
   const walk=new Uint8Array(NN);const inG=(x,y)=>x>x0&&x<x1&&y>y0&&y<y1;
@@ -1120,63 +1142,190 @@ function buildStage(){
   // 多留 SMOOTH_M 的餘量：之後的 Chaikin 平滑在凹角會往外補一點，不能因此吃進緩衝區
   const SMOOTH_M=0.05;
   for(let k=0;k<NN;k++)if(da[k]<=(STAGE_CLEAR+0.05+SMOOTH_M)/RES||dw[k]<=(0.1+SMOOTH_M)/RES)mask[k]=0;
-  for(let i=0;i<W;i++){mask[i]=0;mask[(H-1)*W+i]=0;}for(let j=0;j<H;j++){mask[j*W]=0;mask[j*W+W-1]=0;}
   // (3b) playground #23：東側階梯（STAIR，第 3.2 節）另外照線稿做成一階一階的踏面（見 (5b)），台面扣掉整個階梯帶 Ω。
   //      Ω 內不再挖路線：資料讓靠舞台的兩路走上 1–3 階，踏面照線稿畫、不挖；Ω 以外的台面照舊挖讓路線與通道（上面的 da／dw）。
-  if(STAIR.N>1){const O=STAIR.omega,ob=bounds(O,0);
-    for(let j=Math.max(0,gj(ob[1])-1);j<=Math.min(H-1,gj(ob[3])+1);j++)for(let i=Math.max(0,gi(ob[0])-1);i<=Math.min(W-1,gi(ob[2])+1);i++)if(pip(x0+i*RES,y0+j*RES,O))mask[j*W+i]=0;}
+  //      北側的下段 11 階（線稿南北對稱）用 Ω 的鏡射 Ωn，同樣照線稿做踏面（北側沒有人走；東班最近離 Ωn 0.31）
+  if(STAIR.N>1){fillPoly(mask,STAIR.omega,0);fillPoly(mask,mirY(STAIR.omega),0);}
+  // (3c) 上段 5 階（UPPER，舞台前緣西側那 5 條長弧）與主台面：最東那條弧以西（|Y| 在弧的範圍內）不屬於台前平台；
+  //      其中最西那條弧以西＝主台面（mainMask，高 STAGE_TOP_H），兩條弧之間照線稿做 4 級踏面（見 (5c)）
+  //      兩側的紅色方塊（線稿裡斜放的長方框）有一半在弧的南北端以外：主台面往南北延伸到把它們整個包住（ylimMain），那一段以最西那條弧端點的 X 為界
+  const U=UPPER.arcs,mainMask=new Uint8Array(NN);
+  if(U.length>1){const uE=U[0],uW=U[U.length-1],ylim=UPPER.ylim;
+    let ylimMain=ylim;for(const P0 of PADS)if(P0.kind==='n'||P0.kind==='s')for(const q of P0.hull)ylimMain=Math.max(ylimMain,Math.abs(q[1])+0.08);built.mainYlim=+ylimMain.toFixed(3);
+    for(let j=0;j<H;j++){const y=y0+j*RES;if(Math.abs(y)>ylimMain)continue;const xw=UPPER.xAt(uW,y),xe=Math.abs(y)>ylim?xw:UPPER.xAt(uE,y);
+      for(let i=0;i<W;i++){const x=x0+i*RES,k=j*W+i;if(!mask[k]||x>=xe)continue;if(x<xw)mainMask[k]=1;mask[k]=0;}}}
   // (4) 等值線（marching squares）→ 先粗簡化去掉格點鋸齒 → Chaikin 平滑 3 次 → 再簡化 → 外框／洞
-  const loops=marching(mask,W,H).map(L=>L.map(([i,j])=>[x0+i*RES,y0+j*RES])).map(L=>rdpClosed(chaikin(rdpClosed(L,0.03),3),0.004)).filter(L=>Math.abs(polyArea(L))>0.02);
-  // (4b) 台面靠階梯那一邊貼齊第 N 條階梯線（格點＋平滑的誤差約 ±0.02，會蓋住或露出最上一階）：Y 在第 N 條線範圍內、X 離它 −0.035…+0.05 的頂點移到線上
-  let snapped=0;if(STAIR.N>1){const cN=STAIR.chains[STAIR.N-1];for(const L of loops)for(const v of L)if(v[1]>=cN.y0&&v[1]<cN.y1){const xn=STAIR.xAt(cN,v[1]);if(v[0]>xn-0.035&&v[0]<xn+0.05){v[0]=xn;snapped++;}}}
+  const loopsOf=m=>{for(let i=0;i<W;i++){m[i]=0;m[(H-1)*W+i]=0;}for(let j=0;j<H;j++){m[j*W]=0;m[j*W+W-1]=0;}
+    return marching(m,W,H).map(L=>L.map(([i,j])=>[x0+i*RES,y0+j*RES])).map(L=>rdpClosed(chaikin(rdpClosed(L,0.03),3),0.004)).filter(L=>Math.abs(polyArea(L))>0.02);};
+  // (4b) 靠階梯線那一邊貼齊線稿（格點＋平滑的誤差約 ±0.02，會蓋住或露出一階）：Y 在線的範圍內、X 離它 −0.035…+0.05 的頂點移到線上。
+  //      台前平台貼齊第 N 條下段階梯線（南北兩側）與上段最東那條弧；主台面貼齊上段最西那條弧
+  let snapped=0;const snap=(loops,xAt,ya,yb,flip)=>{for(const L of loops)for(const v of L){const y=flip?-v[1]:v[1];if(y>=ya&&y<yb){const xn=xAt(y);if(v[0]>xn-0.035&&v[0]<xn+0.05){v[0]=xn;snapped++;}}}};
+  const loops=loopsOf(mask),mainLoops=loopsOf(mainMask);
+  if(STAIR.N>1){const cN=STAIR.chains[STAIR.N-1];for(const fl of [false,true])snap(loops,y=>STAIR.xAt(cN,y),cN.y0,cN.y1,fl);}
+  if(U.length>1){const uE=U[0],uW=U[U.length-1];snap(loops,y=>UPPER.xAt(uE,y),-UPPER.ylim,UPPER.ylim,false);snap(mainLoops,y=>UPPER.xAt(uW,y),-UPPER.ylim,UPPER.ylim,false);}
   built.stageSnapped=snapped;
-  const depth=loops.map((L,i)=>loops.reduce((n,M2,j)=>n+(j!==i&&pip(L[0][0],L[0][1],M2)?1:0),0));
-  const shapes=[];loops.forEach((L,i)=>{if(depth[i]%2===0)shapes.push({outer:L,holes:[],area:Math.abs(polyArea(L))});});
-  loops.forEach((L,i)=>{if(depth[i]%2===1){let best=null;for(const s of shapes)if(pip(L[0][0],L[0][1],s.outer)&&(!best||s.area<best.area))best=s;if(best)best.holes.push(L);}});
-  built.stageLoops=shapes.map(s=>({outer:s.outer,holes:s.holes}));
-  built.stageArea=shapes.reduce((a,s)=>a+s.area-s.holes.reduce((b,h)=>b+Math.abs(polyArea(h)),0),0);
-  for(const s of shapes)solidParts.push(slab(s.outer,0,STAGE_H,'#f3cdb8',s.holes,0.012));
-  // (5b) 東側階梯的踏面：第 k 階（k＝1..N−1）是第 k、k+1 條階梯線之間的帶，頂面高 STAIR.top(k)（往西一階高一級，第 N 條線以西是台面）。
-  //      頂面深淺交替、立面較深，踏階讀得出來；立面只露出一級的高度（東邊低一級的踏面擋住下面）
+  const shapesOf=loops=>{const depth=loops.map((L,i)=>loops.reduce((n,M2,j)=>n+(j!==i&&pip(L[0][0],L[0][1],M2)?1:0),0));
+    const shapes=[];loops.forEach((L,i)=>{if(depth[i]%2===0)shapes.push({outer:L,holes:[],area:Math.abs(polyArea(L))});});
+    loops.forEach((L,i)=>{if(depth[i]%2===1){let best=null;for(const s of shapes)if(pip(L[0][0],L[0][1],s.outer)&&(!best||s.area<best.area))best=s;if(best)best.holes.push(L);}});return shapes;};
+  const shapes=shapesOf(loops),mainShapes=shapesOf(mainLoops);
+  built.stageLoops=shapes.concat(mainShapes).map(s=>({outer:s.outer,holes:s.holes}));
+  built.stageArea=shapes.concat(mainShapes).reduce((a,s)=>a+s.area-s.holes.reduce((b,h)=>b+Math.abs(polyArea(h)),0),0);
+  for(const s of shapes){solidParts.push(slab(s.outer,0,STAGE_H,STAGE_COL.top,s.holes,0.012,STAGE_COL.side));SOLIDS.add('landing',s.outer,STAGE_H,s.holes);}
+  for(const s of mainShapes){solidParts.push(slab(s.outer,0,STAGE_TOP_H,STAGE_COL.top,s.holes,0.012,STAGE_COL.side));SOLIDS.add('main',s.outer,STAGE_TOP_H,s.holes);}
+  // (5b) 下段 11 階的踏面：第 k 階（k＝1..N−1）是第 k、k+1 條階梯線之間的帶，頂面高 STAIR.top(k)（往西一階高一級，第 N 條線以西是台前平台）。
+  //      頂面深淺交替（附圖的褐色階梯）、立面較深，踏階讀得出來；南側是 Ω（有人走上 1–3 階），北側是鏡射的 Ωn
   built.stageTreads=[];
-  for(const T of STAIR.treads){solidParts.push(slab(T.poly,0,T.top,T.k%2?'#f6d8c6':'#efc8b1',[],0,'#c48d72'));built.stageTreads.push({k:T.k,top:+T.top.toFixed(5),poly:T.poly});}
+  for(const T of STAIR.treads){stepSlab('omega',T.poly,T.top,T.k);stepSlab('omegaN',mirY(T.poly),T.top,T.k);built.stageTreads.push({k:T.k,top:+T.top.toFixed(5),poly:T.poly});}
   built.stair={N:STAIR.N,rise:+STAIR.rise.toFixed(5),box:STAIR.box.map(v=>+v.toFixed(3))};
-  // 舞台線稿：階梯線畫在它西側那一階的頂面邊緣（第 N 條＝台面）；南端連接兩條階梯線的短邊畫在那一階的頂面；
-  // 其餘：兩端與中點都在平台內 → 畫在台面上；其他（含西緣的小格框）畫成地面淡線，讓輪廓仍和平面圖一致
+  // (5c) 上段 5 階：第 k 階（k＝1..4）是上段第 k、k+1 條弧之間的帶（東→西），頂面高 STAGE_H + k × STEP_RISE；第 5 條弧以西是主台面
+  built.upperTreads=[];
+  for(let k=1;k<U.length;k++){const poly=[...U[k-1].pts,...U[k].pts.slice().reverse()],top=levelTop(STAGE_K+k);
+    stepSlab('upper',poly,top,k);built.upperTreads.push({k,top:+top.toFixed(5)});}
+  // (5d) 伸展台與中央平台（第 6.6b 節）
+  buildRunwayPlatform();
+  // 舞台線稿：下段階梯線畫在它西側那一階的頂面邊緣（第 N 條＝台前平台；北側用鏡射的同一條線）；南端連接兩條階梯線的短邊畫在那一階的頂面；
+  // 其餘：畫在線段下方實體的頂面上（主台面、上段踏面、台前平台、伸展台、中央平台）；底下沒有實體的（含西緣的小格框）畫成地面淡線，讓輪廓仍和平面圖一致
   const kp=q=>q[0].toFixed(4)+','+q[1].toFixed(4),lineK=new Map();
-  STAIR.pl.forEach((a,i)=>{const k=STAIR.member.get(i);if(k){lineK.set(a.map(kp).join(';'),k);lineK.set(a.slice().reverse().map(kp).join(';'),k);}});
-  const endK=new Map();STAIR.chains.forEach((c,i)=>endK.set(kp(c.pts[c.pts.length-1]),i+1));
-  const inStage=(x,y)=>shapes.some(s=>pip(x,y,s.outer)&&!s.holes.some(h=>pip(x,y,h)));let onTop=0,onGround=0,onStep=0;
+  STAIR.pl.forEach((a,i)=>{const k=STAIR.member.get(i);if(k)for(const b of [a,mirY(a)]){lineK.set(b.map(kp).join(';'),k);lineK.set(b.slice().reverse().map(kp).join(';'),k);}});
+  const endK=new Map();STAIR.chains.forEach((c,i)=>{const e=c.pts[c.pts.length-1];endK.set(kp(e),i+1);endK.set(kp(mirY([e])[0]),i+1);});
+  let onTop=0,onGround=0,onStep=0;
   for(const l of st){const a0=pairs(l),k=lineK.get(a0.map(kp).join(';')),ka=endK.get(kp(a0[0])),kb=endK.get(kp(a0[a0.length-1]));
-    if(k){addLine(l,STAIR.top(k)+0.003,'#d99a7b');onStep++;continue;}
-    if(ka&&kb&&Math.abs(ka-kb)===1){addLine(l,STAIR.top(Math.min(ka,kb))+0.003,'#d99a7b');onStep++;continue;}
-    for(let i=0;i+3<l.length;i+=2){const a=[l[i],l[i+1]],b=[l[i+2],l[i+3]],m=lerp2(a,b,.5);
-    if(inStage(...a)&&inStage(...b)&&inStage(...m)){addLine([...a,...b],STAGE_H+0.003,'#d99a7b');onTop++;}else{addLine([...a,...b],0.013,'#d6b49e');onGround++;}}}
+    if(k){addLine(l,STAIR.top(k)+0.003,STAGE_COL.line);onStep++;continue;}
+    if(ka&&kb&&Math.abs(ka-kb)===1){addLine(l,STAIR.top(Math.min(ka,kb))+0.003,STAGE_COL.line);onStep++;continue;}
+    for(const h of lineOnSolids(l))h>0?onTop++:onGround++;}
   built.stageLines={onTop,onGround,onStep};
-  // 背板：平台外框中「背對球場、朝外野牆」的邊，立一排半透明低矮背板（高 0.3）
-  const panelMat=new THREE.MeshStandardMaterial({color:C.glass,roughness:.78,transparent:true,opacity:.42,depthWrite:false});
-  const panels=new Parts(new THREE.BoxGeometry(1,1,1),panelMat,{cast:false,receive:false});
-  // 先挑出朝外野牆的邊，再把相隔 < 0.3（沿輪廓弧長）的段接起來、丟掉總長 < 0.2 的零碎段，避免斷成好幾截
-  built.backRuns=[];
-  for(const s of shapes){const L=s.outer,n=L.length,len=[],sel=[];
-    for(let i=0;i<n;i++){const a=L[i],b=L[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);len.push(l);if(l<1e-6){sel.push(null);continue;}
-      const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];let nn=[dy/l,-dx/l];if(pip(m[0]+nn[0]*0.02,m[1]+nn[1]*0.02,L))nn=[-nn[0],-nn[1]];
-      const r=Math.hypot(m[0],m[1]);sel.push((nn[0]*m[0]+nn[1]*m[1])/r>=0.6);}
-    for(let i=0;i<n;i++)if(sel[i]===null)sel[i]=sel[(i-1+n)%n]||false;
-    if(sel.every(Boolean)||!sel.some(Boolean))continue;
-    // 依迴圈找連續段（從一個未選的邊之後開始）
-    const s0=sel.indexOf(false),runs=[];let cur=null;
-    for(let k=1;k<=n;k++){const i=(s0+k)%n;if(sel[i]){if(!cur){cur={i0:i,edges:[]};runs.push(cur);}cur.edges.push(i);}else cur=null;}
-    // 接起小缺口
-    for(let r=0;r<runs.length-1;){const A=runs[r],Bn=runs[r+1],gap=[];for(let i=(A.edges[A.edges.length-1]+1)%n;i!==Bn.edges[0];i=(i+1)%n)gap.push(i);
-      if(gap.reduce((t,i)=>t+len[i],0)<0.3){A.edges.push(...gap,...Bn.edges);runs.splice(r+1,1);}else r++;}
-    for(const R of runs){const tot=R.edges.reduce((t,i)=>t+len[i],0);if(tot<0.2)continue;built.backRuns.push(+tot.toFixed(3));
-      for(const i of R.edges){const a=L[i],b=L[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1],l=len[i];if(l<0.005)continue;
-        const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];let nn=[dy/l,-dx/l];if(pip(m[0]+nn[0]*0.02,m[1]+nn[1]*0.02,L))nn=[-nn[0],-nn[1]];
-        const inset=0.03;boxAlong(panels,[a[0]-nn[0]*inset,a[1]-nn[1]*inset],[b[0]-nn[0]*inset,b[1]-nn[1]*inset],STAGE_H,STAGE_H+0.3,0.018,C.glass,0.01);}}}
-  panels.build();panels.mesh.renderOrder=3;built.backPanels=panels.items.length;built.backboardMat=panelMat;built.backboardOpacity=panelMat.opacity;
+  // 紅色方塊（附圖：舞台上的升降點／定位點）：線稿裡主台面中央與兩側的長方形框，畫成扁平紅色方塊（下方實體頂面＋0.006）
+  buildPads();
+  // 主 LED 牆、立柱、側邊螢幕（第 6.6c 節）
+  buildLed();
   built.stageMask={W,H,x0,y0,RES};
 }
+// ---- 6.6a 舞台的配色與實體登記（給線稿高度與測試用）----
+const STAGE_COL={top:'#f2ebe4',side:'#c9b6a6',step1:'#cfa77d',step2:'#c39b71',stepSide:'#8f6d50',line:'#b98e6c',pad:'#c8473a',padSide:'#93342b'};
+// SOLIDS：舞台一帶每個實體的平面外框與頂面高（kind：landing 台前平台／main 主台面／omega、omegaN 下段踏面／upper 上段踏面／ramp 斜坡／
+// runway 伸展台各級／ring 中央平台各級（圓）／pad 紅色方塊／led 牆與立柱、側螢幕）。topAt＝(x,y) 上方最高的實體頂面（沒有就是 0）
+const SOLIDS={list:[],add(kind,poly,top,holes=[],extra){this.list.push({kind,poly,top,holes,...extra,bb:bounds(poly,0)});},
+  topAt(x,y){let h=0;for(const s of this.list){if(s.top<=h||s.kind==='led')continue;const b=s.bb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;
+    if(s.r!=null?Math.hypot(x-s.c[0],y-s.c[1])<=s.r+1e-3:(pip(x,y,s.poly)&&!s.holes.some(q=>pip(x,y,q))))h=s.top;}return h;},
+  // 線段 (a,b) 下方的實體頂面：取兩端、中點以及它們往四周偏 0.004 的點中最高的（線稿多半正好在兩級的交界，取高的那一邊＝立面頂緣）
+  // probe(p)＝[p 點的頂面, p 與四周偏 0.004 中最高的]；pa／pb 可傳入已算好的端點結果（lineOnSolids 讓相鄰兩段共用）
+  probe(p){let c=this.topAt(p[0],p[1]),h=c;for(const [dx,dy] of [[.004,0],[-.004,0],[0,.004],[0,-.004]])h=Math.max(h,this.topAt(p[0]+dx,p[1]+dy));return [c,h];},
+  segTop(a,b,pa=this.probe(a),pb=this.probe(b)){const pm=this.probe(lerp2(a,b,.5));
+    return Math.min(Math.max(pa[1],pm[1],pb[1]),Math.max(pa[0],pm[0],pb[0])+STEP_RISE*1.01);}};
+// 一級踏面或台面：拉伸成 0..top 的實體並登記到 SOLIDS。isTop＝白色台面（否則依 k 深淺交替的褐色踏面）
+function stepSlab(kind,poly,top,k,isTop=false,extra){solidParts.push(slab(poly,0,top,isTop?STAGE_COL.top:k%2?STAGE_COL.step1:STAGE_COL.step2,[],0,isTop?STAGE_COL.side:STAGE_COL.stepSide));SOLIDS.add(kind,poly,top,[],extra);}
+// 線稿 l 逐段畫在下方實體的頂面（SOLIDS.segTop）上，底下沒有實體就畫成地面淡線；回傳每段的高度（0＝地面）
+function lineOnSolids(l){const a=pairs(l),hs=[];let pa=SOLIDS.probe(a[0]);for(let i=0;i+1<a.length;i++){const pb=SOLIDS.probe(a[i+1]),h=SOLIDS.segTop(a[i],a[i+1],pa,pb);pa=pb;
+    addLine([...a[i],...a[i+1]],h>0?h+0.003:0.013,h>0?STAGE_COL.line:'#d6b49e');hs.push(h);}return hs;}
+// 上段 5 階：base.stage 西側線稿中，南北都跨過 |Y| 2.9、全在 X −6.6..−5.3 的長弧（資料是 5 條，Y ±3.0），依 Y=0 的 X 由東往西排
+const mirY=a=>a.map(([x,y])=>[x,-y]);   // 南北鏡射（舞台與下段階梯南北對稱）
+const UPPER=(()=>{const arcs=[];for(const l of M.base.stage){const a=pairs(l);if(a.length<20)continue;const [xa,ya,xb,yb]=bounds(a,0);
+    if(ya<-2.9&&yb>2.9&&xa>-6.6&&xb<-5.3){const pts=a[0][1]>a[a.length-1][1]?a.slice().reverse():a;arcs.push({pts,y0:pts[0][1],y1:pts[pts.length-1][1]});}}
+  const xAt=(c,y)=>STAIR.xAt(c,clamp(y,c.y0,c.y1));   // 弧的資料形狀和 STAIR 的鏈相同（Y 遞增的 pts）；超出端點時取端點
+  arcs.sort((p,q)=>xAt(q,0)-xAt(p,0));
+  const ylim=arcs.length?Math.min(...arcs.map(c=>Math.min(-c.y0,c.y1))):0;   // 取最短那條弧的端點：比它更外的部分台前平台照舊鋪在踏面底下，不會留洞
+  return {arcs,xAt,ylim};})();
+
+// ---- 6.6b 伸展台與中央平台：每一級做成一塊從地面拉到該級頂面的實體（上一級疊在下一級上面，露出的就是踏面） ----
+//  伸展台第 k 級（k＝1..7）：|Y| < 下段第 k 條階梯線北端的 Y（.711 → .395，和伸展台兩側的線稿同一組），X 從那條線的北端往東到原點（接進中央平台）；
+//  第 7 級＝伸展台台面。靠舞台那一端（線稿 X −5.98..−5.06、|Y| < .395 的長方形）是斜坡，從伸展台台面升到台前平台。
+//  中央平台：base.stage 中半徑 1.45 以內的同心圓（14 圈），由外往內第 i 圈＝第 i 級；外圈 7 級和伸展台兩側的 7 階相接。
+function buildRunwayPlatform(){const lv=levelTop,RW=[];built.runway=RW;
+  // 斜坡：Y=0 那一列、X −6.1..−4.9 之間的舞台線稿交點，最西＝台前平台邊、最東＝伸展台台面起點
+  const xs=[];for(const l of M.base.stage)for(let i=0;i+3<l.length;i+=2){const [ax,ay,bx,by]=[l[i],l[i+1],l[i+2],l[i+3]];if((ay<=0)!==(by<=0)){const x=ax+(bx-ax)*(0-ay)/(by-ay);if(x>-6.1&&x<-4.9)xs.push(x);}}
+  const rx0=Math.min(...xs),rx1=Math.max(...xs),ends=STAIR.chains.map(c=>c.pts[0]),NR=Math.min(RUNWAY_K,ends.length),hw7=ends[NR-1][1];
+  for(let k=1;k<=NR;k++){const x0=k===NR?rx1:ends[k-1][0],hw=ends[k-1][1],top=lv(k),poly=[[x0,-hw],[0,-hw],[0,hw],[x0,hw]];
+    stepSlab('runway',poly,top,k,k===NR);RW.push({k,x0:+x0.toFixed(3),hw:+hw.toFixed(3),top:+top.toFixed(4)});}
+  // 斜坡（楔形）：西端頂 STAGE_H、東端頂 RUNWAY_H
+  {const a=rx0,b=rx1,w=hw7,hA=STAGE_H,hB=RUNWAY_H,v=[],q=(p0,p1,p2,p3)=>v.push(...p0,...p1,...p2,...p0,...p2,...p3);
+    const A0=[a,0,-w],A1=[a,0,w],B0=[b,0,-w],B1=[b,0,w],a0=[a,hA,-w],a1=[a,hA,w],b0=[b,hB,-w],b1=[b,hB,w];
+    q(a1,b1,b0,a0);q(A0,a0,b0,B0);q(B1,b1,a1,A1);q(A1,a1,a0,A0);q(B0,b0,b1,B1);
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.computeVertexNormals();
+    solidParts.push(sideTint(tint(g,STAGE_COL.top),STAGE_COL.side));SOLIDS.add('ramp',[[a,-w],[b,-w],[b,w],[a,w]],STAGE_H);built.ramp={x0:+a.toFixed(3),x1:+b.toFixed(3),hw:+w.toFixed(3)};}
+  // 中央平台：同心圓半徑（每條線的半徑變化 < 0.01 才算圓），由外往內
+  //  （只算張角 ≥ 1.2 rad 的弧、半徑 0.5..1.45：外圈 7 條在伸展台處斷成南北兩段；轉角的短圓角弧與正中方框附近的小圓不算）
+  const rs=[];for(const l of M.base.stage){const a=pairs(l);let lo=1e9,hi=-1e9,sw=0;for(let j=0;j<a.length;j++){const [x,y]=a[j],r=Math.hypot(x,y);lo=Math.min(lo,r);hi=Math.max(hi,r);
+      if(j){let d=Math.atan2(y,x)-Math.atan2(a[j-1][1],a[j-1][0]);if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;sw+=Math.abs(d);}}
+    if(hi<1.45&&lo>0.5&&hi-lo<0.01&&sw>=1.2&&!rs.some(r=>Math.abs(r-hi)<0.01))rs.push(hi);}
+  rs.sort((p,q)=>q-p);built.platformRings=rs.map((r,i)=>({r:+r.toFixed(3),top:+lv(i+1).toFixed(4)}));
+  const tops=new Set([RUNWAY_K,PLATFORM_K,PLATFORM_TOP_K]);   // 白色台面那幾級：伸展台台面、環狀平台、中央圓台
+  rs.forEach((r,i)=>{const k=i+1,c=[];for(let j=0;j<96;j++){const t=j/96*Math.PI*2;c.push([Math.cos(t)*r,Math.sin(t)*r]);}
+    stepSlab('ring',c,lv(k),k,tops.has(k),{r,c:[0,0]});});}
+
+// ---- 紅色方塊（附圖：舞台上的升降點／定位點）：線稿裡主台面中央那個長方框（約 0.4 × 0.8）、兩側斜放的長方框（|Y| 約 2.7–3.6），
+//      以及中央平台正中的方框。每一區取「全部點都落在該區」的線稿的點的凸包，往內縮 0.012，畫成扁平紅色方塊
+const PADS=(()=>{const box={c:(x,y)=>x>-8.0&&x<-7.3&&Math.abs(y)<0.6,n:(x,y)=>x>-7.45&&x<-6.4&&y<-2.2&&y>-3.8,s:(x,y)=>x>-7.45&&x<-6.4&&y>2.2&&y<3.8,p:(x,y)=>Math.hypot(x,y)<0.3},out=[];
+  for(const kd of Object.keys(box)){const pts=[];for(const l of M.base.stage){const a=pairs(l);if(a.every(([x,y])=>box[kd](x,y)))pts.push(...a);}if(pts.length<3)continue;
+    const hull=convexHull(pts);out.push({kind:kd,hull,poly:offsetPoly(hull,-0.012),c:hull.reduce((s,p)=>[s[0]+p[0]/hull.length,s[1]+p[1]/hull.length],[0,0])});}
+  return out;})();
+function buildPads(){built.pads=[];
+  for(const P0 of PADS){let h=0;for(const q of P0.poly)h=Math.max(h,SOLIDS.topAt(q[0],q[1]));
+    solidParts.push(slab(P0.poly,h,h+0.007,STAGE_COL.pad,[],0,STAGE_COL.padSide));SOLIDS.add('pad',P0.poly,h+0.007);
+    built.pads.push({kind:P0.kind,c:P0.c.map(v=>+v.toFixed(3)),on:+h.toFixed(4),area:+Math.abs(polyArea(P0.hull)).toFixed(3)});}}
+
+// ---- 6.6c 主 LED 牆、兩側立柱、側邊螢幕、上方桁架（資料裡沒有，照企劃 3D 圖）----
+//  弧：舞台西緣線稿（base.stage 西側、最小 X < −8 的長折線，含南北兩條）擬合圓 → 同圓心、半徑 LED_R；牆面朝圓心（東、朝球場），背對全壘打牆。
+//  黏土風格：LED 面是深藍帶淡格線的 canvas 貼圖（不發光、不是螢幕畫面），立柱與背框是深灰黏土，桁架是一條細的低彩度條。
+//  牆、立柱、螢幕兩個 mesh（貼圖面＋背框）共用一個不透明度：總覽不透明；章節 3–6 的特寫、跟隨、以及鏡頭在牆東側且牆擋住路線時淡化成 LED_FADE（見 ledStep）。
+//  不投影：牆很高，影子會蓋住牆後的門前隊伍。
+const LED={mats:[],cur:1,target:1,mode:'home',occ:0,camDirty:true,samples:null,c:[0,0],R:LED_R,spans:[]};
+function ledCircle(){const pts=[];for(const l of M.base.stage){const a=pairs(l);if(a.length<10)continue;if(Math.min(...a.map(p=>p[0]))<-8)pts.push(...a);}
+  if(pts.length<6)return [-0.34,0];
+  // 代數圓擬合（Kåsa）：x²+y² = 2ax + 2by + c
+  let S=[[0,0,0],[0,0,0],[0,0,0]],r=[0,0,0];for(const [x,y] of pts){const v=[2*x,2*y,1],z=x*x+y*y;for(let i=0;i<3;i++){r[i]+=v[i]*z;for(let j=0;j<3;j++)S[i][j]+=v[i]*v[j];}}
+  const det=m=>m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])-m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])+m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+  const D0=det(S),col=(k)=>S.map((row,i)=>row.map((v,j)=>j===k?r[i]:v));const a=det(col(0))/D0,b=det(col(1))/D0,c=det(col(2))/D0;
+  built.ledFit={c:[+a.toFixed(3),+b.toFixed(3)],R:+Math.sqrt(c+a*a+b*b).toFixed(3),n:pts.length};return [a,b];}
+function ledTexture(){const cv=document.createElement('canvas');cv.width=512;cv.height=512;const g=cv.getContext('2d');
+  // 上半（v 0.5..1）：主牆深藍；下半（v 0..0.5）：側螢幕，上 1/3 橘、下 2/3 紫。都是低彩度黏土色，加淡格線
+  g.fillStyle='#2f4f73';g.fillRect(0,0,512,256);g.fillStyle='#c98a4f';g.fillRect(0,256,512,86);g.fillStyle='#5a4f8f';g.fillRect(0,342,512,170);
+  g.strokeStyle='rgba(205,225,240,.20)';g.lineWidth=1;for(let x=0;x<=512;x+=8){g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,512);g.stroke();}
+  for(let y=0;y<=512;y+=8){g.beginPath();g.moveTo(0,y+.5);g.lineTo(512,y+.5);g.stroke();}
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;t.wrapS=THREE.RepeatWrapping;return t;}
+function buildLed(){const C0=ledCircle(),R=LED_R,cx=C0[0],cy=C0[1];LED.c=C0;LED.R=R;
+  const ang=y=>Math.asin(clamp((y-cy)/R,-1,1)),Pr=(t,r)=>[cx-Math.cos(t)*r,cy+Math.sin(t)*r];
+  // 弧面：t0..t1（角度，0＝正西），高 y0..y1，貼圖 v 範圍 v0..v1；格線密度照實際長度（每 0.1 單位一格）
+  const face=[],faceUV=[];
+  const arcPts=(t0,t1,r)=>{const n=Math.max(2,Math.ceil(Math.abs(t1-t0)*R/0.12)),o=[];for(let i=0;i<=n;i++)o.push(Pr(lerp(t0,t1,i/n),r));return o;};
+  const arcFace=(t0,t1,y0,y1,v0,v1)=>{const pts=arcPts(t0,t1,R),n=pts.length-1,us=Math.abs(t1-t0)*R/(64*0.1);   // 貼圖一次重複 64 格（每格 8px），每格 0.1 單位
+    for(let i=0;i<n;i++){const a=pts[i],b=pts[i+1],ua=us*i/n,ub=us*(i+1)/n;
+      // a→b 由北往南；從東邊（圓心那一側）看 a 在右、b 在左，三角形照逆時針排，面朝東
+      face.push(a[0],y0,a[1],b[0],y1,b[1],b[0],y0,b[1],a[0],y0,a[1],a[0],y1,a[1],b[0],y1,b[1]);faceUV.push(ua,v0,ub,v1,ub,v0,ua,v0,ua,v1,ub,v1);}
+    LED.spans.push({t0:Math.min(t0,t1),t1:Math.max(t0,t1),y0,y1});};
+  const tL=ang(LED_Y),tN=ang(-LED_Y);
+  // 側螢幕的角度範圍（南、北），算一次給貼圖面、背板、腳共用
+  const side=[1,-1].map(s=>{const a=ang(s*LED_SIDE[0]),b=ang(s*LED_SIDE[1]);return [Math.min(a,b),Math.max(a,b)];});
+  arcFace(tN,tL,STAGE_TOP_H,STAGE_TOP_H+LED_H,0.5,1);
+  for(const [lo,hi] of side)arcFace(lo,hi,LED_SIDE_Y[0],LED_SIDE_Y[1],0,0.5);
+  const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.Float32BufferAttribute(face,3));fg.setAttribute('uv',new THREE.Float32BufferAttribute(faceUV,2));fg.computeVertexNormals();
+  const faceMat=new THREE.MeshStandardMaterial({map:ledTexture(),roughness:.86,metalness:0,transparent:true,opacity:1,side:THREE.FrontSide});
+  const fm=new THREE.Mesh(fg,faceMat);fm.receiveShadow=true;fm.renderOrder=4;scene.add(fm);
+  // 背框（面後方 0.06 厚的深灰黏土）、立柱、側螢幕背板與兩支腳、桁架：合併成一個 vertex color mesh
+  const parts=[],TH=0.06,DARK='#3a393f',MID='#4a4950',TRUSS='#8c8794';
+  const shell=(t0,t1,y0,y1,hex)=>{const pts=arcPts(t0,t1,R+TH/2+0.002);parts.push(aoGrad(ribbon(pts,false,TH/2,y0,y1,()=>hex),y0,y1));
+    const fp=[...arcPts(t0,t1,R),...arcPts(t0,t1,R+TH+0.004).reverse()];SOLIDS.add('led',fp,y1);};
+  shell(tN,tL,STAGE_TOP_H-0.02,STAGE_TOP_H+LED_H+0.02,DARK);
+  // 牆下的支撐（主台面到牆底已經接在台面上，不另做）；立柱：牆兩端外側，從地面到 LED_POST_H
+  const dT=LED_POST_W/R;
+  for(const s of [1,-1]){const tm=s>0?tL+dT/2+0.004:tN-dT/2-0.004,c=Pr(tm,R+TH/2);
+    const g=new RoundedBoxGeometry(LED_POST_W,LED_POST_H,0.22,2,0.03);g.translate(0,LED_POST_H/2,0);
+    // 盒子本地 +x 沿切線（弧的方向）、+z 沿半徑
+    g.rotateY(tm-Math.PI/2);g.translate(c[0],0,c[1]);
+    parts.push(aoGrad(sideTint(tint(g,DARK),'#2c2b30'),0,LED_POST_H));
+    const half=LED_POST_W/2,rr=0.11,tg=[Math.sin(tm),Math.cos(tm)],nr=[-Math.cos(tm),Math.sin(tm)];
+    const fp=[[-half,-rr],[half,-rr],[half,rr],[-half,rr]].map(([u,w])=>[c[0]+tg[0]*u+nr[0]*w,c[1]+tg[1]*u+nr[1]*w]);SOLIDS.add('led',fp,LED_POST_H);
+    // 側螢幕背板與兩支腳
+    const [lo,hi]=side[s>0?0:1];
+    shell(lo,hi,LED_SIDE_Y[0]-0.02,LED_SIDE_Y[1]+0.02,MID);
+    for(const tt of [lerp(lo,hi,.18),lerp(lo,hi,.82)]){const q=Pr(tt,R+TH/2),gl=new THREE.BoxGeometry(0.035,LED_SIDE_Y[0],0.035);gl.translate(q[0],LED_SIDE_Y[0]/2,q[1]);parts.push(tint(gl,MID));
+      const lf=[[q[0]-0.02,q[1]-0.02],[q[0]+0.02,q[1]-0.02],[q[0]+0.02,q[1]+0.02],[q[0]-0.02,q[1]+0.02]];SOLIDS.add('led',lf,LED_SIDE_Y[0]);}}
+  // 桁架：牆頂前方一條細的低彩度條（弧長和牆＋兩根立柱同寬），兩端擱在立柱頂
+  {const pts=arcPts(tN-dT,tL+dT,R-0.04),y=STAGE_TOP_H+LED_H+0.08;parts.push(ribbon(pts,false,0.018,y,y+0.035,()=>TRUSS));}
+  const frameMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,transparent:true,opacity:1});
+  const frame=new THREE.Mesh(BGU.mergeGeometries(parts,false),frameMat);frame.receiveShadow=true;frame.renderOrder=4;scene.add(frame);
+  LED.mats=[faceMat,frameMat];LED.samples=ledSamples();
+  built.led={c:C0.map(v=>+v.toFixed(3)),R,y:LED_Y,h:LED_H,top:+(STAGE_TOP_H+LED_H).toFixed(3),postH:LED_POST_H,side:LED_SIDE,sideY:LED_SIDE_Y,
+    xMid:+Pr(0,R)[0].toFixed(3),tris:(fg.getAttribute('position').count+frame.geometry.getAttribute('position').count)/3};}
 // 兩趟 chamfer 距離轉換（格點單位）
 function dt(src,W,H){const NN=W*H,d=new Float32Array(NN);for(let k=0;k<NN;k++)d[k]=src[k]?0:1e9;
   const nb=[[-1,0,1],[0,-1,1],[-1,-1,1.4142],[1,-1,1.4142],[-2,-1,2.2361],[-1,-2,2.2361],[1,-2,2.2361],[2,-1,2.2361]];
@@ -1473,12 +1622,13 @@ function applyTint(lie){for(const k of TINT_PARTS){const a=people[k].instanceCol
 const FOLLOW_OFF=new THREE.Vector3(0.9,1.1,1.3);
 let follow=null;   // {mode:'row'|'person', lie, i（個人）, cur（目前鏡頭鎖定的人）}
 const _ft=new THREE.Vector3(),_fp=new THREE.Vector3();
-let pillHead=null,pillMe=null,bbAlpha=1;
+let pillHead=null,pillMe=null;
 function buildPills(){const mk=cls=>{const el=document.createElement('div');el.className='pill '+cls;const o=new CSS2DObject(el);o.center.set(0.5,1);o.visible=false;scene.add(o);return {o,el};};
   pillHead=mk('head');pillMe=mk('me');}
 function personTop(i,v){const K=people.K>0?people.K:1;return v.set(people.px[i],people.h[i]+(FIG.headY+FIG.headR)*K*people.sz[i]+0.035,people.pz[i]);}
 function followTarget(){if(!follow)return -1;if(follow.mode==='person')return follow.i;const h=rowHead(follow.lie,simT);return h>=0?h:LIE_ORDER.get(follow.lie)[LIE_ORDER.get(follow.lie).length-1];}
-function setFollow(f){const was=follow;follow=f||null;cancelFlight();
+function setFollow(f){const was=follow;follow=f||null;cancelFlight();if(follow)setLedMode('free');   // 跟隨會移動鏡頭：結束跟隨後 LED 牆改由遮擋檢查決定
+
   if(follow){if(activeCam!==camera)setTop(false);follow.cur=-1;document.querySelectorAll('#cams .chip').forEach(x=>x.setAttribute('aria-pressed','false'));}
   const lie=follow?follow.lie:null;if(people.tintLie!==lie)applyTint(lie);
   updatePills();syncFollowUi();
@@ -1497,9 +1647,6 @@ function updatePills(){if(!pillHead)return;
   else pillMe.o.visible=false;}
 // 每幀：平滑移動鏡頭；回傳是否還需要 render
 function stepFollow(dt){let need=false;
-  // 背板：跟隨模式時淡出
-  const bb=built.backboardMat;if(bb){const tgt=follow?0:1;if(bbAlpha!==tgt){bbAlpha=RM?tgt:clamp(bbAlpha+Math.sign(tgt-bbAlpha)*dt*3,0,1);if(Math.abs(bbAlpha-tgt)<1e-3)bbAlpha=tgt;
-      bb.opacity=built.backboardOpacity*bbAlpha;bb.visible=bbAlpha>0.01;need=true;}}
   if(!follow||activeCam!==camera)return need;
   const i=followTarget();if(i<0)return need;
   if(i!==follow.cur){follow.cur=i;if(follow.mode==='row')showCard(i);}
@@ -1956,6 +2103,40 @@ function rmSync(){const m=reduceMotion.matches;if(m===RM)return;RM=m;
 function flyTo(v,ms=800){cancelFlight();if(RM||ms<=0){camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();dirty=true;return;}
   flight={t0:performance.now(),ms,fp:camera.position.clone(),ft:controls.target.clone(),tp:v.pos.clone(),tt:v.target.clone()};dirty=true;}
 function cancelFlight(){if(flight){flight=null;}}
+// ---- 主 LED 牆的淡化（第 6.6c 節）----
+// 目標不透明度：總覽（home）不透明；章節 3–6 的特寫（queue／gate／hold／north）與跟隨一律淡化；其他（章節 1、2、7、自己轉的鏡頭）
+// 由遮擋檢查決定：鏡頭在牆的東側（離 LED 圓心比牆近）時，把牆後面的路線點（全部人 path 點中在牆外側的，0.12 格點去重）和鏡頭連線，
+// 和牆面、立柱、側螢幕（同一個圓上的幾段弧面）相交、而且那個點在畫面內，就算擋住；擋住任何一點就淡化。俯視（正交相機）不淡化。
+// 鏡頭或目標沒動就不重算（controls 的 change、resize、模式改變時設 LED.camDirty）；不透明度平滑過渡（reduced-motion 時直接到位）。
+// 換模式（章節、總覽、自己轉、跟隨）一律經過這裡：順便要求重新做遮擋檢查
+function setLedMode(m){LED.mode=m;LED.camDirty=true;}
+const LED_FADE_SHOTS=new Set(['queue','gate','hold','north']);
+function ledSamples(){const out=[],seen=new Set(),[cx,cy]=LED.c,Rb=LED.R+0.12;
+  for(let i=0;i<P.length;i++){const a=P[i].path;for(let j=0;j<a.length;j++){const x=a[j][0],y=a[j][1];if(Math.hypot(x-cx,y-cy)<Rb)continue;
+    const key=(Math.round(x/0.12)+4096)*8192+Math.round(y/0.12)+4096;if(seen.has(key))continue;seen.add(key);out.push(x,heightAt(i,a[j][2],a[j])+0.1,y);}}   // 高度照小人的 heightAt（看台、B1 走廊、樓梯、地面）
+  return new Float32Array(out);}
+const _ledP=new THREE.Vector3();
+function ledOccluded(){const cam=activeCam,C=cam.position,[cx,cy]=LED.c,R=LED.R;if(Math.hypot(C.x-cx,C.z-cy)>=R&&C.x<=cx)return 0;   // 鏡頭在牆後（西側、圓外）：牆不擋路線
+  const S=LED.samples,fx=C.x-cx,fz=C.z-cy,Cq=fx*fx+fz*fz-R*R;cam.updateMatrixWorld();   // 只和鏡頭有關的量先算好
+  for(let k=0;k<S.length;k+=3){const qx=S[k],qy=S[k+1],qz=S[k+2];
+    // 線段 C→Q 與圓 |p − c| = R 的交點（鏡頭在圓外東側時可能兩個），只看落在西半圓（牆所在那一側）、在牆面某一段弧與高度範圍內的；
+    // 先做這個便宜的平面測試，命中了才投影確認那個點在畫面內；找到一個就夠（ledStep 只看有沒有擋住）
+    const dx=qx-C.x,dz=qz-C.z,A=dx*dx+dz*dz,Bq=2*(fx*dx+fz*dz),disc=Bq*Bq-4*A*Cq;if(disc<0||A<1e-12)continue;
+    let hit=false;for(const sg of [-1,1]){const s=(-Bq+sg*Math.sqrt(disc))/(2*A);if(s<=0||s>=1)continue;
+      const px=C.x+dx*s,pz=C.z+dz*s,py=C.y+(qy-C.y)*s,t=Math.asin(clamp((pz-cy)/R,-1,1));if(px>cx)continue;
+      for(const sp of LED.spans)if(t>=sp.t0-0.02&&t<=sp.t1+0.02&&py>=sp.y0-0.05&&py<=sp.y1+0.05){hit=true;break;}if(hit)break;}
+    if(!hit)continue;_ledP.set(qx,qy,qz).project(cam);if(_ledP.z<=1&&Math.abs(_ledP.x)<=1&&Math.abs(_ledP.y)<=1)return 1;}
+  return 0;}
+function ledStep(dt){if(!LED.mats.length)return false;
+  let tgt;
+  if(activeCam!==camera)tgt=1;
+  else if(follow||LED_FADE_SHOTS.has(LED.mode))tgt=LED_FADE;
+  else if(LED.mode==='home')tgt=1;
+  else{if(LED.camDirty&&!flight){LED.camDirty=false;LED.occ=ledOccluded();}tgt=LED.occ>0?LED_FADE:1;}   // 飛行中不檢查：等落定再決定，免得半路淡化又復原
+  LED.target=tgt;if(LED.cur===tgt)return false;
+  LED.cur=RM?tgt:(Math.abs(tgt-LED.cur)<0.01?tgt:LED.cur+(tgt-LED.cur)*Math.min(1,dt*7));
+  for(const m of LED.mats){m.opacity=LED.cur;m.depthWrite=LED.cur>0.98;}
+  return true;}
 function stepFlight(now){if(!flight)return false;const k=clamp((now-flight.t0)/flight.ms,0,1),e=easeInOutCubic(k);
   camera.position.lerpVectors(flight.fp,flight.tp,e);controls.target.lerpVectors(flight.ft,flight.tt,e);camera.lookAt(controls.target);if(k>=1)flight=null;return true;}
 // 特寫目標（全部由資料推導）
@@ -2067,7 +2248,7 @@ let SHOTS;
 // =====================================================================
 // 8. 迴圈與尺寸
 // =====================================================================
-function resize(){vcInvalidate();_homeDist=0;syncListFold();const w=stageEl.clientWidth||innerWidth,h=stageEl.clientHeight||innerHeight;renderer.setSize(w,h,false);labelRenderer.setSize(w,h);
+function resize(){vcInvalidate();LED.camDirty=true;_homeDist=0;syncListFold();const w=stageEl.clientWidth||innerWidth,h=stageEl.clientHeight||innerHeight;renderer.setSize(w,h,false);labelRenderer.setSize(w,h);
   camera.aspect=w/h;camera.updateProjectionMatrix();dirty=true;}
 let frames=0,lastRenderMs=0,lastNow=null,settling=0;
 function render(){const t0=performance.now();renderer.render(scene,activeCam);labelRenderer.render(scene,activeCam);layoutLabels();lastRenderMs=performance.now()-t0;frames++;}
@@ -2078,6 +2259,7 @@ function loop(now){requestAnimationFrame(loop);rmSync();
   if(playing){const dA=dt*speed;simT=Math.min(T_END,simT+dA);settling=updatePeople(simT,dA,false);updateHud();dirty=true;if(simT>=T_END)setPlaying(false);
     if(RIB.tex&&RIB.on&&!RM)RIB.tex.offset.x=(RIB.tex.offset.x+dA*RIB.flow)%1;}   // 絲帶往隊頭方向流動（reduced-motion 時不流動）
   if(stepFollow(dt))dirty=true;
+  if(ledStep(dt))dirty=true;
   if(activeCam===camera&&controls.update())dirty=true;
   // 鏡頭這一幀移動後（跟隨、飛行、拖曳）高度倍率 K 可能變了：render 前重算，不讓任何一幀用上一幀的 K（播放中的 settling 已由上面的 updatePeople 處理）
   if((!playing&&settling>0)||zoomK()!==people.K){settling=updatePeople(simT,0,false);if(follow)updatePills();dirty=true;}
@@ -2187,7 +2369,7 @@ const CHAPTERS=(()=>{let h1=1e9,e1=1e9;for(const p of P)if(p.dadui===1){if(p.t.h
     {key:'done',name:'全部入座',full:'全部入座',t:D.meta.tEnd,t0:D.meta.tEnd,shot:'seat'}];})();
 let chapCur=-2;
 function pressCam(b){for(const x of $('#cams').querySelectorAll('.chip'))x.setAttribute('aria-pressed',String(x===b));}
-function goChapter(k){const c=CHAPTERS[k];setFollow(null);setTop(false);seekTo(c.t);flyTo(SHOTS[c.shot].view());pressCam($(`#cams [data-chap="${k}"]`));
+function goChapter(k){const c=CHAPTERS[k];setFollow(null);setTop(false);seekTo(c.t);setLedMode(c.shot);flyTo(SHOTS[c.shot].view());pressCam($(`#cams [data-chap="${k}"]`));
   if(isSheet()&&$('#list').classList.contains('open'))closeList();return c.t;}
 // 目前所在的章節（依時間；最後一個 t ≤ 目前時間的章節）：chip 下緣一個小點
 function updateChapterCur(){let k=-1;for(let j=0;j<CHAPTERS.length;j++)if(simT>=CHAPTERS[j].t-1e-6)k=j;if(k===chapCur)return;chapCur=k;
@@ -2195,7 +2377,7 @@ function updateChapterCur(){let k=-1;for(let j=0;j<CHAPTERS.length;j++)if(simT>=
 function buildCams(){const nav=$('#cams');
   const mk=(html,lab)=>{const b=document.createElement('button');b.className='chip';b.type='button';b.innerHTML=html;if(lab)b.setAttribute('aria-label',lab);b.setAttribute('aria-pressed','false');nav.appendChild(b);return b;};
   const home=mk('總覽','總覽鏡頭（不改時間）');home.dataset.shot='home';home.setAttribute('aria-pressed','true');
-  home.onclick=()=>{setFollow(null);setTop(false);if(isSheet()&&$('#list').classList.contains('open'))closeList();flyTo(SHOTS.home.view());pressCam(home);};
+  home.onclick=()=>{setFollow(null);setTop(false);if(isSheet()&&$('#list').classList.contains('open'))closeList();setLedMode('home');flyTo(SHOTS.home.view());pressCam(home);};
   CHAPTERS.forEach((c,k)=>{const b=mk(`<span class="n" aria-hidden="true">${k+1}</span>${c.name}`,`章節 ${k+1}：${c.full}（跳到這個時間，鏡頭飛到特寫）`);b.dataset.chap=k;b.dataset.shot=c.shot;b.title=c.full;
     b.onclick=()=>{goChapter(k);b.scrollIntoView({block:'nearest',inline:'nearest'});};});
   const t=mk('俯視','俯視（正上方，北朝上）');t.classList.add('sep');
@@ -2300,11 +2482,11 @@ try{
       step:(n,dt)=>{let w=0;for(let k=0;k<n;k++){simT=Math.min(T_END,simT+dt*speed);settling=updatePeople(simT,dt*speed,false);w+=people.lastWrote;}updateHud();render();return w/n;},
       fig:i=>{const o=i*16,g=k=>Array.from(people[k].instanceMatrix.array.slice(o,o+16));return {yaw:people.yaw[i],gait:people.gait[i],ph:people.ph[i],st:people.st[i],K:people.K,sz:people.sz[i],shadow:g('shadow'),legL:g('legL'),legR:g('legR'),body:g('body'),head:g('head')};},
       timeUpdate:(n,dt)=>{const ts=[];for(let k=0;k<n;k++){const a=performance.now();simT=Math.min(T_END,simT+dt);updatePeople(simT,dt,false);ts.push(+(performance.now()-a).toFixed(2));}return {ms:ts,wrote:people.lastWrote};},
-      setCam:(pos,tgt)=>{setTop(false);cancelFlight();camera.position.fromArray(pos);controls.target.fromArray(tgt);controls.update();updatePeople(simT,0,true);render();return zoomK();},
+      setCam:(pos,tgt)=>{setTop(false);cancelFlight();setLedMode('free');camera.position.fromArray(pos);controls.target.fromArray(tgt);controls.update();updatePeople(simT,0,true);render();return zoomK();},
       FIG,heightAtT:i=>heightAt(i,simT),hudPct:()=>$('#scrub').value/10,
       heightAt,pos:(i,t)=>pos(P[i],t),state:(i,t)=>state(P[i],t),counts:t=>counts(t,P),
       ht:i=>({tL:HT[i].tL,tH:HT[i].tH,tS:HT[i].tS,tE:HT[i].tE,k:HT[i].k,kH:HT[i].kH,kEnd:HT[i].kEnd,h0:HT[i].h0}),
-      built:()=>({...built,backboardMat:undefined,stepH:undefined}),
+      built:()=>({...built,stepH:undefined}),
       // playground #23：舞台東側階梯（第 3.2 節）。stepAt＝往東數跨過幾條階梯線；top(n)＝第 n 階踏面頂；foot(i)＝目前腳底高度（影子零件 y − 0.002）；ground(i)＝是否在地面層（下樓之後）
       stair:()=>({N:STAIR.N,rise:STAIR.rise,box:STAIR.box,chains:STAIR.chains.map(c=>({y0:c.y0,y1:c.y1,n:c.pts.length}))}),stepAt:(x,y)=>STAIR.stepAt(x,y),stairTop:n=>STAIR.top(n),
       foot:i=>people.arrs.shadow[i*16+13]-0.002,ground:i=>!!people.gr[i],treadTopAt:(x,y)=>treadTopAt(x,y),stageLoops:()=>built.stageLoops,stepH:()=>built.stepH,
@@ -2315,8 +2497,8 @@ try{
       // 直接指定俯視換算（與 core.js View 相同：像素 = (X − cx)·s + w/2，(Y − cy)·s + h/2）
       setTopSC:(s,cx,cy)=>{const w=renderer.domElement.clientWidth,h=renderer.domElement.clientHeight;Object.assign(orthoCam,{left:-w/2/s,right:w/2/s,top:h/2/s,bottom:-h/2/s});orthoCam.updateProjectionMatrix();
         orthoCam.position.set(cx,40,cy);orthoCam.up.set(0,0,-1);orthoCam.lookAt(cx,0,cy);orthoCam.updateMatrixWorld();activeCam=orthoCam;controls.enabled=false;render();return true;},
-      view:k=>{setTop(false);const v=SHOTS[k].view();camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();if(zoomK()!==people.K)updatePeople(simT,0,false);render();return {pos:v.pos.toArray(),target:v.target.toArray()};},
-      fly:k=>flyTo(SHOTS[k].view()),
+      view:k=>{setTop(false);setLedMode(k);const v=SHOTS[k].view();camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();if(zoomK()!==people.K)updatePeople(simT,0,false);render();return {pos:v.pos.toArray(),target:v.target.toArray()};},
+      fly:k=>{setLedMode(k);return flyTo(SHOTS[k].view());},
       viewDir:(k,d,p)=>{const v=SHOTS._fit(k,d,p);return {pos:v.pos.toArray(),target:v.target.toArray()};},
       camera:()=>({pos:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov,aspect:camera.aspect}),
       project:(x,y,z)=>{const p=new THREE.Vector3(x,y,z).project(activeCam);return [(p.x+1)/2*renderer.domElement.clientWidth,(1-p.y)/2*renderer.domElement.clientHeight,p.z];},
@@ -2336,7 +2518,9 @@ try{
       card:()=>({i:card.i,open:!$('#card').hidden,cur:card.cur,steps:card.steps&&card.steps.map(s=>({k:s.k,t:s.t})),bd:Array.from(card.bd),text:$('#card').innerText}),
       tint:i=>{const o=i*3,g=k=>Array.from(people[k].instanceColor.array.slice(o,o+3)),gb=k=>Array.from(people.baseCol[k].slice(o,o+3));return {body:g('body'),base:gb('body'),head:g('head'),headBase:gb('head'),hair:g('hair'),hairBase:gb('hair'),leg:g('legL'),legBase:gb('legL'),lie:people.tintLie};},
       pills:()=>[pillHead,pillMe].map(q=>({vis:q.o.visible,text:q.el.textContent,pos:q.o.position.toArray()})),
-      backboard:()=>({opacity:built.backboardMat.opacity,visible:built.backboardMat.visible}),
+      backboard:()=>({opacity:LED.cur,visible:LED.cur>0}),
+      // 主 LED 牆：目前／目標不透明度、鏡頭模式（home／章節的 shot／free）、上一次遮擋檢查擋住幾個路線點；solids＝舞台一帶全部實體的平面外框（測試用）
+      led:()=>({opacity:+LED.cur.toFixed(3),target:LED.target,mode:LED.mode,occ:LED.occ,follow:!!follow}),solids:()=>SOLIDS.list.map(o=>({kind:o.kind,top:o.top,poly:o.poly,holes:o.holes,r:o.r??null})),ledMode:m=>{setLedMode(m);dirty=true;return m;},
       counts:()=>({...Object.fromEntries(COUNT_KEYS.map(([k])=>[k,+$(`#counts [data-n="${k}"]`).textContent.replace(/,/g,'')]))}),
       personScreen:i=>{activeCam.updateMatrixWorld();const v=new THREE.Vector3(people.px[i],people.arrs.body[i*16+13],people.pz[i]).project(activeCam);return [(v.x+1)/2*renderer.domElement.clientWidth,(1-v.y)/2*renderer.domElement.clientHeight];},
       uiInsets:()=>uiInsets(),visibleCenter:()=>visibleCenter(),
