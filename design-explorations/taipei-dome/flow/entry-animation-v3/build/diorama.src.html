@@ -1208,7 +1208,7 @@ const SOLIDS={list:[],add(kind,poly,top,holes=[],extra){this.list.push({kind,pol
   // 線段 (a,b) 下方的實體頂面：取兩端、中點以及它們往四周偏 0.004 的點中最高的（線稿多半正好在兩級的交界，取高的那一邊＝立面頂緣）
   segTop(a,b){const m=lerp2(a,b,.5),c=[];let h=0;for(const p of [a,m,b]){let hp=this.topAt(p[0],p[1]);c.push(hp);
       for(const [dx,dy] of [[.004,0],[-.004,0],[0,.004],[0,-.004]])hp=Math.max(hp,this.topAt(p[0]+dx,p[1]+dy));h=Math.max(h,hp);}
-    return Math.min(h,Math.max(c[0],c[1])+STEP_RISE*1.01);}};
+    return Math.min(h,Math.max(...c)+STEP_RISE*1.01);}};
 // 一級踏面或台面：拉伸成 0..top 的實體並登記到 SOLIDS。isTop＝白色台面（否則依 k 深淺交替的褐色踏面）
 function stepSlab(kind,poly,top,k,isTop=false,extra){solidParts.push(slab(poly,0,top,isTop?STAGE_COL.top:k%2?STAGE_COL.step1:STAGE_COL.step2,[],0,isTop?STAGE_COL.side:STAGE_COL.stepSide));SOLIDS.add(kind,poly,top,[],extra);}
 // 線稿 l 逐段畫在下方實體的頂面（SOLIDS.segTop）上，底下沒有實體就畫成地面淡線；回傳每段的高度（0＝地面）
@@ -1244,7 +1244,8 @@ function buildRunwayPlatform(){const lv=k=>FOOT_LIFT+k*STEP_RISE,RW=[];built.run
       if(j){let d=Math.atan2(y,x)-Math.atan2(a[j-1][1],a[j-1][0]);if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;sw+=Math.abs(d);}}
     if(hi<1.45&&lo>0.5&&hi-lo<0.01&&sw>=1.2&&!rs.some(r=>Math.abs(r-hi)<0.01))rs.push(hi);}
   rs.sort((p,q)=>q-p);built.platformRings=rs.map((r,i)=>({r:+r.toFixed(3),top:+lv(i+1).toFixed(4)}));
-  const tops=new Set([NR,11,rs.length]);
+  // 白色台面那幾級：伸展台台面（RUNWAY_H）、環狀平台（PLATFORM_H）、中央圓台（PLATFORM_TOP_H），由檔頭常數換回級數
+  const lvOf=h=>Math.round((h-FOOT_LIFT)/STEP_RISE),tops=new Set([lvOf(RUNWAY_H),lvOf(PLATFORM_H),lvOf(PLATFORM_TOP_H)]);
   rs.forEach((r,i)=>{const k=i+1,c=[];for(let j=0;j<96;j++){const t=j/96*Math.PI*2;c.push([Math.cos(t)*r,Math.sin(t)*r]);}
     stepSlab('ring',c,lv(k),k,tops.has(k),{r,c:[0,0]});});}
 
@@ -2105,7 +2106,7 @@ function cancelFlight(){if(flight){flight=null;}}
 const LED_FADE_SHOTS=new Set(['queue','gate','hold','north']);
 function ledSamples(){const out=[],seen=new Set(),[cx,cy]=LED.c,Rb=LED.R+0.12;
   for(let i=0;i<P.length;i++){const a=P[i].path;for(let j=0;j<a.length;j++){const x=a[j][0],y=a[j][1];if(Math.hypot(x-cx,y-cy)<Rb)continue;
-    const key=(Math.round(x/0.12)+4096)*8192+Math.round(y/0.12)+4096;if(seen.has(key))continue;seen.add(key);out.push(x,j<=HT[i].k?H1+0.1:0.1,y);}}
+    const key=(Math.round(x/0.12)+4096)*8192+Math.round(y/0.12)+4096;if(seen.has(key))continue;seen.add(key);out.push(x,(j<HT[i].kH?HT[i].h0:j<=HT[i].k?H1:0)+0.1,y);}}   // 看台內（座位到出口）用座位高，B1 走廊用 H1，下樓後在地面
   return new Float32Array(out);}
 const _ledP=new THREE.Vector3();
 function ledOccluded(){const cam=activeCam,C=cam.position,[cx,cy]=LED.c,R=LED.R;if(Math.hypot(C.x-cx,C.z-cy)>=R&&C.x<=cx)return 0;   // 鏡頭在牆後（西側、圓外）：牆不擋路線
@@ -2491,7 +2492,7 @@ try{
       setTopSC:(s,cx,cy)=>{const w=renderer.domElement.clientWidth,h=renderer.domElement.clientHeight;Object.assign(orthoCam,{left:-w/2/s,right:w/2/s,top:h/2/s,bottom:-h/2/s});orthoCam.updateProjectionMatrix();
         orthoCam.position.set(cx,40,cy);orthoCam.up.set(0,0,-1);orthoCam.lookAt(cx,0,cy);orthoCam.updateMatrixWorld();activeCam=orthoCam;controls.enabled=false;render();return true;},
       view:k=>{setTop(false);LED.mode=k;const v=SHOTS[k].view();camera.position.copy(v.pos);controls.target.copy(v.target);controls.update();if(zoomK()!==people.K)updatePeople(simT,0,false);render();return {pos:v.pos.toArray(),target:v.target.toArray()};},
-      fly:k=>flyTo(SHOTS[k].view()),
+      fly:k=>{LED.mode=k;return flyTo(SHOTS[k].view());},
       viewDir:(k,d,p)=>{const v=SHOTS._fit(k,d,p);return {pos:v.pos.toArray(),target:v.target.toArray()};},
       camera:()=>({pos:camera.position.toArray(),target:controls.target.toArray(),fov:camera.fov,aspect:camera.aspect}),
       project:(x,y,z)=>{const p=new THREE.Vector3(x,y,z).project(activeCam);return [(p.x+1)/2*renderer.domElement.clientWidth,(1-p.y)/2*renderer.domElement.clientHeight,p.z];},

@@ -189,6 +189,8 @@ def test_diorama_led_wall_fades(open_page, three_cdn):
         led = pg.evaluate('__dome.debug.led()')
         if 2 <= k <= 5:                      # 章節 3–6
             assert led['target'] < 0.5 and led['opacity'] == led['target'], (k, led)
+        else:                                # 章節 1、2、7：牆不擋這幾個特寫的主角
+            assert led['target'] == 1, (k, led)
     # 從東側高處往西看（接近企劃 3D 圖的角度）：牆擋住牆後的門前隊伍與 B2 走廊 → 淡化
     pg.evaluate('__dome.seek(45); __dome.debug.setCam([8.6, 9.0, 0.02], [-3.7, -0.4, 0.02])')
     pg.wait_for_function(settle, timeout=120000, polling=500)
@@ -198,5 +200,8 @@ def test_diorama_led_wall_fades(open_page, three_cdn):
     pg.evaluate('__dome.debug.search("列 14")')
     pg.wait_for_function(settle, timeout=120000, polling=500)
     assert pg.evaluate('__dome.debug.led()')['target'] < 0.5
+    # 結束跟隨：鏡頭已經不在總覽，改由遮擋檢查決定（不能沿用跟隨前的 home 而強制不透明）
+    pg.evaluate('__dome.debug.setFollow(null)')
+    assert pg.evaluate('__dome.debug.led()')['mode'] == 'free'
     assert pg.evaluate('__dome.debug.info().calls') <= 60
     assert not errs and not perrs, (errs, perrs)
