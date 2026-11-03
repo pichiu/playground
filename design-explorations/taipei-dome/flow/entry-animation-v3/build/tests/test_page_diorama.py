@@ -122,10 +122,15 @@ def _pip(xs, ys, poly):
 def _solid_hits(solids, xs, ys):
     """落在任何實體平面外框內（扣掉洞）的點數，依實體種類分開數。圓（中央平台各級）用半徑判斷。"""
     import numpy as np
-    out = {}
+    out = {s['kind']: 0 for s in solids}
+    # 先只留落在全部實體外框聯集內的點（225 萬點 → 約 53 萬），每個實體再各自篩
+    bb = np.array([[min(p[0] for p in s['poly']), min(p[1] for p in s['poly']), max(p[0] for p in s['poly']), max(p[1] for p in s['poly'])] for s in solids])
+    keep = (xs >= bb[:, 0].min()) & (xs <= bb[:, 2].max()) & (ys >= bb[:, 1].min()) & (ys <= bb[:, 3].max())
+    xs, ys = xs[keep], ys[keep]
+    r = np.hypot(xs, ys)
     for s in solids:
         if s['r'] is not None:
-            hit = np.hypot(xs, ys) <= s['r']
+            hit = r <= s['r']
         else:
             poly = s['poly']
             bx0, by0 = min(p[0] for p in poly), min(p[1] for p in poly)
@@ -146,6 +151,7 @@ def test_diorama_stage_solids_clear(open_page, three_cdn):
     data.others 3,679 人、場內位置與休息區座位都不能落在裡面。南側下段階梯（omega，資料讓人走上最多 3 階）是例外，只列出。"""
     import json
     import numpy as np
+    from check import SUBDIV                 # 和 check.py 的幾何檢核同一個細分間距（0.02）
     pg, errs, perrs = open_page('diorama.html', 1280, 800)
     _ready(pg)
     solids = pg.evaluate('__dome.debug.solids()')
@@ -156,7 +162,7 @@ def test_diorama_stage_solids_clear(open_page, three_cdn):
     for p in D['persons']:
         a = np.array([q[:2] for q in p['path']], float)
         seg = np.diff(a, axis=0)
-        n = np.maximum(1, np.ceil(np.hypot(seg[:, 0], seg[:, 1]) / 0.02)).astype(int)
+        n = np.maximum(1, np.ceil(np.hypot(seg[:, 0], seg[:, 1]) / SUBDIV)).astype(int)
         k = np.repeat(np.arange(len(seg)), n)                          # 每個細分點屬於哪一段
         f = (np.arange(n.sum()) - np.repeat(np.cumsum(n) - n, n)) / n[k]   # 段內的比例 0, 1/n, …
         xs.append(a[k, 0] + seg[k, 0] * f)
@@ -180,12 +186,12 @@ def test_diorama_led_wall_fades(open_page, three_cdn):
     _ready(pg)
     settle = '() => { const l = __dome.debug.led(); return l.opacity === l.target && !__dome.debug.flight(); }'
     pg.evaluate('__dome.debug.pause(); __dome.debug.view("home")')
-    pg.wait_for_function(settle, timeout=120000, polling=500)
+    pg.wait_for_function(settle, timeout=120000, polling=100)
     home = pg.evaluate('__dome.debug.led()')
     assert home['target'] == 1 and home['opacity'] == 1, home
     for k in range(7):
         pg.evaluate(f'__dome.debug.chapter({k})')
-        pg.wait_for_function(settle, timeout=120000, polling=500)
+        pg.wait_for_function(settle, timeout=120000, polling=100)
         led = pg.evaluate('__dome.debug.led()')
         if 2 <= k <= 5:                      # 章節 3–6
             assert led['target'] < 0.5 and led['opacity'] == led['target'], (k, led)
@@ -193,12 +199,12 @@ def test_diorama_led_wall_fades(open_page, three_cdn):
             assert led['target'] == 1, (k, led)
     # 從東側高處往西看（接近企劃 3D 圖的角度）：牆擋住牆後的門前隊伍與 B2 走廊 → 淡化
     pg.evaluate('__dome.seek(45); __dome.debug.setCam([8.6, 9.0, 0.02], [-3.7, -0.4, 0.02])')
-    pg.wait_for_function(settle, timeout=120000, polling=500)
+    pg.wait_for_function(settle, timeout=120000, polling=100)
     east = pg.evaluate('__dome.debug.led()')
     assert east['occ'] > 0 and east['target'] < 0.5, east
     # 跟隨一列 → 淡化
     pg.evaluate('__dome.debug.search("列 14")')
-    pg.wait_for_function(settle, timeout=120000, polling=500)
+    pg.wait_for_function(settle, timeout=120000, polling=100)
     assert pg.evaluate('__dome.debug.led()')['target'] < 0.5
     # 結束跟隨：鏡頭已經不在總覽，改由遮擋檢查決定（不能沿用跟隨前的 home 而強制不透明）
     pg.evaluate('__dome.debug.setFollow(null)')
