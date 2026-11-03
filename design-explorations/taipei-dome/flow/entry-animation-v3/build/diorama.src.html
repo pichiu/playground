@@ -762,7 +762,7 @@ function initRenderer(){
   controls.minPolarAngle=deg(20);controls.maxPolarAngle=deg(65);
   controls.minDistance=1.2;controls.maxDistance=70;
   controls.screenSpacePanning=false;
-  controls.addEventListener('change',()=>{clampPan();dirty=true;});
+  controls.addEventListener('change',()=>{clampPan();dirty=true;LED.camDirty=true;});
   controls.addEventListener('start',()=>{LED.mode='free';});   // 使用者自己轉、拉鏡頭：LED 牆改由遮擋檢查決定
   renderer.domElement.addEventListener('pointerdown',cancelFlight,{passive:true});
   renderer.domElement.addEventListener('wheel',cancelFlight,{passive:true});
@@ -1206,8 +1206,9 @@ const SOLIDS={list:[],add(kind,poly,top,holes=[],extra){this.list.push({kind,pol
   topAt(x,y){let h=0;for(const s of this.list){if(s.top<=h||s.kind==='led')continue;const b=s.bb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;
     if(s.r!=null?Math.hypot(x-s.c[0],y-s.c[1])<=s.r+1e-3:(pip(x,y,s.poly)&&!s.holes.some(q=>pip(x,y,q))))h=s.top;}return h;},
   // 線段 (a,b) 下方的實體頂面：取兩端、中點以及它們往四周偏 0.004 的點中最高的（線稿多半正好在兩級的交界，取高的那一邊＝立面頂緣）
-  segTop(a,b){const m=lerp2(a,b,.5);let h=0;for(const p of [a,m,b])for(const [dx,dy] of [[0,0],[.004,0],[-.004,0],[0,.004],[0,-.004]])h=Math.max(h,this.topAt(p[0]+dx,p[1]+dy));
-    return Math.min(h,Math.max(this.topAt(a[0],a[1])+STEP_RISE*1.01,this.topAt(m[0],m[1])+STEP_RISE*1.01));}};
+  segTop(a,b){const m=lerp2(a,b,.5),c=[];let h=0;for(const p of [a,m,b]){let hp=this.topAt(p[0],p[1]);c.push(hp);
+      for(const [dx,dy] of [[.004,0],[-.004,0],[0,.004],[0,-.004]])hp=Math.max(hp,this.topAt(p[0]+dx,p[1]+dy));h=Math.max(h,hp);}
+    return Math.min(h,Math.max(c[0],c[1])+STEP_RISE*1.01);}};
 // 一級踏面或台面：拉伸成 0..top 的實體並登記到 SOLIDS。isTop＝白色台面（否則依 k 深淺交替的褐色踏面）
 function stepSlab(kind,poly,top,k,isTop=false,extra){solidParts.push(slab(poly,0,top,isTop?STAGE_COL.top:k%2?STAGE_COL.step1:STAGE_COL.step2,[],0,isTop?STAGE_COL.side:STAGE_COL.stepSide));SOLIDS.add(kind,poly,top,[],extra);}
 // 線稿 l 逐段畫在下方實體的頂面（SOLIDS.segTop）上，底下沒有實體就畫成地面淡線；回傳每段的高度（0＝地面）
@@ -1263,7 +1264,7 @@ function buildPads(){built.pads=[];
 //  黏土風格：LED 面是深藍帶淡格線的 canvas 貼圖（不發光、不是螢幕畫面），立柱與背框是深灰黏土，桁架是一條細的低彩度條。
 //  牆、立柱、螢幕兩個 mesh（貼圖面＋背框）共用一個不透明度：總覽不透明；章節 3–6 的特寫、跟隨、以及鏡頭在牆東側且牆擋住路線時淡化成 LED_FADE（見 ledStep）。
 //  不投影：牆很高，影子會蓋住牆後的門前隊伍。
-const LED={mats:[],cur:1,target:1,mode:'home',occ:0,key:'',samples:null,c:[0,0],R:LED_R,spans:[]};
+const LED={mats:[],cur:1,target:1,mode:'home',occ:0,camDirty:true,samples:null,c:[0,0],R:LED_R,spans:[]};
 function ledCircle(){const pts=[];for(const l of M.base.stage){const a=pairs(l);if(a.length<10)continue;if(Math.min(...a.map(p=>p[0]))<-8)pts.push(...a);}
   if(pts.length<6)return [-0.34,0];
   // 代數圓擬合（Kåsa）：x²+y² = 2ax + 2by + c
@@ -2100,31 +2101,31 @@ function cancelFlight(){if(flight){flight=null;}}
 // 目標不透明度：總覽（home）不透明；章節 3–6 的特寫（queue／gate／hold／north）與跟隨一律淡化；其他（章節 1、2、7、自己轉的鏡頭）
 // 由遮擋檢查決定：鏡頭在牆的東側（離 LED 圓心比牆近）時，把牆後面的路線點（全部人 path 點中在牆外側的，0.12 格點去重）和鏡頭連線，
 // 和牆面、立柱、側螢幕（同一個圓上的幾段弧面）相交、而且那個點在畫面內，就算擋住；擋住任何一點就淡化。俯視（正交相機）不淡化。
-// 鏡頭或目標沒動就不重算；不透明度平滑過渡（reduced-motion 時直接到位）。
+// 鏡頭或目標沒動就不重算（controls 的 change、resize、模式改變時設 LED.camDirty）；不透明度平滑過渡（reduced-motion 時直接到位）。
 const LED_FADE_SHOTS=new Set(['queue','gate','hold','north']);
 function ledSamples(){const out=[],seen=new Set(),[cx,cy]=LED.c,Rb=LED.R+0.12;
   for(let i=0;i<P.length;i++){const a=P[i].path;for(let j=0;j<a.length;j++){const x=a[j][0],y=a[j][1];if(Math.hypot(x-cx,y-cy)<Rb)continue;
-    const key=Math.round(x/0.12)+','+Math.round(y/0.12);if(seen.has(key))continue;seen.add(key);out.push(x,j<=HT[i].k?H1+0.1:0.1,y);}}
+    const key=(Math.round(x/0.12)+4096)*8192+Math.round(y/0.12)+4096;if(seen.has(key))continue;seen.add(key);out.push(x,j<=HT[i].k?H1+0.1:0.1,y);}}
   return new Float32Array(out);}
 const _ledP=new THREE.Vector3();
 function ledOccluded(){const cam=activeCam,C=cam.position,[cx,cy]=LED.c,R=LED.R;if(Math.hypot(C.x-cx,C.z-cy)>=R&&C.x<=cx)return 0;   // 鏡頭在牆後（西側、圓外）：牆不擋路線
-  const S=LED.samples;cam.updateMatrixWorld();let n=0;
+  const S=LED.samples;cam.updateMatrixWorld();
   for(let k=0;k<S.length;k+=3){const qx=S[k],qy=S[k+1],qz=S[k+2];
-    _ledP.set(qx,qy,qz).project(cam);if(_ledP.z>1||_ledP.x<-1||_ledP.x>1||_ledP.y<-1||_ledP.y>1)continue;
-    // 線段 C→Q 與圓 |p − c| = R 的交點（鏡頭在圓外東側時可能兩個），只看落在西半圓（牆所在那一側）、在牆面某一段弧與高度範圍內的
+    // 線段 C→Q 與圓 |p − c| = R 的交點（鏡頭在圓外東側時可能兩個），只看落在西半圓（牆所在那一側）、在牆面某一段弧與高度範圍內的；
+    // 先做這個便宜的平面測試，命中了才投影確認那個點在畫面內；找到一個就夠（ledStep 只看有沒有擋住）
     const dx=qx-C.x,dz=qz-C.z,fx=C.x-cx,fz=C.z-cy,A=dx*dx+dz*dz,Bq=2*(fx*dx+fz*dz),Cq=fx*fx+fz*fz-R*R,disc=Bq*Bq-4*A*Cq;if(disc<0||A<1e-12)continue;
     let hit=false;for(const sg of [-1,1]){const s=(-Bq+sg*Math.sqrt(disc))/(2*A);if(s<=0||s>=1)continue;
       const px=C.x+dx*s,pz=C.z+dz*s,py=C.y+(qy-C.y)*s,t=Math.asin(clamp((pz-cy)/R,-1,1));if(px>cx)continue;
       for(const sp of LED.spans)if(t>=sp.t0-0.02&&t<=sp.t1+0.02&&py>=sp.y0-0.05&&py<=sp.y1+0.05){hit=true;break;}if(hit)break;}
-    if(hit)n++;}
-  return n;}
+    if(!hit)continue;_ledP.set(qx,qy,qz).project(cam);if(_ledP.z<=1&&Math.abs(_ledP.x)<=1&&Math.abs(_ledP.y)<=1)return 1;}
+  return 0;}
 function ledStep(dt){if(!LED.mats.length)return false;
+  if(LED.mode!==LED.lastMode){LED.lastMode=LED.mode;LED.camDirty=true;}   // 換模式（章節、總覽、自己轉）後重新檢查一次
   let tgt;
   if(activeCam!==camera)tgt=1;
   else if(follow||LED_FADE_SHOTS.has(LED.mode))tgt=LED_FADE;
   else if(LED.mode==='home')tgt=1;
-  else{const C=camera.position,T=controls.target,key=[C.x,C.y,C.z,T.x,T.y,T.z,camera.aspect].map(v=>v.toFixed(3)).join(',');
-    if(key!==LED.key){LED.key=key;LED.occ=ledOccluded();}tgt=LED.occ>0?LED_FADE:1;}
+  else{if(LED.camDirty){LED.camDirty=false;LED.occ=ledOccluded();}tgt=LED.occ>0?LED_FADE:1;}
   LED.target=tgt;if(LED.cur===tgt)return false;
   LED.cur=RM?tgt:(Math.abs(tgt-LED.cur)<0.01?tgt:LED.cur+(tgt-LED.cur)*Math.min(1,dt*7));
   for(const m of LED.mats){m.opacity=LED.cur;m.depthWrite=LED.cur>0.98;}
@@ -2240,7 +2241,7 @@ let SHOTS;
 // =====================================================================
 // 8. 迴圈與尺寸
 // =====================================================================
-function resize(){vcInvalidate();_homeDist=0;syncListFold();const w=stageEl.clientWidth||innerWidth,h=stageEl.clientHeight||innerHeight;renderer.setSize(w,h,false);labelRenderer.setSize(w,h);
+function resize(){vcInvalidate();LED.camDirty=true;_homeDist=0;syncListFold();const w=stageEl.clientWidth||innerWidth,h=stageEl.clientHeight||innerHeight;renderer.setSize(w,h,false);labelRenderer.setSize(w,h);
   camera.aspect=w/h;camera.updateProjectionMatrix();dirty=true;}
 let frames=0,lastRenderMs=0,lastNow=null,settling=0;
 function render(){const t0=performance.now();renderer.render(scene,activeCam);labelRenderer.render(scene,activeCam);layoutLabels();lastRenderMs=performance.now()-t0;frames++;}
@@ -2474,7 +2475,7 @@ try{
       step:(n,dt)=>{let w=0;for(let k=0;k<n;k++){simT=Math.min(T_END,simT+dt*speed);settling=updatePeople(simT,dt*speed,false);w+=people.lastWrote;}updateHud();render();return w/n;},
       fig:i=>{const o=i*16,g=k=>Array.from(people[k].instanceMatrix.array.slice(o,o+16));return {yaw:people.yaw[i],gait:people.gait[i],ph:people.ph[i],st:people.st[i],K:people.K,sz:people.sz[i],shadow:g('shadow'),legL:g('legL'),legR:g('legR'),body:g('body'),head:g('head')};},
       timeUpdate:(n,dt)=>{const ts=[];for(let k=0;k<n;k++){const a=performance.now();simT=Math.min(T_END,simT+dt);updatePeople(simT,dt,false);ts.push(+(performance.now()-a).toFixed(2));}return {ms:ts,wrote:people.lastWrote};},
-      setCam:(pos,tgt)=>{setTop(false);cancelFlight();LED.mode='free';camera.position.fromArray(pos);controls.target.fromArray(tgt);controls.update();updatePeople(simT,0,true);render();return zoomK();},
+      setCam:(pos,tgt)=>{setTop(false);cancelFlight();LED.mode='free';LED.camDirty=true;camera.position.fromArray(pos);controls.target.fromArray(tgt);controls.update();updatePeople(simT,0,true);render();return zoomK();},
       FIG,heightAtT:i=>heightAt(i,simT),hudPct:()=>$('#scrub').value/10,
       heightAt,pos:(i,t)=>pos(P[i],t),state:(i,t)=>state(P[i],t),counts:t=>counts(t,P),
       ht:i=>({tL:HT[i].tL,tH:HT[i].tH,tS:HT[i].tS,tE:HT[i].tE,k:HT[i].k,kH:HT[i].kH,kEnd:HT[i].kEnd,h0:HT[i].h0}),
@@ -2512,7 +2513,7 @@ try{
       pills:()=>[pillHead,pillMe].map(q=>({vis:q.o.visible,text:q.el.textContent,pos:q.o.position.toArray()})),
       backboard:()=>({opacity:LED.cur,visible:LED.cur>0}),
       // 主 LED 牆：目前／目標不透明度、鏡頭模式（home／章節的 shot／free）、上一次遮擋檢查擋住幾個路線點；solids＝舞台一帶全部實體的平面外框（測試用）
-      led:()=>({opacity:+LED.cur.toFixed(3),target:LED.target,mode:LED.mode,occ:LED.occ,follow:!!follow}),solids:()=>SOLIDS.list.map(o=>({kind:o.kind,top:o.top,poly:o.poly,holes:o.holes,r:o.r??null})),ledMode:m=>{LED.mode=m;LED.key='';dirty=true;return m;},
+      led:()=>({opacity:+LED.cur.toFixed(3),target:LED.target,mode:LED.mode,occ:LED.occ,follow:!!follow}),solids:()=>SOLIDS.list.map(o=>({kind:o.kind,top:o.top,poly:o.poly,holes:o.holes,r:o.r??null})),ledMode:m=>{LED.mode=m;LED.camDirty=true;dirty=true;return m;},
       counts:()=>({...Object.fromEntries(COUNT_KEYS.map(([k])=>[k,+$(`#counts [data-n="${k}"]`).textContent.replace(/,/g,'')]))}),
       personScreen:i=>{activeCam.updateMatrixWorld();const v=new THREE.Vector3(people.px[i],people.arrs.body[i*16+13],people.pz[i]).project(activeCam);return [(v.x+1)/2*renderer.domElement.clientWidth,(1-v.y)/2*renderer.domElement.clientHeight];},
       uiInsets:()=>uiInsets(),visibleCenter:()=>visibleCenter(),

@@ -157,10 +157,10 @@ def test_diorama_stage_solids_clear(open_page, three_cdn):
         a = np.array([q[:2] for q in p['path']], float)
         seg = np.diff(a, axis=0)
         n = np.maximum(1, np.ceil(np.hypot(seg[:, 0], seg[:, 1]) / 0.02)).astype(int)
-        for k in range(len(seg)):
-            f = np.arange(n[k]) / n[k]
-            xs.append(a[k, 0] + seg[k, 0] * f)
-            ys.append(a[k, 1] + seg[k, 1] * f)
+        k = np.repeat(np.arange(len(seg)), n)                          # 每個細分點屬於哪一段
+        f = (np.arange(n.sum()) - np.repeat(np.cumsum(n) - n, n)) / n[k]   # 段內的比例 0, 1/n, …
+        xs.append(a[k, 0] + seg[k, 0] * f)
+        ys.append(a[k, 1] + seg[k, 1] * f)
         xs.append(a[-1:, 0])
         ys.append(a[-1:, 1])
     px, py = np.concatenate(xs), np.concatenate(ys)
