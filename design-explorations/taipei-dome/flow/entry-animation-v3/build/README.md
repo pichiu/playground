@@ -28,7 +28,7 @@ python3 -I inline.py                                            # 3D 模型頁�
 | `geo.py` | 與 2c 相同 |
 | `diorama.src.html` | 3D 模型頁（`../diorama.html`）的原始碼：Three.js 0.160.0、黏土微縮模型；資料位置是 `__DATA__`。沒有內嵌資料時改用 core.js 的 `Dome.load()` 讀 data.json |
 | `inline.py` | 由 `diorama.src.html` 產生頁面版 `../diorama.html`（預設）或 artifact 版（`--artifact`，內嵌資料） |
-| `tests/` | pytest：排位、路線、時鐘、檢核（含竄改偵測）、Review Focus、八個頁面（Playwright，含 3D 模型 diorama.html）、發行（首頁卡、2c 不動、追蹤檔與管線輸出逐位元相同、diorama.html 與 src 重新產生的結果相同） |
+| `tests/` | pytest：排位、路線、時鐘、檢核（含竄改偵測）、Review Focus、八個頁面（Playwright，含 3D 模型 diorama.html：舞台／伸展台／中央平台／LED 牆的平面外框不碰任何路徑點與座位、LED 牆淡化規則）、發行（首頁卡、2c 不動、追蹤檔與管線輸出逐位元相同、diorama.html 與 src 重新產生的結果相同） |
 
 ## 依賴
 

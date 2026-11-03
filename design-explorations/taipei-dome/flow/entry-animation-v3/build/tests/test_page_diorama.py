@@ -102,3 +102,101 @@ def test_diorama_pages_menu(open_page, three_cdn):
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert pg.locator('nav.dome-nav a[aria-current="page"]').inner_text() == '總覽'
     assert not errs and not perrs, (errs, perrs)
+
+
+def _pip(xs, ys, poly):
+    """向量化 ray casting：點 (xs, ys) 是否在多邊形 poly 內。"""
+    import numpy as np
+    inside = np.zeros(xs.shape, bool)
+    n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i - 1]
+        x2, y2 = poly[i]
+        c = (y2 > ys) != (y1 > ys)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            xi = (x1 - x2) * (ys - y2) / (y1 - y2) + x2
+        inside ^= c & (xs < xi)
+    return inside
+
+
+def _solid_hits(solids, xs, ys):
+    """落在任何實體平面外框內（扣掉洞）的點數，依實體種類分開數。圓（中央平台各級）用半徑判斷。"""
+    import numpy as np
+    out = {}
+    for s in solids:
+        if s['r'] is not None:
+            hit = np.hypot(xs, ys) <= s['r']
+        else:
+            poly = s['poly']
+            bx0, by0 = min(p[0] for p in poly), min(p[1] for p in poly)
+            bx1, by1 = max(p[0] for p in poly), max(p[1] for p in poly)
+            box = (xs >= bx0) & (xs <= bx1) & (ys >= by0) & (ys <= by1)
+            hit = np.zeros(xs.shape, bool)
+            if box.any():
+                h = _pip(xs[box], ys[box], poly)
+                for hole in s['holes']:
+                    h &= ~_pip(xs[box], ys[box], hole)
+                hit[box] = h
+        out[s['kind']] = out.get(s['kind'], 0) + int(hit.sum())
+    return out
+
+
+def test_diorama_stage_solids_clear(open_page, three_cdn):
+    """舞台、伸展台、中央平台、紅色方塊、LED 牆／立柱／側螢幕的平面外框：1,609 人全部 path（每 0.02 細分）、
+    data.others 3,679 人、場內位置與休息區座位都不能落在裡面。南側下段階梯（omega，資料讓人走上最多 3 階）是例外，只列出。"""
+    import json
+    import numpy as np
+    pg, errs, perrs = open_page('diorama.html', 1280, 800)
+    _ready(pg)
+    solids = pg.evaluate('__dome.debug.solids()')
+    kinds = {s['kind'] for s in solids}
+    assert {'landing', 'main', 'omega', 'omegaN', 'upper', 'ramp', 'runway', 'ring', 'pad', 'led'} <= kinds, kinds
+    D = json.loads((ROOT / 'data.json').read_text(encoding='utf-8'))
+    xs, ys = [], []
+    for p in D['persons']:
+        a = np.array([q[:2] for q in p['path']], float)
+        seg = np.diff(a, axis=0)
+        n = np.maximum(1, np.ceil(np.hypot(seg[:, 0], seg[:, 1]) / 0.02)).astype(int)
+        for k in range(len(seg)):
+            f = np.arange(n[k]) / n[k]
+            xs.append(a[k, 0] + seg[k, 0] * f)
+            ys.append(a[k, 1] + seg[k, 1] * f)
+        xs.append(a[-1:, 0])
+        ys.append(a[-1:, 1])
+    px, py = np.concatenate(xs), np.concatenate(ys)
+    paths = _solid_hits(solids, px, py)
+    ox = np.array([o['X'] for o in D['others']] + [s['X'] for s in D['restSeats']] + [p['field']['X'] for p in D['persons']])
+    oy = np.array([o['Y'] for o in D['others']] + [s['Y'] for s in D['restSeats']] + [p['field']['Y'] for p in D['persons']])
+    others = _solid_hits(solids, ox, oy)
+    print('path points', len(px), 'hits', paths, '| others+seats', len(ox), 'hits', others)
+    assert all(v == 0 for k, v in paths.items() if k != 'omega'), paths
+    assert all(v == 0 for v in others.values()), others
+    assert not errs and not perrs, (errs, perrs)
+
+
+def test_diorama_led_wall_fades(open_page, three_cdn):
+    """主 LED 牆：總覽不透明；章節 3–6 的特寫與跟隨淡化；鏡頭在牆東側且牆擋住路線時淡化。draw call ≤ 60。"""
+    pg, errs, perrs = open_page('diorama.html', 1280, 800)
+    _ready(pg)
+    settle = '() => { const l = __dome.debug.led(); return l.opacity === l.target && !__dome.debug.flight(); }'
+    pg.evaluate('__dome.debug.pause(); __dome.debug.view("home")')
+    pg.wait_for_function(settle, timeout=120000, polling=500)
+    home = pg.evaluate('__dome.debug.led()')
+    assert home['target'] == 1 and home['opacity'] == 1, home
+    for k in range(7):
+        pg.evaluate(f'__dome.debug.chapter({k})')
+        pg.wait_for_function(settle, timeout=120000, polling=500)
+        led = pg.evaluate('__dome.debug.led()')
+        if 2 <= k <= 5:                      # 章節 3–6
+            assert led['target'] < 0.5 and led['opacity'] == led['target'], (k, led)
+    # 從東側高處往西看（接近企劃 3D 圖的角度）：牆擋住牆後的門前隊伍與 B2 走廊 → 淡化
+    pg.evaluate('__dome.seek(45); __dome.debug.setCam([8.6, 9.0, 0.02], [-3.7, -0.4, 0.02])')
+    pg.wait_for_function(settle, timeout=120000, polling=500)
+    east = pg.evaluate('__dome.debug.led()')
+    assert east['occ'] > 0 and east['target'] < 0.5, east
+    # 跟隨一列 → 淡化
+    pg.evaluate('__dome.debug.search("列 14")')
+    pg.wait_for_function(settle, timeout=120000, polling=500)
+    assert pg.evaluate('__dome.debug.led()')['target'] < 0.5
+    assert pg.evaluate('__dome.debug.info().calls') <= 60
+    assert not errs and not perrs, (errs, perrs)
