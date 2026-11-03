@@ -1218,7 +1218,7 @@ const UPPER=(()=>{const arcs=[];for(const l of M.base.stage){const a=pairs(l);if
     if(ya<-2.9&&yb>2.9&&xa>-6.6&&xb<-5.3){const pts=a[0][1]>a[a.length-1][1]?a.slice().reverse():a;arcs.push({pts,y0:pts[0][1],y1:pts[pts.length-1][1]});}}
   const xAt=(c,y)=>{const a=c.pts;y=clamp(y,c.y0,c.y1);let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][1]<=y)lo=m;else hi=m;}const f=(y-a[lo][1])/((a[hi][1]-a[lo][1])||1);return a[lo][0]+(a[hi][0]-a[lo][0])*f;};
   arcs.sort((p,q)=>xAt(q,0)-xAt(p,0));
-  const ylim=arcs.length?Math.max(...arcs.map(c=>Math.max(-c.y0,c.y1))):0;
+  const ylim=arcs.length?Math.min(...arcs.map(c=>Math.min(-c.y0,c.y1))):0;   // 取最短那條弧的端點：比它更外的部分台前平台照舊鋪在踏面底下，不會留洞
   return {arcs,xAt,ylim};})();
 
 // ---- 6.6b 伸展台與中央平台：每一級做成一塊從地面拉到該級頂面的實體（上一級疊在下一級上面，露出的就是踏面） ----
@@ -1283,7 +1283,7 @@ function buildLed(){const C0=ledCircle(),R=LED_R,cx=C0[0],cy=C0[1];LED.c=C0;LED.
   const ang=y=>Math.asin(clamp((y-cy)/R,-1,1)),P2=t=>[cx-Math.cos(t)*R,cy+Math.sin(t)*R],Pr=(t,r)=>[cx-Math.cos(t)*r,cy+Math.sin(t)*r];
   // 弧面：t0..t1（角度，0＝正西），高 y0..y1，貼圖 v 範圍 v0..v1；格線密度照實際長度（每 0.1 單位一格）
   const face=[],faceUV=[];
-  const arcFace=(t0,t1,y0,y1,v0,v1)=>{const n=Math.max(2,Math.ceil(Math.abs(t1-t0)*R/0.12)),L=Math.abs(t1-t0)*R,us=L/(64*0.1/8)/8;
+  const arcFace=(t0,t1,y0,y1,v0,v1)=>{const n=Math.max(2,Math.ceil(Math.abs(t1-t0)*R/0.12)),L=Math.abs(t1-t0)*R,us=L/(64*0.1);   // 貼圖一次重複 64 格（每格 8px），每格 0.1 單位
     for(let i=0;i<n;i++){const ta=lerp(t0,t1,i/n),tb=lerp(t0,t1,(i+1)/n),a=P2(ta),b=P2(tb),ua=us*i/n,ub=us*(i+1)/n;
       // a→b 由北往南；從東邊（圓心那一側）看 a 在右、b 在左，三角形照逆時針排，面朝東
       face.push(a[0],y0,a[1],b[0],y1,b[1],b[0],y0,b[1],a[0],y0,a[1],a[0],y1,a[1],b[0],y1,b[1]);faceUV.push(ua,v0,ub,v1,ub,v0,ua,v0,ua,v1,ub,v1);}
@@ -1318,7 +1318,7 @@ function buildLed(){const C0=ledCircle(),R=LED_R,cx=C0[0],cy=C0[1];LED.c=C0;LED.
   {const pts=arcPts(tN-dT,tL+dT,R-0.04),y=STAGE_TOP_H+LED_H+0.08;parts.push(ribbon(pts,false,0.018,y,y+0.035,()=>TRUSS));}
   const frameMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,transparent:true,opacity:1});
   const frame=new THREE.Mesh(BGU.mergeGeometries(parts,false),frameMat);frame.receiveShadow=true;frame.renderOrder=4;scene.add(frame);
-  LED.mats=[faceMat,frameMat];LED.meshes=[fm,frame];
+  LED.mats=[faceMat,frameMat];LED.meshes=[fm,frame];LED.samples=ledSamples();
   built.led={c:C0.map(v=>+v.toFixed(3)),R,y:LED_Y,h:LED_H,top:+(STAGE_TOP_H+LED_H).toFixed(3),postH:LED_POST_H,side:LED_SIDE,sideY:LED_SIDE_Y,
     xMid:+P2(0)[0].toFixed(3),tris:(fg.getAttribute('position').count+frame.geometry.getAttribute('position').count)/3};}
 // 兩趟 chamfer 距離轉換（格點單位）
@@ -1622,7 +1622,8 @@ function buildPills(){const mk=cls=>{const el=document.createElement('div');el.c
   pillHead=mk('head');pillMe=mk('me');}
 function personTop(i,v){const K=people.K>0?people.K:1;return v.set(people.px[i],people.h[i]+(FIG.headY+FIG.headR)*K*people.sz[i]+0.035,people.pz[i]);}
 function followTarget(){if(!follow)return -1;if(follow.mode==='person')return follow.i;const h=rowHead(follow.lie,simT);return h>=0?h:LIE_ORDER.get(follow.lie)[LIE_ORDER.get(follow.lie).length-1];}
-function setFollow(f){const was=follow;follow=f||null;cancelFlight();
+function setFollow(f){const was=follow;follow=f||null;cancelFlight();if(follow)LED.mode='free';   // 跟隨會移動鏡頭：結束跟隨後 LED 牆改由遮擋檢查決定
+
   if(follow){if(activeCam!==camera)setTop(false);follow.cur=-1;document.querySelectorAll('#cams .chip').forEach(x=>x.setAttribute('aria-pressed','false'));}
   const lie=follow?follow.lie:null;if(people.tintLie!==lie)applyTint(lie);
   updatePills();syncFollowUi();
@@ -2109,7 +2110,7 @@ function ledSamples(){const out=[],seen=new Set(),[cx,cy]=LED.c,Rb=LED.R+0.12;
   return new Float32Array(out);}
 const _ledP=new THREE.Vector3();
 function ledOccluded(){const cam=activeCam,C=cam.position,[cx,cy]=LED.c,R=LED.R;if(Math.hypot(C.x-cx,C.z-cy)>=R&&C.x<=cx)return 0;   // 鏡頭在牆後（西側、圓外）：牆不擋路線
-  const S=LED.samples||(LED.samples=ledSamples());cam.updateMatrixWorld();let n=0;
+  const S=LED.samples;cam.updateMatrixWorld();let n=0;
   for(let k=0;k<S.length;k+=3){const qx=S[k],qy=S[k+1],qz=S[k+2];
     _ledP.set(qx,qy,qz).project(cam);if(_ledP.z>1||_ledP.x<-1||_ledP.x>1||_ledP.y<-1||_ledP.y>1)continue;
     // 線段 C→Q 與圓 |p − c| = R 的交點（鏡頭在圓外東側時可能兩個），只看落在西半圓（牆所在那一側）、在牆面某一段弧與高度範圍內的
