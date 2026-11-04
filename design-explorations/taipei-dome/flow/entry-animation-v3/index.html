@@ -7,64 +7,65 @@
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap"></noscript>
+<script src="core.js"></script>
 <style>
-:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--white:#b9a77a;--blue:#2f6fd0;--ok:#1f8a5a;--ng:#c0392b;--grid:#ecebe5;color-scheme:light}
+:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--white:#b9a77a;--blue:#2f6fd0;--ok:#1b7c51;--ng:#c0392b;--grid:#ecebe5;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--white:#e6d9b4;--blue:#4f8fe8;--ok:#5fcf93;--ng:#ef8a7a;--grid:#223034;color-scheme:dark}}
 :root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--white:#e6d9b4;--blue:#4f8fe8;--ok:#5fcf93;--ng:#ef8a7a;--grid:#223034;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.75 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 a{color:var(--accent);text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .dome-nav.bar{--line:var(--rule)}
 .wrap{max-width:1120px;margin:auto;padding:24px max(16px,env(safe-area-inset-left)) 64px;overflow-x:hidden}
-.back{color:var(--dim);text-decoration:none;font-size:14px}
-h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(30px,5vw,50px);line-height:1.15;margin:18px 0 12px}
-.lede{font-size:18px;max-width:64ch;color:var(--dim);margin:0 0 12px}
-.kpi{display:flex;flex-wrap:wrap;gap:10px 28px;margin:0 0 28px;font-size:14px;color:var(--dim)}
-.kpi b{display:block;font-size:26px;color:var(--ink);line-height:1.2}
-h2{font-family:"Noto Serif TC",serif;font-size:26px;margin:48px 0 10px;line-height:1.3}
+.back{color:var(--dim);text-decoration:none;font-size:0.875rem}
+h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(1.875rem,5vw,3.125rem);line-height:1.15;margin:18px 0 12px}
+.lede{font-size:1.125rem;max-width:64ch;color:var(--dim);margin:0 0 12px}
+.kpi{display:flex;flex-wrap:wrap;gap:10px 28px;margin:0 0 28px;font-size:0.875rem;color:var(--dim)}
+.kpi b{display:block;font-size:1.625rem;color:var(--ink);line-height:1.2}
+h2{font-family:"Noto Serif TC",serif;font-size:1.625rem;margin:48px 0 10px;line-height:1.3}
 h2+p.sub{margin:-4px 0 16px;color:var(--dim);max-width:64ch}
 ol.rules{padding-left:1.4em;max-width:72ch}ol.rules li{margin:6px 0}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:15px;min-width:520px}
+table{width:100%;border-collapse:collapse;font-size:0.9375rem;min-width:520px}
 th,td{padding:9px 10px;border-top:1px solid var(--rule);text-align:left;vertical-align:top}
-thead th{border-top:0;color:var(--dim);font-weight:500;font-size:13px}
+thead th{border-top:0;color:var(--dim);font-weight:500;font-size:0.8125rem}
 td.n{text-align:right;white-space:nowrap}
 .lane-A{border-left:4px solid var(--white)}.lane-B{border-left:4px solid var(--blue)}
 .seg b{display:block}.seg small{color:var(--dim);display:block}
 /* 樓梯序條：9 個大隊，每格上白下藍 */
 .stair{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;margin:8px 0 4px;min-width:0}
-.stair [data-dadui]{min-width:0;background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:6px 4px;font-size:12px;line-height:1.3;text-align:center}
-.stair [data-dadui] b{display:block;font-size:14px}
+.stair [data-dadui]{min-width:0;background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:6px 4px;font-size:0.75rem;line-height:1.3;text-align:center}
+.stair [data-dadui] b{display:block;font-size:0.875rem}
 .stair [data-dadui] span{display:block;padding:2px 0;overflow-wrap:anywhere}
 .stair .w{border-top:3px solid var(--white)}.stair .b{border-top:3px solid var(--blue)}
-.stair-hint{color:var(--dim);font-size:13px;margin:0 0 6px}
+.stair-hint{color:var(--dim);font-size:0.8125rem;margin:0 0 6px}
 /* 出口用量 */
 .usage{display:grid;gap:8px;max-width:720px}
-.usage [data-exit]{display:grid;grid-template-columns:3.2em 1fr 7em;gap:10px;align-items:center;font-size:14px}
+.usage [data-exit]{display:grid;grid-template-columns:3.2em 1fr 7em;gap:10px;align-items:center;font-size:0.875rem}
 .usage .bar{height:12px;background:var(--grid);border-radius:6px;overflow:hidden;position:relative}
 .usage .bar i{position:absolute;top:0;bottom:0;left:0;background:var(--accent)}
 .usage .bar i.b{background:var(--blue)}.usage .bar i.w{background:var(--white)}
 .usage .n{text-align:right;color:var(--dim)}
 /* 檢核 */
 [data-checks]{border:1px solid var(--rule);border-radius:12px;padding:6px 16px 14px;background:var(--card)}
-[data-checks] .verdict{font-weight:700;font-size:18px;margin:10px 0 4px}
+[data-checks] .verdict{font-weight:700;font-size:1.125rem;margin:10px 0 4px}
 [data-checks].ok .verdict{color:var(--ok)}[data-checks]:not(.ok) .verdict{color:var(--ng)}
 [data-checks] table{min-width:0}
 [data-checks] tr.ok td:first-child::before{content:'✓ ';color:var(--ok);font-weight:700}
 [data-checks] tr.ng td:first-child::before{content:'✗ ';color:var(--ng);font-weight:700}
 [data-checks] tr.info td:first-child::before{content:'· ';color:var(--dim);font-weight:700}
-[data-checks] .ex{color:var(--dim);font-size:13px}
+[data-checks] .ex{color:var(--dim);font-size:0.8125rem}
 /* 頁面卡 */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:14px}
 .card{display:block;border:1px solid var(--rule);border-radius:12px;padding:16px 18px;background:var(--card);text-decoration:none;color:var(--ink)}
 .card:hover{border-color:var(--accent)}
-.card b{display:block;font-size:18px;font-family:"Noto Serif TC",serif}
-.card .who{color:var(--accent);font-size:13px;font-weight:700;display:block;margin:2px 0 6px}
-.card p{margin:0;color:var(--dim);font-size:14px;line-height:1.6}
+.card b{display:block;font-size:1.125rem;font-family:"Noto Serif TC",serif}
+.card .who{color:var(--accent);font-size:0.8125rem;font-weight:700;display:block;margin:2px 0 6px}
+.card p{margin:0;color:var(--dim);font-size:0.875rem;line-height:1.6}
 .dl{display:flex;gap:10px;flex-wrap:wrap}
-.dl a{border:1.5px solid var(--accent);border-radius:8px;padding:7px 14px;text-decoration:none;font-weight:700;font-size:15px}
-.note{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);color:var(--dim);font-size:14px;max-width:72ch}
+.dl a{border:1.5px solid var(--accent);border-radius:8px;padding:7px 14px;text-decoration:none;font-weight:700;font-size:0.9375rem}
+.note{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);color:var(--dim);font-size:0.875rem;max-width:72ch}
 .note ul{padding-left:1.2em;margin:6px 0}
 .err{color:var(--dim)}
 @media(max-width:640px){.stair{grid-template-columns:repeat(3,minmax(0,1fr))}.usage [data-exit]{grid-template-columns:3em 1fr 6em}}
@@ -104,7 +105,6 @@ td.n{text-align:right;white-space:nowrap}
 <div class="dl"><a href="seats.csv" download>座位表 seats.csv</a><a href="data.json">動線資料 data.json</a><a href="README.md">怎麼看、怎麼重算</a></div>
 <div class="note" id="note"></div>
 </div>
-<script src="core.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);

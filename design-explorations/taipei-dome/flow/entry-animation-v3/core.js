@@ -38,13 +38,52 @@ function fail(err){let b=document.getElementById('dome-err');if(!b){b=document.c
   b.textContent='';const m=document.createElement('b');m.textContent=err.message;const c=document.createElement('code');c.textContent='python3 -m http.server';   // 訊息可能含網址參數：一律當文字，不當 HTML
   b.append(m,'。這些頁面讀同一份 data.json，需要經由網頁伺服器開啟（GitHub Pages 或 ',c,'）；網路斷線時重新整理即可重試。');}
 
+// ---- 外觀偏好：主題（跟隨系統／淺色／深色）與字級（標準／大／特大）。各頁共用、記在 localStorage（讀寫包 try/catch），
+// core.js 放在 <head> 載入，第一次繪製前就套用，不會先閃一下別的主題。主題寫在 <html data-theme>（auto 就拿掉，交給 prefers-color-scheme）；
+// 字級寫在 <html> 的 font-size 百分比，各頁 CSS 字級用 rem，所以跟著放大，也保留瀏覽器自己的預設字級。
+// canvas 地圖上的文字（區號、西一入口、樓梯）與幾何位置綁在一起，放大會跑出畫面，所以不跟字級；總譜的列標籤同理（綁 13px 列距）。
+// 講義（列印 A3，紙張配色、版面以 mm／pt 定死）在 <html data-prefs="off"> 關掉，不套用也不顯示控制。
+const THEMES=[['auto','跟隨系統'],['light','淺色'],['dark','深色']],SIZES=[['1','標準'],['1.15','大'],['1.3','特大']];
+const PREF_KEY={theme:'dome.theme',fs:'dome.fs'},ROOT=document.documentElement,prefsOff=()=>ROOT.dataset.prefs==='off';
+const readPref=(k,ok)=>{try{const v=localStorage.getItem(PREF_KEY[k]);return ok.some(([x])=>x===v)?v:ok[0][0];}catch(e){return ok[0][0];}};
+const prefs={theme:readPref('theme',THEMES),fs:readPref('fs',SIZES)};
+function applyPrefs(){if(prefsOff())return;
+  if(prefs.theme==='auto')delete ROOT.dataset.theme;else ROOT.dataset.theme=prefs.theme;
+  ROOT.style.fontSize=prefs.fs==='1'?'':prefs.fs*100+'%';}
+applyPrefs();
+const isDark=()=>/dark/.test(getComputedStyle(ROOT).colorScheme);
+const fs=()=>prefsOff()?1:+prefs.fs;
+// 主題或字級改了就呼叫 fn（含系統深淺色切換）；canvas 頁在這裡重讀顏色、重畫
+function onPrefs(fn){addEventListener('dome:prefs',fn);matchMedia('(prefers-color-scheme: dark)').addEventListener('change',fn);}
+function setPref(k,v){prefs[k]=v;try{localStorage.setItem(PREF_KEY[k],v);}catch(e){}applyPrefs();dispatchEvent(new CustomEvent('dome:prefs',{detail:{...prefs}}));}
+// 「外觀」按鈕＋面板。面板 position:fixed 掛在 body，不會被 console 那種可橫捲的導覽列裁掉；Esc、點外面關閉，焦點回按鈕。
+function prefsControl(){const wrap=document.createElement('div');wrap.className='dome-prefs';
+  const seg=(k,list,label)=>`<div class="dp-g" role="group" aria-label="${label}"><span class="dp-l" aria-hidden="true">${label}</span><div class="dp-seg">${list.map(([v,l])=>`<button type="button" data-k="${k}" data-v="${v}" aria-pressed="${prefs[k]===v}">${l}</button>`).join('')}</div></div>`;
+  wrap.innerHTML='<button type="button" class="dp-btn" aria-expanded="false" aria-controls="dome-prefs-pop"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg>外觀</button>';
+  const pop=document.createElement('div');pop.id='dome-prefs-pop';pop.className='dome-prefs-pop';pop.hidden=true;pop.setAttribute('role','dialog');pop.setAttribute('aria-label','外觀設定');
+  pop.innerHTML=seg('theme',THEMES,'主題')+seg('fs',SIZES,'字級');document.body.append(pop);
+  const btn=wrap.firstChild,place=()=>{const r=btn.getBoundingClientRect(),w=pop.offsetWidth;pop.style.top=Math.round(r.bottom+6)+'px';pop.style.left=Math.round(Math.max(12,Math.min(r.right-w,innerWidth-12-w)))+'px';};
+  const open=on=>{pop.hidden=!on;btn.setAttribute('aria-expanded',String(on));if(on){place();(pop.querySelector('[aria-pressed=true]')||pop.querySelector('button')).focus();}};
+  btn.addEventListener('click',()=>open(pop.hidden));
+  pop.addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(!b)return;setPref(b.dataset.k,b.dataset.v);
+    pop.querySelectorAll(`[data-k="${b.dataset.k}"]`).forEach(x=>x.setAttribute('aria-pressed',String(x===b)));place();});
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden){e.stopPropagation();open(false);btn.focus();}},true);
+  addEventListener('pointerdown',e=>{if(!pop.hidden&&!pop.contains(e.target)&&!btn.contains(e.target))open(false);});
+  addEventListener('resize',()=>{if(!pop.hidden)place();});
+  addEventListener('scroll',()=>{if(!pop.hidden)place();},{capture:true,passive:true});   // capture：連導覽列自己的橫捲也接得到
+  // 面板掛在 body 最後，Tab 順序跟按鈕不相鄰：頭尾再 Tab 就關面板、焦點回按鈕（再 Tab 照原本順序往下）；焦點移到別處也關
+  pop.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const bs=[...pop.querySelectorAll('button')],edge=e.shiftKey?bs[0]:bs[bs.length-1];if(document.activeElement===edge){e.preventDefault();open(false);btn.focus();}});
+  pop.addEventListener('focusout',e=>{const to=e.relatedTarget;if(to&&!pop.contains(to)&&to!==btn)open(false);});
+  return wrap;}
+
 // 八頁同一條導覽列（3D 模型 diorama.html 不顯示這條列，改由品牌卡的「其他頁面」選單列出 Dome.NAV）。mount 未給時放在 body 最前面；console 等滿版頁把它掛在自己的角落。
 const NAV=[['index.html','總覽'],['console.html','指揮台'],['me.html','我的路'],['score.html','總譜'],['handout.html','講義'],['captain.html','口令卡'],['exit.html','出口卡'],['diorama.html','3D 模型']];
 function nav(current,mount){if(!document.getElementById('dome-nav-style')){const s=document.createElement('style');s.id='dome-nav-style';
-  s.textContent='.dome-nav{display:flex;flex-wrap:wrap;gap:2px 4px;align-items:center;font:13px/1.4 "Noto Sans TC",system-ui,sans-serif}.dome-nav a{color:var(--dim,#8fa29f);text-decoration:none;padding:4px 8px;border-radius:6px}.dome-nav a:hover{color:var(--ink,#e9efe9)}.dome-nav a[aria-current=page]{color:var(--ink,#e9efe9);font-weight:700;background:var(--line,var(--rule,rgba(128,128,128,.18)))}.dome-nav.bar{padding:8px max(12px,env(safe-area-inset-left));border-bottom:1px solid var(--line,var(--rule,#22302f))}@media print{.dome-nav{display:none}}';
+  s.textContent='.dome-nav{display:flex;flex-wrap:wrap;gap:2px 4px;align-items:center;font:0.8125rem/1.4 "Noto Sans TC",system-ui,sans-serif}.dome-nav a{color:var(--dim,#8fa29f);text-decoration:none;padding:4px 8px;border-radius:6px}.dome-nav a:hover{color:var(--ink,#e9efe9)}.dome-nav a[aria-current=page]{color:var(--ink,#e9efe9);font-weight:700;background:var(--line,var(--rule,rgba(128,128,128,.18)))}.dome-nav.bar{padding:8px max(12px,env(safe-area-inset-left));border-bottom:1px solid var(--line,var(--rule,#22302f))}@media print{.dome-nav,.dome-prefs-pop{display:none}}'+'.dome-prefs{margin-left:auto}.dome-prefs .dp-btn{display:inline-flex;align-items:center;gap:6px;font:inherit;color:var(--dim,#8fa29f);background:none;border:1px solid var(--line,var(--rule,rgba(128,128,128,.3)));border-radius:6px;padding:3px 9px;cursor:pointer;white-space:nowrap}'+'.dome-prefs .dp-btn:hover,.dome-prefs .dp-btn[aria-expanded=true]{color:var(--ink,#e9efe9)}'+'.dome-prefs .dp-btn:focus-visible,.dome-prefs-pop button:focus-visible{outline:2px solid var(--ink,#e9efe9);outline-offset:2px}'+'.dome-prefs-pop{position:fixed;z-index:60;display:grid;gap:12px;padding:14px;border-radius:12px;width:max-content;max-width:calc(100vw - 24px);font:0.8125rem/1.4 "Noto Sans TC",system-ui,sans-serif;color:var(--ink,#e9efe9);background:var(--card,var(--paper,var(--bg,#fff)));border:1px solid var(--line,var(--rule,rgba(128,128,128,.3)));box-shadow:0 2px 4px rgba(0,0,0,.08),0 12px 32px rgba(0,0,0,.16)}'+'.dome-prefs-pop[hidden]{display:none}.dome-prefs-pop .dp-g{display:grid;gap:6px}.dome-prefs-pop .dp-l{color:var(--dim,#8fa29f);font-weight:700}'+'.dome-prefs-pop .dp-seg{display:flex;border:1px solid var(--line,var(--rule,rgba(128,128,128,.3)));border-radius:8px;overflow:hidden}'+'.dome-prefs-pop .dp-seg button{flex:1;min-height:36px;padding:6px 14px;font:inherit;color:var(--dim,#8fa29f);background:none;border:0;cursor:pointer;white-space:nowrap}'+'.dome-prefs-pop .dp-seg button+button{border-left:1px solid var(--line,var(--rule,rgba(128,128,128,.3)))}'+'.dome-prefs-pop .dp-seg button:hover{color:var(--ink,#e9efe9)}'+'.dome-prefs-pop .dp-seg button[aria-pressed=true]{background:var(--ink,#e9efe9);color:var(--card,var(--paper,var(--bg,#fff)));font-weight:700}'+'@media(pointer:coarse){.dome-prefs-pop .dp-seg button{min-height:44px}.dome-prefs .dp-btn{min-height:32px}}';
   document.head.append(s);}
   const el=document.createElement('nav');el.className='dome-nav'+(mount?'':' bar');el.setAttribute('aria-label','進場動線版本 3 各頁');
   el.innerHTML=NAV.map(([h,l])=>`<a href="${h}"${h===current?' aria-current="page"':''}>${l}</a>`).join('');
+  if(!prefsOff())el.append(prefsControl());
   if(mount)mount.append(el);else document.body.prepend(el);return el;}
 
 // 投影：rotate=true 時順時針轉 90°，與 app《我的走位》同向（甲舞台朝上）。
@@ -79,5 +118,5 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
-window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,esc,View,pairs,LANE_NAME,NAV};
+window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,esc,View,pairs,LANE_NAME,NAV,onPrefs,isDark,fs,prefs};
 })();
