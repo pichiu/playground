@@ -1,4 +1,4 @@
-"""發行：首頁兩張進場動線卡、2c 資料與建置不動、全站連結、README 在、追蹤檔可重現。"""
+"""發行：首頁只有版本 3 進場動線卡、2c 資料與建置不動、全站連結、README 在、追蹤檔可重現。"""
 import hashlib
 import json
 import re
@@ -18,8 +18,8 @@ def test_readmes_present(root):
 
 def test_hub_has_v3_card(root):
     h = (root.parents[1] / 'index.html').read_text(encoding='utf-8')
-    assert h.count('flow/entry-animation-v3/index.html') == 1 and h.count('flow/entry-animation/index.html') == 1
-    assert '進場動線 · 版本 3' in h and '進場動線 · 2c' in h
+    assert h.count('flow/entry-animation-v3/index.html') == 1 and 'flow/entry-animation/index.html' not in h
+    assert '進場動線 · 版本 3（定案）' in h and '進場動線 · 2c' not in h
 
 
 def test_2c_data_and_build_untouched(root):   # 2c 只動 README、頁面顯示（10/23 企劃：時間改百分比、拿掉時刻）與頁面測試；資料與建置不動
@@ -52,7 +52,7 @@ def test_no_dangling_links(root):   # 掃 taipei-dome 下所有 html 的相對 h
 def test_no_2c_wording_in_pages(root):
     for name in ['index.html', 'console.html', 'me.html', 'score.html', 'handout.html', 'captain.html', 'exit.html', 'diorama.html', 'core.js']:
         text = (root / name).read_text(encoding='utf-8')
-        text = text.replace('../entry-animation/index.html">2c 總覽', '')
+        text = text.replace('舊版 <a href="../entry-animation/index.html">2c</a> 已停用', '')
         assert not re.search(r'(?<![\w#])2c(?!\w)', text), name
 
 
