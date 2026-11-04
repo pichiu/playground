@@ -1,4 +1,4 @@
-// 2c 七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
+// 2c（已停用，改用 entry-animation-v3）七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
 (function(){
 'use strict';
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
@@ -78,5 +78,23 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
+// 2c 已停用：每頁都掛一條提示，連到版本 3 的對應頁，避免有人點錯、印錯。
+(function legacyBanner(){
+  const page=(location.pathname.split('/').pop()||'index.html');
+  const V3=['index.html','console.html','me.html','score.html','captain.html','exit.html','handout.html'];
+  const href='../entry-animation-v3/'+(V3.includes(page)?page:'index.html');
+  const css='.dome-legacy{position:fixed;left:12px;right:12px;bottom:12px;z-index:60;margin:0 auto;max-width:640px;display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;background:#7a1f12;color:#fff;font:14px/1.5 "Noto Sans TC",system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.3)}'
+   +'.dome-legacy p{margin:0;flex:1}.dome-legacy a{color:#fff;font-weight:700;text-decoration:underline}'
+   +'.dome-legacy button{flex:none;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer}'
+   +'@media print{.dome-legacy{position:static;margin:0 0 8px;max-width:none;box-shadow:none;border:2px solid #7a1f12;background:#fff;color:#7a1f12}.dome-legacy a{color:#7a1f12}.dome-legacy button{display:none}}';
+  function mount(){
+    const st=document.createElement('style');st.textContent=css;document.head.append(st);
+    const b=document.createElement('div');b.className='dome-legacy';b.setAttribute('role','alert');
+    const p=document.createElement('p');const a=document.createElement('a');a.href=href;a.textContent='改用版本 3 →';
+    p.append(document.createElement('b'),' 這是舊版 2c，已停用，僅供對照；實際執行以版本 3 為準。',a);p.firstChild.textContent='⚠ 已停用';
+    const x=document.createElement('button');x.type='button';x.textContent='知道了';x.addEventListener('click',()=>b.remove());
+    b.append(p,x);document.body.prepend(b);}
+  if(document.body)mount();else document.addEventListener('DOMContentLoaded',mount);
+})();
 window.Dome={load,dataUrl,fail,nav,pos,state,zone,counts,bounds,View,pairs,LANE_NAME,ZONE_NAME};
 })();
