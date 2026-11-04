@@ -120,3 +120,39 @@ def test_diorama_follows_saved_theme(open_page):
     pg.goto(pg.url.replace('index.html', 'diorama.html'))
     pg.wait_for_function("document.documentElement.dataset.theme === 'dark'", timeout=20000)
     assert pg.evaluate("getComputedStyle(document.documentElement).colorScheme") == 'dark'
+
+
+@pytest.mark.parametrize('path', ['console.html', 'score.html'])
+def test_switch_during_load_still_recolors_canvas(open_page, path):
+    """回歸（PR review）：資料還在讀取時就切主題，載入完成後 canvas 也要用新主題的顏色。"""
+    pg, *_ = open_page('index.html', 1280)
+    pg.route('**/data.json', lambda r: (pg.wait_for_timeout(1500), r.continue_()))
+    pg.goto(pg.url.replace('index.html', path))
+    _pick(pg, 'theme', 'light')
+    _ready(pg)
+    pg.wait_for_timeout(150)
+    cv = '#cv' if path == 'console.html' else '#m'
+    px = pg.evaluate(f"(()=>{{const c=document.querySelector('{cv}'),x=c.getContext('2d'),d=window.devicePixelRatio||1;return x.getImageData(4*d,4*d,1,1).data[0]}})()")
+    assert px > 200, (path, px)
+
+
+def test_panel_follows_scroll_and_closes_on_tab_out(open_page):
+    """回歸（PR review）：面板跟著捲動走；Tab 離開面板就關閉。"""
+    pg, *_ = open_page('index.html', 1280)
+    _ready(pg)
+    pg.click('.dp-btn')
+    pg.mouse.wheel(0, 300)
+    pg.wait_for_timeout(200)
+    btn = pg.evaluate("document.querySelector('.dp-btn').getBoundingClientRect().bottom")
+    top = pg.evaluate("document.getElementById('dome-prefs-pop').getBoundingClientRect().top")
+    assert abs(top - (btn + 6)) <= 1, (btn, top)
+    pg.evaluate('scrollTo(0,0)')
+    pg.click('.dp-btn') if pg.is_hidden('#dome-prefs-pop') else None
+    pg.focus('#dome-prefs-pop [data-v="1.3"]')
+    pg.keyboard.press('Tab')
+    assert pg.is_hidden('#dome-prefs-pop') and pg.evaluate('document.activeElement.className') == 'dp-btn'
+    pg.keyboard.press('Enter')
+    pg.keyboard.press('Shift+Tab')   # 焦點在第一個主題選項以外時，Shift+Tab 先在面板內移動
+    pg.focus('#dome-prefs-pop [data-v=auto]')
+    pg.keyboard.press('Shift+Tab')
+    assert pg.is_hidden('#dome-prefs-pop')

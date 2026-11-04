@@ -152,6 +152,7 @@ function paintRead(){const rr=hover>=0?rows[hover]:null,list=rr?rr.ps:ds.P,cs=co
  const waitRow='';
  $('read').innerHTML=`<h2><span>${title}</span></h2>${sub}<div class="bars">${[['walk',C.walk],['wait',C.wait],['enter',C.enter],['done',C.ink]].map(([s,col])=>`<i style="width:${cs[s]/n*100}%;background:${col}"></i>`).join('')}</div><table>${ROWS.map(([k,l])=>`<tr><td>${l}</td><td class="n">${cs[k]}</td></tr>`).join('')}${waitRow}</table><p class="tip">${rr?'地圖只亮這一列。':'滑過任一列，地圖只亮那一列；在譜上拖曳移動時間（← → 各 5 秒）。'}</p>`;}
 (async()=>{try{ds=await Dome.load();}catch(e){$('summary').textContent=e.message;return;}
+ readC();   // 讀取期間可能已切換主題（那時 onPrefs 還沒註冊），第一次繪製前重讀
  rows=rowsFor(ds);T=ds.T_END;H=yOf(rows.length-1)+RH+BOT;
  t=Math.min(T,ds.D.phases.find(p=>p.key==='enter').t0);
  $('summary').innerHTML=summaryText(ds);$('keys').innerHTML=KEY;

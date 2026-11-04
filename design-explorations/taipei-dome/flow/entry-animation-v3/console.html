@@ -9,10 +9,10 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
 <script src="core.js"></script>
 <style>
-:root{--bg:#0d1315;--map:#0f171a;--ink:#e9efe9;--dim:#8fa29f;--faint:#3a4a4b;--line:#22302f;--floor:#152124;--white:#f5efe3;--blue:#4f93e6;--amber:#f2a73b;--amber-ink:#f2a73b;--teal:#57c3a6;--gate:#2c4a63;--on-amber:#111;--hover:#fff;color-scheme:dark}
+:root{--bg:#0d1315;--map:#0f171a;--ink:#e9efe9;--dim:#8fa29f;--faint:#3a4a4b;--line:#22302f;--floor:#152124;--white:#f5efe3;--blue:#4f93e6;--amber:#f2a73b;--amber-ink:#f2a73b;--teal:#57c3a6;--dd-blue:var(--blue);--gate:#2c4a63;--on-amber:#111;--hover:#fff;color-scheme:dark}
 /* 淺色：投影在明亮會議室、或使用者在「外觀」選淺色時。白衣在淺底看不見，改沙色（與總覽、總譜同一個 --white）；琥珀當文字時加深到 4.5:1 */
-@media(prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f1f4f3;--map:#fafbfb;--ink:#17262b;--dim:#56656a;--faint:#b9c0bd;--line:#dcdfd8;--floor:#e9eeec;--white:#a8935e;--blue:#2f6fd0;--amber:#e08e12;--amber-ink:#9a5a00;--teal:#23907a;--gate:#c6d6e6;--on-amber:#111;--hover:#000;color-scheme:light}}
-:root[data-theme=light]{--bg:#f1f4f3;--map:#fafbfb;--ink:#17262b;--dim:#56656a;--faint:#b9c0bd;--line:#dcdfd8;--floor:#e9eeec;--white:#a8935e;--blue:#2f6fd0;--amber:#e08e12;--amber-ink:#9a5a00;--teal:#23907a;--gate:#c6d6e6;--on-amber:#111;--hover:#000;color-scheme:light}
+@media(prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f1f4f3;--map:#fafbfb;--ink:#17262b;--dim:#56656a;--faint:#b9c0bd;--line:#dcdfd8;--floor:#e9eeec;--white:#a8935e;--blue:#2f6fd0;--amber:#e08e12;--amber-ink:#9a5a00;--teal:#23907a;--dd-blue:#6f9be0;--gate:#c6d6e6;--on-amber:#111;--hover:#000;color-scheme:light}}
+:root[data-theme=light]{--bg:#f1f4f3;--map:#fafbfb;--ink:#17262b;--dim:#56656a;--faint:#b9c0bd;--line:#dcdfd8;--floor:#e9eeec;--white:#a8935e;--blue:#2f6fd0;--amber:#e08e12;--amber-ink:#9a5a00;--teal:#23907a;--dd-blue:#6f9be0;--gate:#c6d6e6;--on-amber:#111;--hover:#000;color-scheme:light}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font:0.875rem/1.5 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums;overflow:hidden}
 ::selection{background:var(--amber);color:var(--on-amber)}
@@ -27,7 +27,7 @@ canvas{display:block;width:100%;height:100%}
 body>.dome-nav.bar{position:fixed;top:0;left:0;right:0;height:var(--navh);z-index:5;background:var(--bg);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 body>.dome-nav.bar a{white-space:nowrap}
 /* 窄螢幕導覽列橫捲時，「外觀」黏在右端，不必捲才找得到 */
-body>.dome-nav.bar .dome-prefs{position:sticky;right:0;padding-left:8px;background:var(--bg);box-shadow:-12px 0 10px -2px var(--bg)}
+body>.dome-nav.bar .dome-prefs{position:sticky;right:0;padding-left:8px;margin-right:-12px;padding-right:12px;background:var(--bg);box-shadow:-12px 0 10px -2px var(--bg)}
 /* 標題區：標題、副標、圖例疊在左上角 */
 .title{position:absolute;left:28px;top:22px;z-index:2;max-width:min(460px,calc(100% - 44px))}
 .title h1{margin:0;font-size:1.625rem;font-weight:900;letter-spacing:.04em;line-height:1.2}
@@ -63,12 +63,12 @@ body>.dome-nav.bar .dome-prefs{position:sticky;right:0;padding-left:8px;backgrou
 .seg button{padding:6px 10px;color:var(--dim);font-size:0.8125rem}
 .seg button[aria-pressed=true]{background:var(--line);color:var(--ink)}
 .lanes button[aria-pressed=true]{background:var(--amber);color:var(--on-amber);font-weight:700}
-.track{position:relative;cursor:pointer;touch-action:none;display:grid;gap:6px;padding:4px 0;margin-left:48px}
+.track{position:relative;cursor:pointer;touch-action:none;display:grid;gap:6px;padding:4px 0;margin-left:calc(2.75rem + 8px)}   /* 「西一入口」四字寬＋間距，跟字級放大 */
 .lane{position:relative;height:16px;font-size:0.6875rem;color:var(--dim)}
 .lane>b{position:absolute;right:100%;margin-right:8px;font-weight:500;white-space:nowrap;line-height:16px}
 .lane i{position:absolute;top:0;height:100%;border-radius:3px;font-style:normal;overflow:hidden;container-type:inline-size;box-shadow:0 0 0 1px var(--bg)}
 .lane i span{position:absolute;left:3px;top:0;line-height:16px;font-weight:700;white-space:nowrap}
-.lane i.dd{background:linear-gradient(var(--white) 0 50%,var(--blue) 50% 100%);color:#1b2629}
+.lane i.dd{background:linear-gradient(var(--white) 0 50%,var(--dd-blue) 50% 100%);color:#1b2629}   /* 數字壓在下半段：淺色用較亮的藍，讓 #1b2629 保持 4.5:1 */
 .lane.g i{background:var(--gate);color:var(--ink)}
 @container (max-width:25px){.lane.s i span{display:none}}
 @container (max-width:13px){.lane.g i span{display:none}}
@@ -167,6 +167,7 @@ document.onkeydown=e=>{if(!ds)return;if(e.code==='Space'&&!e.target.closest('but
 function frame(now){if(playing){if(last)t=Math.min(T,t+(now-last)/1000*speed);last=now;dirty=true;if(t>=T)setPlaying(false);}if(view.step(now))dirty=true;if(dirty){draw();ui();dirty=false;}requestAnimationFrame(frame);}
 window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
 (async()=>{try{ds=await Dome.load();}catch(e){$('loading').textContent=e.message;return;}
+ readC();   // 讀取期間可能已切換主題（那時 onPrefs 還沒註冊），第一次繪製前重讀
  S=stats(ds);T=ds.T_END;
  // 取景：手機裁掉右側空著的舞台端、左側留出標籤空間；寬螢幕不縮放，只把地圖往右推，避開左上的標題／圖例欄（右側有餘裕才推）
  view=new View($('cv'),{pad:40});

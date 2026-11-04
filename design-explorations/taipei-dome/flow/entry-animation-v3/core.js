@@ -70,6 +70,10 @@ function prefsControl(){const wrap=document.createElement('div');wrap.className=
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden){e.stopPropagation();open(false);btn.focus();}},true);
   addEventListener('pointerdown',e=>{if(!pop.hidden&&!pop.contains(e.target)&&!btn.contains(e.target))open(false);});
   addEventListener('resize',()=>{if(!pop.hidden)place();});
+  addEventListener('scroll',()=>{if(!pop.hidden)place();},{capture:true,passive:true});   // capture：連導覽列自己的橫捲也接得到
+  // 面板掛在 body 最後，Tab 順序跟按鈕不相鄰：頭尾再 Tab 就關面板、焦點回按鈕（再 Tab 照原本順序往下）；焦點移到別處也關
+  pop.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const bs=[...pop.querySelectorAll('button')],edge=e.shiftKey?bs[0]:bs[bs.length-1];if(document.activeElement===edge){e.preventDefault();open(false);btn.focus();}});
+  pop.addEventListener('focusout',e=>{const to=e.relatedTarget;if(to&&!pop.contains(to)&&to!==btn)open(false);});
   return wrap;}
 
 // 八頁同一條導覽列（3D 模型 diorama.html 不顯示這條列，改由品牌卡的「其他頁面」選單列出 Dome.NAV）。mount 未給時放在 body 最前面；console 等滿版頁把它掛在自己的角落。
