@@ -156,3 +156,75 @@ def test_panel_follows_scroll_and_closes_on_tab_out(open_page):
     pg.focus('#dome-prefs-pop [data-v=auto]')
     pg.keyboard.press('Shift+Tab')
     assert pg.is_hidden('#dome-prefs-pop')
+
+
+# ---------- 跟隨系統（auto）：交給 prefers-color-scheme ----------
+CANVAS = {'console.html': '#cv', 'score.html': '#m', 'captain.html?k=2': '#c', 'me.html?id=1-28': 'canvas'}
+
+
+def _lum(pg, js):
+    return sum(int(x) for x in re.findall(r'\d+', pg.evaluate(js))[:3]) / 3
+
+
+def _canvas_px(pg, sel):
+    return pg.evaluate(f"(()=>{{const c=document.querySelector('{sel}'),d=window.devicePixelRatio||1;"
+                       f"return c.getContext('2d').getImageData(3*d,3*d,1,1).data[0]}})()")
+
+
+@pytest.mark.parametrize('path', PAGES)
+def test_auto_follows_system_scheme_live(open_page, path):
+    """沒選主題（auto）時跟著系統；系統在頁面開著時切換，頁面與 canvas 都要即時跟著變，不用重新整理。"""
+    pg, errs, perrs = open_page(path, 1280)
+    pg.emulate_media(color_scheme='light')
+    pg.reload()
+    _ready(pg)
+    assert pg.evaluate("document.documentElement.hasAttribute('data-theme')") is False
+    bg = "getComputedStyle(document.body).backgroundColor"
+    assert _lum(pg, bg) > 200 and pg.evaluate("getComputedStyle(document.documentElement).colorScheme") == 'light'
+    sel = CANVAS.get(path)
+    if sel:
+        assert _canvas_px(pg, sel) > 200
+    pg.emulate_media(color_scheme='dark')      # 系統切深色：matchMedia change → onPrefs
+    pg.wait_for_timeout(200)
+    assert _lum(pg, bg) < 60 and pg.evaluate("getComputedStyle(document.documentElement).colorScheme") == 'dark'
+    if sel:
+        assert _canvas_px(pg, sel) < 60, (path, 'canvas 沒跟著系統換色')
+    assert not errs and not perrs, (errs, perrs)
+
+
+@pytest.mark.parametrize('system,manual', [('dark', 'light'), ('light', 'dark')])
+def test_manual_choice_beats_system(open_page, system, manual):
+    """手動選擇要蓋過相反的系統偏好；改回「跟隨系統」再回到系統的那一邊。"""
+    pg, *_ = open_page('captain.html?k=2', 1280)
+    pg.emulate_media(color_scheme=system)
+    pg.reload()
+    _ready(pg)
+    bg = "getComputedStyle(document.body).backgroundColor"
+    _pick(pg, 'theme', manual)
+    pg.wait_for_timeout(100)
+    assert (_lum(pg, bg) > 200) == (manual == 'light')
+    assert (_canvas_px(pg, '#c') > 200) == (manual == 'light')
+    pg.emulate_media(color_scheme=manual)      # 系統再怎麼切，手動選擇都不動
+    pg.emulate_media(color_scheme=system)
+    pg.wait_for_timeout(100)
+    assert (_lum(pg, bg) > 200) == (manual == 'light')
+    _pick(pg, 'theme', 'auto')
+    pg.wait_for_timeout(100)
+    assert (_lum(pg, bg) > 200) == (system == 'light')
+    assert (_canvas_px(pg, '#c') > 200) == (system == 'light')
+
+
+def test_theme_token_blocks_stay_in_sync(root):
+    """每個主題各有兩份 token（prefers-color-scheme 與 data-theme），內容必須一模一樣，否則「跟隨系統」與手動選擇顏色不同。"""
+    pat = {'dark': (r'@media\(prefers-color-scheme:dark\)\{:root:not\(\[data-theme=light\]\)\{([^}]*)\}\}', r':root\[data-theme=dark\]\{([^}]*)\}'),
+           'light': (r'@media\(prefers-color-scheme:light\)\{:root:not\(\[data-theme=dark\]\)\{([^}]*)\}\}', r':root\[data-theme=light\]\{([^}]*)\}')}
+    for name in ['index.html', 'console.html', 'me.html', 'score.html', 'captain.html', 'exit.html']:
+        s = (root / name).read_text(encoding='utf-8')
+        pairs = 0
+        for theme, (a, b) in pat.items():
+            x, y = re.search(a, s), re.search(b, s)
+            assert bool(x) == bool(y), (name, theme, '只有一份')
+            if x:
+                assert x.group(1) == y.group(1), (name, theme)
+                pairs += 1
+        assert pairs == 1, (name, '每頁應該正好有一組被覆寫的主題')
