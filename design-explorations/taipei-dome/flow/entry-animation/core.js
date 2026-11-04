@@ -1,4 +1,4 @@
-// 2c 七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
+// 2c（已停用，改用 entry-animation-v3）七頁共用的最小引擎：只讀 ./data.json，依時間戳折線內插；各頁只決定「畫什麼、用什麼顏色」。
 (function(){
 'use strict';
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
@@ -46,7 +46,8 @@ function nav(current,mount){if(!document.getElementById('dome-nav-style')){const
   document.head.append(s);}
   const el=document.createElement('nav');el.className='dome-nav'+(mount?'':' bar');el.setAttribute('aria-label','進場動線 2c 各頁');
   el.innerHTML=NAV.map(([h,l])=>`<a href="${h}"${h===current?' aria-current="page"':''}>${l}</a>`).join('');
-  if(mount)mount.append(el);else document.body.prepend(el);return el;}
+  const legacy=document.querySelector('body>.dome-legacy');   // 停用提示永遠在最上方，頁籤接在它下面
+  if(mount)mount.append(el);else if(legacy)legacy.after(el);else document.body.prepend(el);return el;}
 
 // 投影：rotate=true 時順時針轉 90°，與 app《我的走位》同向（甲舞台朝上）。
 class View{
@@ -78,5 +79,23 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
 }
+// 2c 已停用：每頁最上方掛一條提示（不蓋住任何操作），連到版本 3 的同一頁並保留網址參數（例如 me.html?id=），避免有人點錯、印錯。
+// 高度寫進 --legacy-h，讓頂端固定排版的頁面（指揮台）把頁籤與舞台往下移。
+(function legacyBanner(){
+  const page=location.pathname.split('/').pop()||'index.html';
+  const href='../entry-animation-v3/'+page+location.search+location.hash;   // 2c 七頁在版本 3 都有同名頁
+  const css='.dome-legacy{position:relative;z-index:6;margin:0;padding:10px 16px;background:#7a1f12;color:#fff;font:14px/1.5 "Noto Sans TC",system-ui,sans-serif;text-align:center}'
+   +'.dome-legacy a{color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap}'
+   +'@media print{.dome-legacy{margin:0 0 8px;border:2px solid #7a1f12;background:#fff;color:#7a1f12;text-align:left}.dome-legacy a{color:#7a1f12}}';
+  function mount(){
+    const st=document.createElement('style');st.textContent=css;document.head.append(st);
+    const b=document.createElement('aside');b.className='dome-legacy';b.setAttribute('role','note');
+    const tag=document.createElement('b');tag.textContent='⚠ 已停用：';
+    const a=document.createElement('a');a.href=href;a.textContent='改用版本 3 →';
+    b.append(tag,'這是舊版 2c，僅供對照；實際執行以版本 3 為準。',a);document.body.prepend(b);
+    const sync=()=>document.documentElement.style.setProperty('--legacy-h',b.offsetHeight+'px');
+    sync();if(window.ResizeObserver)new ResizeObserver(sync).observe(b);}
+  if(document.body)mount();else document.addEventListener('DOMContentLoaded',mount);
+})();
 window.Dome={load,dataUrl,fail,nav,pos,state,zone,counts,bounds,View,pairs,LANE_NAME,ZONE_NAME};
 })();

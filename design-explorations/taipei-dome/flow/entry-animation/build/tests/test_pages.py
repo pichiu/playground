@@ -50,3 +50,21 @@ def test_no_time_shown_on_any_page(open_page):   # 企劃 10/23：2c 也拿掉�
         body = pg.inner_text('body')
         assert not re.search(r'\d{1,2}:\d\d', body), (name, re.findall(r'.{0,20}\d{1,2}:\d\d.{0,20}', body)[:5])
         assert '分鐘' not in body and '示意全程' not in body, name
+
+
+def test_legacy_banner_links_to_v3(open_page):   # 定案採用版本 3：2c 每頁最上方有停用提示，連到版本 3 同一頁、保留網址參數
+    for name in ['index.html', 'console.html', 'me.html?id=1-28', 'score.html', 'handout.html', 'captain.html', 'exit.html']:
+        pg, errs, perrs = open_page(name, 375, 700)
+        pg.wait_for_selector('.dome-legacy a', timeout=20000)
+        assert pg.get_attribute('.dome-legacy a', 'href') == '../entry-animation-v3/' + name and not perrs, name
+        assert pg.evaluate("document.querySelector('.dome-legacy').getBoundingClientRect().top") == 0, name
+        assert no_hscroll(pg), name
+
+
+def test_legacy_banner_does_not_cover_console_nav(open_page):   # review：指揮台頁籤與舞台固定排版，提示條不能蓋住它們
+    pg, *_ = open_page('console.html', 1280)
+    pg.wait_for_selector('.dome-legacy', timeout=20000)
+    banner = pg.evaluate("document.querySelector('.dome-legacy').getBoundingClientRect().bottom")
+    nav = pg.evaluate("document.querySelector('body>.dome-nav.bar').getBoundingClientRect().top")
+    stage = pg.evaluate("document.querySelector('.stage').getBoundingClientRect().top")
+    assert nav >= banner - 0.5 and stage >= banner - 0.5, (banner, nav, stage)
