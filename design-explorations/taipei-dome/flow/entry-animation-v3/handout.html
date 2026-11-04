@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-prefs="off">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,6 +7,7 @@
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap"></noscript>
+<script src="core.js"></script>
 <style>
 :root{--paper:#ffffff;--ink:#24211c;--dim:#655f55;--rule:#d9d6cc;--blue:#1d4f91;--floor:#efeee9;--rust:#a8461d;--ar:.68;color-scheme:light}
 *{box-sizing:border-box}
@@ -74,7 +75,6 @@ figcaption .mv b{color:var(--ink);font-weight:500}
 <section class="frames" id="frames" aria-label="六個關鍵時刻"></section>
 <p class="foot"><span id="foot-l">讀取中…</span><span id="foot-r"></span></p>
 </div>
-<script src="core.js"></script>
 <script>
 'use strict';
 const {pos,state,counts,View}=Dome,$=id=>document.getElementById(id);

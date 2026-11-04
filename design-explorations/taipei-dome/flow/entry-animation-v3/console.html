@@ -7,11 +7,15 @@
 <link rel="icon" href="data:,">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap"></noscript>
+<script src="core.js"></script>
 <style>
-:root{--bg:#0d1315;--map:#0f171a;--ink:#e9efe9;--dim:#8fa29f;--faint:#3a4a4b;--line:#22302f;--floor:#152124;--white:#f5efe3;--blue:#4f93e6;--amber:#f2a73b;--teal:#57c3a6;--gate:#2c4a63;color-scheme:dark}
+:root{--bg:#0d1315;--map:#0f171a;--ink:#e9efe9;--dim:#8fa29f;--faint:#3a4a4b;--line:#22302f;--floor:#152124;--white:#f5efe3;--blue:#4f93e6;--amber:#f2a73b;--amber-ink:#f2a73b;--teal:#57c3a6;--gate:#2c4a63;--on-amber:#111;--hover:#fff;color-scheme:dark}
+/* 淺色：投影在明亮會議室、或使用者在「外觀」選淺色時。白衣在淺底看不見，改沙色（與總覽、總譜同一個 --white）；琥珀當文字時加深到 4.5:1 */
+@media(prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f1f4f3;--map:#fafbfb;--ink:#17262b;--dim:#56656a;--faint:#b9c0bd;--line:#dcdfd8;--floor:#e9eeec;--white:#a8935e;--blue:#2f6fd0;--amber:#e08e12;--amber-ink:#9a5a00;--teal:#23907a;--gate:#c6d6e6;--on-amber:#111;--hover:#000;color-scheme:light}}
+:root[data-theme=light]{--bg:#f1f4f3;--map:#fafbfb;--ink:#17262b;--dim:#56656a;--faint:#b9c0bd;--line:#dcdfd8;--floor:#e9eeec;--white:#a8935e;--blue:#2f6fd0;--amber:#e08e12;--amber-ink:#9a5a00;--teal:#23907a;--gate:#c6d6e6;--on-amber:#111;--hover:#000;color-scheme:light}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font:14px/1.5 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums;overflow:hidden}
-::selection{background:var(--amber);color:#111}
+body{background:var(--bg);color:var(--ink);font:0.875rem/1.5 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums;overflow:hidden}
+::selection{background:var(--amber);color:var(--on-amber)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:6px}
 .stage{position:fixed;inset:var(--navh) 0 0;display:grid;grid-template-rows:1fr auto}
@@ -22,43 +26,45 @@ canvas{display:block;width:100%;height:100%}
 :root{--navh:42px}
 body>.dome-nav.bar{position:fixed;top:0;left:0;right:0;height:var(--navh);z-index:5;background:var(--bg);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 body>.dome-nav.bar a{white-space:nowrap}
+/* 窄螢幕導覽列橫捲時，「外觀」黏在右端，不必捲才找得到 */
+body>.dome-nav.bar .dome-prefs{position:sticky;right:0;padding-left:8px;background:var(--bg);box-shadow:-12px 0 10px -2px var(--bg)}
 /* 標題區：標題、副標、圖例疊在左上角 */
 .title{position:absolute;left:28px;top:22px;z-index:2;max-width:min(460px,calc(100% - 44px))}
-.title h1{margin:0;font-size:26px;font-weight:900;letter-spacing:.04em;line-height:1.2}
-.title p{margin:2px 0 6px;color:var(--dim);font-size:13px}
-.legend{margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--dim)}
+.title h1{margin:0;font-size:1.625rem;font-weight:900;letter-spacing:.04em;line-height:1.2}
+.title p{margin:2px 0 6px;color:var(--dim);font-size:0.8125rem}
+.legend{margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:0.75rem;color:var(--dim)}
 .legend span{display:flex;align-items:center;gap:8px}
 .legend i{width:9px;height:9px;border-radius:50%}
 .legend i.ln{width:22px;height:3px;border-radius:2px}.legend i.ln.dim{opacity:.55}
-.legend .num{color:var(--amber);font-size:12px;min-width:22px}
+.legend .num{color:var(--amber-ink);font-size:0.75rem;min-width:22px}
 .clock{position:absolute;right:28px;top:18px;text-align:right;z-index:2}
-.clock b{display:block;font-size:46px;line-height:1;font-weight:700;letter-spacing:-.02em}
-.clock span{color:var(--dim);font-size:13px}
-.phase{color:var(--amber)!important;font-weight:700}
+.clock b{display:block;font-size:2.875rem;line-height:1;font-weight:700;letter-spacing:-.02em}
+.clock span{color:var(--dim);font-size:0.8125rem}
+.phase{color:var(--amber-ink)!important;font-weight:700}
 /* 流量柱：一根柱子講完「人在哪」 */
 .flows{position:absolute;left:28px;bottom:24px;width:220px;z-index:2}
 .flow-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin-bottom:10px}
 .flow-bar i{display:block;height:100%}
-.flow dl{margin:0;display:grid;grid-template-columns:12px 1fr auto;gap:4px 9px;align-items:center;font-size:13px}
+.flow dl{margin:0;display:grid;grid-template-columns:12px 1fr auto;gap:4px 9px;align-items:center;font-size:0.8125rem}
 .flow dt{width:10px;height:10px;border-radius:50%}
 .flow dd{margin:0}.flow dd.n{font-weight:700;text-align:right;min-width:48px}
 .flow dd.l{color:var(--dim)}
-.focus{position:absolute;right:28px;bottom:24px;width:250px;font-size:13px;color:var(--dim);z-index:2}
-.focus strong{color:var(--ink);font-size:15px;display:block;margin-bottom:6px}
+.focus{position:absolute;right:28px;bottom:24px;width:250px;font-size:0.8125rem;color:var(--dim);z-index:2}
+.focus strong{color:var(--ink);font-size:0.9375rem;display:block;margin-bottom:6px}
 .focus ol{margin:0;padding:0;list-style:none;display:grid;gap:6px}
 .focus li{display:grid;grid-template-columns:44px 1fr;gap:8px}
-.focus li.now{color:var(--ink)}.focus li.now span:first-child{color:var(--amber)}
+.focus li.now{color:var(--ink)}.focus li.now span:first-child{color:var(--amber-ink)}
 /* 底部示意進度軸 */
 .deck{grid-row:2;border-top:1px solid var(--line);padding:14px 28px 18px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--bg)}
 .ctl{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
 .play{width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center}
-.play:hover{background:#fff}
+.play:hover{background:var(--hover)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{padding:6px 10px;color:var(--dim);font-size:13px}
+.seg button{padding:6px 10px;color:var(--dim);font-size:0.8125rem}
 .seg button[aria-pressed=true]{background:var(--line);color:var(--ink)}
-.lanes button[aria-pressed=true]{background:var(--amber);color:#111;font-weight:700}
+.lanes button[aria-pressed=true]{background:var(--amber);color:var(--on-amber);font-weight:700}
 .track{position:relative;cursor:pointer;touch-action:none;display:grid;gap:6px;padding:4px 0;margin-left:48px}
-.lane{position:relative;height:16px;font-size:11px;color:var(--dim)}
+.lane{position:relative;height:16px;font-size:0.6875rem;color:var(--dim)}
 .lane>b{position:absolute;right:100%;margin-right:8px;font-weight:500;white-space:nowrap;line-height:16px}
 .lane i{position:absolute;top:0;height:100%;border-radius:3px;font-style:normal;overflow:hidden;container-type:inline-size;box-shadow:0 0 0 1px var(--bg)}
 .lane i span{position:absolute;left:3px;top:0;line-height:16px;font-weight:700;white-space:nowrap}
@@ -71,9 +77,9 @@ body>.dome-nav.bar a{white-space:nowrap}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);padding:0 16px;text-align:center}
 /* 矮視窗：圖例、事件清單讓位，避免跟左下流量柱、底部進度軸疊在一起 */
 @media(max-height:760px){.legend{display:none}}
-@media(max-height:620px){.focus{display:none}.flow dl{gap:2px 9px;font-size:12px}}
+@media(max-height:620px){.focus{display:none}.flow dl{gap:2px 9px;font-size:0.75rem}}
 @media(max-height:480px){.flows{display:none}}
-@media(max-width:860px){.focus,.legend{display:none}.title{left:16px;top:14px;max-width:calc(100% - 32px)}.title h1{font-size:20px}.title p{font-size:11px;margin-bottom:4px}.clock{top:auto;bottom:10px;right:16px;max-width:150px}.clock b{font-size:34px}.clock span{display:block}.flows{width:180px;left:16px;bottom:10px}.deck{padding:10px 16px 12px;grid-template-columns:1fr;gap:10px}.ctl{gap:6px}.play{width:44px;height:44px}.seg button{padding:6px 7px;font-size:12px}}
+@media(max-width:860px){.focus,.legend{display:none}.title{left:16px;top:14px;max-width:calc(100% - 32px)}.title h1{font-size:1.25rem}.title p{font-size:0.6875rem;margin-bottom:4px}.clock{top:auto;bottom:10px;right:16px;max-width:150px}.clock b{font-size:2.125rem}.clock span{display:block}.flows{width:180px;left:16px;bottom:10px}.deck{padding:10px 16px 12px;grid-template-columns:1fr;gap:10px}.ctl{gap:6px}.play{width:44px;height:44px}.seg button{padding:6px 7px;font-size:0.75rem}}
 </style>
 </head>
 <body>
@@ -100,14 +106,13 @@ body>.dome-nav.bar a{white-space:nowrap}
   </div>
  </div>
 </div>
-<script src="core.js"></script>
 <script>
 'use strict';
 const {pos,state,counts,View,LANE_NAME}=Dome,$=id=>document.getElementById(id);
 Dome.nav('console.html');
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
-const C={};for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','teal','bg'])C[n]=css(n);
-const STATES=[['seated','休息區',C.faint],['walk','走廊／樓梯',C.teal],['wait','門前隊伍',C.amber],['enter','進場中',C.blue],['done','已到位',C.white]];
+const C={},readC=()=>{for(const n of ['map','floor','line','faint','dim','ink','white','blue','amber','amber-ink','teal','bg'])C[n]=css(n);};readC();
+const STATES=[['seated','休息區','faint'],['walk','走廊／樓梯','teal'],['wait','門前隊伍','amber'],['enter','進場中','blue'],['done','已到位','white']];   // 第三欄是 C 的鍵：換主題時重讀
 const {esc}=Dome;
 let ds=null,S=null,view=null,t=0,T=1,playing=false,speed=1,last=0,dirty=true,cues=[];
 const hl=new Set();   // 目前高亮的路別（可多選）
@@ -130,7 +135,7 @@ function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT;v.text('樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}
- v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C.amber,size:13,weight:900,halo:C.map,align:'right',dx:-14});
+ v.text(D.nodes.GATE6.label,D.nodes.GATE6.X,D.nodes.GATE6.Y,{color:C['amber-ink'],size:13,weight:900,halo:C.map,align:'right',dx:-14});
  // 休息區淡點、到位實點
  for(const p of P){const st=state(p,t);if(st!=='seated'&&st!=='done')continue;const q=pos(p,t);c.globalAlpha=st==='seated'?.3:1;v.dot(q[0],q[1],st==='seated'?r*.7:r,p.costume==='白'?C.white:C.blue);}c.globalAlpha=1;
  // 隊伍線：同一列、同一階段（走／等／進場）的人依前後順序連成一條；彼此距離拉開就斷開。排隊中畫淡，行進中在線頭加點標出前方。
@@ -169,11 +174,12 @@ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
   if(mobile){const top=view.p(b[0],b[1])[1],want=$('title').getBoundingClientRect().bottom-$('cv').getBoundingClientRect().top+8;if(top>want)view.cy+=(top-want)/view.s;}   // 手機：地圖貼著標題區下緣，把空白留給底下的流量柱與時鐘
   else{const left=view.p(b[0],b[1])[0],free=view.w-view.pad-view.p(b[2],b[3])[0],need=Math.min(360-left,Math.max(0,free));if(need>0)view.cx-=need/view.s;}};
  refit();view.onresize=()=>{refit();dirty=true;};
+ Dome.onPrefs(()=>{readC();requestAnimationFrame(()=>{refit();dirty=true;});});   // 換主題重讀顏色；換字級標題變高，手機取景要重算
  track.setAttribute('aria-valuemax',Math.round(T));
  buildTrack();
  cues=[{t:0,s:'全員就座'},...S.stair.map(o=>({t:o.a,s:`大隊 ${o.k} 兩路下樓梯`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
- $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:${c}"></i>`).join('');
- $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:${c}"></dt><dd class="l">${l}</dd><dd class="n" data-n="${k}">0</dd>`).join('');
+ $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:var(--${c})"></i>`).join('');
+ $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:var(--${c})"></dt><dd class="l">${l}</dd><dd class="n" data-n="${k}">0</dd>`).join('');
  $('loading').remove();
  draw();ui();dirty=false;window.__dome_ready=true;
  requestAnimationFrame(frame);})();
