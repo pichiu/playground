@@ -11,7 +11,8 @@ def test_handout(open_page, root):
     assert not errs and not perrs, (errs, perrs)
     figs = pg.locator('figure[data-key]')
     assert figs.count() == 6
-    assert [figs.nth(i).get_attribute('data-key') for i in range(6)] == ['seated', 'form', 'gate', 'swapA', 'swapB', 'done']
+    keys = [figs.nth(i).get_attribute('data-key') for i in range(6)]          # 版本 3.1：依時刻排（大隊 1 要走到集合區、站齊才放行，白衣換口可能早於放行）
+    assert sorted(keys) == sorted(['seated', 'form', 'gate', 'swapA', 'swapB', 'done']) and keys[0] == 'seated' and keys[-1] == 'done'
     lens = pg.evaluate("Array.from(document.querySelectorAll('figure[data-key] canvas')).map(c=>c.toDataURL().length)")
     assert len(lens) == 6 and all(l > 5000 for l in lens), lens
     assert '139' in pg.inner_text('figure[data-key="swapA"]') and '140' in pg.inner_text('figure[data-key="swapA"]')

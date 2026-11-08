@@ -9,7 +9,7 @@ def test_me_card(open_page):
     assert not errs and not perrs, (errs, perrs)
     assert pg.locator('[data-step]').count() == 6 and '139' in pg.inner_text('[data-step="起"]')
     assert [pg.locator('[data-step]').nth(i).get_attribute('data-step') for i in range(6)] == ['起', '出', '走', '集', '進', '到']
-    assert '第 1 位' in pg.inner_text('[data-step="集"]') and '白衣' in pg.inner_text('[data-step="走"]')
+    assert '第 1 排' in pg.inner_text('[data-step="集"]') and '大隊 1 的集合位置' in pg.inner_text('[data-step="集"]') and '白衣' in pg.inner_text('[data-step="走"]')
     assert no_hscroll(pg)
 
 

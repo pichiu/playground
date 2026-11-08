@@ -102,7 +102,7 @@ function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g
   {key:'gate',t:ph.enter.t0,h:'大隊 1 站齊、放行進場',d:'下樓後兩路沿通行帶走到 B2 集合區最深處、回頭散成六路（面向入口左三路白衣、右三路藍衣），走回大隊 1 的集合位置（最靠西一入口）；站齊後一排緊跟一排、六人並肩右轉進西一入口，直接北行進列；後面的大隊照樣到自己的位置整隊。'},
   swapM('swapA',A,'白衣','隊伍不斷。'),
   swapM('swapB',B,'藍衣','走最外側。'),
-  {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}];}
+  {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}].sort((a,b)=>a.t-b.t);}
 let jobs=[];
 function build(ds){const D=ds.D,M=D.meta,frames=$('frames');
  $('rule').textContent=RULE;
