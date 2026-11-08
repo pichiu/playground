@@ -24,9 +24,10 @@ NORTH_X = SEAT_X0 + 7 * SP_SEAT
 NORTH = [(NORTH_X, 1.2)]
 R_GATE_IN, R_WALL, R_NORTH = 0.35, 0.45, 0.45
 SPLIT_AHEAD = 0.12                       # 大隊在最南一列之南這麼遠處分出
-NORTH_TY = -0.2                          # 中心線切線 ty < 這個值算「往北走」（北行段）；否則還在沿牆段（大隊 9 在沿牆段就分出）
+NORTH_TY = -0.2                          # 中心線切線 ty < 這個值算「往北走」（北行段）；分出點一定在北行直線上（含大隊 9），不在就停止建置
 TURN_R = 0.08                            # 分出後各人轉進自己那一列的轉彎半徑
 GAP_H = SP_SEAT / 2                      # 半格：兩列（兩欄）中間的空隙離座位的距離
+STAGE_MIN = 0.15                         # 分出後的路線離舞台線稿至少這麼遠（和 check.py 的 STAGE_MIN 相同；產生時就檢查，不靠事後檢核）
 
 
 def _unit(a, b):
@@ -177,7 +178,7 @@ class March:
             prev = (q, t)
         raise SystemExit(f'第 {j} 條線沒有穿過全壘打牆')
 
-    def split_s(self, y_south, x_front=None):
+    def split_s(self, y_south):
         """大隊分出點：北轉之後的正北直線上，整排第一次走到 y ≤ 最南一列 + SPLIT_AHEAD 的 s（六路都在欄間空隙上）。
         北轉弧結束時已經在最南一列半格以北（這個大隊的列區南緣在弧裡）就停止建置。"""
         for s in self.ss:
@@ -218,7 +219,7 @@ class March:
             best = min(best, math.hypot(q[0] - ax - dx * f, q[1] - ay - dy * f))
         return best
 
-    def tail(self, p0, heading, seat, xlim, y_south, f_lat=None):
+    def tail(self, p0, heading, seat, f_lat=None):
         """分出之後的個人路線（不含 p0）：點 (x, y) 或 (x, y, 速度倍數)，沒寫倍數就是步速。座位都在同一個網格上（欄距、列距都是 SP_SEAT，原點 SEAT_X0），
         「欄間空隙」（座位欄 ± 半格）與「列間空隙」（座位列 ± 半格）離任何座位都是半格（GAP_H = 0.066），
         走在那裡不會擦過已坐好的人，也不會擦過正坐下的同排的人。
@@ -226,7 +227,7 @@ class March:
         1. 座位在 ax 東側：走到自己那一列右轉往東到座位（同一列由東往西坐，經過的座位都還空著）。
         2. 座位在 ax 西側：走到自己那一列南邊半格的列間空隙左轉往西，到座位正南方再往北半格進座位
            （同一列東側的座位已經有人，所以不沿著列走，改走列間空隙）。f_lat：build.avoid 指定的往西那一段速度倍數。
-        xlim、y_south 保留給呼叫端（不再使用）。"""
+        路線上任何一點離舞台線稿不到 STAGE_MIN 就停止建置（座位或參數改了，產生時就知道，不必等 check.py）。"""
         xs, ys = seat
         if heading[1] >= NORTH_TY:
             raise SystemExit('分出點不在北行直線上')
@@ -236,10 +237,24 @@ class March:
         if ax < xs:
             r = min(TURN_R, xs - ax, y_from - ys)
             c = (ax + r, ys + r)
-            return out + [(c[0] - r * math.cos(math.pi / 2 * i / 6), c[1] - r * math.sin(math.pi / 2 * i / 6)) for i in range(7)] + [(xs, ys)]
-        yg = ys + GAP_H
-        pts = out + ([(ax, yg)] if y_from > yg + 1e-9 else [])
-        return pts + west_plan(ax, yg, xs, f_lat if f_lat is not None else 1.0) + [(xs, ys)]
+            pts = out + [(c[0] - r * math.cos(math.pi / 2 * i / 6), c[1] - r * math.sin(math.pi / 2 * i / 6)) for i in range(7)] + [(xs, ys)]
+        else:
+            yg = ys + GAP_H
+            pts = out + ([(ax, yg)] if y_from > yg + 1e-9 else [])
+            pts += west_plan(ax, yg, xs, f_lat if f_lat is not None else 1.0) + [(xs, ys)]
+        self._check_stage(p0, pts, seat)
+        return pts
+
+    def _check_stage(self, p0, pts, seat):
+        """分出後的路線（每 0.02 細分）離舞台線稿 ≥ STAGE_MIN，否則停止建置。"""
+        prev = p0
+        for q in pts:
+            n = max(1, int(math.ceil(math.dist(prev[:2], q[:2]) / 0.02)))
+            for k in range(1, n + 1):
+                x, y = prev[0] + (q[0] - prev[0]) * k / n, prev[1] + (q[1] - prev[1]) * k / n
+                if self.stage_clear((x, y)) < STAGE_MIN:
+                    raise SystemExit(f'座位 {seat} 的進列路線在 ({x:.3f}, {y:.3f}) 離舞台不到 {STAGE_MIN}')
+            prev = q
 
 
 # 往西進列（座位在自己那一路西側）要橫越西側幾路還在往北走的人流：同一排六人同時走到同一個 Y、一排接一排每 RANK_GAP 秒，

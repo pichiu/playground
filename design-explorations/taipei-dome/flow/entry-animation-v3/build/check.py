@@ -41,7 +41,6 @@ ROW_TOL = 0.005                    # 進列時 Y 與 field.Y
 STAGE_MIN = 0.15                   # 離舞台線稿（base.stage 中 X < −4.5 的部分）
 STAGE_X = -4.5
 SUBDIV = 0.02                      # 幾何避讓：路徑每 0.02 細分
-STAIR_Y = (0.9, 3.95)              # 舞台東側的 11 階階梯（大隊 1–4 列區西側，Y 範圍）
 STAIR_BOX = (-5.6, -4.3, 0.8, 4.5) # 數「跨過幾條階梯線」的範圍（x0, x1, y0, y1）：場內舞台東緣這一帶
 MAX_STEPS = 0                      # 最多跨過幾條階梯線（上幾階）：北行走第 5–10 排地標的直線，不上階梯
 
@@ -317,8 +316,8 @@ def wheel(data):
 
 def lane_map(data, by_rank):
     """lane 對應：lie = 6(大隊 − 1) + gateLane + 1（lane 0 對到大隊第一列、Y 最小）；分出時同一排 lane 0 在行進方向最左、依序往右；
-    分出後每人進到自己那一列（|Y − field.Y| ≤ ROW_TOL）之後一直在那一列上、朝座位單調前進（右轉進列的往東；
-    座位在自己那條線西側的人從座位旁的欄間空隙進列，最多半格），到 field 停下，而且不越過自己那一列往北。"""
+    分出後每人進到自己那一列（|Y − field.Y| ≤ ROW_TOL）之後一直在那一列上、朝座位單調前進（座位在東側的右轉沿那一列往東；
+    座位在西側的沿那一列南邊半格的列間空隙往西、到座位正南方才往北半格，所以進到那一列時就已經在座位上），到 field 停下，而且不越過自己那一列往北。"""
     M = _March(data['map']['march'])
     bad, worst_row = [], 0.0
     for p in data['persons']:
@@ -350,8 +349,8 @@ def lane_map(data, by_rank):
 
 def geometry(data):
     """幾何避讓：所有路徑（每 SUBDIV 細分）只在西一入口門洞（gate.band）內穿過全壘打牆；離舞台線稿（X < STAGE_X 的部分）≥ STAGE_MIN，
-    階梯（STAIR_Y 這一段）也一樣（北行走第 5–10 排地標的直線，不上階梯）。
-    STAIR_BOX 裡每一點都數跨過幾條線：跨過的舞台線不能超過 MAX_STEPS（0）條（不能走上階梯、走進舞台）。"""
+    舞台東側的階梯也一樣（北行走第 5–10 排地標的直線，不上階梯）。
+    STAIR_BOX 裡每一點往東數跨過幾條舞台線：不能超過 MAX_STEPS（0）條（不能走上階梯、走進舞台）。"""
     band = pairs(data['map']['gate']['band'])
     wall = np.array(pairs(data['map']['wall']))
     W0, W1 = wall[:-1], wall[1:]
@@ -425,12 +424,10 @@ def geometry(data):
         with np.errstate(divide='ignore', invalid='ignore'):
             xx = SB[:, 0] + (SB[:, 2] - SB[:, 0]) * (Q[:, 1:2] - ay) / (by - ay)
         steps[idx] = (span & (xx > Q[:, 0:1]) & (xx < x1)).sum(1)
-    on_stair = inbox & (P[:, 1] >= STAIR_Y[0]) & (P[:, 1] <= STAIR_Y[1])
-    bad_steps = int(((steps > MAX_STEPS) | ((steps > 0) & ~on_stair)).sum())
+    bad_steps = int((steps > MAX_STEPS).sum())
     near_out = int((best < STAGE_MIN).sum())
-    far = best.copy()
-    k = int(far.argmin()) if len(far) else 0
-    min_stage = float(far[k]) if len(far) else 9.0
+    k = int(best.argmin()) if len(best) else 0
+    min_stage = float(best[k]) if len(best) else 9.0
     return dict(points=int(len(P)), minStage=round(min(min_stage, 9.0), 4), stageNear=near_out, wallOutside=wall_out,
                 stairPoints=int((steps > 0).sum()), maxSteps=int(steps.max()) if len(steps) else 0, stepViolations=bad_steps,
                 at=[round(float(P[k][0]), 3), round(float(P[k][1]), 3)] if len(P) else None,
