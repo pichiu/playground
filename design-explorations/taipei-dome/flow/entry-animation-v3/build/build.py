@@ -58,12 +58,12 @@ def march_of(G):
 
 
 def split_points(G, people):
-    """每個大隊在哪裡分出（中心線弧長 s）：該大隊最南一列之南、最前座位西側一點。"""
+    """每個大隊在哪裡分出（中心線弧長 s）：北行直線上，整排走到該大隊最南一列之南 SPLIT_AHEAD 處。"""
     M = march_of(G)
     out = {}
     for d in sorted({p['dadui'] for p in people}):
         ps = [p for p in people if p['dadui'] == d]
-        out[d] = M.split_s(max(p['field']['Y'] for p in ps), min(p['field']['X'] for p in ps))
+        out[d] = M.split_s(max(p['field']['Y'] for p in ps))
     return out
 
 
@@ -211,22 +211,7 @@ def schedule(G, people, R=None):
     return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()), ranks=ranks, rankOf=rank_of, split=split, stage=stage)
 
 
-def tail_limits(people, rank_of):
-    """每人分出後的兩個參數：xlim（自己那一列與同大隊南邊幾列，排號 ≤ 自己的人裡最西的座位 X；沿牆段就分出的大隊斜切時要在它西側）
-    與 y_south（本大隊最南一列的 Y；要橫走的人在它南邊半格那條列間空隙往西）。"""
-    rows = collections.defaultdict(list)                  # (大隊, gateLane) → [(排號, X)]
-    y_south = {d: max(p['field']['Y'] for p in people if p['dadui'] == d) for d in {p['dadui'] for p in people}}
-    for p in people:
-        rows[(p['dadui'], p['gateLane'])].append((rank_of[p['id']], p['field']['X']))
-    out = {}
-    for p in people:
-        r, d = rank_of[p['id']], p['dadui']
-        xs = [x for j in range(p['gateLane'], 6) for rr, x in rows[(d, j)] if rr <= r]
-        out[p['id']] = (min(xs), y_south[d])
-    return out
-
-
-def person_path(G, p, r, t, ranks, rank, s_split, lim, f_lat=None, stage=None):
+def person_path(G, p, r, t, ranks, rank, s_split, f_lat=None, stage=None):
     """座位 → 自己那條線的起點 → 步速追上隊伍 → 跟著隊伍（慢行或站住）到隊頭
     → 一排六人並肩沿 march 中心線（整排轉進西一入口、沿牆、北轉、沿第 5–10 排地標直線北行）→ 在自己大隊列區南緣分出 → 沿自己那一路走到自己那一列 → 座位（步速）。"""
     line = G.line_poly(p['gateLane'])
@@ -259,7 +244,7 @@ def person_path(G, p, r, t, ranks, rank, s_split, lim, f_lat=None, stage=None):
         path += [(x, y, t['enter'] + tau) for x, y, tau in M.lane_track(j, s_split)[1:]]
     _, _, tx, ty, _ = M.C.at(s_split)
     tt, last = path[-1][2], path[-1]
-    for q in M.tail(last[:2], (tx, ty), (p['field']['X'], p['field']['Y']), *lim, f_lat):
+    for q in M.tail(last[:2], (tx, ty), (p['field']['X'], p['field']['Y']), f_lat):
         tt += math.dist(last[:2], q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
         path.append((q[0], q[1], tt))
         last = path[-1]
@@ -288,10 +273,9 @@ def _ids_between(persons, L, i0, i1):
 def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     people = planj['people']
     persons = []
-    lims = tail_limits(people, clocks['rankOf'])
     for p in people:
         r, t = R[p['id']], sched[p['id']]
-        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], clocks['split'][p['dadui']], lims[p['id']], (slow or {}).get(p['id']), clocks.get('stage'))
+        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], clocks['split'][p['dadui']], (slow or {}).get(p['id']), clocks.get('stage'))
         tt = dict(leave=round(t['leave'], 3), stair=round(t['stair'], 3), entry=round(t['entry'], 3), assembly=round(t['assembly'], 3), enter=round(t['enter'], 3),
                   gate=round(t['gate'], 3), split=round(t['split'], 3), arrive=path[-1][2])
         if 'holdStart' in t:                           # 迴廊候隊：在沿牆迴廊停的起訖

@@ -21,8 +21,8 @@ python3 -I inline.py                                            # 3D 模型頁�
 | `base.json` | 與 2c 相同：版本 1 動畫頁內嵌的 DATA 原樣（場地幾何、座位、場內定位與場內路徑） |
 | `plan.py` | 兩路（`LANES`、`LANE_J`）、出口順序（`EXIT_ORDER`）與 `lane_sequence / stair_key / assign_exits / nesting_violations / assign_seats / build_plan`；出口定義、可用席、走道口沿用 2c |
 | `routes.py` | 自 2c 精簡：只留「座位 → B1 → 樓梯 → B2 → 門前隊伍隊頭」一條路，兩路偏移 A +0.12、B −0.12；B2 六條線的折線（門前隊伍用） |
-| `march.py` | 整排並肩（wheel turn，§3.4c）：隊頭之後的中心線（直線＋圓弧）、六條平移線、間距漸變、時間剖面（外圈步速、內圈依半徑放慢）、各大隊分出點、分出後的梯次進列路線；`export` 寫進 `data.json` 的 `map.march`（含迴廊範圍 `stageTau`）給 check.py 驗 |
-| `build.py` | `aligned_clock / rank_numbers / schedule`（含每大隊排滿才出發與迴廊候隊，§3.4d）`/ split_points / tail_limits / person_path / assemble / avoid / write_seats_csv` |
+| `march.py` | 整排並肩（wheel turn，§3.4c）：隊頭之後的中心線（直線＋圓弧）、六條平移線、間距漸變、時間剖面（外圈步速、內圈依半徑放慢）、各大隊分出點、分出後走到自己那列再轉的路線（`tail`；往西的人用 `west_plan` 錯開人流，離舞台 < 0.15 就停止建置）；`export` 寫進 `data.json` 的 `map.march`（含迴廊範圍 `stageTau`）給 check.py 驗 |
+| `build.py` | `aligned_clock / rank_numbers / schedule`（含每大隊排滿才出發與迴廊候隊，§3.4d）`/ split_points / person_path / assemble / avoid / write_seats_csv` |
 | `check.py` | `check_all(data)` 與 CLI；整排並肩與迴廊候隊在 `staging / formation / wheel / lane_map / geometry` |
 | `collide.py` | 2c 的 `collisions`，加上 `seated_hits`（走動中的人與已到位的人） |
 | `geo.py` | 與 2c 相同 |
