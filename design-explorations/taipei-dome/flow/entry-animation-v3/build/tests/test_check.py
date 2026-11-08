@@ -312,11 +312,11 @@ def test_check_detects_corridor_rules(built):           # 迴廊候隊：前一�
     assert check.staging(D)['violations'] >= 1
 
 
-def test_check_detects_too_many_steps(built):           # 階梯：最多上 3 階，走到第 5 條階梯線以西就算越界
+def test_check_detects_too_many_steps(built):           # 階梯：北行走第 5–10 排地標的直線，一階都不上；走上階梯就算越界
     _, D = built
     D = _copy(D)
     G = check.geometry(D)
-    assert G['maxSteps'] <= check.MAX_STEPS and G['stepViolations'] == 0
+    assert G['maxSteps'] == 0 == check.MAX_STEPS and G['stepViolations'] == 0
     p = next(q for q in D['persons'] if q['dadui'] == 1 and q['gateLane'] == 0)
     k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
     q = p['path'][k]
