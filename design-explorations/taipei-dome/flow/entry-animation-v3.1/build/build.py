@@ -226,14 +226,6 @@ def person_path(G, p, r, t, lay, s_split, f_lat=None):
     return path
 
 
-def _at_time(path, t):
-    """名目路徑在 t 時刻的位置。"""
-    k = max(0, min(len(path) - 2, bisect.bisect_right([q[2] for q in path], t) - 1))
-    q0, q1 = path[k], path[k + 1]
-    f = max(0.0, min(1.0, (t - q0[2]) / (q1[2] - q0[2]))) if q1[2] > q0[2] else 0.0
-    return (q0[0] + (q1[0] - q0[0]) * f, q0[1] + (q1[1] - q0[1]) * f)
-
-
 def _lerp(xs, ys, x):
     """xs 遞增；x 對應的 ys（線性內插，超出兩端取端點）。"""
     k = max(0, min(len(xs) - 2, bisect.bisect_right(xs, x) - 1))
@@ -278,12 +270,7 @@ def _lam_at_x(pts, lam, xe):
 
 def _lane_lambda(M, j):
     """lane j 平移線的弧長 λ_j(s)（取樣點 M.ss）。"""
-    out, prev = [0.0], M.lane_xy(M.ss[0], j)
-    for s in M.ss[1:]:
-        q = M.lane_xy(s, j)
-        out.append(out[-1] + math.dist(prev, q))
-        prev = q
-    return out
+    return cum([M.lane_xy(s, j) for s in M.ss])
 
 
 def align_sim(G, people, paths, sched, tau_h):
@@ -328,6 +315,7 @@ def align_sim(G, people, paths, sched, tau_h):
         if w.stop:
             rank_of[(w.p['dadui'], w.p['slot'])].append(w)
     released, T = set(), collections.defaultdict(dict)
+    nxt_rank = {d: 0 for d, _ in rank_of}                  # 各排依序過線（slot 0、1、2…，第 10 排以東的人在每一路都是最前面那幾位，所以 slot 連續）
     # 進列時橫越別路北行線：往西的人沿自己那一列南邊半格的空隙（y = yg）橫越西側幾路，往東的人沿自己那一列橫越東側幾路
     # （前面大隊、被擋住晚到的人可能還在往北走；第 10 排以東的人在第 9 排對齊點等時，就站在第 6 路的北行線上）。交會點 = (那一路的 x, y)：
     # 一個交會點同一時間只給一種人用——有人往北經過（λ 離交會點 < CROSS_N）時，橫越的人在 x 離那一路 CROSS_X 之外等；
@@ -371,23 +359,19 @@ def align_sim(G, people, paths, sched, tau_h):
     t = min(w.e for w in W.values())
     t_stop = max(w.e + w.U[-1] for w in W.values()) + 60.0
     active = {j: [] for j in range(6)}                     # 每一路已放行、還沒到位的人，依同一路的前後順序（gateIdx）
-    gidx = {j: [] for j in range(6)}                       # 同上，只放 gateIdx（插入時二分用）
     pending = sorted(W.values(), key=lambda w: w.e)        # 依放行時刻啟動：後面的大隊從集合區更深處出發，可能比前一大隊最後幾位早放行
     nxt = 0
     while t < t_stop:
-        for key, ws in rank_of.items():                      # 這一排的人都在線上，而且上一排已經過線 RANK_GAP 以上：一起過線
-            if key in released:
-                continue
-            d, k = key
-            if all(w.lc >= w.lam_line - 1e-7 for w in ws) and (k == 0 or (k - 1 in T[d] and t >= T[d][k - 1] + RANK_GAP - 1e-9)):
-                released.add(key)
+        for d, k in nxt_rank.items():                        # 各大隊下一排：這一排的人都在線上，而且上一排已經過線 RANK_GAP 以上，一起過線
+            ws = rank_of.get((d, k))
+            if ws and (k == 0 or t >= T[d][k - 1] + RANK_GAP - 1e-9) and all(w.lc >= w.lam_line - 1e-7 for w in ws):
+                released.add((d, k))
                 T[d][k] = t
+                nxt_rank[d] = k + 1
         while nxt < len(pending) and pending[nxt].e < t + ALIGN_DT:
             w = pending[nxt]
-            j = w.p['gateLane']
-            k = bisect.bisect(gidx[j], w.p['gateIdx'])
-            active[j].insert(k, w)
-            gidx[j].insert(k, w.p['gateIdx'])
+            a = active[w.p['gateLane']]
+            a.insert(bisect.bisect(a, w.p['gateIdx'], key=lambda m: m.p['gateIdx']), w)
             nxt += 1
         done = nxt == len(pending)
         for j in range(6):
@@ -403,11 +387,11 @@ def align_sim(G, people, paths, sched, tau_h):
                 for ii in range(i - 1, -1, -1):
                     m = a[ii]
                     lm = m.lc
+                    if lm > w.lc + 3.0:                         # 更前面的人離得遠，不會再限制（同一路依前後順序，λ 大致遞增）
+                        break
                     se = shared(m, w)
                     if lm < se + ALIGN_GAP:                     # 離前一位至少 ALIGN_GAP，但不要求比名目間距（落後 RANK_GAP 秒）還遠：轉彎內圈名目間距本來就小於 ALIGN_GAP
                         lim = min(lim, max(lm - ALIGN_GAP, w.lam(w.u_at(lm) - RANK_GAP + 1e-6)))
-                    if lm > w.lc + 3.0:
-                        break
                 lw = w.lam(want)
                 for l_in, l_out, key in w.cross:                 # 橫越：交會點有人往北經過，就在交會點外等
                     if w.lc <= l_in + 1e-6 and l_in < lw and zones[key]['north']:   # 1e-6：停在邊界上的人，λ 由 u 反推會差一點點
@@ -442,7 +426,6 @@ def align_sim(G, people, paths, sched, tau_h):
                     w.zones = now
             if any(w.u >= w.U[-1] for w in a):
                 active[j] = [w for w in a if w.u < w.U[-1]]
-                gidx[j] = [w.p['gateIdx'] for w in active[j]]
         if done:
             break
         t = round(t + ALIGN_DT, 9)
@@ -468,9 +451,9 @@ def align_sim(G, people, paths, sched, tau_h):
                     kn[-1] = q
                     continue
             kn.append(q)
-        pts = list(path[:k0])
-        xy = lambda u: _at_time([(q[0], q[1], uu) for q, uu in zip(w.post, w.U)], u)
-        pts.append((*xy(0.0), w.e))
+        pts = list(path[:k0]) + [(w.post[0][0], w.post[0][1], w.e)]
+        xs, ys = [q[0] for q in w.post], [q[1] for q in w.post]
+        xy = lambda u: (_lerp(w.U, xs, u), _lerp(w.U, ys, u))
         for (t0, u0), (t1, u1) in zip(kn, kn[1:]):
             if u1 > u0:
                 for q, uu in zip(w.post, w.U):
@@ -593,7 +576,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     absent = [c for c in base['map']['pillars'] if c['id'] in ASSUME_NO_PILLARS]
     m = dict(base['map'], pillars=pillars, pillarsAssumedAbsent=absent, **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
              march=march.export(G.march, clocks['split'], {d: clocks['tauHead'][d] for d in clocks['lay']['head']}),
-             align=dict(pai=march.ALIGN_PAI, x=round(march.ALIGN_X, 4), gap=ALIGN_GAP, release={str(d): round(v[0], 3) for d, v in ranks_t.items()},
+             align=dict(pai=march.ALIGN_PAI, x=round(march.ALIGN_X, 4),
                         ranks={str(d): [round(x, 3) for x in v] for d, v in ranks_t.items()}))
     return dict(meta=meta, phases=phases, nodes=nodes, map=m, restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])

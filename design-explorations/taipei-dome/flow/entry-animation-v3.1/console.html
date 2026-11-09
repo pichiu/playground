@@ -189,7 +189,7 @@ window.__seek=x=>{t=Math.max(0,Math.min(T,x));dirty=true;};
  Dome.onPrefs(()=>{readC();requestAnimationFrame(()=>{refit();dirty=true;});});   // 換主題重讀顏色；換字級標題變高，手機取景要重算
  track.setAttribute('aria-valuemax',Math.round(T));
  buildTrack();
- cues=[{t:0,s:'全員就座'},...S.stair.map(o=>({t:o.a,s:`大隊 ${o.k} 兩路下樓梯`})),...S.st.map(o=>({t:o.full,s:`大隊 ${o.k} 在集合位置站齊`})),...S.st.map(o=>({t:o.go,s:`大隊 ${o.k} 放行`})),...Object.entries(ds.D.map.align.release).map(([k,t])=>({t,s:`大隊 ${k} 排頭在第 9 排對齊、一起走`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
+ cues=[{t:0,s:'全員就座'},...S.stair.map(o=>({t:o.a,s:`大隊 ${o.k} 兩路下樓梯`})),...S.st.map(o=>({t:o.full,s:`大隊 ${o.k} 在集合位置站齊`})),...S.st.map(o=>({t:o.go,s:`大隊 ${o.k} 放行`})),...Object.entries(ds.D.map.align.ranks).map(([k,v])=>({t:v[0],s:`大隊 ${k} 排頭在第 9 排對齊、一起走`})),...S.dad.map(o=>({t:o.a,s:`大隊 ${o.k} 由西一入口進場`})),{t:T,s:'全員到位'}].sort((a,b)=>a.t-b.t);
  $('bar').innerHTML=STATES.map(([k,,c])=>`<i data-k="${k}" style="background:var(--${c})"></i>`).join('');
  $('dl').innerHTML=STATES.map(([k,l,c])=>`<dt style="background:var(--${c})"></dt><dd class="l">${l}</dd><dd class="n" data-n="${k}">0</dd>`).join('');
  $('loading').remove();

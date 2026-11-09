@@ -20,7 +20,7 @@ def test_captain_eleven_cues(open_page, root):
     want = {'白衣第一位離座': min(p['t']['leave'] for p in ps if p['costume'] == '白'),
             '最後一位過西一入口': max(p['t']['gate'] for p in ps), '全隊到位': max(p['t']['arrive'] for p in ps),
             '全隊站齊': max(p['t']['assembly'] for p in ps), '放行': min(p['t']['enter'] for p in ps),
-            '排頭在第 9 排對齊': D['map']['align']['release']['1']}
+            '排頭在第 9 排對齊': D['map']['align']['ranks']['1'][0]}
     got = dict(zip(cues.evaluate_all("els => els.map(e => e.querySelector('.h').textContent)"), ts))
     assert all(abs(got[k] - v) < 1e-6 for k, v in want.items())
     body = pg.inner_text('body')

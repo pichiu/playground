@@ -342,18 +342,11 @@ def test_pillars_assumed_absent_are_reported(built):   # 11/9 假設沒有柱 L7
 def test_check_align_green(built):                      # 第 9 排對齊：第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊
     _, D = built
     A = check.align(D)
-    assert A['violations'] == 0 and A['minQueueGap'] > 0.03                # 進門前排隊是允許的（11/9），不在這裡設限
-    X, ranks = D['map']['align']['x'], {int(k): v for k, v in D['map']['align']['ranks'].items()}
-    assert all(b - a >= build.RANK_GAP - check.RELEASE_TOL for v in ranks.values() for a, b in zip(v, v[1:]))
-    by = {}
-    for p in D['persons']:
-        if p['field']['X'] > X:
-            q = [r for r in p['path'] if abs(r[0] - X) <= check.ALIGN_TOL and abs(r[1] - p['field']['Y']) <= check.ALIGN_TOL][-1]
-            by.setdefault((p['dadui'], p['slot']), []).append(q[2])
-    assert all(max(v) - min(v) <= check.RELEASE_TOL and len(v) >= 1 for v in by.values())      # 同一排一起過線
-    assert sum(len(v) for v in ranks.values()) == len(by)
-    full = [v for k, v in by.items() if k[1] == 0]
-    assert all(len(v) == 6 for v in full)                                                        # 第一排六列都在第 10 排以東
+    assert A['violations'] == 0 and A['maxCrossErr'] <= check.RELEASE_TOL and A['minQueueGap'] > 0.03   # 進門前排隊是允許的（11/9），不在這裡設限
+    X, ranks = D['map']['align']['x'], D['map']['align']['ranks']
+    assert A['ranks'] == sum(len(v) for v in ranks.values())
+    first = collections.Counter(p['dadui'] for p in D['persons'] if p['slot'] == 0 and p['field']['X'] > X)
+    assert set(first.values()) == {6}                                          # 每個大隊第一排六列都在第 10 排以東
 
 
 def test_check_detects_align_tampering(built):          # 竄改：一排裡有人提早過線、沒記排隊時段卻停、對齊線挪開、排的順序顛倒

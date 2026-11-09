@@ -47,8 +47,8 @@ STAGE_X = -4.5
 SUBDIV = 0.02                      # 幾何避讓：路徑每 0.02 細分
 STAIR_BOX = (-5.6, -4.3, 0.8, 4.5) # 數「跨過幾條階梯線」的範圍（x0, x1, y0, y1）：場內舞台東緣這一帶
 MAX_STEPS = 0                      # 最多跨過幾條階梯線（上幾階）：北行走第 4–9 排地標的直線，不上階梯
-ALIGN_TOL = 0.002                  # 第 9 排對齊：停的位置、停的起訖（路徑存三位小數）
-RELEASE_TOL = 0.01                 # 最後一位隊頭到對齊點的時刻與出發時刻差
+ALIGN_TOL = 0.002                  # 第 9 排對齊：對齊點的位置、排隊時段的起訖（路徑存三位小數）
+RELEASE_TOL = 0.01                 # 每一排過線時刻（離開對齊點）與 map.align.ranks 的差、相鄰兩排間隔的容許
 
 
 def _gaps(ps, tkey, group_key, queued=lambda p: False):
@@ -546,7 +546,7 @@ def geometry(data):
 def align(data):
     """第 9 排對齊（11/9 第二版）：map.align 給對齊線 x（第 9 排東側的欄間空隙）與各大隊各排過線時刻 ranks[大隊] = [T0, T1, …]。
     - 第 10 排以東（field.X > x）的人：路徑經過 (x, 自己那一列的 Y)，離開那一點的時刻 = 自己那一排（slot）的 T（± RELEASE_TOL）：
-      同一排六列一起過線；之後不再排隊（t.holdEnd ≤ 過線時刻）。各排的 T 依序、相鄰至少 RANK_GAP；T0 = release。
+      同一排六列一起過線；之後不再排隊（t.holdEnd ≤ 過線時刻）。各排的 T 依序、相鄰至少 RANK_GAP。
     - 第 9 排與以內的人不經過對齊點；可以被前面的隊伍擋（有排隊時段，列出人數）。
     - 沒有排隊時段的人，離開隊頭之後路徑上沒有任何停留點；排隊時段只有一段（t.holdStart → t.holdEnd）。
     - 資訊：排隊人數、最長排隊時段、在穿過西一入口之前就開始排隊的人數（11/9 企劃同意後面大隊在進門前等）。"""
@@ -555,7 +555,7 @@ def align(data):
     ranks = {int(d): v for d, v in A['ranks'].items()}
     bad, worst = [], 0.0
     for d, T in ranks.items():
-        if abs(T[0] - A['release'][str(d)]) > 1e-6 or any(b - a < build.RANK_GAP - RELEASE_TOL for a, b in zip(T, T[1:])):
+        if any(b - a < build.RANK_GAP - RELEASE_TOL for a, b in zip(T, T[1:])):
             bad.append(dict(dadui=d, why='ranks'))
     n_hold = n_pre = n_direct = 0
     max_hold = 0.0
@@ -573,10 +573,10 @@ def align(data):
                 bad.append(dict(who=p['id'], why='holdWindow'))
         elif stays:
             bad.append(dict(who=p['id'], why='stopWithoutHold'))
-        fy = p['field']['Y']
-        at = [q for q in a if q[2] >= t['split'] - 1e-6 and abs(q[0] - X) <= ALIGN_TOL and abs(q[1] - fy) <= ALIGN_TOL]
         if p['field']['X'] <= X:
             continue
+        fy = p['field']['Y']
+        at = [q for q in a if q[2] >= t['split'] - 1e-6 and abs(q[0] - X) <= ALIGN_TOL and abs(q[1] - fy) <= ALIGN_TOL]
         T = ranks.get(p['dadui'], [])
         if not at or p['slot'] >= len(T):
             bad.append(dict(who=p['id'], why='noAlignPoint'))
@@ -585,7 +585,7 @@ def align(data):
         worst = max(worst, abs(c - T[p['slot']]))
         if abs(c - T[p['slot']]) > RELEASE_TOL or (held and t['holdEnd'] > c + RELEASE_TOL + build.ALIGN_DT):
             bad.append(dict(who=p['id'], why='cross', at=c, rank=T[p['slot']]))
-    # 資訊：同一路前後兩人在後一位排隊時段裡最近相距多少（每 0.02 秒取樣）。排隊要求至少 map.align.gap，但轉彎內圈、進座位時
+    # 資訊：同一路前後兩人在後一位排隊時段裡最近相距多少（每 0.02 秒取樣）。排隊要求至少 build.ALIGN_GAP，但轉彎內圈、進座位時
     # 名目間距本來就比較近，模擬不要求比名目間距更遠，所以這裡只列出、不設門檻（碰撞另由 collisions 以 0.03 驗）
     lanes = collections.defaultdict(list)
     for p in data['persons']:

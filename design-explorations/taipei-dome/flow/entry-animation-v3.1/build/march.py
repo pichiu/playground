@@ -42,8 +42,8 @@ GAP_H = SP_SEAT / 2                      # 半格：兩列（兩欄）中間的�
 STAGE_MIN = 0.15                         # 分出後的路線離舞台線稿至少這麼遠（和 check.py 的 STAGE_MIN 相同；產生時就檢查，不靠事後檢核）
 STAGE_MIN_NORTH = 0.10                   # 11/9 例外（同 check.STAGE_MIN_NORTH）：第 1 路的北行線（第 4 排地標東側空隙）在舞台東側階梯旁最近 0.111（約 0.84 m），
                                          # 仍在地面、不跨階梯線；只有在那條線上的點用這個門檻
-# 第 9 排對齊（11/9）：分出後轉進自己那一列往東的人，座位在第 9 排以東（第 10 排起）的，隊頭先走到第 9 排東側那條欄間空隙
-# （= 第 6 路北行的那條線）停住；同一大隊六列隊頭都到了才一起往東走。第 9 排與以內的人直接到位、不停（見 build.align_holds）。
+# 第 9 排對齊（11/9）：分出後轉進自己那一列往東的人，座位在第 9 排以東（第 10 排起）的，每一排（六列各一位）都在第 9 排東側那條欄間空隙
+# （= 第 6 路北行的那條線）對齊、一起過線再往東。第 9 排與以內的人不對齊（排隊模擬見 build.align_sim）。
 ALIGN_PAI = 9
 ALIGN_X = SEAT_X0 + SP_SEAT * (ALIGN_PAI - 1) + GAP_H
 
@@ -145,6 +145,7 @@ class March:
         self.sample()
         self.wall = pairs(base['map']['wall'])
         self.stage = [(a, b) for poly in base['map']['base']['stage'] for a, b in zip(pairs(poly), pairs(poly)[1:]) if a[0] < -4.5 and b[0] < -4.5]
+        self._stage_np = np.array([(a[0], a[1], b[0], b[1]) for a, b in self.stage], dtype=float).reshape(-1, 4)
         self.tau_gate = [self._wall_tau(j) for j in range(6)]     # 各線穿過全壘打牆（西一入口牆線）的 τ（相對 s = 0）
         self.B2 = G.B2
 
@@ -259,8 +260,6 @@ class March:
 
     def _stage_dist(self, Q):
         """Q（n × 2）每一點離舞台線稿（X < −4.5 的部分）最近的距離（沒有舞台線段時是 9）。"""
-        if not hasattr(self, '_stage_np'):
-            self._stage_np = np.array([(a[0], a[1], b[0], b[1]) for a, b in self.stage], dtype=float).reshape(-1, 4)
         if not len(self._stage_np):
             return np.full(len(Q), 9.0)
         ax, ay, bx, by = self._stage_np.T
