@@ -2226,7 +2226,7 @@ function shots(){
       for(let k=0;k<mc.tau.length;k++)if(mc.tau[k]>=Math.max(mc.northTau,t1-NORTH_FIT/D.meta.speedUnitPerSec)&&mc.tau[k]<=t1)for(const d of [-0.4,0.4])o.push(V3(mc.x[k]+d,0,mc.y[k]),V3(mc.x[k]+d,0.16,mc.y[k]));
       for(const p of P)if(p.dadui===1)o.push(V3(A.x+0.3,0,p.field.Y));
       const ySplit=mc.y[mc.tau.findIndex(v=>v>=t1)];
-      for(const p of P){if(p.dadui!==1)continue;if(state(p,t)==='enter'&&marchTau(p,t)>=M.march.northTau){const q=pos(p,t);if(q[1]<=ySplit+NORTH_FIT)o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}}
+      for(const p of P){if(p.dadui!==1)continue;if(state(p,t)==='enter'&&pastNorth(p,t)){const q=pos(p,t);if(q[1]<=ySplit+NORTH_FIT)o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}}
       return o;},
     // 入座：整個西班（全部人的場內位置，不只 WEST_N 周圍）fit 進扣掉面板的可視矩形（審查 rv14：原本座位區下半被 HUD／章節列蓋住）
     seat:()=>[...P.map(p=>V3(p.field.X,0.12,p.field.Y)),V3(N.WEST_N.X,0,N.WEST_N.Y)],
@@ -2303,10 +2303,10 @@ function updateHud(){const f=pctOf(simT),v=Math.round(f*10);
   updateCounts();updateCardStep();updateChapterCur();if(follow)updatePills();}
 // 短標籤：最前面（編號最小、還沒全部入座）的大隊與下一個已經起身的大隊，各自「走得最前面的人」在哪一段：
 // 離座（樓梯段之前）→ 下樓梯（樓梯段）→ 往集合區（下樓後到站定）→ 集合區（wait）→ 放行進門（enter，北轉前）
-// → 北行進列（τ ≥ map.march.northTau）→ 入座（done）。全部還在座位上＝「休息區就座」，全部入座＝「全部入座」
+// → 北行進列（t ≥ t.north）→ 入座（done）。全部還在座位上＝「休息區就座」，全部入座＝「全部入座」
 const PH_NAME=['就座','離座','下樓梯','往集合區','集合區','放行進門','北行進列','入座'];
 function stageOf(p,i,t){const s=state(p,t);if(s==='seated')return 0;if(s==='walk')return t<HT[i].tS?1:t<HT[i].tE?2:3;if(s==='wait')return 4;if(s==='done')return 7;
-  return marchTau(p,t)>=M.march.northTau?6:5;}
+  return pastNorth(p,t)?6:5;}
 const _phMax=new Int8Array(10),_phMin=new Int8Array(10);
 function phaseShort(t){_phMax.fill(-1);_phMin.fill(9);for(let i=0;i<P.length;i++){const d=P[i].dadui,g=stageOf(P[i],i,t);if(g<7&&g>_phMax[d])_phMax[d]=g;if(g<_phMin[d])_phMin[d]=g;}
   let lead=0;for(let d=1;d<=9;d++)if(_phMin[d]<7){lead=d;break;}
@@ -2351,13 +2351,13 @@ function buildHud(){
 //   兩路轉六路（版本 3.1）＝還在走、離「六路起點」（t.entry）前 1.5 秒到後 0.8 秒之間（回頭的半圓與散開那一段）；
 //   集合區＝state 是 wait；
 //   穿過西一入口＝state 是 enter 且 pos 在 map.gate.band（門洞地面）內；
-//   北行進列＝state 是 enter，且已走到北轉（中心線時間 τ ≥ map.march.northTau；τ＝t − t.enter + map.march.headTau[大隊]），
+//   北行進列＝state 是 enter，且已走到北轉（t ≥ t.north：build 模擬的實際時刻），
 //   包括沿第 4–9 排地標直線北行、分出後走到自己那列再轉、在第 9 排對齊。
 //   舊的「沿牆通道」（大隊 1 第一人 t.gate + 1 起、insideWalk 前 50%）在資料加入迴廊候隊後改成上面兩章（見 NOTES「playground #23 更新」）。
 // 同一套計算在 tests/fin/chapter-times.js 用 node 獨立重算（結果寫 tests/fin/chapter-times.result.json，記在 NOTES）。
 // 中心線時間 τ（相對中心線起點＝集合區最深處）：大隊 d 離開自己集合位置隊頭（t.enter）時 τ＝headTau[d]（build/march.py；版本 3.1 沒有迴廊候隊）
-// 第 9 排對齊排隊時段（t.holdStart → t.holdEnd）裡走走停停：把整段當成停住，扣掉後的 τ 會偏小一點（只用來判斷有沒有走到北轉，近似就夠）
-function marchTau(p,t){const h=p.t.holdStart;return t-p.t.enter+M.march.headTau[p.dadui]-(h==null?0:Math.max(0,Math.min(t,p.t.holdEnd)-h));}
+// 有沒有走到北轉：用 data.json 的 t.north（build 模擬出來的實際時刻；第 9 排對齊排隊時走走停停，不能由 τ = t − t.enter + headTau 推）
+const pastNorth=(p,t)=>t>=p.t.north;
 const CHAP_WIN=20,CHAP_STEP=0.05;
 const GATE_BAND=pairs(M.gate.band);
 const INREG={stair:(p,i,t)=>t>=HT[i].tS&&t<HT[i].tE,

@@ -445,7 +445,7 @@ def lane_map(data, by_rank):
             continue
         ps = sorted(ps, key=lambda p: p['gateLane'])
         t = min(p['t']['split'] for p in ps)
-        if t > _free_until(ps[0]):                       # 第 1 路那位已經在排隊：中心線上的位置不能由 τ 推，這一排不驗左右順序
+        if any(t > _free_until(p) for p in ps):          # 這一排有人已經在排隊：位置不在名目隊形上（第 1 路那位的 τ 也不能由 t 推），不驗左右順序
             continue
         c, (tx, ty), _ = M.at(_tau(ps[0], t, ht))
         offs = [(q[0] - c[0]) * ty - (q[1] - c[1]) * tx for q in (_Track(p['path']).at(t) for p in ps)]   # 往左（左法向）為正
@@ -585,8 +585,24 @@ def align(data):
         worst = max(worst, abs(c - T[p['slot']]))
         if abs(c - T[p['slot']]) > RELEASE_TOL or (held and t['holdEnd'] > c + RELEASE_TOL + build.ALIGN_DT):
             bad.append(dict(who=p['id'], why='cross', at=c, rank=T[p['slot']]))
+    # 資訊：同一路前後兩人在後一位排隊時段裡最近相距多少（每 0.02 秒取樣）。排隊要求至少 map.align.gap，但轉彎內圈、進座位時
+    # 名目間距本來就比較近，模擬不要求比名目間距更遠，所以這裡只列出、不設門檻（碰撞另由 collisions 以 0.03 驗）
+    lanes = collections.defaultdict(list)
+    for p in data['persons']:
+        lanes[p['gateLane']].append(p)
+    min_gap = 9.0
+    for ps in lanes.values():
+        ps.sort(key=lambda p: p['gateIdx'])
+        for a_, b_ in zip(ps, ps[1:]):
+            if 'holdStart' not in b_['t']:
+                continue
+            ta, tb = _Track(a_['path']), _Track(b_['path'])
+            t_ = b_['t']['holdStart']
+            while t_ <= min(b_['t']['holdEnd'], a_['t']['arrive']):
+                min_gap = min(min_gap, math.dist(ta.at(t_), tb.at(t_)))
+                t_ += 0.02
     return dict(x=X, pai=A['pai'], ranks=sum(len(v) for v in ranks.values()), holders=n_hold, directHeld=n_direct, preGate=n_pre,
-                maxHold=round(max_hold, 3), maxCrossErr=round(worst, 4), violations=len(bad), examples=bad[:3])
+                maxHold=round(max_hold, 3), maxCrossErr=round(worst, 4), minQueueGap=round(min_gap, 4), violations=len(bad), examples=bad[:3])
 
 
 def check_all(data, coll=None):
@@ -819,7 +835,7 @@ def main(path):
         ('B2 集合區（九個集合位置依序不重疊、入口前留空、站在自己那一路那一格、到位前不停、兩路走通行帶、九隊站齊才依序放行）', f"{St['violations']}（{St['blocks']} 個位置；到位前最長停留 {St['maxWaitBeforeSlot']} 秒；通行帶越界 {St['bypassViolations']}；動畫裡同時有人在集合區的大隊最多 {St['peakDaduiInArea']} 個）", '0', St['violations'] == 0),
         ('幾何避讓（只在門洞穿牆、離舞台、不上階梯）', f"{Ge['violations']}（門洞外穿牆 {Ge['wallOutside']}；離舞台最近 {Ge['minStage']}，< {STAGE_MIN} 的點 {Ge['stageNear']}；走上階梯最多 {Ge['maxSteps']} 階、越界 {Ge['stepViolations']}）",
          f'0（≥ {STAGE_MIN}，第 1 路北行線 ≥ {STAGE_MIN_NORTH}；上階梯 {MAX_STEPS} 階）', Ge['violations'] == 0),
-        ('第 9 排對齊（第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊）', f"{Al['violations']}（{Al['ranks']} 排；過線時刻誤差 ≤ {Al['maxCrossErr']}；排隊 {Al['holders']} 人（第 9 排以內 {Al['directHeld']}、進門前就開始 {Al['preGate']}）、最長 {Al['maxHold']} 秒）",
+        ('第 9 排對齊（第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊）', f"{Al['violations']}（{Al['ranks']} 排；過線時刻誤差 ≤ {Al['maxCrossErr']}；排隊 {Al['holders']} 人（第 9 排以內 {Al['directHeld']}、進門前就開始 {Al['preGate']}）、最長 {Al['maxHold']} 秒；排隊時前後最近 {Al['minQueueGap']}）",
          f"0（± {RELEASE_TOL}）", Al['violations'] == 0),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),

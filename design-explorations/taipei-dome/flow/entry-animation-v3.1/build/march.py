@@ -255,13 +255,19 @@ class March:
 
     def stage_clear(self, q):
         """q 離舞台線稿（X < −4.5 的部分）的距離。"""
-        best = 9.0
-        for (ax, ay), (bx, by) in self.stage:
-            dx, dy = bx - ax, by - ay
-            L2 = dx * dx + dy * dy or 1e-12
-            f = max(0.0, min(1.0, ((q[0] - ax) * dx + (q[1] - ay) * dy) / L2))
-            best = min(best, math.hypot(q[0] - ax - dx * f, q[1] - ay - dy * f))
-        return best
+        return float(self._stage_dist(np.array([q[:2]], dtype=float))[0])
+
+    def _stage_dist(self, Q):
+        """Q（n × 2）每一點離舞台線稿（X < −4.5 的部分）最近的距離（沒有舞台線段時是 9）。"""
+        if not hasattr(self, '_stage_np'):
+            self._stage_np = np.array([(a[0], a[1], b[0], b[1]) for a, b in self.stage], dtype=float).reshape(-1, 4)
+        if not len(self._stage_np):
+            return np.full(len(Q), 9.0)
+        ax, ay, bx, by = self._stage_np.T
+        dx, dy = bx - ax, by - ay
+        L2 = np.maximum(dx * dx + dy * dy, 1e-12)
+        f = np.clip(((Q[:, 0:1] - ax) * dx + (Q[:, 1:2] - ay) * dy) / L2, 0, 1)
+        return np.minimum(np.hypot(Q[:, 0:1] - ax - dx * f, Q[:, 1:2] - ay - dy * f).min(1), 9.0)
 
     def tail(self, p0, heading, seat, f_lat=None):
         """分出之後的個人路線（不含 p0）：點 (x, y) 或 (x, y, 速度倍數)，沒寫倍數就是步速。座位都在同一個網格上（欄距、列距都是 SP_SEAT，原點 SEAT_X0），
@@ -301,13 +307,7 @@ class March:
             Q.append(np.array(prev[:2]) + (np.array(q[:2]) - np.array(prev[:2])) * f)
             prev = q
         Q = np.concatenate(Q)
-        if not hasattr(self, '_stage_np'):
-            self._stage_np = np.array([(a[0], a[1], b[0], b[1]) for a, b in self.stage])
-        ax, ay, bx, by = self._stage_np.T
-        dx, dy = bx - ax, by - ay
-        L2 = np.maximum(dx * dx + dy * dy, 1e-12)
-        f = np.clip(((Q[:, 0:1] - ax) * dx + (Q[:, 1:2] - ay) * dy) / L2, 0, 1)
-        d = np.hypot(Q[:, 0:1] - ax - dx * f, Q[:, 1:2] - ay - dy * f).min(1)
+        d = self._stage_dist(Q)
         lim = np.where(np.abs(Q[:, 0] - (NORTH_X - lane_off(0, SP_SEAT))) <= GAP_H, STAGE_MIN_NORTH, STAGE_MIN)   # 同 check.NORTH_LINE_TOL：第 1 路北行線兩側半格，含它在階梯旁轉進列的彎
         bad = np.nonzero(d < lim)[0]
         if len(bad):

@@ -342,7 +342,7 @@ def test_pillars_assumed_absent_are_reported(built):   # 11/9 假設沒有柱 L7
 def test_check_align_green(built):                      # 第 9 排對齊：第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊
     _, D = built
     A = check.align(D)
-    assert A['violations'] == 0 and A['preGate'] == 0
+    assert A['violations'] == 0 and A['minQueueGap'] > 0.03                # 進門前排隊是允許的（11/9），不在這裡設限
     X, ranks = D['map']['align']['x'], {int(k): v for k, v in D['map']['align']['ranks'].items()}
     assert all(b - a >= build.RANK_GAP - check.RELEASE_TOL for v in ranks.values() for a, b in zip(v, v[1:]))
     by = {}
