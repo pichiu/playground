@@ -52,11 +52,11 @@ def test_no_time_shown_on_any_page(open_page):   # 企劃 10/23：2c 也拿掉�
         assert '分鐘' not in body and '示意全程' not in body, name
 
 
-def test_legacy_banner_links_to_v3(open_page):   # 定案採用版本 3：2c 每頁最上方有停用提示，連到版本 3 同一頁、保留網址參數
+def test_legacy_banner_links_to_v3(open_page):   # 定案採用版本 3.1（11/9）：2c 每頁最上方有停用提示，連到版本 3.1 同一頁、保留網址參數
     for name in ['index.html', 'console.html', 'me.html?id=1-28', 'score.html', 'handout.html', 'captain.html', 'exit.html']:
         pg, errs, perrs = open_page(name, 375, 700)
         pg.wait_for_selector('.dome-legacy a', timeout=20000)
-        assert pg.get_attribute('.dome-legacy a', 'href') == '../entry-animation-v3/' + name and not perrs, name
+        assert pg.get_attribute('.dome-legacy a', 'href') == '../entry-animation-v3.1/' + name and not perrs, name
         assert pg.evaluate("document.querySelector('.dome-legacy').getBoundingClientRect().top") == 0, name
         assert no_hscroll(pg), name
 

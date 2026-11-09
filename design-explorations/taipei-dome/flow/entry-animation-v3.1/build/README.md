@@ -8,7 +8,7 @@ python3 plan.py  base.json plan.json                           # §3.1–3.3：�
 python3 build.py base.json plan.json ../data.json ../seats.csv  # §3.4–3.6：路線、一個時鐘的拉式排程、整排並肩（§3.4c）、碰撞避讓、meta.checks（約 2 分鐘）
 python3 check.py ../data.json                                   # §4：檢核全部從 persons / restSeats 重算並與 meta.checks 比對；未通過 exit 1
 python3 -I inline.py                                            # 3D 模型頁：由 diorama.src.html 產生 ../diorama.html（改 src 後要重跑）
-python3 verify_paths.py ../data.json ../../entry-animation-v3/data.json [圖.png]   # 與版本 3 逐人比對、大隊 1／5／9 左右（以行進方向）與連續性
+python3 verify_paths.py ../data.json ../../entry-animation-v3-archive/data.json [圖.png]   # 與版本 3 逐人比對、大隊 1／5／9 左右（以行進方向）與連續性
 ```
 
 3D 模型頁另可產生 claude.ai artifact 版（內嵌 data.json，不進 git）：`python3 -I inline.py --artifact OUT.html [../data.json]`。

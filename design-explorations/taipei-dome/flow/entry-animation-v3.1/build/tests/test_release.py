@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 
 import inline
 
@@ -13,20 +14,60 @@ def test_readmes_present(root):
     assert root.name == 'entry-animation-v3.1'
     assert (root / 'README.md').exists() and (root / 'build' / 'README.md').exists()
     text = (root / 'README.md').read_text(encoding='utf-8')
-    assert '版本 3.1' in text and '集合區' in text and '../entry-animation/' in text and '../entry-animation-v3/' in text and '尚需現場確認' in text
+    assert '版本 3.1' in text and '集合區' in text and '../entry-animation/' in text and '../entry-animation-v3-archive/' in text and '尚需現場確認' in text
 
 
-def test_hub_has_v31_and_v3_cards(root):
+def test_hub_has_only_v31_card(root):                   # 11/9 定案：總覽頁只有版本 3.1 卡片（版本 3 與 2c 都拿掉）
     h = (root.parents[1] / 'index.html').read_text(encoding='utf-8')
-    assert h.count('flow/entry-animation-v3.1/index.html') == 1 and h.count('flow/entry-animation-v3/index.html') == 1 and 'flow/entry-animation/index.html' not in h
-    assert '進場動線 · 版本 3.1' in h and '進場動線 · 版本 3（定案）' in h and '進場動線 · 2c' not in h
-    assert h.index('flow/entry-animation-v3.1/index.html') < h.index('flow/entry-animation-v3/index.html')
+    assert h.count('flow/entry-animation-v3.1/index.html') == 1 and 'flow/entry-animation-v3/index.html' not in h and 'flow/entry-animation/index.html' not in h
+    assert '進場動線 · 版本 3.1（定案）' in h and '進場動線 · 2c' not in h and '進場動線 · 版本 3（定案）' not in h
 
 
-def test_v3_untouched(root):                             # 版本 3 保留作對照：整個資料夾不動（只在 git 有記錄時檢查）
+def test_v3_urls_redirect_to_v31(root):                  # 版本 3 網址已公告：八頁都直接轉到版本 3.1 同一頁（保留網址參數）
+    v3 = root.parent / 'entry-animation-v3'
+    for name in ['index.html', 'console.html', 'me.html', 'score.html', 'handout.html', 'captain.html', 'exit.html', 'diorama.html']:
+        h = (v3 / name).read_text(encoding='utf-8')
+        assert f"url=../entry-animation-v3.1/{name}" in h and f"location.replace('../entry-animation-v3.1/{name}'+location.search+location.hash)" in h, name
+        assert (root / name).exists(), name
+
+
+def test_v3_redirect_in_browser(root, browser):           # 實際在瀏覽器開版本 3 的我的路，落在版本 3.1 同一人
+    import socket
+    import time
+    import urllib.request
+    s = socket.socket()
+    s.bind(('127.0.0.1', 0))
+    port = s.getsockname()[1]
+    s.close()
+    proc = subprocess.Popen([sys.executable, '-m', 'http.server', str(port), '--bind', '127.0.0.1'], cwd=root.parent,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        base = f'http://127.0.0.1:{port}/'
+        for _ in range(50):
+            try:
+                urllib.request.urlopen(base + 'entry-animation-v3/me.html', timeout=1)
+                break
+            except Exception:
+                time.sleep(0.1)
+        ctx = browser.new_context(viewport={'width': 400, 'height': 800})
+        pg = ctx.new_page()
+        pg.goto(base + 'entry-animation-v3/me.html?id=1-28', wait_until='load')
+        pg.wait_for_url('**/entry-animation-v3.1/me.html?id=1-28', timeout=10000)
+        pg.wait_for_function("document.querySelector('#lie') && document.querySelector('#lie').value === '1'", timeout=20000)
+        ctx.close()
+    finally:
+        proc.terminate()
+
+
+def test_v3_archive_data_untouched(root):               # 舊版 3 留存在 archive：資料與建置與 main 上的 entry-animation-v3 逐位元相同（只動頁面停用提示、README 與測試）
     repo = root.parents[3]
-    r = subprocess.run(['git', 'diff', '--name-only', 'HEAD', '--', 'design-explorations/taipei-dome/flow/entry-animation-v3/'], capture_output=True, text=True, cwd=repo)
-    assert r.returncode == 0 and not r.stdout.strip(), r.stdout
+    arc = root.parent / 'entry-animation-v3-archive'
+    files = ['data.json', 'seats.csv'] + [f'build/{p.name}' for p in (arc / 'build').iterdir() if p.is_file() and p.suffix in ('.py', '.json', '.html')]
+    for f in files:
+        old = subprocess.run(['git', 'show', f'origin/main:design-explorations/taipei-dome/flow/entry-animation-v3/{f}'], capture_output=True, cwd=repo)
+        if old.returncode == 0:
+            assert old.stdout == (arc / f).read_bytes(), f'{f} 與 main 的版本 3 不同'
+
 
 
 def test_2c_data_and_build_untouched(root):   # 2c 只動 README、頁面顯示（10/23 企劃：時間改百分比、拿掉時刻）與頁面測試；資料與建置不動

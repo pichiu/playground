@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]   # entry-animation-v3/
+ROOT = Path(__file__).resolve().parents[2]   # entry-animation-v3-archive/
 sys.path.insert(0, str(ROOT / 'build'))        # import plan / routes / check
 
 

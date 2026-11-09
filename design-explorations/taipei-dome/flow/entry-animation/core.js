@@ -83,7 +83,7 @@ class View{
 // 高度寫進 --legacy-h，讓頂端固定排版的頁面（指揮台）把頁籤與舞台往下移。
 (function legacyBanner(){
   const page=location.pathname.split('/').pop()||'index.html';
-  const href='../entry-animation-v3/'+page+location.search+location.hash;   // 2c 七頁在版本 3 都有同名頁
+  const href='../entry-animation-v3.1/'+page+location.search+location.hash;   // 2c 七頁在版本 3.1 都有同名頁（11/9 定案改為 3.1）
   const css='.dome-legacy{position:relative;z-index:6;margin:0;padding:10px 16px;background:#7a1f12;color:#fff;font:14px/1.5 "Noto Sans TC",system-ui,sans-serif;text-align:center}'
    +'.dome-legacy a{color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap}'
    +'@media print{.dome-legacy{margin:0 0 8px;border:2px solid #7a1f12;background:#fff;color:#7a1f12;text-align:left}.dome-legacy a{color:#7a1f12}}';
@@ -91,8 +91,8 @@ class View{
     const st=document.createElement('style');st.textContent=css;document.head.append(st);
     const b=document.createElement('aside');b.className='dome-legacy';b.setAttribute('role','note');
     const tag=document.createElement('b');tag.textContent='⚠ 已停用：';
-    const a=document.createElement('a');a.href=href;a.textContent='改用版本 3 →';
-    b.append(tag,'這是舊版 2c，僅供對照；實際執行以版本 3 為準。',a);document.body.prepend(b);
+    const a=document.createElement('a');a.href=href;a.textContent='改用版本 3.1 →';
+    b.append(tag,'這是舊版 2c，僅供對照；實際執行以版本 3.1 為準。',a);document.body.prepend(b);
     const sync=()=>document.documentElement.style.setProperty('--legacy-h',b.offsetHeight+'px');
     sync();if(window.ResizeObserver)new ResizeObserver(sync).observe(b);}
   if(document.body)mount();else document.addEventListener('DOMContentLoaded',mount);

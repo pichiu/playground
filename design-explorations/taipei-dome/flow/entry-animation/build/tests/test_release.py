@@ -52,7 +52,7 @@ def test_v2_data_follows_2c(root):
 def test_hub_has_no_2c_card(root):                     # 定案採用版本 3：2c 從總覽頁拿掉，只留作對照
     h = (root.parents[1] / 'index.html').read_text(encoding='utf-8')
     assert 'flow/entry-animation/index.html' not in h and 'entry-animation-v2' not in h and '進場動線 · 2c' not in h
-    assert h.count('flow/entry-animation-v3/index.html') == 1
+    assert h.count('flow/entry-animation-v3.1/index.html') == 1 and 'flow/entry-animation-v3/index.html' not in h   # 11/9 定案改為版本 3.1
 
 
 def test_no_dangling_links(root):   # 掃 taipei-dome 下所有 html 的相對 href/src/fetch，檔案都要存在

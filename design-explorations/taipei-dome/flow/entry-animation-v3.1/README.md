@@ -1,6 +1,6 @@
 # 入經藏進場動線 版本 3.1：B2 集合區（11/8 現場彩排修正）
 
-以版本 3（`../entry-animation-v3/`）為底的獨立版本。版本 3 與舊版 2c（`../entry-animation/`）都保留不動，作為對照。
+**這是定案版本（11/9）。** 以版本 3 為底的獨立版本。版本 3 的網址已公告，所以 `../entry-animation-v3/` 只放轉址頁，打開直接轉到本版同一頁；舊版 3 完整留存在 `../entry-animation-v3-archive/`（每頁有停用提示），舊版 2c（`../entry-animation/`）也保留作對照。
 
 ## 為什麼改
 
@@ -81,7 +81,7 @@ python3 plan.py  base.json plan.json                           # 與版本 3 相
 python3 build.py base.json plan.json ../data.json ../seats.csv  # 路線、集合區、放行、整排轉彎、避撞、meta.checks（約 1 分鐘）
 python3 check.py ../data.json                                   # 檢核全部重算；未通過 exit 1
 python3 -I inline.py                                            # 由 diorama.src.html 產生 ../diorama.html
-python3 verify_paths.py ../data.json ../../entry-animation-v3/data.json [圖.png]   # 與版本 3 逐人比對、大隊 1／5／9 左右與連續性
+python3 verify_paths.py ../data.json ../../entry-animation-v3-archive/data.json [圖.png]   # 與版本 3 逐人比對、大隊 1／5／9 左右與連續性
 ```
 
 見 `build/README.md`。

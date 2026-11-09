@@ -10,16 +10,15 @@ BASE_2C = 'd9af8c5'   # 2c 最後一次刻意改資料與建置（10/23 code rev
 
 
 def test_readmes_present(root):
-    assert root.name == 'entry-animation-v3'
+    assert root.name == 'entry-animation-v3-archive'   # 11/9 定案改為版本 3.1，版本 3 移到 archive
     assert (root / 'README.md').exists() and (root / 'build' / 'README.md').exists()
     text = (root / 'README.md').read_text(encoding='utf-8')
     assert '版本 3' in text and '兩路' in text and '../entry-animation/' in text
 
 
-def test_hub_has_v3_card(root):
+def test_hub_has_no_v3_card(root):                       # 11/9 定案改為版本 3.1：總覽頁不再有版本 3 卡片
     h = (root.parents[1] / 'index.html').read_text(encoding='utf-8')
-    assert h.count('flow/entry-animation-v3/index.html') == 1 and 'flow/entry-animation/index.html' not in h
-    assert '進場動線 · 版本 3（定案）' in h and '進場動線 · 2c' not in h
+    assert 'flow/entry-animation-v3/index.html' not in h and 'flow/entry-animation-v3-archive/' not in h and 'flow/entry-animation/index.html' not in h
 
 
 def test_2c_data_and_build_untouched(root):   # 2c 只動 README、頁面顯示（10/23 企劃：時間改百分比、拿掉時刻）與頁面測試；資料與建置不動
@@ -102,8 +101,6 @@ def test_diorama_artifact_escapes_script_breakers(tmp_path):
     assert '<!--' not in _embedded(html) and json.loads(_embedded(html)) == data
 
 
-def test_hub_v3_card_copy_current(root):                 # review：首頁卡不得留著不集結版本的說法
-    h = (root.parents[1] / 'index.html').read_text(encoding='utf-8')
-    i = h.index('flow/entry-animation-v3/index.html')
-    card = h[i:h.index('</a>', i)]
-    assert '沒有人停下來等' not in card and '18 秒' not in card and '門前' in card
+def test_legacy_banner_points_to_v31(root):             # 每頁最上方的停用提示連到版本 3.1 同一頁
+    core = (root / 'core.js').read_text(encoding='utf-8')
+    assert "'../entry-animation-v3.1/'+page+location.search+location.hash" in core and '已停用' in core

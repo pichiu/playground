@@ -1,6 +1,6 @@
 """版本 3.1 路徑抽查（README「驗證」一節）：與版本 3 逐人比對不變的欄位，並把大隊 1、5、9 各一列白衣、一列藍衣的完整路徑分段檢查。
 
-用法: python3 verify_paths.py ../data.json ../../entry-animation-v3/data.json [圖.png]
+用法: python3 verify_paths.py ../data.json ../../entry-animation-v3-archive/data.json [圖.png]
 - 不變：人員集合、座位、出口、出口序、樓梯路與序號、樓梯口時刻、離座時刻、列 ↔ 場內位置、西一入口序號、排號、終點。
 - 連續：每人路徑時間遞增、任一段速度 ≤ 步速（容許四捨五入），沒有瞬移。
 - 左右（以當下行進方向判定，不用螢幕左右）：同一排的白衣第 1 路與藍衣第 6 路，在
