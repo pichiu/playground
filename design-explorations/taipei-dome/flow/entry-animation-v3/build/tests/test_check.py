@@ -31,7 +31,7 @@ def test_check_all_green(built):
     assert C['routes']['crossings'] == 0 and C['pace']['violations'] == 0 and C['ranks']['violations'] == 0
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
-    assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundary'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())
+    assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundaryNet'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())   # 交界扣掉等門前隊伍空位的延後
     assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= check.GATE_BOUNDARY_MAX for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
@@ -39,13 +39,14 @@ def test_check_all_green(built):
 def test_boundary_gap_matches_rule(built):          # Review Focus 4
     _, D = built
     n = {(L, d): sum(1 for p in D['persons'] if p['lane'] == L and p['dadui'] == d) for L in 'AB' for d in range(1, 10)}
+    delay = {int(k): v for k, v in D['meta']['stairDelay'].items()}     # 等門前隊伍有空位而延後
     for L in 'AB':
         ps = sorted((p for p in D['persons'] if p['lane'] == L), key=lambda p: p['laneIdx'])
         for a, b in zip(ps, ps[1:]):
             if a['dadui'] != b['dadui']:
                 d = a['dadui']
                 rule = build.HEADWAY * (max(n[('A', d)], n[('B', d)]) - n[(L, d)]) + build.HEADWAY + build.DADUI_GAP
-                assert b['t']['stair'] - a['t']['stair'] <= rule + 0.4 + 1e-6
+                assert b['t']['stair'] - a['t']['stair'] <= rule + delay.get(b['dadui'], 0.0) + 0.4 + 1e-6
                 assert rule <= check.BOUNDARY_MAX
 
 
@@ -152,7 +153,7 @@ def test_check_enforces_boundary_rule(built):          # final review：交界�
         if p['lane'] == 'B' and p['dadui'] >= 3:
             p['t']['stair'] += 3.0
     C = check.check_all(D, NO_COLL)
-    assert C['continuity']['stair']['B']['maxGapBoundary'] < check.BOUNDARY_MAX
+    assert C['continuity']['stair']['B']['maxGapBoundaryNet'] < check.BOUNDARY_MAX
     assert C['continuity']['boundaryRuleViolations'] >= 1 and C['continuity']['ok'] is False and C['ok'] is False
 
 
@@ -302,9 +303,10 @@ def test_check_detects_corridor_rules(built):           # 迴廊候隊：前一�
     _, D = built
     D = _copy(D)
     assert check.staging(D)['violations'] == 0
+    full = max(p['t']['assembly'] for p in D['persons'] if p['dadui'] == 4)
     for p in D['persons']:
         if p['dadui'] == 3:
-            p['t']['holdEnd'] -= 5.0
+            p['t']['holdEnd'] = full - 1.0                 # 大隊 4 還沒排滿就放行
     assert check.staging(D)['violations'] >= 1
     D = _copy(built[1])
     p = next(q for q in D['persons'] if q['dadui'] == 9)

@@ -3,11 +3,16 @@ import plan
 import routes
 
 
-def _sched(base):
-    G = routes.Geometry(base)
-    people = plan.build_plan(base)['people']
-    R = build.prepare(G, people)
-    return people, build.schedule(G, people, R)
+_CACHE = {}
+
+
+def _sched(base):                                       # 排程約 100 秒（逐排排往西走法、樓梯延後要重算幾輪）：同一份 base 只算一次
+    if id(base) not in _CACHE:
+        G = routes.Geometry(base)
+        people = plan.build_plan(base)['people']
+        R = build.prepare(G, people)
+        _CACHE[id(base)] = (people, build.schedule(G, people, R))
+    return _CACHE[id(base)]
 
 
 def test_first_leave_is_t0_and_order(base):
@@ -24,7 +29,9 @@ def test_stair_beats_and_dadui_alignment(base):
             assert all(abs(b - a - build.HEADWAY) < 1e-6 for a, b in zip(ts, ts[1:]))
     ends = {d: max(S[p['id']]['stair'] for p in people if p['dadui'] == d) for d in range(1, 9)}
     starts = {d: min(S[p['id']]['stair'] for p in people if p['dadui'] == d) for d in range(2, 10)}
-    assert all(abs(starts[d + 1] - ends[d] - build.HEADWAY - build.DADUI_GAP) < 1e-6 for d in range(1, 9))
+    delay = clocks['stairDelay']                      # 等門前隊伍有空位而延後的秒數（北行段到齊才起步、進場變慢）
+    assert all(abs(starts[d + 1] - ends[d] - build.HEADWAY - build.DADUI_GAP - delay.get(d + 1, 0.0)) < 1e-6 for d in range(1, 9))
+    assert all(0 <= v < 40 for v in delay.values())
 
 
 def test_lane_b_staggered(base):
@@ -36,7 +43,7 @@ def test_lane_b_staggered(base):
 
 def test_total_length_band(base):
     people, (S, clocks) = _sched(base)
-    assert 15 < clocks['tGateStart'] < 60 and 170 < max(v['gate'] for v in S.values()) < 210
+    assert 15 < clocks['tGateStart'] < 60 and 360 < max(v['gate'] for v in S.values()) < 410   # 到齊才起步：北行段排距約 0.6 秒，全長約 397 秒
 
 
 def test_ranks_fill_then_continuous(base):             # 每個大隊排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP

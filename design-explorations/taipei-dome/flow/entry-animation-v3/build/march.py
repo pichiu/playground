@@ -25,7 +25,6 @@ NORTH = [(NORTH_X, 1.2)]
 R_GATE_IN, R_WALL, R_NORTH = 0.35, 0.45, 0.45
 SPLIT_AHEAD = 0.12                       # 大隊在最南一列之南這麼遠處分出
 NORTH_TY = -0.2                          # 中心線切線 ty < 這個值算「往北走」（北行段）；分出點一定在北行直線上（含大隊 9），不在就停止建置
-TURN_R = 0.08                            # 分出後各人轉進自己那一列的轉彎半徑
 GAP_H = SP_SEAT / 2                      # 半格：兩列（兩欄）中間的空隙離座位的距離
 STAGE_MIN = 0.15                         # 分出後的路線離舞台線稿至少這麼遠（和 check.py 的 STAGE_MIN 相同；產生時就檢查，不靠事後檢核）
 
@@ -219,31 +218,37 @@ class March:
             best = min(best, math.hypot(q[0] - ax - dx * f, q[1] - ay - dy * f))
         return best
 
-    def tail(self, p0, heading, seat, f_lat=None):
-        """分出之後的個人路線（不含 p0）：點 (x, y) 或 (x, y, 速度倍數)，沒寫倍數就是步速。座位都在同一個網格上（欄距、列距都是 SP_SEAT，原點 SEAT_X0），
-        「欄間空隙」（座位欄 ± 半格）與「列間空隙」（座位列 ± 半格）離任何座位都是半格（GAP_H = 0.066），
-        走在那裡不會擦過已坐好的人，也不會擦過正坐下的同排的人。
-        分出點在正北直線上，六路都在欄間空隙 ax；每人沿自己那一路直直往北，走到自己那一列才轉：
-        1. 座位在 ax 東側：走到自己那一列右轉往東到座位（同一列由東往西坐，經過的座位都還空著）。
-        2. 座位在 ax 西側：走到自己那一列南邊半格的列間空隙左轉往西，到座位正南方再往北半格進座位
-           （同一列東側的座位已經有人，所以不沿著列走，改走列間空隙）。f_lat：build.avoid 指定的往西那一段速度倍數。
+    @staticmethod
+    def turn_point(j, seat):
+        """第 j 路的人走到自己那一列要停下轉向的點，與是否往東：第 j 路在欄間空隙 x = NORTH_X + (j − 2.5) 欄；
+        座位在東側就停在自己那一列上 (x, 座位 Y)，往東；座位在西側就停在那一列南邊半格的列間空隙 (x, 座位 Y + 半格)，往西。"""
+        ax = NORTH_X + (j - 2.5) * SP_SEAT
+        east = ax < seat[0]
+        return (ax, seat[1] if east else seat[1] + GAP_H), east
+
+    def tail(self, p0, heading, seat, f_lat=None, passes=None, plan=None):
+        """分出之後的個人路線（不含 p0），分成兩段：(approach, depart)，點是 (x, y) 或 (x, y, 速度倍數)，沒寫倍數就是步速。
+        座位都在同一個網格上（欄距、列距都是 SP_SEAT，原點 SEAT_X0），「欄間空隙」（座位欄 ± 半格）與「列間空隙」（座位列 ± 半格）
+        離任何座位都是半格（GAP_H = 0.066），走在那裡不會擦過已坐好的人，也不會擦過正坐下的同排的人。
+        approach：沿自己那一路（欄間空隙）直直往北，走到自己那一列的轉向點（turn_point）停下。
+        depart：同一排六人都轉好之後一起起步（等多久由 build.schedule 算，這裡不管時間）——
+        1. 座位在東側：沿自己那一列往東到座位（同一列由東往西坐，經過的座位都還空著）。
+        2. 座位在西側：沿那一列南邊半格的列間空隙往西（west_plan 錯開還在往北走的人流；passes 是人流經過這條空隙的時刻，
+           相對起步時刻；plan 是 build.schedule 已經排好的走法），到座位正南方再往北半格進座位。f_lat：build.avoid 指定的往西那一段速度上限。
         路線上任何一點離舞台線稿不到 STAGE_MIN 就停止建置（座位或參數改了，產生時就知道，不必等 check.py）。"""
-        xs, ys = seat
         if heading[1] >= NORTH_TY:
             raise SystemExit('分出點不在北行直線上')
-        ax = SEAT_X0 + SP_SEAT * (math.floor((p0[0] - SEAT_X0) / SP_SEAT) + 0.5)
-        out = [(ax, p0[1] - abs(ax - p0[0]))] if abs(ax - p0[0]) > 1e-6 else []
-        y_from = out[-1][1] if out else p0[1]
-        if ax < xs:
-            r = min(TURN_R, xs - ax, y_from - ys)
-            c = (ax + r, ys + r)
-            pts = out + [(c[0] - r * math.cos(math.pi / 2 * i / 6), c[1] - r * math.sin(math.pi / 2 * i / 6)) for i in range(7)] + [(xs, ys)]
+        j = int(round((p0[0] - NORTH_X) / SP_SEAT + 2.5))
+        (ax, yt), east = self.turn_point(j, seat)
+        if abs(ax - p0[0]) > 1e-6:
+            raise SystemExit(f'分出點 x {p0[0]:.4f} 不在第 {j} 路的欄間空隙上')
+        approach = [(ax, yt)]
+        if east:
+            depart = [tuple(seat)]
         else:
-            yg = ys + GAP_H
-            pts = out + ([(ax, yg)] if y_from > yg + 1e-9 else [])
-            pts += west_plan(ax, yg, xs, f_lat if f_lat is not None else 1.0) + [(xs, ys)]
-        self._check_stage(p0, pts, seat)
-        return pts
+            depart = list(plan if plan is not None else west_plan(ax, yt, seat[0], f_lat if f_lat is not None else 1.0, passes)) + [tuple(seat)]
+        self._check_stage(p0, approach + depart, seat)
+        return approach, depart
 
     def _check_stage(self, p0, pts, seat):
         """分出後的路線（每 0.02 細分）離舞台線稿 ≥ STAGE_MIN，否則停止建置。"""
@@ -268,21 +273,24 @@ WEST_F = (1.0, 0.9, 0.8, 0.7)
 WEST_BEAM = 40
 
 
-def _seg_min(p0, t0, p1, t1, cols, yg):
-    """walker 從 (p0, t0) 直線到 (p1, t1)；人流在 x ∈ cols、於 t = n·RANK_GAP 時在 yg、以 V 往北。回傳最近距離。"""
+def _seg_min(p0, t0, p1, t1, cols, yg, passes=None):
+    """walker 從 (p0, t0) 直線到 (p1, t1)；人流在 x ∈ cols、於 passes 的各時刻經過 yg、以 V 往北。回傳最近距離。
+    passes 沒給時用固定節拍：t = n·RANK_GAP（第 0 排在 cols[0] 那一路就是自己，略過）。"""
     dt = t1 - t0
     vx, vy = (p1[0] - p0[0]) / dt, (p1[1] - p0[1]) / dt
     best = 9.0
     for xc in cols:
         if (p0[0] - xc) * (p1[0] - xc) > 0 and min(abs(p0[0] - xc), abs(p1[0] - xc)) > 0.05:
             continue
-        n0 = math.floor((t0 - 1.0) / RANK_GAP)
-        for n in range(n0, n0 + int((dt + 2.0) / RANK_GAP) + 2):
-            if n == 0 and abs(xc - cols[0]) < 1e-9:      # 自己那一路的這一排就是自己
-                continue
+        if passes is None:
+            n0 = math.floor((t0 - 1.0) / RANK_GAP)
+            ts = [n * RANK_GAP for n in range(n0, n0 + int((dt + 2.0) / RANK_GAP) + 2) if not (n == 0 and abs(xc - cols[0]) < 1e-9)]
+        else:
+            ts = [tp for tp in passes if t0 - 1.0 <= tp <= t1 + 1.0]
+        for tp in ts:
             # 相對位置 d(t) = walker − 人流，t ∈ [t0, t1]
             rx0 = p0[0] - xc
-            ry0 = p0[1] - (yg - V * (t0 - n * RANK_GAP))
+            ry0 = p0[1] - (yg - V * (t0 - tp))
             rvx, rvy = vx, vy + V
             vv = rvx * rvx + rvy * rvy
             f = 0.0 if vv < 1e-12 else max(0.0, min(dt, -(rx0 * rvx + ry0 * rvy) / vv))
@@ -290,14 +298,45 @@ def _seg_min(p0, t0, p1, t1, cols, yg):
     return best
 
 
-def west_plan(ax, yg, xs, f_cap=1.0):
-    """從 (ax, yg)（此刻同一排的人都在 yg）往西到 (xs, yg) 的折點（不含起點）：(x, y, 速度倍數)。"""
+def _traj_at(tr, t):
+    """軌跡 tr = [(x, y, t), …]（時刻遞增）在 t 的位置；t 在範圍外就是端點（之前還沒出現的人回傳 None）。"""
+    if t < tr[0][2]:
+        return None
+    if t >= tr[-1][2]:
+        return tr[-1][:2]
+    for (x0, y0, t0), (x1, y1, t1) in zip(tr, tr[1:]):
+        if t0 <= t <= t1:
+            f = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
+            return (x0 + (x1 - x0) * f, y0 + (y1 - y0) * f)
+    return tr[-1][:2]
+
+
+def _traj_min(p0, t0, p1, t1, trajs, n=8):
+    """walker 從 (p0, t0) 直線到 (p1, t1) 時，離其他往西進列者的軌跡最近多少（每段取 n + 1 個點）。"""
+    best = 9.0
+    for tr in trajs:
+        if t1 < tr[0][2] - 0.05:
+            continue
+        for k in range(n + 1):
+            f = k / n
+            t = t0 + (t1 - t0) * f
+            q = _traj_at(tr, t)
+            if q is not None:
+                best = min(best, math.hypot(p0[0] + (p1[0] - p0[0]) * f - q[0], p0[1] + (p1[1] - p0[1]) * f - q[1]))
+    return best
+
+
+def west_plan(ax, yg, xs, f_cap=1.0, passes=None, trajs=(), scored=False):
+    """從 (ax, yg) 往西到 (xs, yg) 的折點（不含起點）：(x, y, 速度倍數)。passes：西側幾路的人流經過 yg 的時刻（相對起步）；
+    沒給時用固定節拍（此刻同一排的人都在 yg、之後每 RANK_GAP 一排）。trajs：同一列其他往西進列者的軌跡（相對起步的時刻），也要避開。
+    scored=True 時回傳 (折點, 最近距離)。"""
     lane = int(round((ax - NORTH_X) / SP_SEAT + 2.5))    # 自己是第幾路：西側還有 lane 條欄間空隙有人往北走
     n_cross = min(lane, int(round((ax - xs) / SP_SEAT - 0.5)))   # 會跨過其中幾條（ax 西側、xs 東側）
+    cols = [ax - k * SP_SEAT for k in range(0, max(0, n_cross) + 1)]
     if n_cross <= 0:
-        return [(xs, yg, f_cap)]
-    cols = [ax - k * SP_SEAT for k in range(0, n_cross + 1)]
-    wps = [ax - (k + 0.5) * SP_SEAT for k in range(n_cross)] + [xs]
+        wps = [xs]
+    else:
+        wps = [ax - (k + 0.5) * SP_SEAT for k in range(n_cross)] + [xs]
     fs = [f for f in WEST_F if f <= f_cap + 1e-9] or [f_cap]
     beam = [(9.0, 0.0, 0.0, [])]                         # (目前最近距離, 時刻, 偏移, 折點)
     for i, x in enumerate(wps):
@@ -310,12 +349,24 @@ def west_plan(ax, yg, xs, f_cap=1.0):
                 d = math.dist(p0, p1)
                 for f in (fs if abs(dy - dy0) < 1e-9 else (1.0,)):
                     t1 = t + d / (V * f)
-                    sc = min(score, _seg_min(p0, t, p1, t1, cols, yg))
+                    sc = min(score, _seg_min(p0, t, p1, t1, cols, yg, passes) if n_cross > 0 else 9.0)
+                    if trajs:
+                        sc = min(sc, _traj_min(p0, t, p1, t1, trajs))
                     key = (round(dy, 4), round(t1, 2))
                     if key not in cand or cand[key][0] < sc:
                         cand[key] = (sc, t1, dy, pts + [(x, yg + dy, f)])
         beam = sorted(cand.values(), key=lambda c: (-c[0], c[1]))[:WEST_BEAM]
-    return beam[0][3]
+    return (beam[0][3], beam[0][0]) if scored else beam[0][3]
+
+
+def west_traj(ax, yg, xs, ys, plan, t0):
+    """往西進列者的絕對軌跡：(ax, yg) 在 t0 起步，照 plan 走到 (xs, yg)，再往北半格進座位 (xs, ys)，之後坐著。"""
+    tr, last, t = [(ax, yg, t0)], (ax, yg), t0
+    for q in list(plan) + [(xs, ys, 1.0)]:
+        t += math.dist(last, q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
+        tr.append((q[0], q[1], t))
+        last = q[:2]
+    return tr
 
 
 def export(M, split):

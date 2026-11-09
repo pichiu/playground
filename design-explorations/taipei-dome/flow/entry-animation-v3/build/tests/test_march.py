@@ -117,18 +117,20 @@ def test_west_plan_needs_offsets():                     # 等速直走過 5 條�
     assert _plan_min(ax, yg, xs, march.west_plan(ax, yg, xs)) > 0.035
 
 
-def test_tail_turns_at_own_row(base):                   # 分出後沿自己那一路往北，走到自己那一列才轉：東側右轉沿列、西側走列南邊半格的空隙
+def test_tail_turns_at_own_row(base):                   # 分出後沿自己那一路往北，走到自己那一列的轉向點停下（approach），之後直行（depart）：東側沿列、西側走列南邊半格的空隙
     G, M = _m(base)
     ax = march.NORTH_X + 0.5 * march.SP_SEAT                                     # 第 4 路（貼第 8 排）
     p0, north = (ax, 6.2), (0.0, -1.0)
     ys = 5.5
-    east = M.tail(p0, north, (ax + 3.5 * march.SP_SEAT, ys))
     near = lambda q, r: math.dist(q[:2], r) < 1e-9
-    assert abs(east[0][0] - ax) < 1e-9 and near(east[-1], (ax + 3.5 * march.SP_SEAT, ys))
-    assert all(q[1] >= ys - 1e-9 for q in east)                                  # 不越過自己那一列往北
-    west = M.tail(p0, north, (ax - 2.5 * march.SP_SEAT, ys))
-    assert near(west[0], (ax, ys + march.GAP_H))                                 # 沿自己那一路走到列南邊半格才轉
-    assert near(west[-1], (ax - 2.5 * march.SP_SEAT, ys)) and near(west[-2], (ax - 2.5 * march.SP_SEAT, ys + march.GAP_H))
+    seat_e = (ax + 3.5 * march.SP_SEAT, ys)
+    app, dep = M.tail(p0, north, seat_e)
+    assert len(app) == 1 and near(app[0], (ax, ys)) and app[0] == M.turn_point(3, seat_e)[0]   # 停在自己那一列上，正北直走過來
+    assert len(dep) == 1 and near(dep[0], seat_e)                                # 往東直行到座位
+    seat_w = (ax - 2.5 * march.SP_SEAT, ys)
+    app, dep = M.tail(p0, north, seat_w)
+    assert len(app) == 1 and near(app[0], (ax, ys + march.GAP_H))                # 停在自己那一列南邊半格
+    assert near(dep[-1], seat_w) and near(dep[-2], (seat_w[0], ys + march.GAP_H))
     try:
         M.tail(p0, (1.0, 0.0), (ax, ys))
     except SystemExit:
@@ -137,10 +139,13 @@ def test_tail_turns_at_own_row(base):                   # 分出後沿自己那�
         raise AssertionError('分出點不在北行直線上要停止建置')
 
 
-def test_lane_to_row(base):                             # lane j → 列 6k−5+j：lane 0 對到大隊第一列（Y 最小）
-    people = plan.build_plan(base)['people']
-    for p in people:
-        assert p['lie'] == 6 * (p['dadui'] - 1) + p['gateLane'] + 1
-    for d in range(1, 10):
-        ys = [min(p['field']['Y'] for p in people if p['dadui'] == d and p['gateLane'] == j) for j in range(6)]
-        assert ys == sorted(ys)
+def test_west_plan_avoids_same_row_walker():           # 同一列前一排的往西者也要避開（不會從後面追撞）
+    yg, ax = 5.0, march.NORTH_X + 2.5 * march.SP_SEAT
+    lead = march.west_traj(ax, yg, ax - 2.5 * march.SP_SEAT, yg - march.GAP_H, [(ax - 2.5 * march.SP_SEAT, yg, 0.7)], -0.2)
+    pl, sc = march.west_plan(ax, yg, ax - 4.5 * march.SP_SEAT, passes=[], trajs=[lead], scored=True)
+    assert sc > 0.035
+    tr = march.west_traj(ax, yg, ax - 4.5 * march.SP_SEAT, yg - march.GAP_H, pl, 0.0)
+    for k in range(200):
+        t = k * 0.01
+        a, b = march._traj_at(tr, t), march._traj_at(lead, t)
+        assert math.dist(a, b) > 0.03
