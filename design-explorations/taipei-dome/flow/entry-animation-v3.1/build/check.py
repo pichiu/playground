@@ -42,9 +42,8 @@ STAGE_OFF_TOL = 0.02               # 集合區六路的偏移（B2 走廊折線�
 STAGE_MIN = 0.15                   # 離舞台線稿（base.stage 中 X < −4.5 的部分）
 STAGE_X = -4.5
 SUBDIV = 0.02                      # 幾何避讓：路徑每 0.02 細分
-STAIR_Y = (0.9, 3.95)              # 舞台東側的 11 階階梯（大隊 1–4 列區西側，Y 範圍）：靠舞台的人可以走上去
 STAIR_BOX = (-5.6, -4.3, 0.8, 4.5) # 數「跨過幾條階梯線」的範圍（x0, x1, y0, y1）：場內舞台東緣這一帶
-MAX_STEPS = 3                      # 最多跨過幾條階梯線（上幾階）
+MAX_STEPS = 0                      # 最多跨過幾條階梯線（上幾階）：北行走第 5–10 排地標的直線，不上階梯
 
 
 def _gaps(ps, tkey, group_key):
@@ -396,8 +395,8 @@ def wheel(data):
 
 def lane_map(data, by_rank):
     """lane 對應：lie = 6(大隊 − 1) + gateLane + 1（lane 0 對到大隊第一列、Y 最小）；分出時同一排 lane 0 在行進方向最左、依序往右；
-    分出後每人進到自己那一列（|Y − field.Y| ≤ ROW_TOL）之後一直在那一列上、朝座位單調前進（右轉進列的往東；
-    座位在自己那條線西側的人從座位旁的欄間空隙進列，最多半格），到 field 停下，而且不越過自己那一列往北。"""
+    分出後每人進到自己那一列（|Y − field.Y| ≤ ROW_TOL）之後一直在那一列上、朝座位單調前進（座位在東側的右轉沿那一列往東；
+    座位在西側的沿那一列南邊半格的列間空隙往西、到座位正南方才往北半格，所以進到那一列時就已經在座位上），到 field 停下，而且不越過自己那一列往北。"""
     M = _March(data['map']['march'])
     bad, worst_row = [], 0.0
     for p in data['persons']:
@@ -429,8 +428,8 @@ def lane_map(data, by_rank):
 
 def geometry(data):
     """幾何避讓：所有路徑（每 SUBDIV 細分）只在西一入口門洞（gate.band）內穿過全壘打牆；離舞台線稿（X < STAGE_X 的部分）≥ STAGE_MIN，
-    只有舞台階梯（STAIR_Y 這一段）例外：靠舞台的人可以走上去，往東數跨過的舞台線不超過 MAX_STEPS 條（上 MAX_STEPS 階）。
-    STAIR_BOX 裡每一點都數跨過幾條線：階梯以外的地方一條都不能跨（不能走進舞台）。"""
+    舞台東側的階梯也一樣（北行走第 5–10 排地標的直線，不上階梯）。
+    STAIR_BOX 裡每一點往東數跨過幾條舞台線：不能超過 MAX_STEPS（0）條（不能走上階梯、走進舞台）。"""
     band = pairs(data['map']['gate']['band'])
     wall = np.array(pairs(data['map']['wall']))
     W0, W1 = wall[:-1], wall[1:]
@@ -504,13 +503,10 @@ def geometry(data):
         with np.errstate(divide='ignore', invalid='ignore'):
             xx = SB[:, 0] + (SB[:, 2] - SB[:, 0]) * (Q[:, 1:2] - ay) / (by - ay)
         steps[idx] = (span & (xx > Q[:, 0:1]) & (xx < x1)).sum(1)
-    on_stair = inbox & (P[:, 1] >= STAIR_Y[0]) & (P[:, 1] <= STAIR_Y[1])
-    bad_steps = int(((steps > MAX_STEPS) | ((steps > 0) & ~on_stair)).sum())
-    near_out = int(((best < STAGE_MIN) & ~on_stair).sum())
-    far = best.copy()
-    far[on_stair] = 9.0
-    k = int(far.argmin()) if len(far) else 0
-    min_stage = float(far[k]) if len(far) else 9.0
+    bad_steps = int((steps > MAX_STEPS).sum())
+    near_out = int((best < STAGE_MIN).sum())
+    k = int(best.argmin()) if len(best) else 0
+    min_stage = float(best[k]) if len(best) else 9.0
     return dict(points=int(len(P)), minStage=round(min(min_stage, 9.0), 4), stageNear=near_out, wallOutside=wall_out,
                 stairPoints=int((steps > 0).sum()), maxSteps=int(steps.max()) if len(steps) else 0, stepViolations=bad_steps,
                 at=[round(float(P[k][0]), 3), round(float(P[k][1]), 3)] if len(P) else None,
@@ -740,9 +736,9 @@ def main(path):
         ('整排轉彎（外圈不超速、內圈不倒退、內圈半徑）', f"{Wh['violations']}（{Wh['turns']} 個轉彎；最快 {Wh['maxSpeed']}、內圈最慢 {Wh['minInnerSpeed']}、內圈半徑 ≥ {Wh['minInnerR']}）",
          f"0（≤ V + {SPEED_EPS}、> 0、≥ {data['map']['march']['innerMin']}）", Wh['violations'] == 0),
         ('lane 對應（lane j → 列 6k−5+j、進列後在自己那一列朝座位走）', f"{Lm['violations']}（進列後 Y 偏差 ≤ {Lm['maxRowDev']}）", f'0（≤ {ROW_TOL}）', Lm['violations'] == 0),
-        ('B2 集合區（九個集合位置依序不重疊、入口前留空、站在自己那一路那一格、到位前不停、兩路走通行帶、依序放行）', f"{St['violations']}（{St['blocks']} 個位置；到位前最長停留 {St['maxWaitBeforeSlot']} 秒；通行帶越界 {St['bypassViolations']}；動畫裡同時有人在集合區的大隊最多 {St['peakDaduiInArea']} 個）", '0', St['violations'] == 0),
-        ('幾何避讓（只在門洞穿牆、離舞台；階梯例外）', f"{Ge['violations']}（門洞外穿牆 {Ge['wallOutside']}；階梯以外離舞台最近 {Ge['minStage']}，< {STAGE_MIN} 的點 {Ge['stageNear']}；走上階梯最多 {Ge['maxSteps']} 階、越界 {Ge['stepViolations']}）",
-         f'0（≥ {STAGE_MIN}；階梯 ≤ {MAX_STEPS} 階）', Ge['violations'] == 0),
+        ('B2 集合區（九個集合位置依序不重疊、入口前留空、站在自己那一路那一格、到位前不停、兩路走通行帶、九隊站齊才依序放行）', f"{St['violations']}（{St['blocks']} 個位置；到位前最長停留 {St['maxWaitBeforeSlot']} 秒；通行帶越界 {St['bypassViolations']}；動畫裡同時有人在集合區的大隊最多 {St['peakDaduiInArea']} 個）", '0', St['violations'] == 0),
+        ('幾何避讓（只在門洞穿牆、離舞台、不上階梯）', f"{Ge['violations']}（門洞外穿牆 {Ge['wallOutside']}；離舞台最近 {Ge['minStage']}，< {STAGE_MIN} 的點 {Ge['stageNear']}；走上階梯最多 {Ge['maxSteps']} 階、越界 {Ge['stepViolations']}）",
+         f'0（≥ {STAGE_MIN}；上階梯 {MAX_STEPS} 階）', Ge['violations'] == 0),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),
         ('出口用量 ≤ 可用席（重算，與 exits 欄位一致）', ', '.join(f"{k} {v['used']}/{v['capacity']}" + ('' if v['fieldsOk'] else '（欄位不符）') for k, v in C['capacity'].items()), '成立',

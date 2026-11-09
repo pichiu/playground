@@ -75,7 +75,7 @@ td.n{text-align:right;white-space:nowrap}
 <div class="wrap">
 <a class="back" href="../../index.html">‹ Taipei Dome · 大巨蛋活動 App</a>
 <h1>進場動線 版本 3.1：B2 集合區</h1>
-<p class="lede">依 11/8 現場彩排修正版本 3。西一＋桃竹 1,609 人照原順序離座、<b>白衣一路、藍衣一路</b>下樓；西一入口前沒有空間整一個大隊，所以改到 2c 藍衣集結區所在的那段 B2 走廊（西一入口以南、往深處）當<b>集合區</b>：兩路沿走廊外側的通行帶走到集合區盡頭、轉 180°，<b>白衣散成三路、藍衣散成三路</b>，走回自己大隊的集合位置整隊。依大隊 1→9 放行：一排六人並肩、一排緊跟一排，沿 B2 往回走、<b>右轉進西一入口</b>，之後和版本 3 一樣整排轉彎、北行、梯次進列。座位、下樓順序、三列交錯、藍白分流、大隊進場順序都和版本 3 相同。版本 3（<a href="../entry-animation-v3/index.html">對照</a>）與 2c（<a href="../entry-animation/index.html">對照</a>）保留不動。</p>
+<p class="lede">依 11/8 現場彩排修正版本 3。西一＋桃竹 1,609 人照原順序離座、<b>白衣一路、藍衣一路</b>下樓；西一入口前沒有空間整一個大隊，所以改到 2c 藍衣集結區所在的那段 B2 走廊（西一入口以南、往深處）當<b>集合區</b>：兩路沿走廊外側的通行帶走到集合區盡頭、轉 180°，<b>白衣散成三路、藍衣散成三路</b>，走回自己大隊的集合位置整隊。九個大隊都站齊後依大隊 1→9 放行：一排六人並肩、一排緊跟一排，沿 B2 往回走、<b>右轉進西一入口</b>，之後和版本 3 定案一樣整排轉彎、沿第 5–10 排地標直線北行、走到自己那列再轉。座位、下樓順序、三列交錯、藍白分流、大隊進場順序都和版本 3 相同。版本 3（<a href="../entry-animation-v3/index.html">對照</a>）與 2c（<a href="../entry-animation/index.html">對照</a>）保留不動。</p>
 <div class="kpi" id="kpi"></div>
 <h2>B2 集合區：九個集合位置</h2>
 <p class="sub">由西一入口往集合區深處：大隊 1 最近、大隊 9 最深，和放行順序一致，所以先放行的大隊不必穿過還在整隊的大隊；後到的大隊走外側通行帶，也不穿過已整好的隊伍。每個位置六路：面向西一入口時，<b>左側三路白衣（第 1 路 = 列 6k−5 最外側）</b>、右側三路藍衣。圖面點距只為把九個位置排進示意圖，<b>不是現場間距或容量</b>。</p>
@@ -86,7 +86,8 @@ td.n{text-align:right;white-space:nowrap}
 <li><b>下樓後仍是兩路</b>（白衣靠場側、藍衣外側），經通行帶走到集合區盡頭，整路左轉 180°（白衣內圈，所以轉過來白衣仍在行進方向左側），<b>在集合區散成六路</b>。</li>
 <li><b>集合區六路的左右以行進方向判定</b>：面向西一入口時第 1 路在左（走廊外側）；右轉進門後第 1 路在北；北行時在西——和版本 3 門洞以後完全一樣，沒有鏡像、沒有藍白交換。</li>
 <li><b>拿掉版本 3 的「迴廊候隊」</b>：它的觸發條件是「下一大隊在門前隊伍排滿」，門前隊伍沒有了；九個大隊改在集合區等，進門後直接北行、進列。</li>
-<li>放行：每個大隊全員站定後才放行；第一排先走，後面的排往前補到隊頭再走（一排緊跟一排）。下一大隊第一排跟在上一大隊最後一排之後。</li>
+<li><b>放行（11/9 改）：九個大隊全部在集合位置站定後才開始放行</b>，依大隊 1→9；第一排先走，後面的排往前補到隊頭再走（一排緊跟一排）。下一大隊第一排緊跟在上一大隊最後一排之後，九個大隊連續進場。</li>
+<li><b>北行段同版本 3 定案</b>：進門後沿第 5–10 排地標直線北行、不上舞台階梯，走到自己那列再轉。</li>
 <li>不變：座位與出口、個人下樓順序、三列交錯出人、白藍分流、列 ↔ 演繹位置對應、大隊 1→9 進場順序（逐人比對與版本 3 相同）。</li>
 </ul>
 <h2>尚需現場確認</h2>
@@ -143,7 +144,7 @@ function checksTable(C){
   ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
   ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.19、大隊內 ≤ 0.8、大隊間 ≤ 16',Cn.ok,[]],
   ['步速（到集合位置前不停、集合位置裡只在自己那一路站住或往前補、放行後不停）',`${C.pace.violations}`,'0',C.pace.violations===0,C.pace.examples||[]],
-  ['B2 集合區：九個位置依序不重疊、入口前留空、站在自己那一路那一格、兩路走通行帶、依序放行',`${C.assembly.violations}（到位前最長停留 ${C.assembly.maxWaitBeforeSlot} 秒；通行帶越界 ${C.assembly.bypassViolations}）`,'0',C.assembly.violations===0,(C.assembly.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:`${e.why}${e.dadui?' 大隊 '+e.dadui:''}`)],
+  ['B2 集合區：九個位置依序不重疊、入口前留空、站在自己那一路那一格、兩路走通行帶、九隊站齊才依序放行',`${C.assembly.violations}（到位前最長停留 ${C.assembly.maxWaitBeforeSlot} 秒；通行帶越界 ${C.assembly.bypassViolations}）`,'0',C.assembly.violations===0,(C.assembly.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:`${e.why}${e.dadui?' 大隊 '+e.dadui:''}`)],
   ['整排並肩（放行 → 分出）／整排轉彎／lane 對應／幾何避讓',`${C.formation.violations} / ${C.wheel.violations} / ${C.laneMap.violations} / ${C.geometry.violations}`,'0 / 0 / 0 / 0',[C.formation,C.wheel,C.laneMap,C.geometry].every(x=>x.violations===0),[]],
   ['圖面柱位與路徑衝突（資訊，待現場確認；不算進通過與否）',`${C.pillars.conflicts} 根柱、${C.pillars.persons} 人經過`,'待確認',null,Object.entries(C.pillars.where||{}).map(([k,v])=>`${k}：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`)],
   ['一排六人一起放行（每個大隊站齊才放行、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],

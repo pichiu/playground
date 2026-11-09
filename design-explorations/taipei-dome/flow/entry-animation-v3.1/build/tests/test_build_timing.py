@@ -34,10 +34,22 @@ def test_lane_b_staggered(base):
     assert abs(S[b['id']]['stair'] - S[a['id']]['stair'] - 0.17) < 1e-6
 
 
-def test_total_length_band(base):
+def test_total_length_band(base):                       # 11/9：九個大隊全部站定才放行，第一位過西一入口在最後一位站定之後（動畫節奏，不是現場時間）
     people, (S, clocks) = _sched(base)
-    # 版本 3.1：大隊 1 要走到集合區盡頭回頭、再站齊才放行，第一位過西一入口比版本 3 晚（動畫節奏，不是現場時間）
-    assert 40 < clocks['tGateStart'] < 90 and 170 < max(v['gate'] for v in S.values()) < 230
+    last_in = max(v['assembly'] for v in S.values())
+    assert last_in < clocks['tGateStart'] < last_in + 5 and max(v['gate'] for v in S.values()) < last_in + 80
+
+
+def test_release_after_all_nine(base):                  # 11/9：九個大隊全部站定後才開始放行；大隊 1→9 連續，下一大隊第一排緊跟上一大隊最後一排
+    people, (S, clocks) = _sched(base)
+    last_in = max(v['assembly'] for v in S.values())
+    assert min(v['enter'] for v in S.values()) >= last_in + build.FILL_PAUSE - 1e-9
+    th = clocks['tauHead']
+    ref = lambda p: S[p['id']]['enter'] + th[1] - th[p['dadui']]
+    for d in range(1, 9):
+        a = max(ref(p) for p in people if p['dadui'] == d)
+        b = min(ref(p) for p in people if p['dadui'] == d + 1)
+        assert abs(b - a - build.RANK_GAP) < 1e-6
 
 
 def test_ranks_fill_then_continuous(base):             # 每個大隊在集合位置站齊才放行；之後一排六人一起離開隊頭，排與排（換算到大隊 1 隊頭）至少 RANK_GAP

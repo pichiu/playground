@@ -86,8 +86,8 @@ body>.dome-nav.bar .dome-prefs{position:sticky;right:0;padding-left:8px;margin-r
 <div class="stage" id="stage">
  <div class="maps"><canvas id="cv" aria-label="版本 3.1 全場動線地圖"></canvas><div class="loading" id="loading">讀取動線資料…</div></div>
  <div class="hud">
-  <div class="title" id="title"><h1>版本 3.1 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、經通行帶到 B2 集合區盡頭轉彎、散成六路到各大隊集合位置，依序放行、一排六人並肩右轉進門 · 動畫節奏非現場秒數</p>
-   <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集合位置整隊中</span><span><i class="ln" style="background:var(--dim);height:0;border-top:2px dashed var(--dim)"></i>通行帶（假設）</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
+  <div class="title" id="title"><h1>版本 3.1 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、經通行帶到 B2 集合區盡頭轉彎、散成六路到各大隊集合位置，九隊站齊後依序放行、一排六人並肩右轉進門 · 動畫節奏非現場秒數</p>
+   <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集合位置整隊中</span><span><i class="ln" style="background:var(--dim);height:0;border-top:2px dashed var(--dim)"></i>通行帶（假設）</span><span><i style="border:2px solid var(--amber-ink)"></i>L7? L8? 圖面柱位與集合區衝突（待確認）</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
   </div>
   <div class="clock"><b id="clock">0%</b><span class="phase" id="phase"></span></div>
   <div class="flows"><div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div></div>
@@ -130,11 +130,11 @@ function buildTrack(){
  document.querySelector('[data-track="gate"]').insertAdjacentHTML('beforeend',S.dad.map(o=>`<i data-dadui="${o.k}" style="left:${pct(o.a)};width:calc(${pct(o.b-o.a)} - 2px)" title="大隊 ${o.k}：${o.n} 人"><span>${o.k}</span></i>`).join(''));}
 function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.meta.t0)return '休息區就座';
  const dad=S.dad.filter(o=>t>=o.a).pop();if(dad)return `大隊 ${dad.k} 進場中`;
- if(c.wait)return '大隊 1 在集合區整隊';
+ if(c.wait){const n=S.st.filter(o=>t>=o.full).length;return n===9?'九個大隊都已站齊，等放行':`集合區整隊中（${n} 個大隊已站齊）`;}
  return t>=S.stair[0].a?'大隊 1 下樓、往集合區':'大隊 1 離座';}
 function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*v.s);
- v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber,gateLanes:[C.white,C.blue],gateLanesA:.3,stagingInk:C.dim,stagingLabels:false,pillar:C.ink});
- {const pc=(D.meta.checks.pillars||{}).where||{};for(const [k,w] of Object.entries(pc)){v.dot(w.X,w.Y,Math.max(3,.1*v.s),null,C['amber-ink'],2);v.text('柱 '+k+'（待確認）',w.X,w.Y,{color:C['amber-ink'],size:10,weight:700,halo:C.map,dy:-12});}}window.__gateLanesDrawn=v.gateLanesDrawn;
+ v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber,gateLanes:[C.white,C.blue],gateLanesA:.3,stagingInk:C.dim,stagingLabels:false});
+ {const pc=(D.meta.checks.pillars||{}).where||{};for(const [k,w] of Object.entries(pc)){v.dot(w.X,w.Y,Math.max(3,.1*v.s),null,C['amber-ink'],2);{const r=Math.hypot(w.X,w.Y),k2=(r+.75)/r;v.stroke([w.X,w.Y,w.X*k2,w.Y*k2],C['amber-ink'],1);v.text(k+'?',w.X*(r+.85)/r,w.Y*(r+.85)/r,{color:C['amber-ink'],size:10,weight:700,halo:C.map});}}}window.__gateLanesDrawn=v.gateLanesDrawn;
  // 集合位置：標「大隊 d」，有人在等時加上此刻人數（橘）
  {const w={};for(const p of P)if(state(p,t)==='wait')w[p.dadui]=(w[p.dadui]||0)+1;
   for(const b of D.map.staging.blocks){const n=w[b.dadui]||0;v.text(n?`大隊 ${b.dadui}　${n}`:`大隊 ${b.dadui}`,b.label[0],b.label[1],{color:n?C['amber-ink']:C.dim,size:11,weight:700,halo:C.map});}
