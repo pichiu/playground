@@ -86,7 +86,7 @@ const C={};for(const n of ['paper','ink','dim','rule','blue','floor','rust'])C[n
 const FRAME=[-15.0,-11.0,0.3,11.6];
 // 與 core.js 的 View 相同，只把像素密度固定：螢幕 2×、列印 3×，1,609 個小點印出來才不糊。
 class SheetView extends View{resize(){const r=this.c.getBoundingClientRect();this.w=r.width;this.h=r.height;this.dpr=matchMedia('print').matches?3:2;this.c.width=Math.round(this.w*this.dpr);this.c.height=Math.round(this.h*this.dpr);this.fit(this.b,true);}}
-const RULE='白衣一路（靠看台）、藍衣一路（外側），照大隊 1→9 離座、走 B1、下樓梯（同版本 3）；入口前不排隊，兩路沿 B2 走廊外側的通行帶走到自己那一排後方，迴轉散成六路，走回自己大隊的集合位置（大隊 1 最靠西一入口、大隊 9 最深）；九個大隊都站齊才依序放行，一排六人並肩右轉進門、直接北行進列。白衣依序用出口 139→140→141→142，藍衣 142→143→144→145，出口坐滿就換，任何時刻白衣的出口比藍衣近，走廊不交叉。';
+const RULE='白衣一路（靠看台）、藍衣一路（外側），照大隊 1→9 離座、走 B1、下樓梯（同版本 3）；入口前不排隊，兩路沿 B2 走廊外側的通行帶走到自己那一排後方，迴轉散成六路，走回自己大隊的集合位置（大隊 1 最靠西一入口、大隊 9 最深）；九個大隊都站齊才依序放行，一排六人並肩右轉進門、沿第 4–9 排地標北行進列；第 10 排以東的人排頭先到第 9 排停住，六列對齊再一起走。白衣依序用出口 139→140→141→142，藍衣 142→143→144→145，出口坐滿就換，任何時刻白衣的出口比藍衣近，走廊不交叉。';
 // 六個時刻取自 phases、groups 與 lanes（換口那一位的離座時刻）。
 function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g])),ph=Object.fromEntries(D.phases.map(p=>[p.key,p]));
  // 白衣第一次換口、藍衣最後一次換口；段數由資料決定（座位改了換口點會移動），沒有換口就取該路第一段
@@ -99,7 +99,7 @@ function moments(ds){const D=ds.D,G=Object.fromEntries(ds.groups.map(g=>[g.key,g
   // 就座階段的結束瞬間就是第一人離座的瞬間；畫面取它前一毫秒，讓「全員就座」真的是 1,609 人都在座位上。
   {key:'seated',t:ph.seated.t1,tc:ph.seated.t1-1e-3,h:'全員就座',d:'七個出口由上排往下坐，先走的坐上面。'},
   {key:'form',t:(G['白1'].tStairFirst+D.meta.tGateStart)/2,h:'大隊 1 兩路成形',d:`白衣從 ${G['白1'].exits[0].exit} 出口、藍衣從 ${G['藍1'].exits[0].exit} 出口，各自三列交錯成一路；白衣靠看台側、藍衣外側。`},
-  {key:'gate',t:ph.enter.t0,h:'九隊站齊、大隊 1 放行進場',d:'每個大隊下樓後沿通行帶走到自己那一排後方、迴轉散成六路（面向入口左三路白衣、右三路藍衣），走回自己的集合位置；九個大隊都站齊後，大隊 1 先放行，一排緊跟一排、六人並肩右轉進西一入口，沿第 5–10 排地標直線北行；大隊 2–9 依序緊跟。'},
+  {key:'gate',t:ph.enter.t0,h:'九隊站齊、大隊 1 放行進場',d:'每個大隊下樓後沿通行帶走到自己那一排後方、迴轉散成六路（面向入口左三路白衣、右三路藍衣），走回自己的集合位置；九個大隊都站齊後，大隊 1 先放行，一排緊跟一排、六人並肩右轉進西一入口，沿第 4–9 排地標直線北行，各列排頭在第 9 排停住、對齊再一起走（第 9 排以內直接到位）；大隊 2–9 依序緊跟。'},
   swapM('swapA',A,'白衣','隊伍不斷。'),
   swapM('swapB',B,'藍衣','走最外側。'),
   {key:'done',t:D.meta.tEnd,h:'全員到位',d:`${D.meta.population.toLocaleString('zh-TW')} 人全部站在身分證位置。`}].sort((a,b)=>a.t-b.t);}

@@ -3,23 +3,24 @@ import json
 
 from conftest import no_hscroll
 
-CUES = ['白衣第一位離座', '藍衣第一位離座', '白衣最後一位離座', '藍衣最後一位離座', '第一位到集合位置', '全隊站齊', '放行', '第一位過西一入口', '最後一位過西一入口', '全隊到位']
+CUES = ['白衣第一位離座', '藍衣第一位離座', '白衣最後一位離座', '藍衣最後一位離座', '第一位到集合位置', '全隊站齊', '放行', '第一位過西一入口', '最後一位過西一入口', '排頭在第 9 排對齊', '全隊到位']
 
 
-def test_captain_ten_cues(open_page, root):
+def test_captain_eleven_cues(open_page, root):
     D = json.loads((root / 'data.json').read_text(encoding='utf-8'))
     pg, errs, perrs = open_page('captain.html?k=1', 1280)
     pg.wait_for_function('window.__dome_ready === true', timeout=20000)
     assert not errs and not perrs, (errs, perrs)
     cues = pg.locator('[data-cue]')
-    assert cues.count() == 10
-    assert sorted(cues.nth(i).locator('.h').inner_text() for i in range(10)) == sorted(CUES)
+    assert cues.count() == 11
+    assert sorted(cues.nth(i).locator('.h').inner_text() for i in range(11)) == sorted(CUES)
     ts = cues.evaluate_all('els => els.map(e => +e.dataset.t)')
     assert ts == sorted(ts)
     ps = [p for p in D['persons'] if p['dadui'] == 1]
     want = {'白衣第一位離座': min(p['t']['leave'] for p in ps if p['costume'] == '白'),
             '最後一位過西一入口': max(p['t']['gate'] for p in ps), '全隊到位': max(p['t']['arrive'] for p in ps),
-            '全隊站齊': max(p['t']['assembly'] for p in ps), '放行': min(p['t']['enter'] for p in ps)}
+            '全隊站齊': max(p['t']['assembly'] for p in ps), '放行': min(p['t']['enter'] for p in ps),
+            '排頭在第 9 排對齊': D['map']['align']['release']['1']}
     got = dict(zip(cues.evaluate_all("els => els.map(e => e.querySelector('.h').textContent)"), ts))
     assert all(abs(got[k] - v) < 1e-6 for k, v in want.items())
     body = pg.inner_text('body')

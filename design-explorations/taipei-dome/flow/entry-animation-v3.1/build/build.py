@@ -28,6 +28,8 @@ SLOW = routes.STAGE_STEP / RANK_GAP   # 集合位置裡往前補一格的速度�
 FILL_PAUSE = 1.0        # 大隊全員在集合位置站定後，稍停這麼久才放行
 GATE_DRAW_AFTER = 1.0   # 圖面六條線畫到穿過西一入口之後這麼久（秒）
 WAIT_MIN = 0.01         # 路徑上同一點停不到這麼久就不留停留點
+ALIGN_GAP = 0.07        # 第 9 排對齊時停住的人前後最少相距（沿路線，約 0.53 m）。大隊 9 第 6 路（列 54）第 10 排以東只有 9 人、隊頭要等約 1.16 秒，
+                        # 間距要 < 0.078 才不會排到第 9 排的那一位（0.08 會擋到 54-9 約 0.02 秒）
 LANE_K = {'A': 0, 'B': 1}
 ASSUME_NO_PILLARS = {'L7', 'L8'}   # 11/9 企劃：先假設集合區裡沒有這兩根柱（版本 1 圖面的場邊柱，落在大隊 7、8 的集合位置）。圖面不畫；
                                    # 另存在 map.pillarsAssumedAbsent，check.py 照樣算「若有這兩根柱會碰到多少人」，標成假設、不算衝突
@@ -196,9 +198,9 @@ def schedule(G, people, R=None, lay=None):
 
 
 def person_path(G, p, r, t, lay, s_split, f_lat=None):
-    """座位 → … → 樓梯 → 通行帶 → 自己那一排後方迴轉 → 散成六路 → 自己那一路 → 集合位置（全程步速）→ 站住
-    → 放行後沿自己那一路以 SLOW 往前補到隊頭（第一排不用補）→ 一排六人並肩沿 march 中心線（右轉進西一入口、沿牆、北轉、沿第 5–10 排地標直線北行）
-    → 在自己大隊列區南緣分出 → 沿自己那一路走到自己那一列 → 座位（步速）。"""
+    """名目路徑（未四捨五入；第 9 排對齊停住由 align_holds / apply_hold 另外套上，finish_path 收尾）：座位 → … → 樓梯 → 通行帶 → 自己那一排後方迴轉 → 散成六路 → 自己那一路 → 集合位置（全程步速）→ 站住
+    → 放行後沿自己那一路以 SLOW 往前補到隊頭（第一排不用補）→ 一排六人並肩沿 march 中心線（右轉進西一入口、沿牆、北轉、沿第 4–9 排地標直線北行）
+    → 在自己大隊列區南緣分出 → 沿自己那一路走到自己那一列 → 座位（步速；第 10 排起的經過第 9 排對齊點）。"""
     M = march_of(G)
     j, d = p['gateLane'], p['dadui']
     path = list(timed(r['to'], t['leave']))
@@ -222,6 +224,108 @@ def person_path(G, p, r, t, lay, s_split, f_lat=None):
         tt += math.dist(last[:2], q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
         path.append((q[0], q[1], tt))
         last = path[-1]
+    return path
+
+
+def _at_time(path, t):
+    """名目路徑在 t 時刻的位置。"""
+    k = max(0, min(len(path) - 2, bisect.bisect_right([q[2] for q in path], t) - 1))
+    q0, q1 = path[k], path[k + 1]
+    f = max(0.0, min(1.0, (t - q0[2]) / (q1[2] - q0[2]))) if q1[2] > q0[2] else 0.0
+    return (q0[0] + (q1[0] - q0[0]) * f, q0[1] + (q1[1] - q0[1]) * f)
+
+
+def _arc_len(path, t):
+    """名目路徑從起點到 t 時刻的路程。"""
+    c = 0.0
+    for q0, q1 in zip(path, path[1:]):
+        if q1[2] >= t:
+            return c + math.dist(q0[:2], _at_time([q0, q1], t))
+        c += math.dist(q0[:2], q1[:2])
+    return c
+
+
+def _time_at_len(path, L):
+    """名目路徑走到路程 L 的時刻（路程 ≤ 0 回起點時刻）。"""
+    c = 0.0
+    for q0, q1 in zip(path, path[1:]):
+        d = math.dist(q0[:2], q1[:2])
+        if c + d >= L and d > 0:
+            return q0[2] + (q1[2] - q0[2]) * (L - c) / d
+        c += d
+    return path[-1][2]
+
+
+def align_holds(people, paths, sched):
+    """第 9 排對齊（11/9）：每個大隊各自一塊。
+    - 隊頭：每一路第一位（slot 0，那一列排號最大的人）一定在第 10 排以東，名目路徑經過對齊點 (march.ALIGN_X, 自己那一列的 Y)；
+      六路隊頭到對齊點的時刻取最晚那一位 = 這個大隊的出發時刻 release[d]。比它早到的隊頭在對齊點停到 release[d]。
+    - 後面的人：同一路前一位停住了，自己最多走到離他（沿路線）ALIGN_GAP 的地方停；要是在 release[d] 之前就走到了，就停到 release[d]。
+      間距最多壓到名目間距（不會要人比沒停時還晚到前一位停住的地方）。各路各自排隊：第 6 路隊頭最早到、等最久（約 1.2 秒），
+      它後面的隊伍會排回分出點之前（北行直線或北轉弧，那裡第 5、6 路是外圈、走步速），那幾位就在自己那條平移線上停，同一排其他路照走，
+      所以那幾排在停的時候不再並肩（check.formation 的並肩檢核只到同一排第一位停下為止）。
+      不讓分出前整排一起停：大隊 9 在北轉弧結束處就分出，弧內內圈相鄰兩排只隔 0.033，整排停時後面的排沒辦法再靠近，
+      停的範圍會一路往後擴到第 9 排以內的人。
+    - release[d] 一到，所有停住的人一起往前走（每人延後 release[d] − 自己停下的時刻），之後不再停：大家以同一個名目速度剖面走，間距不再縮小。
+    - 座位在第 9 排與以內（field.X ≤ ALIGN_X）的人直接走到位：要是排程讓他也得停，就停止建置（不靠事後檢核）。
+    回傳 holds：{id: (停下時刻, 出發時刻)}（只有真的停 ≥ WAIT_MIN 的人）、release：{大隊: 出發時刻}、heads：{大隊: [六路隊頭 id]}。"""
+    holds, release, heads = {}, {}, {}
+    for d in sorted({p['dadui'] for p in people}):
+        ps = [p for p in people if p['dadui'] == d]
+        lane = {j: sorted((p for p in ps if p['gateLane'] == j), key=lambda p: p['slot']) for j in range(6)}
+        lane = {j: v for j, v in lane.items() if v}
+        arrive_align = {}
+        for j, v in lane.items():
+            h = v[0]
+            if h['field']['X'] <= march.ALIGN_X + 1e-9:
+                raise SystemExit(f'大隊 {d} 第 {j + 1} 路隊頭 {h["id"]} 的座位不在第 10 排以東，沒有對齊點')
+            fy = h['field']['Y']
+            arrive_align[j] = next(q[2] for q in paths[h['id']] if q[2] >= sched[h['id']]['split'] - 1e-9
+                                   and abs(q[0] - march.ALIGN_X) < 1e-6 and abs(q[1] - fy) < 1e-6)
+        R = max(arrive_align.values())
+        release[d], heads[d] = R, [lane[j][0]['id'] for j in sorted(lane)]
+        stop = {}                                        # id → 名目停下時刻（還沒決定停不停之前也記：給同一路後一位算）
+        for k in range(max(len(v) for v in lane.values())):
+            cand = {}
+            for j, v in lane.items():
+                if k >= len(v):
+                    continue
+                p = v[k]
+                if k == 0:
+                    cand[p['id']] = arrive_align[j]
+                    continue
+                lead = v[k - 1]
+                if lead['id'] not in holds:
+                    continue
+                hs_l = stop[lead['id']]
+                t_pl = hs_l + sched[p['id']]['enter'] - sched[lead['id']]['enter']   # 自己名目走到前一位停住處的時刻（同一路前段路線、速度剖面相同）
+                tc = _time_at_len(paths[p['id']], _arc_len(paths[p['id']], t_pl) - ALIGN_GAP)
+                cand[p['id']] = max(tc, hs_l)
+            for pid, hs in cand.items():
+                if R - hs < WAIT_MIN:
+                    continue
+                p = next(q for q in ps if q['id'] == pid)
+                if p['field']['X'] <= march.ALIGN_X + 1e-9:
+                    raise SystemExit(f'第 9 排以內的 {pid} 被前面停住的人擋到（大隊 {d}）：ALIGN_GAP 或排距要改')
+                if hs <= sched[pid]['gate'] + 1e-9:
+                    raise SystemExit(f'{pid} 要在穿過西一入口之前就停（大隊 {d}）')
+                stop[pid] = hs
+                holds[pid] = (hs, R)
+    return holds, release, heads
+
+
+def apply_hold(path, hold):
+    """在名目路徑上 hs 時刻的位置停到 he，之後的點全部延後 he − hs。"""
+    if not hold:
+        return path
+    hs, he = hold
+    k = next(i for i, q in enumerate(path) if q[2] > hs + 1e-12)
+    x, y = _at_time(path, hs)
+    return path[:k] + [(x, y, hs), (x, y, he)] + [(q[0], q[1], q[2] + he - hs) for q in path[k:]]
+
+
+def finish_path(path):
+    """四捨五入到 0.001、去掉停不到 WAIT_MIN 的停留點、時間嚴格遞增。"""
     rounded = [[round(x, 3), round(y, 3), round(z, 3)] for x, y, z in path]
     clean = [rounded[0]]
     for q in rounded[1:]:
@@ -240,11 +344,16 @@ def _ids_between(persons, L, i0, i1):
 def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     people = planj['people']
     persons = []
+    raw = {p['id']: person_path(G, p, R[p['id']], sched[p['id']], clocks['lay'], clocks['split'][p['dadui']], (slow or {}).get(p['id'])) for p in people}
+    holds, release, heads = align_holds(people, raw, sched)
     for p in people:
-        r, t = R[p['id']], sched[p['id']]
-        path = person_path(G, p, r, t, clocks['lay'], clocks['split'][p['dadui']], (slow or {}).get(p['id']))
+        t, hold = sched[p['id']], holds.get(p['id'])
+        path = finish_path(apply_hold(raw[p['id']], hold))
+        split = t['split'] + (hold[1] - hold[0] if hold and hold[0] < t['split'] else 0.0)
         tt = dict(leave=round(t['leave'], 3), stair=round(t['stair'], 3), entry=round(t['entry'], 3), assembly=round(t['assembly'], 3), go=round(t['go'], 3),
-                  enter=round(t['enter'], 3), gate=round(t['gate'], 3), split=round(t['split'], 3), arrive=path[-1][2])
+                  enter=round(t['enter'], 3), gate=round(t['gate'], 3), split=round(split, 3), arrive=path[-1][2])
+        if hold:
+            tt.update(holdStart=round(hold[0], 3), holdEnd=round(hold[1], 3))
         persons.append(dict(id=p['id'], lie=p['lie'], pai=p['pai'], dadui=p['dadui'], costume=p['costume'], a=p['a'],
                             field=p['field'], rest=p['rest'], exit=p['exit'], exitSeq=p['exitSeq'], lane=p['lane'],
                             laneIdx=p['laneIdx'], gateLane=p['gateLane'], gateIdx=p['gateIdx'], slot=p['slot'], rank=clocks['rankOf'][p['id']],
@@ -319,7 +428,9 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     pillars = [c for c in base['map']['pillars'] if c['id'] not in ASSUME_NO_PILLARS]
     absent = [c for c in base['map']['pillars'] if c['id'] in ASSUME_NO_PILLARS]
     m = dict(base['map'], pillars=pillars, pillarsAssumedAbsent=absent, **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
-             march=march.export(G.march, clocks['split'], {d: clocks['tauHead'][d] for d in clocks['lay']['head']}))
+             march=march.export(G.march, clocks['split'], {d: clocks['tauHead'][d] for d in clocks['lay']['head']}),
+             align=dict(pai=march.ALIGN_PAI, x=round(march.ALIGN_X, 4), gap=ALIGN_GAP, release={str(d): round(t, 3) for d, t in release.items()},
+                        heads={str(d): v for d, v in heads.items()}))
     return dict(meta=meta, phases=phases, nodes=nodes, map=m, restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])
 
@@ -374,8 +485,9 @@ RULES = [
     '下樓後仍是白衣一路、藍衣一路（白衣靠場側），經走廊外側的通行帶走到自己那一排的後方，左轉 180°（白衣內圈、藍衣外圈，同心不交叉；轉過來白衣仍在行進方向左側），後面的人迴轉點只再深一排，白衣散成三路、藍衣散成三路，沿自己那一路走回自己大隊的集合位置；先到的站前面，所以沒有人穿過已站好的人；到位前中途不停，樓梯上也不等',
     '集合位置六路：面向西一入口時左側三路白衣、右側三路藍衣，第 1 路（列 6k−5）在最左（走廊外側）；隊頭是每列排號最大那一位（同版本 3 的進門順序）',
     '放行：九個大隊全部在集合位置站定才開始放行，依大隊 1→9；隊頭一排六人並肩、一排緊跟一排離開，後面的排往前補到隊頭再走；下一大隊第一排緊跟在上一大隊最後一排之後。集合區還沒準備好時，由休息區出口幹部控制放人（人留在座位），不在樓梯上等',
-    '整排轉彎：一排六人從集合位置隊頭到自己大隊的列區南緣全程並肩——沿 B2 往回走、右轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿第 5–10 排地標一條直線往北（同版本 3 定案）；第 1 路（白衣列 6k−5）永遠在行進方向左側：集合區在外側、門洞裡在北、北行時在西（第 5 排地標旁）、進列時對到大隊第一列；不閃舞台、不上舞台階梯，六路都在地面',
-    '走到自己那列再轉（同版本 3 定案）：到了自己大隊列區南緣，每人沿自己那一路（兩欄之間的空隙）繼續往北，走到自己那一列才轉；座位在東側的右轉沿那一列往東到位，座位在西側的在那一列南邊半格的空隙往西、到座位正南方再往北半格進列；北行時壓過的是後面大隊還空著的座位',
+    '整排轉彎：一排六人從集合位置隊頭到自己大隊的列區南緣並肩——沿 B2 往回走、右轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿第 4–9 排地標一條直線往北（11/9 由版本 3 定案的第 5–10 排整體往西移一欄）；第 1 路（白衣列 6k−5）永遠在行進方向左側：集合區在外側、門洞裡在北、北行時在西（第 4 排地標旁）、進列時對到大隊第一列；不閃舞台、不上舞台階梯，六路都在地面（第 1 路在舞台東側階梯旁最近約 0.84 m）',
+    '走到自己那列再轉（同版本 3 定案）：到了自己大隊列區南緣，每人沿自己那一路（兩欄之間的空隙）繼續往北，走到自己那一列才轉；座位在東側的右轉沿那一列往東，座位在西側的在那一列南邊半格的空隙往西、到座位正南方再往北半格進列；北行時壓過的是後面大隊還空著的座位',
+    '第 9 排對齊（11/9）：轉進自己那一列往東之後，座位在第 10 排以東的人，每一列排頭先走到第 9 排（第 9、10 排之間的空隙）停住，後面的人跟著前一位停（前後約 0.5 m），所以整塊停住；同一大隊六列排頭都到第 9 排、對齊了，全隊停住的人一起往東走到位，還在路上的人照走不停。第 6 路（最東）一轉進列就到第 9 排、等最久，它後面的人會停回分出點之前、在自己那一路上停。座位在第 9 排與以內的人直接走到自己的位置，不停、也不會被擋',
     '版本 3 的迴廊候隊拿掉：九個大隊改在集合區等，進門後直接北行、進列',
 ]
 ASSUMPTIONS = [

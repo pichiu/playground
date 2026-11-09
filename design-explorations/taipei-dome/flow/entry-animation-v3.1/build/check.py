@@ -27,7 +27,7 @@ GATE_BOUNDARY_MAX = 16.0           # 西一入口每條線兩個大隊之間的�
 SHIFT_TOL = 0.01                   # 同一排離開隊頭的時刻差、排距的容許（避撞不再平移時間線，只容許四捨五入；舊版 0.16）
 WAIT_SLACK = 0.05                  # 步速段的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 POPULATION = 1609
-COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'pace', 'ranks', 'assembly', 'pillars', 'formation', 'wheel', 'laneMap', 'geometry',
+COMPARED = ('collisions', 'nesting', 'assignment', 'routes', 'continuity', 'pace', 'ranks', 'assembly', 'pillars', 'formation', 'wheel', 'laneMap', 'geometry', 'align',
             'seats', 'capacity')   # 與 meta.checks 逐項比對的鍵
 # 整排並肩（wheel turn）：從 t.enter 到大隊分出（t.split），每 FORM_DT 秒取樣
 FORM_DT = 0.1
@@ -39,11 +39,14 @@ SPEED_EPS = 1e-6                   # 中心線取樣（9 位小數）重算的�
 PATH_SPEED_ABS = 0.004             # 路徑（3 位小數）逐段速度：路程 ≤ V·Δt + 這麼多（四捨五入誤差）
 ROW_TOL = 0.005                    # 進列時 Y 與 field.Y
 STAGE_OFF_TOL = 0.02               # 集合區六路的偏移（B2 走廊折線在 u 6.9（截過的 u）有一個折角，中心線倒圓角後離折線最多約 0.02）
-STAGE_MIN = 0.15                   # 離舞台線稿（base.stage 中 X < −4.5 的部分）
+STAGE_MIN = 0.10                   # 離舞台線稿（base.stage 中 X < −4.5 的部分）。11/9 由 0.15 放寬：北行改走第 4–9 排地標後，
+                                   # 第 1 路在 y ≈ 3.1 離舞台東側階梯 0.111（約 0.84 m），不跨階梯線（MAX_STEPS 仍是 0）；其餘路段都還 ≥ 0.15
 STAGE_X = -4.5
 SUBDIV = 0.02                      # 幾何避讓：路徑每 0.02 細分
 STAIR_BOX = (-5.6, -4.3, 0.8, 4.5) # 數「跨過幾條階梯線」的範圍（x0, x1, y0, y1）：場內舞台東緣這一帶
-MAX_STEPS = 0                      # 最多跨過幾條階梯線（上幾階）：北行走第 5–10 排地標的直線，不上階梯
+MAX_STEPS = 0                      # 最多跨過幾條階梯線（上幾階）：北行走第 4–9 排地標的直線，不上階梯
+ALIGN_TOL = 0.002                  # 第 9 排對齊：停的位置、停的起訖（路徑存三位小數）
+RELEASE_TOL = 0.01                 # 最後一位隊頭到對齊點的時刻與出發時刻差
 
 
 def _gaps(ps, tkey, group_key):
@@ -175,9 +178,22 @@ class _March:
         return [(m['x'][k] + m['ty'][k] * (2.5 - j) * m['sp'][k], m['y'][k] - m['tx'][k] * (2.5 - j) * m['sp'][k]) for j in range(6)]
 
 
+def _held(p, t):
+    """到 t 為止停了多久（第 9 排對齊的停住時段 t.holdStart → t.holdEnd）。"""
+    h0, h1 = p['t'].get('holdStart'), p['t'].get('holdEnd')
+    return 0.0 if h0 is None else max(0.0, min(t, h1) - h0)
+
+
 def _tau(p, t, ht):
-    """t 對應中心線上的 τ（相對中心線起點 s = 0）：τ = t − t.enter + headTau[大隊]（離開自己集合位置隊頭時是 headTau）。"""
-    return t - p['t']['enter'] + ht[p['dadui']]
+    """t 對應中心線上的 τ（相對中心線起點 s = 0）：τ = t − t.enter + headTau[大隊] − 停住的時間（離開自己集合位置隊頭時是 headTau）。
+    分出前就停的人（第 6、5 路排回分出點之前），停住的時間不算進 τ。"""
+    return t - p['t']['enter'] + ht[p['dadui']] - _held(p, t)
+
+
+def _is_hold(p, q0, q1):
+    """q0 → q1 是不是這個人的停住時段（同一點、起訖 = t.holdStart、t.holdEnd）。"""
+    h0, h1 = p['t'].get('holdStart'), p['t'].get('holdEnd')
+    return h0 is not None and q0[:2] == q1[:2] and abs(q0[2] - h0) < ALIGN_TOL and abs(q1[2] - h1) < ALIGN_TOL
 
 
 def _head_tau(data):
@@ -303,9 +319,11 @@ def pillars(data):
 
 
 def formation(data, by_rank):
-    """並肩：每一排從 t.enter（離開集合位置隊頭）到本大隊分出（t.split），每 FORM_DT 秒取樣（τ = t − t.enter + headTau[大隊]）：
+    """並肩：每一排從 t.enter（離開集合位置隊頭）到本大隊分出（t.split；同一排有人在分出前就停的，到他停下為止），
+    每 FORM_DT 秒取樣（τ = t − t.enter + headTau[大隊]）：
     偏離橫排角度（最西到最東那兩人的連線與行進方向法線的夾角）≤ ANGLE_MAX；同排相鄰兩人距離 − 設計間距 ≤ SPACING_TOL
-    （中間有空位就除以差幾路）；排的中心（每人扣掉自己的設計偏移後平均）離中心線 ≤ CENTER_TOL。另外每人路徑點離自己那條平移線 ≤ TRACK_TOL。"""
+    （中間有空位就除以差幾路）；排的中心（每人扣掉自己的設計偏移後平均）離中心線 ≤ CENTER_TOL。另外每人路徑點（到自己分出為止，含停住的那一點）
+    離自己那條平移線 ≤ TRACK_TOL（τ 扣掉停住的時間）。"""
     M = _March(data['map']['march'])
     split = data['map']['march']['split']
     ht = _head_tau(data)
@@ -318,6 +336,7 @@ def formation(data, by_rank):
         t1 = min(p['t']['split'] for p in ps)
         if abs(_tau(ps[0], t1, ht) - split[str(ps[0]['dadui'])]) > 2e-3:
             bad.append(dict(rank=r, why='split'))
+        t1 = min([t1] + [p['t']['holdStart'] for p in ps if 'holdStart' in p['t']])   # 有人在分出前停：並肩只驗到他停下
         k = 0
         while t0 + k * FORM_DT < t1 - 1e-9:
             tt = t0 + k * FORM_DT
@@ -430,7 +449,7 @@ def lane_map(data, by_rank):
 
 def geometry(data):
     """幾何避讓：所有路徑（每 SUBDIV 細分）只在西一入口門洞（gate.band）內穿過全壘打牆；離舞台線稿（X < STAGE_X 的部分）≥ STAGE_MIN，
-    舞台東側的階梯也一樣（北行走第 5–10 排地標的直線，不上階梯）。
+    舞台東側的階梯也一樣（北行走第 4–9 排地標的直線，不上階梯）。
     STAIR_BOX 裡每一點往東數跨過幾條舞台線：不能超過 MAX_STEPS（0）條（不能走上階梯、走進舞台）。"""
     band = pairs(data['map']['gate']['band'])
     wall = np.array(pairs(data['map']['wall']))
@@ -515,6 +534,80 @@ def geometry(data):
                 violations=near_out + bad_steps + len(wall_bad), examples=wall_bad[:3])
 
 
+def align(data):
+    """第 9 排對齊（11/9）：map.align 給對齊線 x（第 9 排東側的欄間空隙）、各大隊六路隊頭與出發時刻 release。
+    - 隊頭：每一路第一位（gateIdx 最小）分出後走到 (x, 自己那一列的 Y)；比 release 早到的在那一點停到 release，最後到的那一位到達時刻 = release（± RELEASE_TOL）：
+      停在第 9 排、排頭對齊（六位停的 x 相同）、到齊才一起出發。
+    - 停住的人：只停一次（t.holdStart → t.holdEnd，路徑上同一點），t.holdEnd = 自己大隊的 release（一起出發）；都在第 10 排以東（field.X > x）、
+      停在穿過西一入口之後、停的位置不越過對齊線往東；同一大隊同一路，前後停住的兩人沿路線至少相距 map.align.gap（容許四捨五入）。
+    - 第 9 排與以內（field.X ≤ x）的人：沒有停住時段，離開隊頭之後路徑上沒有任何停留點（不受停住影響）。"""
+    A = data['map']['align']
+    X, rel = A['x'], {int(d): v for d, v in A['release'].items()}
+    P = {p['id']: p for p in data['persons']}
+    bad, worst_rel, n_hold, max_hold = [], 0.0, 0, 0.0
+    for d, ids in ((int(k), v) for k, v in A['heads'].items()):
+        heads = {}
+        for p in data['persons']:
+            if p['dadui'] == d and (p['gateLane'] not in heads or p['gateIdx'] < heads[p['gateLane']]['gateIdx']):
+                heads[p['gateLane']] = p
+        if sorted(h['id'] for h in heads.values()) != sorted(ids):
+            bad.append(dict(dadui=d, why='heads'))
+            continue
+        arr = []
+        for h in heads.values():
+            fy = h['field']['Y']
+            q = next((q for q in h['path'] if q[2] >= h['t']['split'] - 1e-6 and abs(q[0] - X) <= ALIGN_TOL and abs(q[1] - fy) <= ALIGN_TOL), None)
+            if q is None or h['field']['X'] <= X:
+                bad.append(dict(who=h['id'], why='headPoint'))
+                continue
+            arr.append(q[2])
+            if 'holdStart' in h['t'] and (abs(h['t']['holdStart'] - q[2]) > ALIGN_TOL or math.dist(q[:2], (X, fy)) > ALIGN_TOL):
+                bad.append(dict(who=h['id'], why='headHold'))
+            elif 'holdStart' not in h['t'] and abs(q[2] - rel[d]) > RELEASE_TOL:
+                bad.append(dict(who=h['id'], why='headNotStopped'))
+        if arr:
+            worst_rel = max(worst_rel, abs(max(arr) - rel[d]))
+            if abs(max(arr) - rel[d]) > RELEASE_TOL:
+                bad.append(dict(dadui=d, why='release', last=max(arr), release=rel[d]))
+    stop_at = collections.defaultdict(dict)
+    for p in data['persons']:
+        t, a = p['t'], p['path']
+        k = next((i for i, q in enumerate(a) if q[2] >= t['enter'] - 1e-6), len(a))   # 竄改過的 t.enter 可能晚於路徑終點
+        stays = [(q0, q1) for q0, q1 in zip(a[k:], a[k + 1:]) if q0[:2] == q1[:2]]
+        if 'holdStart' not in t:
+            if stays:
+                bad.append(dict(who=p['id'], why='stopWithoutHold'))
+            continue
+        n_hold += 1
+        max_hold = max(max_hold, t['holdEnd'] - t['holdStart'])
+        if len(stays) != 1 or not _is_hold(p, *stays[0]):
+            bad.append(dict(who=p['id'], why='holdSegment'))
+            continue
+        q = stays[0][0]
+        if p['field']['X'] <= X or abs(t['holdEnd'] - rel[p['dadui']]) > ALIGN_TOL or t['holdStart'] <= t['gate'] or q[0] > X + ALIGN_TOL:
+            bad.append(dict(who=p['id'], why='hold', pai=p['pai']))
+        stop_at[(p['dadui'], p['gateLane'])][p['gateIdx']] = (q, a)
+    min_gap = 9.0
+    for runs in stop_at.values():
+        for g in sorted(runs):
+            if g + 1 in runs:                             # 同一路前後兩位都停：沿後一位的路線量到前一位停的位置
+                (q_lead, _), (q_f, a_f) = runs[g], runs[g + 1]
+                i0 = next(i for i, q in enumerate(a_f) if q[:2] == q_f[:2])
+                L, prev = 0.0, q_f
+                for q in a_f[i0 + 1:]:
+                    seg = math.dist(prev[:2], q[:2])
+                    if math.dist(prev[:2], q_lead[:2]) + math.dist(q_lead[:2], q[:2]) - seg < 1e-6:   # 前一位停在這一段上
+                        L += math.dist(prev[:2], q_lead[:2])
+                        break
+                    L += seg
+                    prev = q
+                min_gap = min(min_gap, L)
+    if min_gap < A['gap'] - ALIGN_TOL:
+        bad.append(dict(why='gap', minGap=round(min_gap, 4)))
+    return dict(x=X, pai=A['pai'], holders=n_hold, maxHold=round(max_hold, 3), maxReleaseErr=round(worst_rel, 4),
+                minGap=round(min_gap, 4) if min_gap < 9 else None, violations=len(bad), examples=bad[:3])
+
+
 def check_all(data, coll=None):
     """coll：已算好的 (穿過站定者, 走路互撞, 穿過已坐好的人)，build.py 從避撞最後一輪帶進來；沒給就重算。"""
     persons = data['persons']
@@ -574,7 +667,7 @@ def check_all(data, coll=None):
         all(v['orderOk'] and v['minGap'] >= GATE_GAP_MIN and v['maxGapWithin'] <= GATE_GAP_MAX for v in gate.values())
     out['continuity'] = dict(stair=stair, gate=gate, boundaryRuleViolations=len(rule_bad), boundaryExamples=rule_bad[:3], ok=cont_ok)
     # 3b. 步速與集合位置：離座 → 樓梯 → 通行帶 → 轉彎 → 自己的集合位置 全程步速；集合位置裡（t.assembly → t.enter）只在自己那一路上站住或往前補、
-    #     不快過 build.SLOW（彎道外側那一路比中心線長，容許 1.2 倍）；離開隊頭之後不快過步速（整排轉彎時內圈放慢）、不停；分出（t.split）之後步速
+    #     不快過 build.SLOW（彎道外側那一路比中心線長，容許 1.2 倍）；離開隊頭之後不快過步速（整排轉彎時內圈放慢）、除了第 9 排對齊的停住時段不停；分出（t.split）之後步速
     #     （沿列間空隙往西橫走那一段可以放慢到 build.SLOW_MIN 倍，避撞用）；
     #     t.gate 是自己的路徑穿過全壘打牆的時刻
     V = data['meta']['speedUnitPerSec']
@@ -593,8 +686,10 @@ def check_all(data, coll=None):
         bad = ka is None or ke is None or ks is None or not ke < ks or abs(a[0][2] - t['leave']) > 1e-6 or abs(a[-1][2] - t['arrive']) > 1e-6
         if not bad:
             bad = extra(a[:ka + 1]) > WAIT_SLACK
-        if not bad:                                      # 分出之後步速；只有沿列間空隙往西橫走的那一段可以放慢（避撞），不低於 SLOW_MIN 倍
+        if not bad:                                      # 分出之後步速；只有沿列間空隙往西橫走的那一段可以放慢（避撞），不低於 SLOW_MIN 倍；第 9 排對齊停住那一段除外
             for q0, q1 in zip(a[ks:], a[ks + 1:]):
+                if _is_hold(p, q0, q1):
+                    continue
                 d, dt = math.dist(q0[:2], q1[:2]), q1[2] - q0[2]
                 lateral = abs(q1[1] - q0[1]) < 1e-6 and q1[0] < q0[0]
                 if dt <= 0 or d > V * dt + PATH_SPEED_ABS or (d < V * dt - PATH_SPEED_ABS and not (lateral and d >= build.SLOW_MIN * V * dt - PATH_SPEED_ABS)):
@@ -609,6 +704,8 @@ def check_all(data, coll=None):
         if not bad:
             for q0, q1 in zip(a[ke:], a[ke + 1:]):
                 d = math.dist(q0[:2], q1[:2])
+                if _is_hold(p, q0, q1):
+                    continue
                 if q1[2] <= q0[2] or d < 1e-9 or d > V * (q1[2] - q0[2]) + PATH_SPEED_ABS:
                     bad = True
                     break
@@ -677,6 +774,7 @@ def check_all(data, coll=None):
     out['wheel'] = wheel(data)
     out['laneMap'] = lane_map(data, by_rank)
     out['geometry'] = geometry(data)
+    out['align'] = align(data)
     out['pillars'] = pillars(data)                     # 資訊：圖面柱位衝突（待現場確認），不算進 ok
     # 4. 座位：唯一、合法、休息區＝出口的區、每出口由上排往下且由出口側往中央、exits.order 名單就是該出口全員（依 exitSeq）
     keys = [(p['rest']['sec'], p['rest']['pai'], p['rest']['no']) for p in persons]
@@ -710,7 +808,7 @@ def check_all(data, coll=None):
     out['capacity'] = cap
     out['ok'] = bool(not st and not wk and not sh and out['nesting']['violations'] == 0 == out['nesting']['sameStair'] and upstream == 0 and not_full == 0 and cont_ok
                      and out['routes']['crossings'] == 0 and not pace_bad and not r_bad
-                     and all(out[k]['violations'] == 0 for k in ('assembly', 'formation', 'wheel', 'laneMap', 'geometry'))
+                     and all(out[k]['violations'] == 0 for k in ('assembly', 'formation', 'wheel', 'laneMap', 'geometry', 'align'))
                      and len(set(keys)) == len(persons) == POPULATION and illegal == 0 and wrong_sec == 0 and order_bad == 0 and coverage_bad == 0
                      and all(v['used'] <= v['capacity'] and v['fieldsOk'] for v in cap.values()))
     return out
@@ -722,6 +820,7 @@ def main(path):
     A, S, Rt, Cn = C['assignment'], C['seats'], C['routes'], C['continuity']
     F, Wh, Lm, Ge, St = C['formation'], C['wheel'], C['laneMap'], C['geometry'], C['assembly']
     rng = lambda vs: f"{min(v['minGap'] for v in vs)}–{max(v['maxGapWithin'] for v in vs)}"
+    Al = C['align']
     rows = [
         ('穿過站定者 / 走路互撞 / 穿過已坐好的人', f"{C['collisions']['standing']} / {C['collisions']['walking']} / {C['collisions']['seated']}", '0 / 0 / 0',
          C['collisions']['standing'] == 0 == C['collisions']['walking'] == C['collisions']['seated']),
@@ -741,6 +840,8 @@ def main(path):
         ('B2 集合區（九個集合位置依序不重疊、入口前留空、站在自己那一路那一格、到位前不停、兩路走通行帶、九隊站齊才依序放行）', f"{St['violations']}（{St['blocks']} 個位置；到位前最長停留 {St['maxWaitBeforeSlot']} 秒；通行帶越界 {St['bypassViolations']}；動畫裡同時有人在集合區的大隊最多 {St['peakDaduiInArea']} 個）", '0', St['violations'] == 0),
         ('幾何避讓（只在門洞穿牆、離舞台、不上階梯）', f"{Ge['violations']}（門洞外穿牆 {Ge['wallOutside']}；離舞台最近 {Ge['minStage']}，< {STAGE_MIN} 的點 {Ge['stageNear']}；走上階梯最多 {Ge['maxSteps']} 階、越界 {Ge['stepViolations']}）",
          f'0（≥ {STAGE_MIN}；上階梯 {MAX_STEPS} 階）', Ge['violations'] == 0),
+        ('第 9 排對齊（隊頭停在第 9 排、對齊、到齊一起出發；第 9 排以內不停）', f"{Al['violations']}（停住 {Al['holders']} 人、最長 {Al['maxHold']} 秒；最後一位隊頭到達與出發差 ≤ {Al['maxReleaseErr']}；停住前後間距 ≥ {Al['minGap']}）",
+         f"0（間距 ≥ {data['map']['align']['gap']}）", Al['violations'] == 0),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',
          S['unique'] == POPULATION and S['illegal'] == 0 == S['wrongSection'] == S['orderViolations'] == S['orderCoverage']),
         ('出口用量 ≤ 可用席（重算，與 exits 欄位一致）', ', '.join(f"{k} {v['used']}/{v['capacity']}" + ('' if v['fieldsOk'] else '（欄位不符）') for k, v in C['capacity'].items()), '成立',

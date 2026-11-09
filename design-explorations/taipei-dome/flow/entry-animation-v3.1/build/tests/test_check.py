@@ -317,7 +317,7 @@ def test_check_detects_assembly_rules(built):          # 版本 3.1 集合區：
     assert check.assembly(D)['violations'] >= 1
 
 
-def test_check_detects_too_many_steps(built):           # 階梯：北行走第 5–10 排地標的直線，一階都不上；走上階梯就算越界
+def test_check_detects_too_many_steps(built):           # 階梯：北行走第 4–9 排地標的直線，一階都不上；走上階梯就算越界
     _, D = built
     D = _copy(D)
     G = check.geometry(D)
@@ -337,3 +337,50 @@ def test_pillars_assumed_absent_are_reported(built):   # 11/9 假設沒有柱 L7
     P = check.pillars(D)
     assert P['conflicts'] == 0 and set(P['assumedAbsent']) == build.ASSUME_NO_PILLARS
     assert all(v['standing'] > 0 for v in P['assumedAbsent'].values())
+
+
+def test_check_align_green(built):                      # 第 9 排對齊：每個大隊六路隊頭、只有第 10 排以東的人停、停的人一起出發
+    _, D = built
+    A = check.align(D)
+    assert A['violations'] == 0 and A['holders'] > 9 * 5 and A['minGap'] >= D['map']['align']['gap'] - check.ALIGN_TOL
+    rel = {int(k): v for k, v in D['map']['align']['release'].items()}
+    for p in D['persons']:
+        if 'holdStart' in p['t']:
+            assert p['pai'] >= 10 and p['t']['holdEnd'] == rel[p['dadui']]
+        if p['pai'] <= 9:
+            assert 'holdStart' not in p['t']
+    for d, ids in D['map']['align']['heads'].items():   # 六路隊頭：最晚到的那一位不停，其他五位都停
+        held = [i for i in ids if 'holdStart' in next(q for q in D['persons'] if q['id'] == i)['t']]
+        assert len(ids) == 6 and len(held) == 5
+
+
+def test_check_detects_align_tampering(built):          # 竄改：停的人提早出發、第 9 排以內的人停、沒記停住時段卻停、對齊點挪開
+    _, D = built
+    D = _copy(D)
+    p = next(q for q in D['persons'] if 'holdStart' in q['t'])
+    p['t']['holdEnd'] -= 0.1
+    assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    p = next(q for q in D['persons'] if 'holdStart' in q['t'])
+    del p['t']['holdStart'], p['t']['holdEnd']
+    assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    p = next(q for q in D['persons'] if q['pai'] <= 9 and q['dadui'] == 4)
+    k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
+    q = p['path'][k]
+    for r in p['path'][k:]:
+        r[2] += 0.5
+    p['path'].insert(k, [q[0], q[1], q[2]])
+    assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    D['map']['align']['x'] += 0.05
+    assert check.align(D)['violations'] >= 1
+
+
+def test_tau_skips_hold(built):                         # 中心線時間 τ 不算停住的時間：停住時段裡 τ 不動
+    _, D = built
+    ht = check._head_tau(D)
+    p = next(q for q in D['persons'] if 'holdStart' in q['t'] and q['t']['holdStart'] < q['t']['split'])
+    h0, h1 = p['t']['holdStart'], p['t']['holdEnd']
+    assert abs(check._tau(p, h0, ht) - check._tau(p, h1, ht)) < 1e-9
+    assert abs(check._tau(p, h1 + 1, ht) - check._tau(p, h0 - 1, ht) - 2) < 1e-9
