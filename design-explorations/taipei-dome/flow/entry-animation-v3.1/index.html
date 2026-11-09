@@ -93,7 +93,7 @@ td.n{text-align:right;white-space:nowrap}
 <h2>尚需現場確認</h2>
 <ul class="rules" data-field>
 <li><b>集合區長度與容量</b>：圖面 B2 走廊從西一入口南側到圖面盡頭只有約 12 單位（約 90 m，示意）；九個大隊 281 排、每路前後 0.04 單位（約 0.3 m）才排得進去。若以版本 3 門前隊伍的 0.075 單位（約 0.57 m）計需要約 21 單位。「九個大隊都排得下」目前只是現場觀察，未驗證。</li>
-<li><b>B2 柱位</b>：圖面在集合區六路帶內有兩根柱（L8：大隊 7 的位置、偏移 −0.17；L7：大隊 8 的位置、偏移 +0.18），站在柱位上的格位與後到大隊往回走的路線都會碰到它（檢核「圖面柱位」一行列出人數）。舊版在這裡也有同樣的衝突；版本 3 沒走到這一段。要確認柱子實際位置與走廊淨寬，必要時集合位置要避開柱子、改成柱間排隊或縮短該段。</li>
+<li><b>B2 柱位（假設沒有）</b>：版本 1 圖面在集合區六路帶內畫了兩根場邊柱（L7、L8，落在大隊 7、8 的集合位置）；11/9 起先假設這兩根柱不存在，圖面與檢核都不放。現場若有柱子，大隊 7、8 的集合位置要避開。</li>
 <li><b>通行帶寬度</b>：集合區六路旁要留兩人並行的通行帶（圖面以虛線畫在走廊帶外，是假設）；圖面走廊只畫到六路寬，實際走廊寬度要量。若留不出通行帶，後到的大隊會穿過先到的大隊——這是本方案成立的前提。</li>
 <li><b>迴轉空間</b>：每人在自己那一排後方迴轉（白衣內圈半徑 0.13、藍衣外圈 0.21 單位，示意），迴轉時會掃過後面還空著的格位；集合區要能讓兩人並行迴轉，寬度待確認。大隊 9 最後幾排在圖面盡頭附近迴轉，盡頭之後的實際邊界未知。</li>
 <li><b>入口前與樓梯口留空範圍</b>：集合區從入口帶南緣再往南一點開始（圖面約 0.1 單位）；入口前實際要留多少，依現場指揮。</li>
@@ -146,7 +146,7 @@ function checksTable(C){
   ['步速（到集合位置前不停、集合位置裡只在自己那一路站住或往前補、放行後不停）',`${C.pace.violations}`,'0',C.pace.violations===0,C.pace.examples||[]],
   ['B2 集合區：九個位置依序不重疊、入口前留空、站在自己那一路那一格、兩路走通行帶、九隊站齊才依序放行',`${C.assembly.violations}（到位前最長停留 ${C.assembly.maxWaitBeforeSlot} 秒；通行帶越界 ${C.assembly.bypassViolations}）`,'0',C.assembly.violations===0,(C.assembly.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:`${e.why}${e.dadui?' 大隊 '+e.dadui:''}`)],
   ['整排並肩（放行 → 分出）／整排轉彎／lane 對應／幾何避讓',`${C.formation.violations} / ${C.wheel.violations} / ${C.laneMap.violations} / ${C.geometry.violations}`,'0 / 0 / 0 / 0',[C.formation,C.wheel,C.laneMap,C.geometry].every(x=>x.violations===0),[]],
-  ['圖面柱位與路徑衝突（資訊，待現場確認；不算進通過與否）',`${C.pillars.conflicts} 根柱、${C.pillars.persons} 人經過`,'待確認',null,Object.entries(C.pillars.where||{}).map(([k,v])=>`${k}：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`)],
+  ['圖面柱位與路徑衝突（資訊；不算進通過與否）',`${C.pillars.conflicts} 根柱、${C.pillars.persons} 人經過`,C.pillars.conflicts?'待確認':'0',null,[...Object.entries(C.pillars.where||{}).map(([k,v])=>`${k}：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`),...Object.entries(C.pillars.assumedAbsent||{}).map(([k,v])=>`${k} 假設沒有；若現場有：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`)]],
   ['一排六人一起放行（每個大隊站齊才放行、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
   ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];

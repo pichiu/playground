@@ -46,3 +46,16 @@ def test_console_phase_and_head_follow_time(open_page):   # 回歸：播放／�
     pg.evaluate('window.__seek(120)')
     pg.wait_for_function('parseFloat(document.getElementById("head").style.left) > 10', timeout=5000)   # 等 seek 那一格畫完（t=0 時階段文字本來就有）
     assert pg.inner_text('#phase').strip() not in ('', '休息區就座')
+
+
+def test_console_stage_labels_do_not_overlap(open_page):   # 集合位置標籤（手機、桌面）彼此不重疊，也不壓到西一入口的字
+    for w, h in ((390, 844), (1440, 900)):
+        pg, errs, perrs = open_page('console.html', w, h)
+        pg.wait_for_function('window.__dome_ready === true', timeout=20000)
+        pg.evaluate('window.__seek(185)')
+        pg.wait_for_timeout(300)
+        boxes = pg.evaluate('window.__stageLabelBoxes')
+        assert len(boxes) == 9 and not perrs, (w, perrs)
+        for i, a in enumerate(boxes):
+            for b in boxes[i + 1:]:
+                assert not (a[0] < b[2] and a[2] > b[0] and a[1] < b[3] and a[3] > b[1]), (w, a, b)
