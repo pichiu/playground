@@ -29,6 +29,7 @@ FILL_PAUSE = 1.0        # 大隊全員在集合位置站定後，稍停這麼久
 GATE_DRAW_AFTER = 1.0   # 圖面六條線畫到穿過西一入口之後這麼久（秒）
 WAIT_MIN = 0.01         # 路徑上同一點停不到這麼久就不留停留點
 LANE_K = {'A': 0, 'B': 1}
+ASSUME_NO_PILLARS = {'L7', 'L8'}   # 11/9 企劃：先假設集合區裡沒有這兩根柱（版本 1 圖面的場邊柱，落在大隊 7、8 的集合位置），圖面與檢核都不放；現場若有，要改集合位置
 STAGE_LABEL = 'B2 集合區'
 
 
@@ -314,7 +315,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
               dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，經 B2 通行帶走到自己那一排後方迴轉、散成六路，到集合位置整隊', t0=T0, t1=t_go),
               dict(key='enter', label='依大隊 1→9 放行：集合位置隊頭一排六人並肩、一排緊跟一排，沿 B2 往西一入口、右轉進門、北行、梯次進列；後面的大隊照樣下樓、到自己的集合位置整隊', t0=t_go, t1=t_end)]
     st = staging_map(G, clocks)
-    m = dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
+    m = dict(base['map'], pillars=[c for c in base['map']['pillars'] if c['id'] not in ASSUME_NO_PILLARS], **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
              march=march.export(G.march, clocks['split'], {d: clocks['tauHead'][d] for d in clocks['lay']['head']}))
     return dict(meta=meta, phases=phases, nodes=nodes, map=m, restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])

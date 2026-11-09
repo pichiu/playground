@@ -746,8 +746,8 @@ def main(path):
     for name, val, thr, ok in rows:
         print(f"[{'OK' if ok else 'NG'}] {name}: {val}（門檻 {thr}）")
     Pl = C['pillars']
-    print(f"[待確認] 圖面柱位與路徑衝突（不算進通過與否）: {Pl['conflicts']} 根柱、{Pl['persons']} 人經過；"
-          + '；'.join(f"{k}（B2 u {v['u']}、偏移 {v['off']}）走過 {v['persons']} 人、站在柱上 {v['standing']} 人（大隊 {'、'.join(map(str, v['daduis'])) or '—'}）" for k, v in Pl['where'].items()))
+    print(f"[{'待確認' if Pl['conflicts'] else 'OK'}] 圖面柱位與路徑衝突（不算進通過與否）: {Pl['conflicts']} 根柱、{Pl['persons']} 人經過"
+          + ''.join(f"；{k}（B2 u {v['u']}、偏移 {v['off']}）走過 {v['persons']} 人、站在柱上 {v['standing']} 人（大隊 {'、'.join(map(str, v['daduis'])) or '—'}）" for k, v in Pl['where'].items()))
     meta = data['meta'].get('checks') or {}
     same = bool(meta) and all(meta.get(k) == C.get(k) for k in COMPARED) and meta.get('ok') == C['ok']
     print('meta.checks 與重算一致' if same else 'meta.checks 與重算不一致或缺少', '；', '通過' if C['ok'] and same else '未通過')
