@@ -21,7 +21,7 @@ python3 verify_paths.py ../data.json ../../entry-animation-v3/data.json [圖.png
 |---|---|
 | `base.json` | 與 2c 相同：版本 1 動畫頁內嵌的 DATA 原樣（場地幾何、座位、場內定位與場內路徑） |
 | `plan.py` | 兩路（`LANES`、`LANE_J`）、出口順序（`EXIT_ORDER`）與 `lane_sequence / stair_key / assign_exits / nesting_violations / assign_seats / build_plan`；出口定義、可用席、走道口沿用 2c |
-| `routes.py` | 座位 → B1 → 樓梯 → B2 兩路（A +0.12、B −0.12）→ 移到通行帶（A −0.30、B −0.38）→ 盡頭左轉 180°（`uturn`）；集合區常數（`STAGE_*`、`stage_off(j) = −0.2 + 0.08j`） |
+| `routes.py` | 座位 → B1 → 樓梯 → B2 兩路（A +0.12、B −0.12）→ 移到通行帶（A −0.30、B −0.38）→ 在自己那一排後方左轉 180°（`uturn`，迴轉點由 `build.turn_point` 給）；集合區常數（`STAGE_*`、`stage_off(j) = −0.2 + 0.08j`） |
 | `march.py` | 整排並肩（wheel turn，§3.4c）：中心線從集合區最深處（s = 0）沿 B2 走廊往西一入口、右轉進門，之後同版本 3（直線＋圓弧）；`lane_pts`（集合區六路）、`s_of_u`；、六條平移線、間距漸變、時間剖面（外圈步速、內圈依半徑放慢）、各大隊分出點、分出後走到自己那列再轉的路線（`tail`、`west_plan`，同版本 3 定案）；`export` 寫進 `data.json` 的 `map.march`（含各大隊隊頭的 `headTau`、北轉 `northTau`）給 check.py 驗 |
 | `build.py` | `stage_layout`（九個集合位置）`/ prepare / aligned_clock / rank_numbers / schedule`（到位前不停、九個大隊全部站齊才開始放行、依序放行、往前補；沒有迴廊候隊）`/ split_points / person_path / assemble / staging_map`（`map.staging`、`map.gateLanes`）`/ avoid / write_seats_csv` |
 | `check.py` | `check_all(data)` 與 CLI；集合區在 `assembly`，整排並肩在 `formation / wheel / lane_map / geometry` |

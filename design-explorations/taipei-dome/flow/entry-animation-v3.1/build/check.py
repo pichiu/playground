@@ -196,8 +196,8 @@ def assembly(data):
       在自己那一路的第 stageRank 格（第 0 格在隊頭，相鄰兩格相距約一格）。
     - 站定後到放行（t.assembly → t.enter）一直在自己大隊的集合位置內、自己那一路上。
     - 下樓到站定之間不停（含樓梯上）：樓梯口 → 站定的時間 = 路程 / 步速（± WAIT_SLACK）。樓梯上候隊時間記為 stairWait。
-    - 兩路在 B2：西一入口帶到集合區最深處這一段，下樓後走在通行帶（偏移 ≤ −0.26），不進六路帶；
-      白衣在通行帶靠六路那一側（偏移比藍衣大，行進方向左側）。
+    - 兩路在 B2：西一入口帶到集合區這一段，下樓後走在通行帶（偏移 ≤ −0.26）；要進六路帶（迴轉、散開）只能在自己那一格的深處（u ≥ 自己格位），
+      所以不會從已站好的人旁邊切進去（11/9 起每人在自己那一排附近迴轉，不再走到集合區盡頭）。
     - 放行順序：大隊 d + 1 第一排離開隊頭時，大隊 d 已全部離開隊頭；每大隊全員站定後才放行。"""
     S = data['map']['staging']
     B2 = Poly(pairs(data['map']['b2Corridor']))
@@ -238,10 +238,9 @@ def assembly(data):
         max_wait = max(max_wait, w)
         if w > WAIT_SLACK:
             bad.append(dict(who=p['id'], why='waited before slot', w=round(w, 3)))
-        ki = next((i for i, q in enumerate(a) if abs(q[2] - t['entry']) < 2e-3), None)
-        for q in a[ks:(ki if ki is not None else ka)]:
+        for q in a[ks:ka]:                              # 到站定之前：在入口帶到集合區這一段，只能在通行帶上走；要進六路帶（迴轉、散開）一定在自己那一格的深處
             u, o, _ = B2.proj(q[:2])
-            if S['gateClear'][0] <= u <= S['tailU'] + 0.05 and o > -0.26:
+            if S['gateClear'][0] <= u <= S['uturnU'] + 0.3 and o > -0.26 and u < u0 - 0.01:
                 bypass_bad += 1
                 bad.append(dict(who=p['id'], why='bypass', u=round(u, 3), off=round(o, 3)))
                 break

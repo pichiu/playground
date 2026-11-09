@@ -33,7 +33,9 @@ GATE_U = 4.57                            # 西一入口中線（gateIn）與 B2 
 STAGE_HEAD_U = 5.15                      # 大隊 1 集合位置的隊頭（西一入口帶到 u 5.05 為止，入口前留空）
 STAGE_TAIL_U = 17.15                     # 大隊 9 集合位置的隊尾最深到這裡（圖面 B2 走廊畫到 u 17.91）
 STAGE_START_U = 17.2                     # 六路的起點（散成六路完成）：放行中心線 s = 0
-UTURN_U = 17.55                          # 兩路在這裡左轉 180°（白衣內圈）
+UTURN_U = 17.55                          # 迴轉點最深到這裡（大隊 9 最後幾排）；11/9 起每人在自己那一排附近迴轉
+TURN_BACK = 0.04                         # 迴轉後散成六路，散完的位置在自己那一排再深一排（一格）
+FAN_LEN = 0.3                            # 散成六路的長度（迴轉圓心到散完的位置）
 UTURN_C = -0.17                          # 轉彎圓心的偏移；白衣半徑 0.13（−0.30 → −0.04）、藍衣 0.21（−0.38 → +0.04）
 STAGE_STEP = 0.04                        # 集合位置前後間距（圖面點距；只為把九個大隊排進示意圖面，不是現場間距，見 README）
 STAGE_GAP_MIN = 0.12                     # 相鄰兩個大隊集合位置之間至少空這麼多（隊尾到下一隊隊頭，扣掉一格）
@@ -109,27 +111,29 @@ class Geometry:
         pts.append(self.B1.off(u_in, off))
         return pts + lane_run(self.B1, u_in, STAIR_U_B1 - 0.25, off) + self._down_stair(off)
 
-    def bypass(self, lane):
-        """平台端 → B2 兩路 → 漸移到通行帶 → 沿通行帶到轉彎起點（不含平台端那一點）。"""
+    def bypass(self, lane, u_end=UTURN_U):
+        """平台端 → B2 兩路 → 漸移到通行帶 → 沿通行帶到轉彎起點 u_end（不含平台端那一點）。"""
         o0, o1 = ARRIVE_OFF[lane], BYPASS_OFF[lane]
         pts = [self.B2.off(ARRIVE_U, o0)]
         n = max(1, int((BYPASS_U - ARRIVE_U) / LANE_STEP))
         for k in range(1, n + 1):
             f = k / n
             pts.append(self.B2.off(ARRIVE_U + (BYPASS_U - ARRIVE_U) * f, o0 + (o1 - o0) * f))
-        return pts + lane_run(self.B2, BYPASS_U, UTURN_U, o1)
+        return pts + lane_run(self.B2, BYPASS_U, u_end, o1)
 
-    def uturn(self, lane, n=12):
-        """集合區盡頭整路左轉 180°：以 B2.off(UTURN_U, UTURN_C) 為圓心，白衣在內圈；回傳轉彎上的點（不含起點）。"""
-        c = self.B2.off(UTURN_U, UTURN_C)
-        t, nv = self.B2.tan(UTURN_U), self.B2.nrm(UTURN_U)
+    def uturn(self, lane, u_c=UTURN_U, n=12):
+        """左轉 180°：以 B2.off(u_c, UTURN_C) 為圓心，白衣內圈（半徑 0.13）、藍衣外圈（0.21）；回傳轉彎上的點（不含起點）。
+        11/9 起每人在「自己那一排再深一排」散開完的位置迴轉（u_c 由 build.prepare 給），不再走到集合區盡頭。
+        同一路後面的人迴轉點只深一排（0.04），白衣小圓整個包在前一排藍衣的大圓裡，兩路不交叉。"""
+        c = self.B2.off(u_c, UTURN_C)
+        t, nv = self.B2.tan(u_c), self.B2.nrm(u_c)
         r = UTURN_C - BYPASS_OFF[lane]
         return [(c[0] + r * (-nv[0] * math.cos(a) + t[0] * math.sin(a)), c[1] + r * (-nv[1] * math.cos(a) + t[1] * math.sin(a)))
                 for a in (math.pi * k / n for k in range(1, n + 1))]
 
-    def entry_route(self, person):
-        """座位 → … → 樓梯 → 通行帶 → 盡頭轉彎（到六路起點之前，不含散開那一步）。"""
-        return self._pre_b2(person) + self.bypass(person['lane']) + self.uturn(person['lane'])
+    def entry_route(self, person, u_c=UTURN_U):
+        """座位 → … → 樓梯 → 通行帶 → 在 u_c 迴轉（到散開之前，不含散開那一步）。"""
+        return self._pre_b2(person) + self.bypass(person['lane'], u_c) + self.uturn(person['lane'], u_c)
 
     def stage_band(self, u0, u1, o0, o1, step=0.3):
         """B2 走廊上 u0–u1、偏移 o0–o1 的帶狀多邊形（圖面用）。"""

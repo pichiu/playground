@@ -4,7 +4,7 @@
 const pairs=f=>Array.from({length:f.length/2},(_,i)=>[f[i*2],f[i*2+1]]);
 function bounds(pts,pad=.6){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const [x,y] of pts){if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y;}return [a-pad,b-pad,c+pad,d+pad];}
 function pos(p,t){const a=p.path;if(t<=a[0][2])return a[0];if(t>=a[a.length-1][2])return a[a.length-1];let lo=0,hi=a.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}const u=a[lo],v=a[hi],f=(t-u[2])/(v[2]-u[2]||1);return [u[0]+(v[0]-u[0])*f,u[1]+(v[1]-u[1])*f];}
-// seated → walk(離座、下樓、經通行帶到集合區盡頭轉彎、走到自己的集合位置) → wait(B2 集合位置：站住或往前補) → enter(放行、進場中) → done
+// seated → walk(離座、下樓、經通行帶走到自己那一排後方迴轉、走到自己的集合位置) → wait(B2 集合位置：站住或往前補) → enter(放行、進場中) → done
 function state(p,t){const s=p.t;if(t<s.leave)return 'seated';if(t<s.assembly)return 'walk';if(t<s.enter)return 'wait';if(t<s.arrive)return 'enter';return 'done';}
 function counts(t,list){const c={seated:0,walk:0,wait:0,enter:0,done:0};for(const p of list)c[state(p,t)]++;return c;}
 // 文字一律經過 esc 才放進 innerHTML
@@ -115,7 +115,7 @@ class View{
     if(pal.gate&&m.gate){this.fill(m.gate.band,pal.gate,pal.gateA??.22);for(const d of m.gate.doors)this.stroke(d,pal.gate,Math.max(2.5,.05*this.s));}
     // B2 集合區（版本 3.1）：六路帶、通行帶（假設，虛線框）、九個大隊的集合位置（框＋「大隊 d」＋隊頭線）
     if(pal.band&&m.staging)this.staging(m.staging,pal);
-    // 下樓後兩路（白、藍）經通行帶到盡頭轉彎，再散成六路回到集合位置、往西一入口：pal.gateLanes=[白線色, 藍線色]
+    // 下樓後兩路（白、藍）經通行帶走到自己那一排後方迴轉，再散成六路回到集合位置、往西一入口：pal.gateLanes=[白線色, 藍線色]
     this.gateLanesDrawn=0;if(pal.gateLanes&&m.gateLanes){this.ctx.globalAlpha=pal.gateLanesA??.35;
       if(m.staging)['A','B'].forEach((L,k)=>this.stroke(m.staging.files[L],pal.gateLanes[k],1.4));
       m.gateLanes.forEach((l,j)=>{this.stroke(l,pal.gateLanes[j<3?0:1],1.4);this.gateLanesDrawn++;});this.ctx.globalAlpha=1;}

@@ -1,5 +1,5 @@
 """版本 3.1 排程：樓梯口時鐘與版本 3 相同（兩路、大隊交界對齊、拉式倒推離座時刻），輸出 data.json 與 seats.csv。
-下樓後白衣一路、藍衣一路沿 B2 通行帶走到集合區盡頭、轉 180°、散成六路，走到自己大隊的集合位置站定（中途不停、不等）；
+下樓後白衣一路、藍衣一路沿 B2 通行帶走到自己那一排後方、轉 180°、散成六路，走到自己大隊的集合位置站定（中途不停、不等）；
 每個大隊全員站定後依大隊 1→9 放行：集合位置隊頭一排六人並肩、一排緊跟一排，後面的排往前補；
 沿 B2 往西一入口、右轉進門，之後與版本 3 相同（整排轉彎、北行、分出、梯次進列）。版本 3 的「迴廊候隊」拿掉（見 README）。
 
@@ -93,6 +93,13 @@ def slot_s(lay, p):
     return lay['head'][d] - routes.STAGE_STEP * (lay['rankOf'][p['id']] - lay['r0'][d])
 
 
+def turn_point(G, s_slot):
+    """迴轉點（11/9）：散完六路的位置在自己那一排再深一排（s_fan），迴轉圓心再往深處 FAN_LEN（u_c），最深不超過 UTURN_U。"""
+    M = march_of(G)
+    s_fan = max(0.0, s_slot - routes.TURN_BACK)
+    return s_fan, min(routes.UTURN_U, G.B2.proj(M.C.at(s_fan)[:2])[0] + routes.FAN_LEN)
+
+
 def prepare(G, people, lay=None):
     """每人的路線與距離（不含時間）：to 從座位到集合位置；d_top 到樓梯口、L_entry 到六路起點（s = 0）、L_to 到集合位置。"""
     M = march_of(G)
@@ -100,8 +107,10 @@ def prepare(G, people, lay=None):
     R = {}
     for p in people:
         j = p['gateLane']
-        pre = G.entry_route(p)
-        lane = [q[:2] for q in M.lane_pts(j, 0.0, slot_s(lay, p))]
+        s_slot = slot_s(lay, p)
+        s_fan, u_c = turn_point(G, s_slot)
+        pre = G.entry_route(p, u_c)
+        lane = [q[:2] for q in M.lane_pts(j, s_fan, s_slot)]
         to = pre + lane
         c = cum(to)
         R[p['id']] = dict(to=to, L_to=c[-1], d_top=c[G.stair_top_index(to)], L_entry=c[len(pre)])
@@ -142,7 +151,7 @@ def rank_numbers(people):
 
 
 def schedule(G, people, R=None, lay=None):
-    """1. 樓梯口時刻 S（兩路、大隊交界對齊，同版本 3）；離座 = S − 到樓梯口的路程 / V；之後以步速經通行帶、盡頭轉彎、散成六路，
+    """1. 樓梯口時刻 S（兩路、大隊交界對齊，同版本 3）；離座 = S − 到樓梯口的路程 / V；之後以步速經通行帶、在自己那一排後方迴轉、散成六路，
        走到自己的集合位置（t.entry = 到六路起點、t.assembly = 站定）。中途不停：集合位置在自己到之前一定空著（先到的站前面）。
     2. 放行：九個大隊全部站定後 FILL_PAUSE 秒，依大隊 1→9 放行（11/9 改；原本是各大隊站齊就放），第一排離開隊頭（t.enter），之後一排緊跟一排（RANK_GAP），後面的排以 SLOW 往前補。
        不同大隊的隊頭在不同位置：以「經過大隊 1 隊頭（sHead(1)）的時刻」G 排序，下一個大隊第一排的 G 至少比上一個大隊最後一排晚 RANK_GAP。
@@ -183,7 +192,7 @@ def schedule(G, people, R=None, lay=None):
 
 
 def person_path(G, p, r, t, lay, s_split, f_lat=None):
-    """座位 → … → 樓梯 → 通行帶 → 盡頭轉彎 → 散成六路 → 自己那一路 → 集合位置（全程步速）→ 站住
+    """座位 → … → 樓梯 → 通行帶 → 自己那一排後方迴轉 → 散成六路 → 自己那一路 → 集合位置（全程步速）→ 站住
     → 放行後沿自己那一路以 SLOW 往前補到隊頭（第一排不用補）→ 一排六人並肩沿 march 中心線（右轉進西一入口、沿牆、北轉、沿第 5–10 排地標直線北行）
     → 在自己大隊列區南緣分出 → 沿自己那一路走到自己那一列 → 座位（步速）。"""
     M = march_of(G)
@@ -307,7 +316,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
                 rules=RULES, assumptions=ASSUMPTIONS, checks=checks or {})
     t_go = min(p['t']['enter'] for p in persons)
     phases = [dict(key='seated', label='休息區就座', t0=0, t1=T0),
-              dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，經 B2 通行帶到集合區盡頭轉彎、散成六路，到集合位置整隊', t0=T0, t1=t_go),
+              dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，經 B2 通行帶走到自己那一排後方迴轉、散成六路，到集合位置整隊', t0=T0, t1=t_go),
               dict(key='enter', label='依大隊 1→9 放行：集合位置隊頭一排六人並肩、一排緊跟一排，沿 B2 往西一入口、右轉進門、北行、梯次進列；後面的大隊照樣下樓、到自己的集合位置整隊', t0=t_go, t1=t_end)]
     st = staging_map(G, clocks)
     m = dict(base['map'], **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
@@ -318,7 +327,7 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
 
 def staging_map(G, clocks):
     """圖面：集合區（六路帶）、通行帶（假設，帶外）、九個大隊的集合位置（隊頭、隊尾、六路各自的頭尾點、標籤點）、
-    兩路的走法（平台 → 通行帶 → 盡頭轉彎）與六路（散開 → 集合區 → 西一入口之後 GATE_DRAW_AFTER 秒）。"""
+    兩路的走法（平台 → 通行帶 → 迴轉）與六路（散開 → 集合區 → 西一入口之後 GATE_DRAW_AFTER 秒）。"""
     M = march_of(G)
     lay = clocks['lay']
     flat = lambda pts: [round(v, 3) for q in pts for v in q[:2]]
@@ -336,20 +345,27 @@ def staging_map(G, clocks):
                            heads=[flat([M.lane_xy(sh, j)]) for j in range(6)], tails=[flat([M.lane_xy(st, j)]) for j in range(6)],
                            poly=flat(G.stage_band(ut + du + 0.02, uh + du - 0.02, -0.25, 0.25, 0.15)),
                            label=flat([G.B2.off((uh + ut) / 2 + du, 0.42)])))
+    # 11/9：每人在自己那一排附近迴轉。圖面的兩路畫到最深的迴轉點（大隊 9 最後一排），每個大隊的迴轉範圍另列在 turns
+    u_deep = max(turn_point(G, lay['head'][d] - (lay['r1'][d] - lay['r0'][d]) * routes.STAGE_STEP)[1] for d in lay['head'])
+    turns = []
+    for d in sorted(lay['head']):
+        u0 = turn_point(G, lay['head'][d])[1]
+        u1 = turn_point(G, lay['head'][d] - (lay['r1'][d] - lay['r0'][d]) * routes.STAGE_STEP)[1]
+        turns.append(dict(dadui=d, u=[ud(u0), ud(u1)], first=flat([G.B2.off(u0, routes.UTURN_C)]), last=flat([G.B2.off(u1, routes.UTURN_C)])))
     files = {}
     for L in plan.LANES:
         lp = G.ST_LANE[G.LANE_OFF[L]]
-        files[L] = flat([lp.at(lp.L - 0.05)] + G.bypass(L) + G.uturn(L))
+        files[L] = flat([lp.at(lp.L - 0.05)] + G.bypass(L, u_deep) + G.uturn(L, u_deep))
     lanes = []
     for j in range(6):
         L = routes.lane_of(j)
-        u_end = G.uturn(L)[-1]
+        u_end = G.uturn(L, u_deep)[-1]
         after = M.lane_track(j, M.s_at_tau(M.tau_gate[j] + GATE_DRAW_AFTER), s_start=s_h1)
         lanes.append(flat([u_end] + list(M.lane_pts(j, 0.0, s_h1)) + list(after[1:])))
     return dict(blocks=blocks, files=files, lanes=lanes, step=routes.STAGE_STEP, gap=round(lay['gap'], 4),
                 band=flat(G.stage_band(routes.STAGE_HEAD_U - 0.05, routes.STAGE_START_U, -0.25, 0.25)),
-                bypassBand=flat(G.stage_band(routes.BYPASS_U, routes.UTURN_U + 0.25, -0.44, -0.25)),
-                uturn=flat([G.B2.off(routes.UTURN_U, routes.UTURN_C)]), headU=ud(routes.STAGE_HEAD_U), tailU=ud(routes.STAGE_TAIL_U), uturnU=ud(routes.UTURN_U),
+                bypassBand=flat(G.stage_band(routes.BYPASS_U, u_deep + 0.25, -0.44, -0.25)),
+                uturn=turns[0]['first'], turns=turns, headU=ud(routes.STAGE_HEAD_U), tailU=ud(routes.STAGE_TAIL_U), uturnU=ud(u_deep),
                 gateClear=[ud(routes.GATE_U - 0.47), ud(routes.STAGE_HEAD_U)], stairClear=[0.0, ud(routes.ARRIVE_U)],
                 laneOff=[round(routes.stage_off(j), 3) for j in range(6)], bypassOff=routes.BYPASS_OFF)
 
@@ -361,7 +377,7 @@ RULES = [
     '142 兩路共用：藍衣大隊 1–3 先從上排出，白衣大隊 9 最後從下排出；任何時刻白衣用的出口都比藍衣近、且在不同階梯，所以走廊上不交叉（同版本 3）',
     '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面（同版本 3）',
     'B2 集合區（11/8 彩排後改）：西一入口前與樓梯口不排隊、只走路。集合區是西一入口以南那段 B2 走廊（2c 藍衣集結區所在），九個大隊各有一個集合位置，大隊 1 最靠西一入口、大隊 9 最深——和放行順序一致，先放行的不必穿過還在整隊的',
-    '下樓後仍是白衣一路、藍衣一路（白衣靠場側），經走廊外側的通行帶走到集合區盡頭，整路左轉 180°（白衣內圈，轉過來仍在行進方向左側），白衣散成三路、藍衣散成三路，沿自己那一路走回自己大隊的集合位置；先到的站前面，所以沒有人穿過已站好的人；到位前中途不停，樓梯上也不等',
+    '下樓後仍是白衣一路、藍衣一路（白衣靠場側），經走廊外側的通行帶走到自己那一排的後方，左轉 180°（白衣內圈、藍衣外圈，同心不交叉；轉過來白衣仍在行進方向左側），後面的人迴轉點只再深一排，白衣散成三路、藍衣散成三路，沿自己那一路走回自己大隊的集合位置；先到的站前面，所以沒有人穿過已站好的人；到位前中途不停，樓梯上也不等',
     '集合位置六路：面向西一入口時左側三路白衣、右側三路藍衣，第 1 路（列 6k−5）在最左（走廊外側）；隊頭是每列排號最大那一位（同版本 3 的進門順序）',
     '放行：九個大隊全部在集合位置站定才開始放行，依大隊 1→9；隊頭一排六人並肩、一排緊跟一排離開，後面的排往前補到隊頭再走；下一大隊第一排緊跟在上一大隊最後一排之後。集合區還沒準備好時，由休息區出口幹部控制放人（人留在座位），不在樓梯上等',
     '整排轉彎：一排六人從集合位置隊頭到自己大隊的列區南緣全程並肩——沿 B2 往回走、右轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿第 5–10 排地標一條直線往北（同版本 3 定案）；第 1 路（白衣列 6k−5）永遠在行進方向左側：集合區在外側、門洞裡在北、北行時在西（第 5 排地標旁）、進列時對到大隊第一列；不閃舞台、不上舞台階梯，六路都在地面',
@@ -371,7 +387,7 @@ RULES = [
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒、兩路錯開 0.17 秒、大隊交界加 0.8 秒；放行後 0.2 秒一排（排距約 1.7 m）；皆為動畫節奏，不是現場秒數',
     '集合區的大小是示意：圖面 B2 走廊只畫六路寬（±0.2 單位），從西一入口南側到圖面盡頭約 12 單位；九個大隊每路前後 0.04 單位（約 0.3 m）才排得進去，這是圖面點距，不是現場間距或容量；「九個大隊排得下」是現場觀察，未驗證',
-    '通行帶畫在圖面走廊帶外（偏移 −0.30／−0.38），是假設：走廊實際寬度要能在六路旁再留兩人並行；集合區盡頭的轉 180° 也是假設（圖面盡頭之後的邊界未知）',
+    '通行帶畫在圖面走廊帶外（偏移 −0.30／−0.38），是假設：走廊實際寬度要能在六路旁再留兩人並行；每人在自己那一排後方轉 180° 也是假設（要能兩人並行迴轉；大隊 9 最後幾排在圖面盡頭附近，盡頭之後的邊界未知）',
     '整排並肩的線距：集合區、門洞與沿牆段 0.08 單位，北轉時漸變為座位列距 0.13；轉彎內圈半徑至少 0.08、外圈走步速；只在西一入口門洞穿過全壘打牆；離舞台線稿至少 0.15 單位，不走上舞台階梯',
     '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
     '樓梯照企劃圖 6白 的綠色 L 形；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
