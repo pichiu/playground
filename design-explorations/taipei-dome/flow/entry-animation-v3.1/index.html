@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>進場動線版本 3.1 · 總覽</title>
+<link rel="icon" href="data:,">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap"></noscript>
+<script src="core.js"></script>
+<style>
+:root{--bg:#f7f6f2;--ink:#1b2629;--dim:#58666a;--rule:#e1e0d8;--card:#fff;--accent:#176c61;--white:#b9a77a;--blue:#2f6fd0;--ok:#1b7c51;--ng:#c0392b;--grid:#ecebe5;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--white:#e6d9b4;--blue:#4f8fe8;--ok:#5fcf93;--ng:#ef8a7a;--grid:#223034;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#121819;--ink:#e6ebe8;--dim:#9fb0ad;--rule:#29353a;--card:#182225;--accent:#7fd0b4;--white:#e6d9b4;--blue:#4f8fe8;--ok:#5fcf93;--ng:#ef8a7a;--grid:#223034;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.75 "Noto Sans TC",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.dome-nav.bar{--line:var(--rule)}
+.wrap{max-width:1120px;margin:auto;padding:24px max(16px,env(safe-area-inset-left)) 64px;overflow-x:hidden}
+.back{color:var(--dim);text-decoration:none;font-size:0.875rem}
+h1{font-family:"Noto Serif TC",serif;font-weight:900;font-size:clamp(1.875rem,5vw,3.125rem);line-height:1.15;margin:18px 0 12px}
+.lede{font-size:1.125rem;max-width:64ch;color:var(--dim);margin:0 0 12px}
+.kpi{display:flex;flex-wrap:wrap;gap:10px 28px;margin:0 0 28px;font-size:0.875rem;color:var(--dim)}
+.kpi b{display:block;font-size:1.625rem;color:var(--ink);line-height:1.2}
+h2{font-family:"Noto Serif TC",serif;font-size:1.625rem;margin:48px 0 10px;line-height:1.3}
+h2+p.sub{margin:-4px 0 16px;color:var(--dim);max-width:64ch}
+ol.rules{padding-left:1.4em;max-width:72ch}ol.rules li{margin:6px 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:0.9375rem;min-width:520px}
+th,td{padding:9px 10px;border-top:1px solid var(--rule);text-align:left;vertical-align:top}
+thead th{border-top:0;color:var(--dim);font-weight:500;font-size:0.8125rem}
+td.n{text-align:right;white-space:nowrap}
+.lane-A{border-left:4px solid var(--white)}.lane-B{border-left:4px solid var(--blue)}
+.seg b{display:block}.seg small{color:var(--dim);display:block}
+/* 樓梯序條：9 個大隊，每格上白下藍 */
+.stair{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;margin:8px 0 4px;min-width:0}
+.stair [data-dadui]{min-width:0;background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:6px 4px;font-size:0.75rem;line-height:1.3;text-align:center}
+.stair [data-dadui] b{display:block;font-size:0.875rem}
+.stair [data-dadui] span{display:block;padding:2px 0;overflow-wrap:anywhere}
+.stair .w{border-top:3px solid var(--white)}.stair .b{border-top:3px solid var(--blue)}
+.stair-hint{color:var(--dim);font-size:0.8125rem;margin:0 0 6px}
+/* 出口用量 */
+.usage{display:grid;gap:8px;max-width:720px}
+.usage [data-exit]{display:grid;grid-template-columns:3.2em 1fr 7em;gap:10px;align-items:center;font-size:0.875rem}
+.usage .bar{height:12px;background:var(--grid);border-radius:6px;overflow:hidden;position:relative}
+.usage .bar i{position:absolute;top:0;bottom:0;left:0;background:var(--accent)}
+.usage .bar i.b{background:var(--blue)}.usage .bar i.w{background:var(--white)}
+.usage .n{text-align:right;color:var(--dim)}
+/* 檢核 */
+[data-checks]{border:1px solid var(--rule);border-radius:12px;padding:6px 16px 14px;background:var(--card)}
+[data-checks] .verdict{font-weight:700;font-size:1.125rem;margin:10px 0 4px}
+[data-checks].ok .verdict{color:var(--ok)}[data-checks]:not(.ok) .verdict{color:var(--ng)}
+[data-checks] table{min-width:0}
+[data-checks] tr.ok td:first-child::before{content:'✓ ';color:var(--ok);font-weight:700}
+[data-checks] tr.ng td:first-child::before{content:'✗ ';color:var(--ng);font-weight:700}
+[data-checks] tr.info td:first-child::before{content:'· ';color:var(--dim);font-weight:700}
+[data-checks] .ex{color:var(--dim);font-size:0.8125rem}
+/* 頁面卡 */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:14px}
+.card{display:block;border:1px solid var(--rule);border-radius:12px;padding:16px 18px;background:var(--card);text-decoration:none;color:var(--ink)}
+.card:hover{border-color:var(--accent)}
+.card b{display:block;font-size:1.125rem;font-family:"Noto Serif TC",serif}
+.card .who{color:var(--accent);font-size:0.8125rem;font-weight:700;display:block;margin:2px 0 6px}
+.card p{margin:0;color:var(--dim);font-size:0.875rem;line-height:1.6}
+.dl{display:flex;gap:10px;flex-wrap:wrap}
+.dl a{border:1.5px solid var(--accent);border-radius:8px;padding:7px 14px;text-decoration:none;font-weight:700;font-size:0.9375rem}
+.note{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);color:var(--dim);font-size:0.875rem;max-width:72ch}
+.note ul{padding-left:1.2em;margin:6px 0}
+.err{color:var(--dim)}
+@media(max-width:640px){.stair{grid-template-columns:repeat(3,minmax(0,1fr))}.usage [data-exit]{grid-template-columns:3em 1fr 6em}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="../../index.html">‹ Taipei Dome · 大巨蛋活動 App</a>
+<h1>進場動線 版本 3.1：B2 集合區</h1>
+<p class="lede">依 11/8 現場彩排修正版本 3。西一＋桃竹 1,609 人照原順序離座、<b>白衣一路、藍衣一路</b>下樓；西一入口前沒有空間整一個大隊，所以改到 2c 藍衣集結區所在的那段 B2 走廊（西一入口以南、往深處）當<b>集合區</b>：兩路沿走廊外側的通行帶走到自己那一排後方、轉 180°，<b>白衣散成三路、藍衣散成三路</b>，走回自己大隊的集合位置整隊。九個大隊都站齊後依大隊 1→9 放行：一排六人並肩、一排緊跟一排，沿 B2 往回走、<b>右轉進西一入口</b>，之後和版本 3 定案一樣整排轉彎、沿第 5–10 排地標直線北行、走到自己那列再轉。座位、下樓順序、三列交錯、藍白分流、大隊進場順序都和版本 3 相同。本版為定案版本；舊版 3（<a href="../entry-animation-v3-archive/index.html">對照</a>）與 2c（<a href="../entry-animation/index.html">對照</a>）保留作對照，舊版 3 的網址會直接轉到本版。</p>
+<div class="kpi" id="kpi"></div>
+<h2>B2 集合區：九個集合位置</h2>
+<p class="sub">由西一入口往集合區深處：大隊 1 最近、大隊 9 最深，和放行順序一致，所以先放行的大隊不必穿過還在整隊的大隊；後到的大隊走外側通行帶，也不穿過已整好的隊伍。每個位置六路：面向西一入口時，<b>左側三路白衣（第 1 路 = 列 6k−5 最外側）</b>、右側三路藍衣。圖面點距只為把九個位置排進示意圖，<b>不是現場間距或容量</b>。</p>
+<div class="scroll"><table data-stage-table><thead><tr><th>大隊</th><th>位置（由入口往深處）</th><th class="n">排數</th><th>白衣三路人數（列）</th><th>藍衣三路人數（列）</th></tr></thead><tbody></tbody></table></div>
+<h2>版本 3 → 3.1 改了什麼</h2>
+<ul class="rules" data-diff>
+<li><b>不再在西一入口前排門前隊伍</b>：現場確認樓梯口到入口這段放不下一個大隊。改成集合區九個位置，入口前與樓梯口只走路、不站人。</li>
+<li><b>下樓後仍是兩路</b>（白衣靠場側、藍衣外側），經通行帶走到自己那一排的後方（再深一排加散開的距離），左轉 180°（白衣內圈，所以轉過來白衣仍在行進方向左側），<b>在集合區散成六路</b>。</li>
+<li><b>集合區六路的左右以行進方向判定</b>：面向西一入口時第 1 路在左（走廊外側）；右轉進門後第 1 路在北；北行時在西——和版本 3 門洞以後完全一樣，沒有鏡像、沒有藍白交換。</li>
+<li><b>拿掉版本 3 的「迴廊候隊」</b>：它的觸發條件是「下一大隊在門前隊伍排滿」，門前隊伍沒有了；九個大隊改在集合區等，進門後直接北行、進列。</li>
+<li><b>放行（11/9 改）：九個大隊全部在集合位置站定後才開始放行</b>，依大隊 1→9；第一排先走，後面的排往前補到隊頭再走（一排緊跟一排）。下一大隊第一排緊跟在上一大隊最後一排之後，九個大隊連續進場。</li>
+<li><b>北行段同版本 3 定案</b>：進門後沿第 5–10 排地標直線北行、不上舞台階梯，走到自己那列再轉。</li>
+<li>不變：座位與出口、個人下樓順序、三列交錯出人、白藍分流、列 ↔ 演繹位置對應、大隊 1→9 進場順序（逐人比對與版本 3 相同）。</li>
+</ul>
+<h2>尚需現場確認</h2>
+<ul class="rules" data-field>
+<li><b>集合區長度與容量</b>：圖面 B2 走廊從西一入口南側到圖面盡頭只有約 12 單位（約 90 m，示意）；九個大隊 281 排、每路前後 0.04 單位（約 0.3 m）才排得進去。若以版本 3 門前隊伍的 0.075 單位（約 0.57 m）計需要約 21 單位。「九個大隊都排得下」目前只是現場觀察，未驗證。</li>
+<li><b>B2 柱位</b>：圖面在集合區六路帶內有兩根柱（L8：大隊 7 的位置、偏移 −0.17；L7：大隊 8 的位置、偏移 +0.18），站在柱位上的格位與後到大隊往回走的路線都會碰到它（檢核「圖面柱位」一行列出人數）。舊版在這裡也有同樣的衝突；版本 3 沒走到這一段。要確認柱子實際位置與走廊淨寬，必要時集合位置要避開柱子、改成柱間排隊或縮短該段。</li>
+<li><b>通行帶寬度</b>：集合區六路旁要留兩人並行的通行帶（圖面以虛線畫在走廊帶外，是假設）；圖面走廊只畫到六路寬，實際走廊寬度要量。若留不出通行帶，後到的大隊會穿過先到的大隊——這是本方案成立的前提。</li>
+<li><b>迴轉空間</b>：每人在自己那一排後方迴轉（白衣內圈半徑 0.13、藍衣外圈 0.21 單位，示意），迴轉時會掃過後面還空著的格位；集合區要能讓兩人並行迴轉，寬度待確認。大隊 9 最後幾排在圖面盡頭附近迴轉，盡頭之後的實際邊界未知。</li>
+<li><b>入口前與樓梯口留空範圍</b>：集合區從入口帶南緣再往南一點開始（圖面約 0.1 單位）；入口前實際要留多少，依現場指揮。</li>
+<li><b>指揮位置</b>：(1) 休息區出口幹部照名單放人（集合區還沒準備好就不放，人留在座位，不在樓梯上等）；(2) 每個大隊的集合位置尾端（正在迴轉、分三路的地方，會隨排數往深處移）；(3) 每個集合位置隊頭一位放行；(4) 西一入口右轉處。</li>
+</ul>
+<h2>規則</h2>
+<ol class="rules" id="rules"></ol>
+<h2>出口 × 兩路</h2>
+<p class="sub">每一路依序用四個出口，出口坐滿才換下一個，所以換口點會落在大隊中間；新出口的人直接接在前一個出口最後一位後面。</p>
+<div class="scroll"><table data-lane-table><thead><tr></tr></thead><tbody></tbody></table></div>
+<h2>樓梯序</h2>
+<p class="stair-hint">大隊 1→9 依序下樓，白藍兩路同時走。每格上面是白衣、下面是藍衣從哪個出口出來；換口的大隊寫兩個。</p>
+<div class="stair" data-stair-order></div>
+<h2>七個出口的用量</h2>
+<p class="sub">雙側可進出的區只走靠樓梯那一側；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席。142 兩路共用：藍衣先從上排出，白衣大隊 9 最後從下排出。</p>
+<div class="usage" data-exit-usage></div>
+<h2>檢核</h2>
+<p class="sub">由 <code>build/check.py</code> 重算，寫在 <code>data.json</code> 的 <code>meta.checks</code>。</p>
+<div data-checks><p class="err">讀取中…</p></div>
+<h2>六個看法</h2>
+<p class="sub">同一份資料，依「給誰看、在哪裡看」拆開。</p>
+<div class="cards">
+ <a class="card" href="console.html"><b>A · 指揮台</b><span class="who">企劃 · 投影、彩排檢討</span><p>滿版地圖，每一列是一條隊伍線；時間軸上軌是大隊 1–9 下樓梯（白／藍兩路），下軌是大隊 1–9 進場。</p></a>
+ <a class="card" href="me.html"><b>B · 我的路</b><span class="who">每一位菩薩 · 手機</span><p>輸入列、排，六步：起、出、走、集、進、到。你是本出口第幾位、集合區在哪一格、跟在誰後面。</p></a>
+ <a class="card" href="score.html"><b>C · 總譜</b><span class="who">企劃 · 筆電</span><p>54 列 × 時間攤開，依樓梯序排列；綠是走、橘是在集合區、藍是進場。</p></a>
+ <a class="card" href="handout.html"><b>D · 講義</b><span class="who">幹部 · 印 A3</span><p>六個關鍵時刻的小圖與說明。</p></a>
+ <a class="card" href="captain.html"><b>E · 口令卡</b><span class="who">大隊長 · 手機</span><p>選大隊：白衣／藍衣第一位與最後一位離座、第一位到集合位置、全隊站齊、放行、最後一位過西一入口、全隊到位。</p></a>
+ <a class="card" href="exit.html"><b>F · 出口帶隊卡</b><span class="who">休息區出口幹部 · 手機或列印</span><p>選出口：由上排往下的帶隊順序、每段是哪一路從哪一位起、什麼時候換口；底下是整張休息區座位圖。</p></a>
+</div>
+<h2>下載</h2>
+<div class="dl"><a href="seats.csv" download>座位表 seats.csv</a><a href="data.json">動線資料 data.json</a><a href="README.md">怎麼看、怎麼重算</a></div>
+<div class="note" id="note"></div>
+</div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+Dome.nav('index.html');
+const {esc}=Dome;
+const where=w=>`大隊 ${w.dadui} 列 ${w.lie} 第 ${w.pai} 排`;
+function checksTable(C){
+ const A=C.assignment,S=C.seats,R=C.routes,Cn=C.continuity,st=Object.values(Cn.stair),gt=Object.values(Cn.gate);
+ const rng=vs=>`${Math.min(...vs.map(v=>v.minGap))}–${Math.max(...vs.map(v=>v.maxGapWithin))} 秒`;
+ const rows=[
+  ['穿過站定者 / 走路互撞',`${C.collisions.standing} / ${C.collisions.walking}`,'0 / 0',C.collisions.standing===0&&C.collisions.walking===0,[...(C.collisions.examples||[]),...(C.collisions.unresolved||[])].slice(0,3).map(e=>e.who.join(' × '))],
+  ['任何時刻白衣出口比藍衣近 / 兩路不在同一座階梯',`${C.nesting.violations} / ${C.nesting.sameStair}`,'0 / 0',C.nesting.violations===0&&C.nesting.sameStair===0,(C.nesting.examples||[]).map(e=>`${e.id}：${(e.exits||e.stairs).join(' / ')}`)],
+  ['換口往下游 / 出口還沒坐滿就換',`${A.upstreamViolations} / ${A.notFullSwitches}（白衣 ${A.segments.A} 段、藍衣 ${A.segments.B} 段）`,'0 / 0',A.upstreamViolations===0&&A.notFullSwitches===0,(A.examples||[]).map(e=>`${e.lane} 路第 ${e.idx+1} 位：${e.exits.join(' → ')}`)],
+  ['一列分坐兩個出口（資訊）',`${A.splitColumns} 列：${A.splitLies.join('、')}`,'允許',null,[]],
+  ['每大隊六列頭一位的路徑不交叉（B2）、兩路不交叉（B1）',`${R.crossings}`,'0',R.crossings===0,(R.examples||[]).map(e=>`大隊 ${e.dadui} ${e.phase}：${e.who.join(' × ')}`)],
+  ['不斷拍',`樓梯兩路 ${rng(st)}，大隊交界 ≤ ${Math.max(...st.map(v=>v.maxGapBoundary))} 秒；西一入口六路 ${rng(gt)}`,'樓梯 0.2 ± 0.15、交界 ≤ 7 秒；西一入口 ≥ 0.19、大隊內 ≤ 0.8、大隊間 ≤ 16',Cn.ok,[]],
+  ['步速（到集合位置前不停、集合位置裡只在自己那一路站住或往前補、放行後不停）',`${C.pace.violations}`,'0',C.pace.violations===0,C.pace.examples||[]],
+  ['B2 集合區：九個位置依序不重疊、入口前留空、站在自己那一路那一格、兩路走通行帶、九隊站齊才依序放行',`${C.assembly.violations}（到位前最長停留 ${C.assembly.maxWaitBeforeSlot} 秒；通行帶越界 ${C.assembly.bypassViolations}）`,'0',C.assembly.violations===0,(C.assembly.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:`${e.why}${e.dadui?' 大隊 '+e.dadui:''}`)],
+  ['整排並肩（放行 → 分出）／整排轉彎／lane 對應／幾何避讓',`${C.formation.violations} / ${C.wheel.violations} / ${C.laneMap.violations} / ${C.geometry.violations}`,'0 / 0 / 0 / 0',[C.formation,C.wheel,C.laneMap,C.geometry].every(x=>x.violations===0),[]],
+  ['圖面柱位與路徑衝突（資訊，待現場確認；不算進通過與否）',`${C.pillars.conflicts} 根柱、${C.pillars.persons} 人經過`,'待確認',null,Object.entries(C.pillars.where||{}).map(([k,v])=>`${k}：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`)],
+  ['一排六人一起放行（每個大隊站齊才放行、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],
+  ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],
+  ['出口用量 ≤ 可用席（由名單與座位重算，須與 exits 欄位一致）',Object.entries(C.capacity).map(([k,v])=>`${k} ${v.used}/${v.capacity}${v.fieldsOk?'':'（欄位不符）'}`).join('、'),'成立',Object.values(C.capacity).every(v=>v.used<=v.capacity&&v.fieldsOk),[]]];
+ return `<p class="verdict">${C.ok?'全部通過':'未通過'}</p><div class="scroll"><table><thead><tr><th>項目</th><th>結果</th><th>門檻</th></tr></thead><tbody>${rows.map(([n,v,t,ok,ex])=>`<tr class="${ok===null?'info':ok?'ok':'ng'}"><td>${n}${ex.length?`<div class="ex">${ex.map(esc).join('；')}</div>`:''}</td><td>${esc(v)}</td><td>${t}</td></tr>`).join('')}</tbody></table></div>`;}
+(async()=>{let ds;try{ds=await Dome.load();}catch(e){$('rules').innerHTML='';document.querySelector('[data-checks]').innerHTML=`<p class="err">${esc(e.message)}</p>`;return;}
+ const D=ds.D,M=D.meta;
+ $('kpi').innerHTML=[['人數',M.population.toLocaleString('zh-TW')],['建置',M.built]].map(([k,v])=>`<span><b>${v}</b>${k}</span>`).join('');
+ $('rules').innerHTML=M.rules.map(r=>`<li>${esc(r)}</li>`).join('');
+ const segCell=s=>`<td><span class="seg"><b>${s.exit}</b><small>${where(s.from)} 起</small><small>到 ${where(s.to)} · ${s.n} 人</small></span></td>`;
+ const nSeg=Math.max(...['A','B'].map(L=>ds.lanes[L].segments.length)),ORD='一二三四五六七';   // 段數由資料決定（座位改了換口點會移動）
+ document.querySelector('[data-lane-table] thead tr').innerHTML=`<th>路</th>${Array.from({length:nSeg},(_,i)=>`<th>第${ORD[i]}段</th>`).join('')}<th class="n">合計</th>`;
+ document.querySelector('[data-lane-table] tbody').innerHTML=['A','B'].map(L=>{const l=ds.lanes[L];return `<tr class="lane-${L}"><td><b>${ds.laneName(L)}</b></td>${l.segments.map(segCell).join('')}${'<td></td>'.repeat(nSeg-l.segments.length)}<td class="n">${l.total}</td></tr>`;}).join('');
+ const gOf=(d,c)=>ds.groups.find(g=>g.dadui===d&&g.costume===c);
+ document.querySelector('[data-stair-order]').innerHTML=[1,2,3,4,5,6,7,8,9].map(d=>{const w=gOf(d,'白'),b=gOf(d,'藍');
+   return `<div data-dadui="${d}" title="大隊 ${d}：白 ${w.population}、藍 ${b.population} 人"><b>${d}</b><span class="w">${w.exits.map(e=>e.exit).join('→')}</span><span class="b">${b.exits.map(e=>e.exit).join('→')}</span></div>`;}).join('');
+ const maxCap=Math.max(...ds.exits.map(e=>e.capacity));
+ document.querySelector('[data-exit-usage]').innerHTML=ds.exits.map(e=>{const blue=e.order.filter(id=>ds.byId.get(id).costume==='藍').length;return `<div data-exit="${e.key}"><b>${e.key}</b><div class="bar" title="${e.stairLabel}"><i class="b" style="width:${blue/maxCap*100}%"></i><i class="w" style="left:${blue/maxCap*100}%;width:${(e.used-blue)/maxCap*100}%"></i></div><span class="n">${e.used} / ${e.capacity}</span></div>`;}).join('');
+ const S=D.map.staging,nIn=(d,js)=>js.map(j=>D.persons.filter(p=>p.dadui===d&&p.gateLane===j).length);
+ document.querySelector('[data-stage-table] tbody').innerHTML=S.blocks.map((b,i)=>{const w=nIn(b.dadui,[0,1,2]),bl=nIn(b.dadui,[3,4,5]),k=6*(b.dadui-1);
+   return `<tr data-dadui="${b.dadui}"><td><b>大隊 ${b.dadui}</b></td><td>第 ${i+1} 個${i===0?'（最靠西一入口）':i===S.blocks.length-1?'（最深）':''}</td><td class="n">${b.ranks}</td><td>${w.join('／')}（${k+1}／${k+2}／${k+3}）</td><td>${bl.join('／')}（${k+4}／${k+5}／${k+6}）</td></tr>`;}).join('');
+ const box=document.querySelector('[data-checks]');box.innerHTML=checksTable(M.checks);box.classList.toggle('ok',!!M.checks.ok);
+ $('note').innerHTML=`<b>注意事項</b><ul>${M.assumptions.map(a=>`<li>${esc(a)}</li>`).join('')}<li>${esc(M.frame)}</li></ul>`;
+ window.__dome_ready=true;})();
+</script>
+</body>
+</html>
