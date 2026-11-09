@@ -254,6 +254,7 @@ class _Walker:
         self.U = [q[2] - e for q in post]
         self.L = lam
         self.u = 0.0
+        self.lc = lam[0]                                 # 目前的 λ（u 變了才重算）
         self.knots = []                                  # 受限的那幾步：(t, u)
         self.stop = p['field']['X'] > march.ALIGN_X + 1e-9    # 第 10 排以東：要在第 9 排對齊
         self.lam_line = None
@@ -318,9 +319,10 @@ def align_sim(G, people, paths, sched, tau_h):
     released, T = set(), collections.defaultdict(dict)
 
     def shared(m, k):
-        """m（同一路前面的人）與 k 共用路線到哪個 λ：同一大隊、都往東進列（同一列）時共用到 k 的終點（k 的座位在 m 的路上；
-        座位緊鄰自己那一路的人轉彎半徑較小，λ 差不到 0.01，當成同一條），否則共用到先轉進列的那一位轉彎處。"""
-        if m.p['dadui'] == k.p['dadui'] and m.east and k.east:
+        """m（同一路前面的人）與 k 共用路線到哪個 λ：同一大隊、同一路、往同一側進列時共用到 k 的終點（往東：k 的座位在 m 的路上，
+        座位緊鄰自己那一路的人轉彎半徑較小，λ 差不到 0.01，當成同一條；往西：沿同一條列間空隙，west_plan 的偏移只有 ±0.03），
+        否則共用到先轉進列的那一位轉彎處。"""
+        if m.p['dadui'] == k.p['dadui'] and m.east == k.east:
             return min(m.end, k.end)
         return min(m.turn, k.turn)
 
@@ -334,7 +336,7 @@ def align_sim(G, people, paths, sched, tau_h):
             if key in released:
                 continue
             d, k = key
-            if all(w.lam(w.u) >= w.lam_line - 1e-7 for w in ws) and (k == 0 or (k - 1 in T[d] and t >= T[d][k - 1] + RANK_GAP - 1e-9)):
+            if all(w.lc >= w.lam_line - 1e-7 for w in ws) and (k == 0 or (k - 1 in T[d] and t >= T[d][k - 1] + RANK_GAP - 1e-9)):
                 released.add(key)
                 T[d][k] = t
         while nxt < len(pending) and pending[nxt].e < t + ALIGN_DT:
@@ -349,23 +351,27 @@ def align_sim(G, people, paths, sched, tau_h):
                     continue
                 done = False
                 want = min(w.U[-1], w.u + ALIGN_DT if t >= w.e else t + ALIGN_DT - w.e)
-                lim = w.lam(want)
+                lim = 9e9
                 if w.stop and (w.p['dadui'], w.p['slot']) not in released:
                     lim = min(lim, w.lam_line)
                 for m in reversed(active[j][:i]):
-                    lm = m.lam(m.u)
+                    lm = m.lc
                     se = shared(m, w)
                     if lm < se + ALIGN_GAP:                     # 離前一位至少 ALIGN_GAP，但不要求比名目間距（落後 RANK_GAP 秒）還遠：轉彎內圈名目間距本來就小於 ALIGN_GAP
                         lim = min(lim, max(lm - ALIGN_GAP, w.lam(w.u_at(lm) - RANK_GAP + 1e-6)))
-                    if lm > w.lam(w.u) + 3.0:
+                    if lm > w.lc + 3.0:
                         break
-                cur = w.lam(w.u)
-                u_new = want if w.lam(want) <= lim + 1e-12 else max(w.u, w.u_at(max(lim, cur)))
+                lw = w.lam(want)
+                if lw <= lim + 1e-12:
+                    u_new, lc = want, lw
+                else:
+                    u_new = max(w.u, w.u_at(max(lim, w.lc)))
+                    lc = w.lam(u_new)
                 if u_new < want - 1e-9:                      # 這一步受限：記下起訖（之後合併斜率相同的段）
                     if not w.knots or abs(w.knots[-1][0] - t) > 1e-9:
                         w.knots.append((t, w.u))
                     w.knots.append((t + ALIGN_DT, u_new))
-                w.u = u_new
+                w.u, w.lc = u_new, lc
             active[j] = [w for w in active[j] if w.u < w.U[-1]]
         if done:
             break

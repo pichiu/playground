@@ -14,6 +14,8 @@
 import bisect
 import math
 
+import numpy as np
+
 from geo import pairs
 
 V = 1.1
@@ -291,16 +293,26 @@ class March:
         return pts
 
     def _check_stage(self, p0, pts, seat):
-        """分出後的路線（每 0.02 細分）離舞台線稿 ≥ STAGE_MIN，否則停止建置。"""
-        prev = p0
+        """分出後的路線（每 0.02 細分）離舞台線稿 ≥ STAGE_MIN，否則停止建置（numpy 一次算全部細分點對全部舞台線段）。"""
+        Q, prev = [], p0
         for q in pts:
             n = max(1, int(math.ceil(math.dist(prev[:2], q[:2]) / 0.02)))
-            for k in range(1, n + 1):
-                x, y = prev[0] + (q[0] - prev[0]) * k / n, prev[1] + (q[1] - prev[1]) * k / n
-                lim = STAGE_MIN_NORTH if abs(x - (NORTH_X - lane_off(0, SP_SEAT))) <= GAP_H else STAGE_MIN   # 同 check.NORTH_LINE_TOL：第 1 路北行線兩側半格，含它在階梯旁轉進列的彎
-                if self.stage_clear((x, y)) < lim:
-                    raise SystemExit(f'座位 {seat} 的進列路線在 ({x:.3f}, {y:.3f}) 離舞台不到 {lim}')
+            f = np.arange(1, n + 1)[:, None] / n
+            Q.append(np.array(prev[:2]) + (np.array(q[:2]) - np.array(prev[:2])) * f)
             prev = q
+        Q = np.concatenate(Q)
+        if not hasattr(self, '_stage_np'):
+            self._stage_np = np.array([(a[0], a[1], b[0], b[1]) for a, b in self.stage])
+        ax, ay, bx, by = self._stage_np.T
+        dx, dy = bx - ax, by - ay
+        L2 = np.maximum(dx * dx + dy * dy, 1e-12)
+        f = np.clip(((Q[:, 0:1] - ax) * dx + (Q[:, 1:2] - ay) * dy) / L2, 0, 1)
+        d = np.hypot(Q[:, 0:1] - ax - dx * f, Q[:, 1:2] - ay - dy * f).min(1)
+        lim = np.where(np.abs(Q[:, 0] - (NORTH_X - lane_off(0, SP_SEAT))) <= GAP_H, STAGE_MIN_NORTH, STAGE_MIN)   # 同 check.NORTH_LINE_TOL：第 1 路北行線兩側半格，含它在階梯旁轉進列的彎
+        bad = np.nonzero(d < lim)[0]
+        if len(bad):
+            x, y = Q[bad[0]]
+            raise SystemExit(f'座位 {seat} 的進列路線在 ({x:.3f}, {y:.3f}) 離舞台不到 {lim[bad[0]]}')
 
 
 # 往西進列（座位在自己那一路西側）要橫越西側幾路還在往北走的人流：同一排六人同時走到同一個 Y、一排接一排每 RANK_GAP 秒，
