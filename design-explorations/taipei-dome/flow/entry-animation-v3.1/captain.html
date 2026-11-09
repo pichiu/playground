@@ -136,7 +136,7 @@ function cuesFor(){const W=gs.find(g=>g.costume==='白'),B=gs.find(g=>g.costume=
   {id:'stage-first',t:Math.min(...ps.map(p=>p.t.assembly)),h:'第一位到集合位置',d:`兩路經通行帶走到自己那一排後方迴轉、散成六路，走回大隊 ${k} 的集合位置（由西一入口往深處第 ${k} 個）；先到的站前面`},
   {id:'stage-full',t:Math.max(...ps.map(p=>p.t.assembly)),h:'全隊站齊',d:`六路都站好（面向西一入口：左三路白衣列 ${W.columns.join('、')}，右三路藍衣列 ${B.columns.join('、')}）；等九個大隊全部站齊才開始放行（大隊 1 先走）`},
   {id:'go',t:Math.min(...ps.map(p=>p.t.enter)),h:'放行',d:`隊頭一排六人並肩先走，後面的排往前補到隊頭再走，一排緊跟一排；沿 B2 往回走、右轉進西一入口，沿第 4–9 排地標直線北行${k<9?`；大隊 ${k+1} 緊跟在最後一排後面`:''}`},
-  {id:'align',t:ds.D.map.align.release[k],h:'排頭在第 9 排對齊',d:'六列排頭都走到第 9 排停住、對齊，全隊一起往東走到位；座位在第 9 排與以內的人直接到位、不停'},
+  {id:'align',t:ds.D.map.align.release[k],h:'排頭在第 9 排對齊',d:'第一排六人在第 9 排對齊、一起往東；之後每一排都在第 9 排對齊再走，各自走到自己的位置停；座位在第 9 排與以內的人不對齊、直接到位'},
   {id:'gate-first',t:g0.t.gate,h:'第一位過西一入口',d:'右轉進門後北三路白、南三路藍'},
   {id:'gate-last',t:g1.t.gate,h:'最後一位過西一入口',d:k<9?`大隊 ${k+1} 接著進場`:'最後一個大隊，西一入口收'},
   {id:'arrive',t:Math.max(...lies.map(f=>f.tArrive)),h:'全隊到位',d:`${ps.length} 人到身分證位置`}];

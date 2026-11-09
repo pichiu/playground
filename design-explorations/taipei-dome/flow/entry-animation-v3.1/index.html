@@ -88,7 +88,7 @@ td.n{text-align:right;white-space:nowrap}
 <li><b>拿掉版本 3 的「迴廊候隊」</b>：它的觸發條件是「下一大隊在門前隊伍排滿」，門前隊伍沒有了；九個大隊改在集合區等，進門後直接北行、進列。</li>
 <li><b>放行（11/9 改）：九個大隊全部在集合位置站定後才開始放行</b>，依大隊 1→9；第一排先走，後面的排往前補到隊頭再走（一排緊跟一排）。下一大隊第一排緊跟在上一大隊最後一排之後，九個大隊連續進場。</li>
 <li><b>北行改沿第 4–9 排地標</b>（11/9，版本 3 定案是第 5–10 排）：進門後六路整體往西一欄直線北行、不上舞台階梯，走到自己那列再轉。</li>
-<li><b>第 9 排對齊</b>（11/9）：轉進自己那一列後，座位在第 10 排以東的人，排頭先走到第 9 排停住，後面的人跟著停；同一大隊六列排頭都到第 9 排、對齊了，全隊一起往東走到位。座位在第 9 排與以內的人直接走到自己的位置，不停。</li>
+<li><b>第 9 排對齊</b>（11/9）：轉進自己那一列後，座位在第 10 排以東的人，每一排（六列各一位）都在第 9 排對齊、一起過線，並排往東走到各自的座位停；第 2–6 列每一排都要在線前等第 1 列，走走停停。座位在第 9 排與以內的人不對齊，前面隊伍還沒過去就在後面等，路通了直接到位。</li>
 <li>不變：座位與出口、個人下樓順序、三列交錯出人、白藍分流、列 ↔ 演繹位置對應、大隊 1→9 進場順序（逐人比對與版本 3 相同）。</li>
 </ul>
 <h2>尚需現場確認</h2>
@@ -98,7 +98,7 @@ td.n{text-align:right;white-space:nowrap}
 <li><b>通行帶寬度</b>：集合區六路旁要留兩人並行的通行帶（圖面以虛線畫在走廊帶外，是假設）；圖面走廊只畫到六路寬，實際走廊寬度要量。若留不出通行帶，後到的大隊會穿過先到的大隊——這是本方案成立的前提。</li>
 <li><b>迴轉空間</b>：每人在自己那一排後方迴轉（白衣內圈半徑 0.13、藍衣外圈 0.21 單位，示意），迴轉時會掃過後面還空著的格位；集合區要能讓兩人並行迴轉，寬度待確認。大隊 9 最後幾排在圖面盡頭附近迴轉，盡頭之後的實際邊界未知。</li>
 <li><b>第 1 路離舞台階梯</b>（11/9）：北行改沿第 4–9 排地標後，最西的第 1 路在舞台東側階梯旁最近約 0.11 單位（約 0.84 m，第 5–10 排時 0.15 以上），不跨階梯線；這段通道寬度、階梯邊有沒有人或設備要現場確認。</li>
-<li><b>第 9 排對齊怎麼看齊</b>（11/9）：最東的第 6 路一轉進列就到第 9 排，要等第 1 路排頭走到；第 6 路後面的人會停回分出點以南。誰喊口令、排頭看哪一條地標對齊，要再定。</li>
+<li><b>第 9 排對齊怎麼看齊</b>（11/9）：每一排都在第 9 排等第 1 列，最東的第 6 列每人約等 1–2 秒（動畫時間）；動畫裡排隊最長的人約 3 秒。誰喊口令、看哪一條地標對齊、每一排怎麼確認到齊，要再定。</li>
 <li><b>入口前與樓梯口留空範圍</b>：集合區從入口帶南緣再往南一點開始（圖面約 0.1 單位）；入口前實際要留多少，依現場指揮。</li>
 <li><b>指揮位置</b>：(1) 休息區出口幹部照名單放人（集合區還沒準備好就不放，人留在座位，不在樓梯上等）；(2) 每個大隊的集合位置尾端（正在迴轉、分三路的地方，會隨排數往深處移）；(3) 每個集合位置隊頭一位放行；(4) 西一入口右轉處。</li>
 </ul>
@@ -149,7 +149,7 @@ function checksTable(C){
   ['步速（到集合位置前不停、集合位置裡只在自己那一路站住或往前補、放行後不停）',`${C.pace.violations}`,'0',C.pace.violations===0,C.pace.examples||[]],
   ['B2 集合區：九個位置依序不重疊、入口前留空、站在自己那一路那一格、兩路走通行帶、九隊站齊才依序放行',`${C.assembly.violations}（到位前最長停留 ${C.assembly.maxWaitBeforeSlot} 秒；通行帶越界 ${C.assembly.bypassViolations}）`,'0',C.assembly.violations===0,(C.assembly.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:`${e.why}${e.dadui?' 大隊 '+e.dadui:''}`)],
   ['整排並肩（放行 → 分出）／整排轉彎／lane 對應／幾何避讓',`${C.formation.violations} / ${C.wheel.violations} / ${C.laneMap.violations} / ${C.geometry.violations}`,'0 / 0 / 0 / 0',[C.formation,C.wheel,C.laneMap,C.geometry].every(x=>x.violations===0),[]],
-  ['第 9 排對齊：排頭停在第 9 排、對齊、到齊一起出發；第 9 排以內不停',`${C.align.violations}（停住 ${C.align.holders} 人；停住前後間距 ≥ ${C.align.minGap}）`,'0',C.align.violations===0,(C.align.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:e.why)],
+  ['第 9 排對齊：第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊',`${C.align.violations}（${C.align.ranks} 排；排隊 ${C.align.holders} 人，其中第 9 排以內 ${C.align.directHeld}）`,'0',C.align.violations===0,(C.align.examples||[]).map(e=>e.who?`${e.who}：${e.why}`:e.why)],
   ['圖面柱位與路徑衝突（資訊；不算進通過與否）',`${C.pillars.conflicts} 根柱、${C.pillars.persons} 人經過`,C.pillars.conflicts?'待確認':'0',null,[...Object.entries(C.pillars.where||{}).map(([k,v])=>`${k}：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`),...Object.entries(C.pillars.assumedAbsent||{}).map(([k,v])=>`${k} 假設沒有；若現場有：走過 ${v.persons} 人、站在柱上 ${v.standing} 人（大隊 ${v.daduis.join('、')||'—'}）`)]],
   ['一排六人一起放行（每個大隊站齊才放行、排距、前後間距）',`${C.ranks.violations}（${C.ranks.n} 排）`,'0',C.ranks.violations===0,(C.ranks.examples||[]).map(e=>typeof e.rank==='number'?`第 ${e.rank+1} 排：${e.who.join('、')}`:String(e.rank))],
   ['座位：唯一 / 違規席 / 區不符 / 順序違反 / 名單不符',`${S.unique} / ${S.illegal} / ${S.wrongSection} / ${S.orderViolations} / ${S.orderCoverage}`,'1609 / 0 / 0 / 0 / 0',S.unique===1609&&S.illegal===0&&S.wrongSection===0&&S.orderViolations===0&&S.orderCoverage===0,[]],

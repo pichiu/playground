@@ -196,8 +196,9 @@ def _free_until(p):
 
 
 def _in_hold(p, q0, q1):
-    """q0 → q1 是不是在這個人的排隊時段（t.holdStart → t.holdEnd）裡：那段可以停、可以慢，不快過步速。"""
-    return q0[2] >= _free_until(p) - ALIGN_TOL and q1[2] <= p['t'].get('holdEnd', -1) + ALIGN_TOL
+    """q0 → q1 是不是從這個人的排隊時段（t.holdStart → t.holdEnd）裡開始的一段：那段可以停、可以慢，不快過步速。
+    看起點就好：排隊最後一步若只動了不到 0.0005，路徑四捨五入後那一點會和前一點合併，離開排隊那一段就從時段內開始。"""
+    return _free_until(p) - ALIGN_TOL <= q0[2] <= p['t'].get('holdEnd', -1) + ALIGN_TOL
 
 
 def _head_tau(data):
@@ -632,7 +633,7 @@ def check_all(data, coll=None):
     gate = {}
     for j in range(6):
         ps = sorted((p for p in persons if p['gateLane'] == j), key=lambda p: p['gateIdx'])
-        gate[str(j)] = _gaps(ps, 'gate', 'dadui', lambda p: _free_until(p) < p['t']['gate'])   # 11/9：後面大隊在進門前排隊時，入口拍距不再固定
+        gate[str(j)] = _gaps(ps, 'gate', 'dadui', lambda p: p['t']['enter'] <= _free_until(p) < p['t']['gate'])   # 11/9：後面大隊在進門前（放行之後）排隊時，入口拍距不再固定
     n_ld = collections.Counter((p['lane'], p['dadui']) for p in persons)
     rule_bad = []
     for L in plan.LANES:

@@ -339,49 +339,48 @@ def test_pillars_assumed_absent_are_reported(built):   # 11/9 假設沒有柱 L7
     assert all(v['standing'] > 0 for v in P['assumedAbsent'].values())
 
 
-def test_check_align_green(built):                      # 第 9 排對齊：每個大隊六路隊頭、只有第 10 排以東的人停、停的人一起出發
+def test_check_align_green(built):                      # 第 9 排對齊：第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊
     _, D = built
     A = check.align(D)
-    assert A['violations'] == 0 and A['holders'] > 9 * 5 and A['minGap'] >= D['map']['align']['gap'] - check.ALIGN_TOL
-    rel = {int(k): v for k, v in D['map']['align']['release'].items()}
+    assert A['violations'] == 0 and A['preGate'] == 0
+    X, ranks = D['map']['align']['x'], {int(k): v for k, v in D['map']['align']['ranks'].items()}
+    assert all(b - a >= build.RANK_GAP - check.RELEASE_TOL for v in ranks.values() for a, b in zip(v, v[1:]))
+    by = {}
     for p in D['persons']:
-        if 'holdStart' in p['t']:
-            assert p['pai'] >= 10 and p['t']['holdEnd'] == rel[p['dadui']]
-        if p['pai'] <= 9:
-            assert 'holdStart' not in p['t']
-    P = {p['id']: p for p in D['persons']}
-    for d, ids in D['map']['align']['heads'].items():   # 六路隊頭：最晚到的那一位不停，其他五位都停
-        held = [i for i in ids if 'holdStart' in P[i]['t']]
-        assert len(ids) == 6 and len(held) == 5
+        if p['field']['X'] > X:
+            q = [r for r in p['path'] if abs(r[0] - X) <= check.ALIGN_TOL and abs(r[1] - p['field']['Y']) <= check.ALIGN_TOL][-1]
+            by.setdefault((p['dadui'], p['slot']), []).append(q[2])
+    assert all(max(v) - min(v) <= check.RELEASE_TOL and len(v) >= 1 for v in by.values())      # 同一排一起過線
+    assert sum(len(v) for v in ranks.values()) == len(by)
+    full = [v for k, v in by.items() if k[1] == 0]
+    assert all(len(v) == 6 for v in full)                                                        # 第一排六列都在第 10 排以東
 
 
-def test_check_detects_align_tampering(built):          # 竄改：停的人提早出發、第 9 排以內的人停、沒記停住時段卻停、對齊點挪開
+def test_check_detects_align_tampering(built):          # 竄改：一排裡有人提早過線、沒記排隊時段卻停、對齊線挪開、排的順序顛倒
     _, D = built
     D = _copy(D)
-    p = next(q for q in D['persons'] if 'holdStart' in q['t'])
-    p['t']['holdEnd'] -= 0.1
+    X = D['map']['align']['x']
+    p = next(q for q in D['persons'] if q['field']['X'] > X and q['slot'] == 3 and q['gateLane'] == 4)
+    D['map']['align']['ranks'][str(p['dadui'])][3] -= 0.1
     assert check.align(D)['violations'] >= 1
     D = _copy(built[1])
-    p = next(q for q in D['persons'] if 'holdStart' in q['t'])
+    p = next(q for q in D['persons'] if 'holdStart' in q['t'] and any(a[:2] == b[:2] for a, b in zip(q['path'], q['path'][1:]) if a[2] > q['t']['enter']))
     del p['t']['holdStart'], p['t']['holdEnd']
-    assert check.align(D)['violations'] >= 1
-    D = _copy(built[1])
-    p = next(q for q in D['persons'] if q['pai'] <= 9 and q['dadui'] == 4)
-    k = next(i for i, q in enumerate(p['path']) if q[2] > p['t']['split'])
-    q = p['path'][k]
-    for r in p['path'][k:]:
-        r[2] += 0.5
-    p['path'].insert(k, [q[0], q[1], q[2]])
     assert check.align(D)['violations'] >= 1
     D = _copy(built[1])
     D['map']['align']['x'] += 0.05
     assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    r = D['map']['align']['ranks']['2']
+    r[1], r[2] = r[2], r[1]
+    assert check.align(D)['violations'] >= 1
 
 
-def test_tau_skips_hold(built):                         # 中心線時間 τ 不算停住的時間：停住時段裡 τ 不動
+def test_tau_until_queue(built):                        # 中心線時間 τ 只用到開始排隊為止：並肩、lane 對應只驗到那裡
     _, D = built
     ht = check._head_tau(D)
-    p = next(q for q in D['persons'] if 'holdStart' in q['t'] and q['t']['holdStart'] < q['t']['split'])
-    h0, h1 = p['t']['holdStart'], p['t']['holdEnd']
-    assert abs(check._tau(p, h0, ht) - check._tau(p, h1, ht)) < 1e-9
-    assert abs(check._tau(p, h1 + 1, ht) - check._tau(p, h0 - 1, ht) - 2) < 1e-9
+    p = next(q for q in D['persons'] if 'holdStart' not in q['t'])
+    assert check._free_until(p) == float('inf')
+    assert abs(check._tau(p, p['t']['enter'], ht) - ht[p['dadui']]) < 1e-9
+    q = next(q for q in D['persons'] if 'holdStart' in q['t'])
+    assert check._free_until(q) == q['t']['holdStart']
