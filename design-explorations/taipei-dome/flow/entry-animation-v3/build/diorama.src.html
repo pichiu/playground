@@ -483,7 +483,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
     <div class="eyebrow">怎麼看・3 步驟</div>
     <h2 id="help-h">1,609 位小人依序進場</h2>
     <ol>
-      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿舞台階梯北行入座。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
+      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿第 5–10 排地標直線北行，走到自己那列再轉進座位。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
       <li><span class="n" aria-hidden="true">2</span><div><strong>按章節鈕</strong><span class="d">離座、下樓梯、門前隊伍、穿過西一入口、迴廊候隊、北行進列、全部入座：跳到那個時間，鏡頭飛到特寫。拖曳轉鏡頭，<kbd>Shift</kbd>＋方向鍵也可以。</span></div></li>
       <li><span class="n" aria-hidden="true">3</span><div><strong>點一個小人，或搜尋「列 14 排 7」</strong><span class="d">鏡頭跟著他走，卡片顯示他的六步路線；清單可以跟隨一整列。<kbd>Esc</kbd> 或拖曳鏡頭解除。</span></div></li>
     </ol>
@@ -699,14 +699,14 @@ function heightAt(i,t,xy){const h=HT[i],a=P[i].path;
 // ---------------------------------------------------------------------
 // 3.2 甲舞台東側階梯（playground #23）
 //     資料：舞台在大隊 1–4 列區西側是 11 階的階梯（base.stage 線稿裡一組平行曲線，每階約 0.055 深）；
-//     整排北行時靠舞台的第 1 路最多走上 3 階、第 2 路 1 階（build/march.py；check.py geometry：maxSteps 3、stepViolations 0）。
-//     找階梯線：在 check.py 的階梯 Y 範圍（STAIR_Y 0.9–3.95）中線那一列，取 X < −4.5 的舞台線稿交點，由東往西連續、
+//     北行改走第 5–10 排地標的直線，沒有人走上階梯（build/march.py；check.py geometry：maxSteps 0、stepViolations 0）；階數仍照算，資料改了也畫得對。
+//     找階梯線：在階梯 Y 範圍（0.9–3.95）中線那一列，取 X < −4.5 的舞台線稿交點，由東往西連續、
 //     相鄰間距 ≤ STEP_LINE_GAP 的那幾條就是階梯線（遇到大空隙停；這份資料是 11 條，之後隔 0.33 才是台面上的另一組線）。
 //     每條線沿端點接上相鄰折線，接成一條 Y 單調的鏈（遇到分岔、或 Y 折返＝南端連到下一條線的短邊，就停）。
 //     階數 n(x,y)＝往東數跨過幾條階梯線（只數 y 落在該鏈 Y 範圍內的鏈；和 check.py 的數法相同，資料每個點的階數都對得上）。
 //     踏面頂＝FOOT_LIFT + n × rise，rise＝(STAGE_H − FOOT_LIFT) / N：地面上的腳底高是 FOOT_LIFT，第 N 階的頂正好是台面 STAGE_H。
 // ---------------------------------------------------------------------
-const STEP_ROW_Y=(0.9+3.95)/2,STEP_X_EAST=-4.3,STEP_LINE_GAP=0.1;   // check.py：STAIR_Y＝(0.9, 3.95)、STAIR_BOX 東界 −4.3
+const STEP_ROW_Y=(0.9+3.95)/2,STEP_X_EAST=-4.3,STEP_LINE_GAP=0.1;   // 階梯 Y 範圍 0.9–3.95 的中線；check.py STAIR_BOX 東界 −4.3
 const STAIR=(()=>{const west=M.base.stage.filter(l=>{let mx=-1e9;for(let i=0;i<l.length;i+=2)mx=Math.max(mx,l[i]);return mx<-4.5;});
   // 去掉重複的折線（同一組點、正向或反向各畫了一次）
   const seen=new Set(),pl=[],kp=q=>q[0].toFixed(4)+','+q[1].toFixed(4);
@@ -1695,10 +1695,10 @@ const STEP_TXT={'-1':'還在休息區座位上，輪到才起身。','0':'從座
 // 步驟的時間邊界 me.html 沒有改（迴廊候隊在「進」這一步裡），「進」的說明再依 t.holdStart／t.holdEnd 分成三段
 function stepTxt(k,p,t){const s=p.t,nx=p.dadui+1,hold=s.holdStart!=null;
   if(k===3)return `在牆外門前隊伍等候：要等整個大隊排滿才出發，之後一排緊跟一排${hold?`；進門後在沿牆迴廊停好，等大隊 ${nx} 排滿再進列`:''}。`;
-  if(k===4){if(!hold)return '和同一排六人並肩轉進西一入口，沿牆迴廊直接北行（最後一個大隊不停），到列區南緣梯次進列。';
+  if(k===4){if(!hold)return '和同一排六人並肩轉進西一入口，沿牆迴廊直接北行（最後一個大隊不停），沿第 5–10 排地標直線北行，到自己那列再轉進座位。';
     if(t<s.holdStart)return '和同一排六人並肩轉進西一入口，沿牆迴廊走到停的位置。';
     if(t<s.holdEnd)return `在沿牆迴廊停好，等大隊 ${nx} 排滿門前隊伍再走。`;
-    return '迴廊放行：整排沿舞台邊北行（靠舞台的兩路會走上幾階階梯），到列區南緣梯次進列。';}
+    return '迴廊放行：整排沿第 5–10 排地標直線北行，到自己那列再轉進座位。';}
   return STEP_TXT[String(k)];}
 const stepSub=(k,p,t)=>k!==4||p.t.holdStart==null?0:t<p.t.holdStart?1:t<p.t.holdEnd?2:3;
 const card={i:-1,steps:null,cur:-2,sub:-1,bd:new Float64Array(6)};
@@ -2165,6 +2165,7 @@ function visibleCenter(){if(_vc)return _vc;const W=renderer.domElement.clientWid
 function viewShift(dir,dist,out){const {dx,dy,W,H}=visibleCenter(),hh=Math.tan(deg(camera.fov/2))*dist,wpp=2*hh/H;   // 每 px 的 world 長度
   const right=_vsR.set(0,1,0).cross(dir).normalize(),up=_vsU.copy(dir).cross(right).normalize();
   return out.copy(right).multiplyScalar(-dx*wpp).addScaledVector(up,dy*wpp);}
+const NORTH_FIT=2.5;   // 北行進列特寫框的北行中心線長度（單位）：約是舊版舞台階梯外框的南北長
 const _vsR=new THREE.Vector3(),_vsU=new THREE.Vector3(),_vsO=new THREE.Vector3(),_vsD=new THREE.Vector3();
 function shots(){
   const st=M.stands.map(s=>({s,c:pairs(s.poly).reduce((a,p)=>[a[0]+p[0]/14,a[1]+p[1]/14],[0,0])}));
@@ -2205,9 +2206,10 @@ function shots(){
     // ＋章節時間當下正在迴廊停的人（地面與頭頂）。原本「沿牆通道」只 fit 門洞＋insideWalk 前 50%（審查 rv14／rv15），停在後半段的人會在畫面外
     hold:()=>{const t=CHAPTERS.find(c=>c.key==='hold').t,o=[...fl(M.gate.band),...fl(M.gate.band,WALL_H),...pairs(M.insideWalk).flatMap(q=>sq(q,0.22))];
       for(const p of P)if(p.t.holdStart!=null&&t>=p.t.holdStart&&t<p.t.holdEnd){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}return o;},
-    // playground #23 北行進列：舞台東側整組階梯（踏面外框，地面與台面兩層）、大隊 1 的北行與進列路段（迴廊之後，從各人 path 取點）、
-    // 章節時間當下北行進列的人（地面與頭頂）。主角是走上階梯的第 1、2 路與分出後梯次進列的人
-    north:()=>{const t=CHAPTERS.find(c=>c.key==='north').t,o=[];for(const [x,z] of STAIR.omega)o.push(V3(x,0,z),V3(x,STAGE_H,z));
+    // 北行進列：大隊 1 分出前最後 NORTH_FIT 單位的北行中心線（map.march 取樣點往兩側各 0.4，涵蓋六路）、
+    // 章節時間當下北行進列的人（地面與頭頂）。主角是沿第 5–10 排直線北行的整排與分出後走到自己那列再轉的人（不再框舞台階梯：沒有人走上去）
+    north:()=>{const t=CHAPTERS.find(c=>c.key==='north').t,o=[],mc=M.march,t1=mc.split['1'];
+      for(let k=0;k<mc.tau.length;k++)if(mc.tau[k]>=Math.max(mc.stageTau[1],t1-NORTH_FIT/D.meta.speedUnitPerSec)&&mc.tau[k]<=t1)for(const d of [-0.4,0.4])o.push(V3(mc.x[k]+d,0,mc.y[k]),V3(mc.x[k]+d,0.16,mc.y[k]));
       for(const p of P){if(p.dadui!==1)continue;if(state(p,t)==='enter'&&marchTau(p,t)>=M.march.stageTau[1]){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}}
       return o;},
     // 入座：整個西班（全部人的場內位置，不只 WEST_N 周圍）fit 進扣掉面板的可視矩形（審查 rv14：原本座位區下半被 HUD／章節列蓋住）
@@ -2240,7 +2242,7 @@ function shots(){
     // 北行進列：橫式從東方（略偏南）往西看，北行沿畫面橫向、舞台階梯的立面朝向鏡頭；直式同一側（見下）
     // pg23 第二輪審查：直式原本從南往北看（北行沿畫面深度），手機上前後排距只有同排間距的 1.13 倍、看起來像六路縱隊；
     // 改成和橫式同一側（東方略偏南）、俯角 44°，行進方向橫過畫面（tests/pg23/scan.js 掃描方位／俯角的結果記在 NOTES）
-    north:{name:'舞台階梯',view:()=>portrait()?fitBest(focus.north(),dirFrom(hDir(null,[0.96,0.28]),deg(44)),24,12):fitBest(focus.north(),dirFrom(hDir(null,[0.96,0.28]),deg(52)),24,12)},
+    north:{name:'北行進列',view:()=>portrait()?fitBest(focus.north(),dirFrom(hDir(null,[0.96,0.28]),deg(44)),24,12):fitBest(focus.north(),dirFrom(hDir(null,[0.96,0.28]),deg(52)),24,12)},
     seat:{name:'入座',view:()=>portrait()?pv('seat',deg(52)):lv('seat',FIELD_C,0.1,6,deg(52),[0.6,0.8])},
   };}
 let SHOTS;
@@ -2338,7 +2340,7 @@ function buildHud(){
 //   穿過西一入口＝state 是 enter 且 pos 在 map.gate.band（門洞地面）內；
 //   （playground #23 起）迴廊候隊＝t.holdStart ≤ t < t.holdEnd（資料的迴廊候隊時段：整排停在沿牆迴廊，state 仍是 enter）；
 //   北行進列＝state 是 enter，且已走過沿牆迴廊（中心線時間 τ ≥ map.march.stageTau[1]＝北轉起點；τ＝t − t.enter − 已停的時間），
-//   包括沿舞台階梯北行與分出後的梯次進列。
+//   包括沿第 5–10 排地標直線北行與分出後走到自己那列再轉。
 //   舊的「沿牆通道」（大隊 1 第一人 t.gate + 1 起、insideWalk 前 50%）在資料加入迴廊候隊後改成上面兩章（見 NOTES「playground #23 更新」）。
 // 同一套計算在 tests/fin/chapter-times.js 用 node 獨立重算（結果寫 tests/fin/chapter-times.result.json，記在 NOTES）。
 // 中心線時間 τ（相對 t.enter，不含迴廊停的時間）：同一大隊每排的速度剖面相同，只差 t.enter 與停的時段（build/march.py）
@@ -2365,7 +2367,7 @@ const CHAPTERS=(()=>{let h1=1e9,e1=1e9;for(const p of P)if(p.dadui===1){if(p.t.h
     {key:'gate',name:'穿過西一入口',full:'穿過西一入口',...pk('gate',D.meta.tGateStart),shot:'gate'},
     // playground #23：沿牆通道 → 迴廊候隊（原始時間＝大隊 1 第一個 t.holdStart）＋北行進列（原始時間＝大隊 1 第一個 t.holdEnd，迴廊放行）
     {key:'hold',name:'迴廊候隊',full:'沿牆迴廊候隊（停好等下一大隊排滿）',...pk('hold',h1),shot:'hold'},
-    {key:'north',name:'北行進列',full:'沿舞台階梯北行、梯次進列',...pk('north',e1),shot:'north'},
+    {key:'north',name:'北行進列',full:'沿第 5–10 排直線北行、到自己那列再轉',...pk('north',e1),shot:'north'},
     {key:'done',name:'全部入座',full:'全部入座',t:D.meta.tEnd,t0:D.meta.tEnd,shot:'seat'}];})();
 let chapCur=-2;
 function pressCam(b){for(const x of $('#cams').querySelectorAll('.chip'))x.setAttribute('aria-pressed',String(x===b));}

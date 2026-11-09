@@ -58,12 +58,12 @@ def march_of(G):
 
 
 def split_points(G, people):
-    """每個大隊在哪裡分出（中心線弧長 s）：該大隊最南一列之南、最前座位西側一點。"""
+    """每個大隊在哪裡分出（中心線弧長 s）：北行直線上，整排走到該大隊最南一列之南 SPLIT_AHEAD 處。"""
     M = march_of(G)
     out = {}
     for d in sorted({p['dadui'] for p in people}):
         ps = [p for p in people if p['dadui'] == d]
-        out[d] = M.split_s(max(p['field']['Y'] for p in ps), min(p['field']['X'] for p in ps))
+        out[d] = M.split_s(max(p['field']['Y'] for p in ps))
     return out
 
 
@@ -211,24 +211,9 @@ def schedule(G, people, R=None):
     return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()), ranks=ranks, rankOf=rank_of, split=split, stage=stage)
 
 
-def tail_limits(people, rank_of):
-    """每人分出後的兩個參數：xlim（自己那一列與同大隊南邊幾列，排號 ≤ 自己的人裡最西的座位 X；沿牆段就分出的大隊斜切時要在它西側）
-    與 y_south（本大隊最南一列的 Y；要橫走的人在它南邊半格那條列間空隙往西）。"""
-    rows = collections.defaultdict(list)                  # (大隊, gateLane) → [(排號, X)]
-    y_south = {d: max(p['field']['Y'] for p in people if p['dadui'] == d) for d in {p['dadui'] for p in people}}
-    for p in people:
-        rows[(p['dadui'], p['gateLane'])].append((rank_of[p['id']], p['field']['X']))
-    out = {}
-    for p in people:
-        r, d = rank_of[p['id']], p['dadui']
-        xs = [x for j in range(p['gateLane'], 6) for rr, x in rows[(d, j)] if rr <= r]
-        out[p['id']] = (min(xs), y_south[d])
-    return out
-
-
-def person_path(G, p, r, t, ranks, rank, s_split, lim, f_lat=None, stage=None):
+def person_path(G, p, r, t, ranks, rank, s_split, f_lat=None, stage=None):
     """座位 → 自己那條線的起點 → 步速追上隊伍 → 跟著隊伍（慢行或站住）到隊頭
-    → 一排六人並肩沿 march 中心線（整排轉進西一入口、沿牆、北轉、沿舞台邊北行）→ 在自己大隊列區南緣分出 → 自己那一列 → 座位（步速）。"""
+    → 一排六人並肩沿 march 中心線（整排轉進西一入口、沿牆、北轉、沿第 5–10 排地標直線北行）→ 在自己大隊列區南緣分出 → 沿自己那一路走到自己那一列 → 座位（步速）。"""
     line = G.line_poly(p['gateLane'])
     path = list(timed(r['to'], t['leave']))
     s_join = (t['assembly'] - t['entry']) * V
@@ -259,7 +244,7 @@ def person_path(G, p, r, t, ranks, rank, s_split, lim, f_lat=None, stage=None):
         path += [(x, y, t['enter'] + tau) for x, y, tau in M.lane_track(j, s_split)[1:]]
     _, _, tx, ty, _ = M.C.at(s_split)
     tt, last = path[-1][2], path[-1]
-    for q in M.tail(last[:2], (tx, ty), (p['field']['X'], p['field']['Y']), *lim, f_lat):
+    for q in M.tail(last[:2], (tx, ty), (p['field']['X'], p['field']['Y']), f_lat):
         tt += math.dist(last[:2], q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
         path.append((q[0], q[1], tt))
         last = path[-1]
@@ -288,10 +273,9 @@ def _ids_between(persons, L, i0, i1):
 def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     people = planj['people']
     persons = []
-    lims = tail_limits(people, clocks['rankOf'])
     for p in people:
         r, t = R[p['id']], sched[p['id']]
-        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], clocks['split'][p['dadui']], lims[p['id']], (slow or {}).get(p['id']), clocks.get('stage'))
+        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], clocks['split'][p['dadui']], (slow or {}).get(p['id']), clocks.get('stage'))
         tt = dict(leave=round(t['leave'], 3), stair=round(t['stair'], 3), entry=round(t['entry'], 3), assembly=round(t['assembly'], 3), enter=round(t['enter'], 3),
                   gate=round(t['gate'], 3), split=round(t['split'], 3), arrive=path[-1][2])
         if 'holdStart' in t:                           # 迴廊候隊：在沿牆迴廊停的起訖
@@ -384,12 +368,12 @@ RULES = [
     '每個出口是一條隊伍：由上排往下、每排由出口側往中央，先走的坐上面',
     '不進 B2 集結區、不在樓梯或 B1 走廊候隊：下樓後白衣散到北三條線、藍衣散到南三條線，在樓梯口到西一入口這段 B2 走廊（舞台後方）排成六條線的門前隊伍；每個大隊從新的一排開始，整個大隊排滿門前隊伍才出發，一排六人並肩、一排緊跟一排離開隊頭',
     '迴廊候隊：每個大隊進門後在沿全壘打牆內側的迴廊停好（隊頭停在北轉前，後面往回排），等下一個大隊在門前隊伍排滿，才繼續走、進列；下一個大隊緊跟在後進門，到迴廊停好；最後一個大隊不停',
-    '整排轉彎：一排六人從隊頭到自己大隊的列區南緣全程並肩——左轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿舞台邊北上；轉彎時整排一起轉，內圈走小步、外圈走大步，轉過來仍是六人並肩；第 1 路（白衣列 6k−5）永遠在行進方向左側，北行時在西側、進列時對到大隊第一列；舞台在大隊 1–4 列區西側是階梯，靠舞台的第 1 路最多上 3 階、第 2 路 1 階（大隊 1–4 列區西側那段 11 階的階梯）',
-    '梯次進列：舞台階梯和最前排座位之間只有一人寬，整排右轉進列放不下，所以到了自己大隊列區南緣，每人從自己那一路沿兩欄之間的空隙往北、轉進自己那一列往東到位；座位在自己那一路西側的（多半是每大隊最後幾排、靠舞台）沿列區南緣的空隙往西，再從座位旁的空隙進列；北行時壓過的是後面大隊還空著的座位',
+    '整排轉彎：一排六人從隊頭到自己大隊的列區南緣全程並肩——左轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿第 5–10 排地標一條直線往北；轉彎時整排一起轉，內圈走小步、外圈走大步，轉過來仍是六人並肩；第 1 路（白衣列 6k−5）永遠在行進方向左側，北行時在西側（第 5 排地標旁）、進列時對到大隊第一列；不閃舞台、不上舞台階梯，六路都在地面',
+    '走到自己那列再轉：到了自己大隊列區南緣，每人沿自己那一路（兩欄之間的空隙）繼續往北，走到自己那一列才轉；座位在東側的右轉沿那一列往東到位，座位在西側的在那一列南邊半格的空隙往西、到座位正南方再往北半格進列（橫越還在往北走的人流時，在空隙裡稍微偏移或放慢錯開）；北行時壓過的是後面大隊還空著的座位',
 ]
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒（一個接一個緊跟）、兩路錯開 0.17 秒、大隊交界加 0.8 秒；門前隊伍前後間距 0.075 單位、排滿後 0.2 秒一排（排距約 1.7 m）；迴廊停好時排距約 1.3 m；皆為動畫節奏，不是現場秒數',
-    '整排並肩的線距：門前隊伍、門洞與沿牆段 0.08 單位（牆和舞台南翼之間扣掉舞台淨距只剩約 0.45，放不下更寬的排），北轉時漸變為座位列距 0.13；轉彎內圈半徑至少 0.08、外圈走步速；只在西一入口門洞穿過全壘打牆；離舞台線稿至少 0.15 單位，只有大隊 1–4 列區西側的舞台階梯例外（可以走上去，最多 3 階）',
+    '整排並肩的線距：門前隊伍、門洞與沿牆段 0.08 單位（牆和舞台南翼之間扣掉舞台淨距只剩約 0.45，放不下更寬的排），北轉時漸變為座位列距 0.13；轉彎內圈半徑至少 0.08、外圈走步速；只在西一入口門洞穿過全壘打牆；離舞台線稿至少 0.15 單位，不走上舞台階梯',
     '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
     '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',
     '碰撞檢查為圖面點距（0.03 單位），不是人體寬度或通道容量認證',
