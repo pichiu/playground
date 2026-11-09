@@ -11,6 +11,7 @@
   所以外圈正好是步速、內圈依半徑比放慢，直線段六人都是步速。所有排的速度剖面都一樣，只差 t.enter。
 - 分出之後每人沿自己那條線走到自己那一列才轉：座位在東側的右轉往東；座位在西側的在那一列南邊半格的空隙往西（west_plan 錯開人流）。
 """
+import bisect
 import math
 
 from geo import pairs
@@ -78,9 +79,7 @@ class Centerline:
     def at(self, s):
         """(x, y, tx, ty, 曲率)；曲率 > 0 為左轉。"""
         s = max(0.0, min(self.L, s))
-        i = 0
-        while i < len(self.prims) - 1 and s > self.cum[i + 1]:
-            i += 1
+        i = min(len(self.prims) - 1, bisect.bisect_left(self.cum, s, 1) - 1)   # 第一個 cum[i + 1] ≥ s 的段
         q, f = self.prims[i], s - self.cum[i]
         if q[0] == 'L':
             d = _unit(q[1], q[2]) if self.lens[i] > 1e-12 else _unit(q[1], (q[1][0] + 1e-9, q[1][1]))
@@ -153,7 +152,8 @@ class March:
         """lane j 在 s0 → s1 之間的 (x, y, s) 折線（含兩端；中間點用取樣點、簡化到偏離 < tol）。"""
         key = (j, s0, s1, tol)
         if key not in self._lanes:
-            raw = [(*self.lane_xy(s0, j), s0)] + [(*self.lane_xy(s, j), s) for s in self.ss if s0 + 1e-9 < s < s1 - 1e-9] + [(*self.lane_xy(s1, j), s1)]
+            k0, k1 = bisect.bisect_right(self.ss, s0 + 1e-9), bisect.bisect_left(self.ss, s1 - 1e-9)
+            raw = [(*self.lane_xy(s0, j), s0)] + [(*self.lane_xy(s, j), s) for s in self.ss[k0:k1]] + [(*self.lane_xy(s1, j), s1)]
             keep = _simplify_idx([q[:2] for q in raw], tol)
             self._lanes[key] = tuple(raw[i] for i in keep)
         return self._lanes[key]
@@ -427,15 +427,4 @@ def _simplify_idx(pts, tol, lo=0, hi=None):
 
 def _simplify(pts, tol):
     """Douglas–Peucker：保留端點，去掉離弦小於 tol 的中間點。"""
-    if len(pts) < 3:
-        return list(pts)
-    a, b = pts[0], pts[-1]
-    d = _unit(a, b)
-    far, k = -1.0, 0
-    for i in range(1, len(pts) - 1):
-        e = abs(_cross((pts[i][0] - a[0], pts[i][1] - a[1]), d))
-        if e > far:
-            far, k = e, i
-    if far < tol:
-        return [a, b]
-    return _simplify(pts[:k + 1], tol)[:-1] + _simplify(pts[k:], tol)
+    return [pts[i] for i in _simplify_idx(pts, tol)]

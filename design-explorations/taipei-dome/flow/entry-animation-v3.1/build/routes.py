@@ -7,7 +7,7 @@
 放行時由集合位置的隊頭一排六人並肩往西一入口走、右轉進門（march.py）。
 
 通行帶與六路的偏移（B2 走廊左法向為正，正 = 場側）：
-- 下樓後兩路：A +0.12、B −0.12（同版本 3），到 u BYPASS_U 前漸移到通行帶 A −0.30、B −0.38（白衣仍在行進方向左側）。
+- 下樓後兩路：A +0.12、B −0.12（LANE_OFF，同樓梯），到 u BYPASS_U 前漸移到通行帶 A −0.30、B −0.38（白衣仍在行進方向左側）。
 - 集合區六路（面向西一入口、往 u 變小的方向走，行進方向左側 = 負偏移）：第 j 路在 −0.2 + 0.08j；j 0–2 白衣、3–5 藍衣，
   第 1 路（j 0、列 6k−5）在行進方向最左側，右轉進門後在北側，與版本 3 門洞裡、北行、進列的左右相同。
 圖面 b2Band 只畫到 ±0.2（六路寬）；通行帶在帶外，是假設，要現場確認走廊實際寬度。
@@ -16,7 +16,7 @@ import math
 from geo import Poly, flat, pairs
 import plan
 
-STAIR_U_B1, B2_U_START = 13.15, 1.0      # 樓梯口在 B1 走廊折線的 u；B2 走廊起點 u
+STAIR_U_B1 = 13.15                       # 樓梯口在 B1 走廊折線的 u
 LANE_OFF = {'A': 0.12, 'B': -0.12}
 STAIR_RUN = 0.62                         # 樓梯直段長（約 4.7 m），由 B1 走廊樓梯口往南直下
 LANDING_X, LANDING_END_X = -11.80, -11.31  # B2 平台：路線走到 x −11.80 轉進 B2 走廊；底色帶接到 B2 走廊外緣
@@ -26,7 +26,6 @@ GATE_LABEL = '西一入口（4 扇門）'
 JOIN_AHEAD = 0.3                         # 從走廊邊併入路時往樓梯方向斜走的距離（u）
 LANE_STEP = 0.35                         # lane_run 取點間距
 ARRIVE_U = 1.36                          # 下樓後兩路在這個 u 進到 B2 走廊（同版本 3 六條線的起點）
-ARRIVE_OFF = {'A': 0.12, 'B': -0.12}     # 下樓後兩路的偏移（白衣靠場側，與樓梯平台的北／南兩路不交叉）
 BYPASS_U = 3.6                           # 兩路在這之前移到通行帶（西一入口帶從 u 4.1 起）
 BYPASS_OFF = {'A': -0.30, 'B': -0.38}    # 通行帶：集合區六路（±0.2）外側，離最外一路 0.10
 GATE_U = 4.57                            # 西一入口中線（gateIn）與 B2 走廊交會的 u
@@ -96,7 +95,6 @@ class Geometry:
         bot = (top[0], top[1] + STAIR_RUN)
         self.STAIR_PTS = [top, bot, (LANDING_X, bot[1])]       # 樓梯口 → 樓梯底（B2）→ 平台東端
         self.LANE_OFF = LANE_OFF
-        self._lines = {}
         self.ST_LANE = {o: Poly(miter(self.STAIR_PTS, o)) for o in self.LANE_OFF.values()}   # 樓梯兩路各自的折線
 
     def _down_stair(self, off):
@@ -113,7 +111,7 @@ class Geometry:
 
     def bypass(self, lane, u_end=UTURN_U):
         """平台端 → B2 兩路 → 漸移到通行帶 → 沿通行帶到轉彎起點 u_end（不含平台端那一點）。"""
-        o0, o1 = ARRIVE_OFF[lane], BYPASS_OFF[lane]
+        o0, o1 = LANE_OFF[lane], BYPASS_OFF[lane]                        # 下樓後兩路先照樓梯的偏移（白衣靠場側），再漸移到通行帶
         pts = [self.B2.off(ARRIVE_U, o0)]
         n = max(1, int((BYPASS_U - ARRIVE_U) / LANE_STEP))
         for k in range(1, n + 1):

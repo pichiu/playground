@@ -11,6 +11,9 @@ import json
 import math
 import sys
 
+from check import _Track
+from geo import pairs
+
 V_EPS = 0.004
 
 
@@ -27,15 +30,15 @@ def seg_speed_ok(path, v):
     return True, worst
 
 
+_TRACKS = {}
+
+
 def at(p, t):
-    a = p['path']
-    if t <= a[0][2]:
-        return a[0][:2]
-    for q0, q1 in zip(a, a[1:]):
-        if q1[2] >= t:
-            f = (t - q0[2]) / (q1[2] - q0[2]) if q1[2] > q0[2] else 0
-            return (q0[0] + (q1[0] - q0[0]) * f, q0[1] + (q1[1] - q0[1]) * f)
-    return a[-1][:2]
+    """p 在 t 時刻的位置（check._Track，二分搜尋）。"""
+    tr = _TRACKS.get(p['id'])
+    if tr is None:
+        tr = _TRACKS[p['id']] = _Track(p['path'])
+    return tr.at(t)
 
 
 def left_of_travel(w, b, t, dt=0.05):
@@ -116,7 +119,6 @@ def main(new_path, old_path, png=None):
                 break
         fig, axes = plt.subplots(1, 3, figsize=(18, 8))
         M = b['map']
-        pairs = lambda f: list(zip(f[0::2], f[1::2]))
         for ax, d in zip(axes, (1, 5, 9)):
             for poly, c in ((M['staging']['band'], '#efe6da'), (M['staging']['bypassBand'], '#f6f1ea'), (M['gate']['band'], '#f6dcc0')):
                 xs, ys = zip(*pairs(poly))

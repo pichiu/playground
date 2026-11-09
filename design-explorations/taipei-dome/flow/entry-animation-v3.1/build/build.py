@@ -81,11 +81,11 @@ def stage_layout(G, people):
     gap = (s_h1 - s_end - body) / (len(daduis) - 1)
     if gap < routes.STAGE_GAP_MIN:
         raise SystemExit(f'集合區放不下九個大隊：大隊間空檔只剩 {gap:.3f}（< {routes.STAGE_GAP_MIN}）')
-    head, s = {}, s_h1
+    head, tail, s = {}, {}, s_h1
     for d in daduis:
-        head[d] = s
-        s -= (r1[d] - r0[d]) * routes.STAGE_STEP + gap
-    return dict(rankOf=rank_of, r0=r0, r1=r1, head=head, gap=gap)
+        head[d], tail[d] = s, s - (r1[d] - r0[d]) * routes.STAGE_STEP
+        s = tail[d] - gap
+    return dict(rankOf=rank_of, r0=r0, r1=r1, head=head, tail=tail, gap=gap)
 
 
 def slot_s(lay, p):
@@ -94,10 +94,13 @@ def slot_s(lay, p):
 
 
 def turn_point(G, s_slot):
-    """迴轉點（11/9）：散完六路的位置在自己那一排再深一排（s_fan），迴轉圓心再往深處 FAN_LEN（u_c），最深不超過 UTURN_U。"""
+    """迴轉點（11/9）：散完六路的位置在自己那一排再深一排（s_fan），迴轉圓心再往深處 FAN_LEN（u_c）；超過 UTURN_U 就是集合區放不下迴轉，停止建置。"""
     M = march_of(G)
     s_fan = max(0.0, s_slot - routes.TURN_BACK)
-    return s_fan, min(routes.UTURN_U, G.B2.proj(M.C.at(s_fan)[:2])[0] + routes.FAN_LEN)
+    u_c = G.B2.proj(M.C.at(s_fan)[:2])[0] + routes.FAN_LEN
+    if u_c > routes.UTURN_U + 1e-9:
+        raise SystemExit(f'迴轉點 u {u_c:.3f} 超過 UTURN_U {routes.UTURN_U}：集合區最深處放不下迴轉')
+    return s_fan, u_c
 
 
 def prepare(G, people, lay=None):
@@ -228,13 +231,6 @@ def person_path(G, p, r, t, lay, s_split, f_lat=None):
     return clean
 
 
-def _line_pts(line, s0, s1):
-    """線上 s0 → s1 的點（含中間的折點），附弧長。"""
-    inner = [(q[0], q[1], c) for q, c in zip(line.p, line.cum) if s0 + 1e-9 < c < s1 - 1e-9]
-    a, b = line.at(s0), line.at(s1)
-    return [(a[0], a[1], s0)] + inner + [(b[0], b[1], s1)]
-
-
 def _ids_between(persons, L, i0, i1):
     return [q['id'] for q in sorted((q for q in persons if q['lane'] == L and i0 <= q['laneIdx'] <= i1), key=lambda q: q['laneIdx'])]
 
@@ -336,21 +332,15 @@ def staging_map(G, clocks):
     ud = lambda u: round(u - du, 3)
     blocks = []
     for d in sorted(lay['head']):
-        sh = lay['head'][d]
-        st = sh - (lay['r1'][d] - lay['r0'][d]) * routes.STAGE_STEP
+        sh, st = lay['head'][d], lay['tail'][d]
         uh, ut = (round(B2d.proj(M.C.at(s)[:2])[0], 3) for s in (sh, st))
-        blocks.append(dict(dadui=d, sHead=round(sh, 4), sTail=round(st, 4), uHead=uh, uTail=ut, ranks=lay['r1'][d] - lay['r0'][d] + 1,
-                           head=flat([M.C.at(sh)]), tail=flat([M.C.at(st)]),
-                           heads=[flat([M.lane_xy(sh, j)]) for j in range(6)], tails=[flat([M.lane_xy(st, j)]) for j in range(6)],
+        blocks.append(dict(dadui=d, uHead=uh, uTail=ut, ranks=lay['r1'][d] - lay['r0'][d] + 1,
+                           heads=[flat([M.lane_xy(sh, j)]) for j in range(6)],
                            poly=flat(G.stage_band(ut + du + 0.02, uh + du - 0.02, -0.25, 0.25, 0.15)),
                            label=flat([G.B2.off((uh + ut) / 2 + du, 0.42)])))
-    # 11/9：每人在自己那一排附近迴轉。圖面的兩路畫到最深的迴轉點（大隊 9 最後一排），每個大隊的迴轉範圍另列在 turns
-    u_deep = max(turn_point(G, lay['head'][d] - (lay['r1'][d] - lay['r0'][d]) * routes.STAGE_STEP)[1] for d in lay['head'])
-    turns = []
-    for d in sorted(lay['head']):
-        u0 = turn_point(G, lay['head'][d])[1]
-        u1 = turn_point(G, lay['head'][d] - (lay['r1'][d] - lay['r0'][d]) * routes.STAGE_STEP)[1]
-        turns.append(dict(dadui=d, u=[ud(u0), ud(u1)], first=flat([G.B2.off(u0, routes.UTURN_C)]), last=flat([G.B2.off(u1, routes.UTURN_C)])))
+    # 11/9：每人在自己那一排附近迴轉。圖面的兩路畫到最深的迴轉點（最深那個大隊的最後一排）；uturn 是大隊 1 第一排的迴轉圓心（3D 章節取景用）
+    u_deep = turn_point(G, lay['tail'][max(lay['tail'])])[1]
+    u_first = turn_point(G, s_h1)[1]
     files = {}
     for L in plan.LANES:
         lp = G.ST_LANE[G.LANE_OFF[L]]
@@ -364,9 +354,9 @@ def staging_map(G, clocks):
     return dict(blocks=blocks, files=files, lanes=lanes, step=routes.STAGE_STEP, gap=round(lay['gap'], 4),
                 band=flat(G.stage_band(routes.STAGE_HEAD_U - 0.05, routes.STAGE_START_U, -0.25, 0.25)),
                 bypassBand=flat(G.stage_band(routes.BYPASS_U, u_deep + 0.25, -0.44, -0.25)),
-                uturn=turns[0]['first'], turns=turns, headU=ud(routes.STAGE_HEAD_U), tailU=ud(routes.STAGE_TAIL_U), uturnU=ud(u_deep),
+                uturn=flat([G.B2.off(u_first, routes.UTURN_C)]), uturnU=ud(u_deep),
                 gateClear=[ud(routes.GATE_U - 0.47), ud(routes.STAGE_HEAD_U)], stairClear=[0.0, ud(routes.ARRIVE_U)],
-                laneOff=[round(routes.stage_off(j), 3) for j in range(6)], bypassOff=routes.BYPASS_OFF)
+                laneOff=[round(routes.stage_off(j), 3) for j in range(6)])
 
 
 RULES = [

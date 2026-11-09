@@ -121,8 +121,8 @@ class View{
       m.gateLanes.forEach((l,j)=>{this.stroke(l,pal.gateLanes[j<3?0:1],1.4);this.gateLanesDrawn++;});this.ctx.globalAlpha=1;}
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
-  // 集合區：labels=false 時不寫字（小地圖）；hi=大隊號 時只強調那一隊
-  staging(S,pal,{labels=pal.stagingLabels??true,hi=pal.stagingHi??null}={}){const ink=pal.stagingInk||pal.band,c=this.ctx;
+  // 集合區：pal.stagingLabels=false 時不寫字；pal.stagingHi=大隊號 時只強調那一隊
+  staging(S,pal){const ink=pal.stagingInk||pal.band,c=this.ctx,labels=pal.stagingLabels??true,hi=pal.stagingHi??null;
     this.fill(S.band,pal.band,(pal.bandA??.18)*.8);
     this.fill(S.bypassBand,pal.band,(pal.bandA??.18)*.6);this.stroke(S.bypassBand,ink,1,[4,3],true);
     for(const b of S.blocks){const on=hi==null||hi===b.dadui;c.globalAlpha=on?.9:.35;this.stroke(b.poly,ink,hi===b.dadui?2:1,[],true);
