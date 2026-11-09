@@ -86,15 +86,14 @@ def main(new_path, old_path, png=None):
                 continue
             w, bl = two[0], two[5]
             res['rows'] += 1
-            ts = {'stage': (w['t']['enter'] + w['t']['assembly']) / 2,                      # 站定中：以「下一步往哪走」判定，取放行後 0.05 秒的方向
+            ts = {'stage': w['t']['enter'] + 0.06,                                              # 集合位置：放行那一刻（取放行後 0.06 秒的行進方向）
                   'turn': w['t']['enter'] + (m['gateArcTau'] - m['headTau'][str(d)]) + 0.15,
                   'gate': (w['t']['gate'] + bl['t']['gate']) / 2,
                   'north': w['t']['enter'] + (m['northTau'] - m['headTau'][str(d)]) + 0.3}
             for k, t in ts.items():
                 if k == 'north' and t >= min(w['t']['split'], bl['t']['split']):
                     continue                                                                 # 大隊 9 在沿牆段就分出，沒有北行段
-                tt = w['t']['enter'] + 0.06 if k == 'stage' else t
-                lo = left_of_travel(w, bl, tt)
+                lo = left_of_travel(w, bl, t)
                 if lo is None:
                     continue
                 res[k] += 1 if lo else 0
@@ -147,7 +146,9 @@ def main(new_path, old_path, png=None):
         fig.tight_layout()
         fig.savefig(png, dpi=130)
         print('圖寫到', png)
-    return 0 if (out['sameIds'] and not any(out['fieldDiffs'].values()) and not bad_speed and all(v['wrong'] == 0 for v in sides.values())) else 1
+    same = out['sameIds'] and not any(out['fieldDiffs'].values()) and not any(out['timeDiffs'].values()) and out['endDiffs'] == 0 \
+        and out['gateOrderSame'] and out['daduiOrderAtGate']
+    return 0 if (same and not bad_speed and all(v['wrong'] == 0 for v in sides.values())) else 1
 
 
 if __name__ == '__main__':

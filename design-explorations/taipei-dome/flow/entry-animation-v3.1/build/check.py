@@ -23,7 +23,7 @@ BOUNDARY_MAX = 7.0                 # 大隊交界的外框；每一處交界另�
 GATE_GAP_MIN = round(build.RANK_GAP - 0.01, 3)   # 西一入口每條線：一排接一排（整排並肩段所有排同一個速度剖面，不再平移；容許四捨五入）
 GATE_GAP_MAX = round(build.RANK_GAP + 0.6, 3)    # 同一大隊內：隊伍不停就是 RANK_GAP，容許避撞平移與短暫停住
 RULE_SLACK = 0.4                   # 交界規則值 = 節拍 ×（兩路該大隊人數差）+ 節拍 + 大隊空檔（build.HEADWAY、build.DADUI_GAP），容許錯開與避撞平移 0.4（spec §4）
-GATE_BOUNDARY_MAX = 16.0           # 西一入口每條線兩個大隊之間的空檔上限：下一大隊要全員在集合位置站定才放行（下樓比進門慢，空檔來自下樓），沿用版本 3 的外框
+GATE_BOUNDARY_MAX = 16.0           # 西一入口每條線兩個大隊之間的空檔上限（沿用版本 3 的外框）；11/9 起九隊站齊才連續放行，實際空檔只有約 RANK_GAP
 SHIFT_TOL = 0.01                   # 同一排離開隊頭的時刻差、排距的容許（避撞不再平移時間線，只容許四捨五入；舊版 0.16）
 WAIT_SLACK = 0.05                  # 步速段的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 POPULATION = 1609
@@ -175,17 +175,14 @@ class _March:
         return [(m['x'][k] + m['ty'][k] * (2.5 - j) * m['sp'][k], m['y'][k] - m['tx'][k] * (2.5 - j) * m['sp'][k]) for j in range(6)]
 
 
-def _tau(p, t, m=None):
+def _tau(p, t, ht):
     """t 對應中心線上的 τ（相對中心線起點 s = 0）：τ = t − t.enter + headTau[大隊]（離開自己集合位置隊頭時是 headTau）。"""
-    return t - p['t']['enter'] + _HEAD_TAU[p['dadui']]
+    return t - p['t']['enter'] + ht[p['dadui']]
 
 
-_HEAD_TAU = {}
-
-
-def _set_head_tau(data):
-    _HEAD_TAU.clear()
-    _HEAD_TAU.update({int(d): v for d, v in data['map']['march']['headTau'].items()})
+def _head_tau(data):
+    """各大隊集合位置隊頭的中心線 τ（map.march.headTau）。"""
+    return {int(d): v for d, v in data['map']['march']['headTau'].items()}
 
 
 def assembly(data):
@@ -198,8 +195,9 @@ def assembly(data):
     - 下樓到站定之間不停（含樓梯上）：樓梯口 → 站定的時間 = 路程 / 步速（± WAIT_SLACK）。樓梯上候隊時間記為 stairWait。
     - 兩路在 B2：西一入口帶到集合區這一段，下樓後走在通行帶（偏移 ≤ −0.26）；要進六路帶（迴轉、散開）只能在自己那一格的深處（u ≥ 自己格位），
       所以不會從已站好的人旁邊切進去（11/9 起每人在自己那一排附近迴轉，不再走到集合區盡頭）。
-    - 放行順序：大隊 d + 1 第一排離開隊頭時，大隊 d 已全部離開隊頭；每大隊全員站定後才放行。"""
+    - 放行（11/9）：九個大隊全部站定後才有人離開隊頭；大隊 d + 1 第一排離開隊頭時，大隊 d 已全部離開隊頭。"""
     S = data['map']['staging']
+    ht = _head_tau(data)
     B2 = Poly(pairs(data['map']['b2Corridor']))
     V = data['meta']['speedUnitPerSec']
     bl = {b['dadui']: b for b in S['blocks']}
@@ -252,13 +250,12 @@ def assembly(data):
             if not 0.8 * step * (r1_ - r0_) <= math.dist(q0, q1) <= 1.25 * step * (r1_ - r0_) + 1e-3:
                 bad.append(dict(why='slot spacing', dadui=d, lane=j, ranks=[r0_, r1_]))
                 break
+    if min(p['t']['enter'] for p in data['persons']) < max(p['t']['assembly'] for p in data['persons']) - 1e-6:
+        bad.append(dict(why='released before all nine staged'))
     for a_, b_ in zip(ds, ds[1:]):
         last = max(p['t']['enter'] for p in data['persons'] if p['dadui'] == a_)
         first = min(p['t']['enter'] for p in data['persons'] if p['dadui'] == b_)
-        full = max(p['t']['assembly'] for p in data['persons'] if p['dadui'] == b_)
-        if first < full - 1e-6:
-            bad.append(dict(why='released before full', dadui=b_))
-        gref = lambda d, t: t + _HEAD_TAU[ds[0]] - _HEAD_TAU[d]
+        gref = lambda d, t: t + ht[ds[0]] - ht[d]
         if gref(b_, first) < gref(a_, last) + build.RANK_GAP - SHIFT_TOL:
             bad.append(dict(why='release order', dadui=b_))
     occ = {}
@@ -274,7 +271,7 @@ def assembly(data):
 
 def pillars(data):
     """圖面柱位（map.pillars，版本 1 的「場邊柱」示意）與路徑的衝突：不算進 ok，列出來給現場確認。
-    每人路徑每 SUBDIV 細分，點落在柱半徑內就算；分「站在柱上」（集合位置格位）與「走過柱子」。"""
+    每人路徑任一段離柱心小於柱半徑就算；分「站在柱上」（集合位置格位）與「走過柱子」。"""
     pl = data['map']['pillars']
     hit, stand = collections.defaultdict(set), collections.defaultdict(set)
     for p in data['persons']:
@@ -283,13 +280,14 @@ def pillars(data):
         for c in pl:
             if ka is not None and math.dist(a[ka][:2], (c['X'], c['Y'])) < c['r']:
                 stand[c['id']].add(p['id'])
-        for q0, q1 in zip(a, a[1:]):
-            n = max(1, int(math.dist(q0[:2], q1[:2]) / SUBDIV))
-            for k in range(n + 1):
-                x, y = q0[0] + (q1[0] - q0[0]) * k / n, q0[1] + (q1[1] - q0[1]) * k / n
-                for c in pl:
-                    if abs(x - c['X']) < c['r'] and abs(y - c['Y']) < c['r'] and math.hypot(x - c['X'], y - c['Y']) < c['r']:
-                        hit[c['id']].add(p['id'])
+        A = np.array(a, dtype=float)[:, :2]
+        S0, D = A[:-1], A[1:] - A[:-1]
+        L2 = np.maximum((D * D).sum(1), 1e-12)
+        for c in pl:                                    # 柱心到每一段路徑的最短距離（向量化）
+            Q = np.array((c['X'], c['Y']))
+            f = np.clip(((Q - S0) * D).sum(1) / L2, 0, 1)
+            if (np.hypot(*(S0 + D * f[:, None] - Q).T) < c['r']).any():
+                hit[c['id']].add(p['id'])
     B2 = Poly(pairs(data['map']['b2Corridor']))
     dad = {p['id']: p['dadui'] for p in data['persons']}
     where = {}
@@ -307,6 +305,7 @@ def formation(data, by_rank):
     （中間有空位就除以差幾路）；排的中心（每人扣掉自己的設計偏移後平均）離中心線 ≤ CENTER_TOL。另外每人路徑點離自己那條平移線 ≤ TRACK_TOL。"""
     M = _March(data['map']['march'])
     split = data['map']['march']['split']
+    ht = _head_tau(data)
     tr = {p['id']: _Track(p['path']) for p in data['persons']}
     worst = dict(angle=0.0, spacing=0.0, center=0.0, track=0.0)
     bad, n_samp = [], 0
@@ -314,14 +313,14 @@ def formation(data, by_rank):
         ps = sorted(ps, key=lambda p: p['gateLane'])
         t0 = ps[0]['t']['enter']
         t1 = min(p['t']['split'] for p in ps)
-        if abs(_tau(ps[0], t1) - split[str(ps[0]['dadui'])]) > 2e-3:
+        if abs(_tau(ps[0], t1, ht) - split[str(ps[0]['dadui'])]) > 2e-3:
             bad.append(dict(rank=r, why='split'))
         k = 0
         while t0 + k * FORM_DT < t1 - 1e-9:
             tt = t0 + k * FORM_DT
             k += 1
             n_samp += 1
-            c, (tx, ty), sp = M.at(_tau(ps[0], tt))
+            c, (tx, ty), sp = M.at(_tau(ps[0], tt, ht))
             nx, ny = ty, -tx
             pos = [tr[p['id']].at(tt) for p in ps]
             js = [p['gateLane'] for p in ps]
@@ -339,7 +338,7 @@ def formation(data, by_rank):
         for p in ps:                                     # 路徑點都在自己那條平移線上
             for q in p['path']:
                 if t0 - 1e-9 <= q[2] <= p['t']['split'] + 1e-9:
-                    c, (tx, ty), sp = M.at(_tau(p, q[2]))
+                    c, (tx, ty), sp = M.at(_tau(p, q[2], ht))
                     o = (2.5 - p['gateLane']) * sp
                     d = math.dist(q[:2], (c[0] + ty * o, c[1] - tx * o))
                     worst['track'] = max(worst['track'], d)
@@ -397,6 +396,7 @@ def lane_map(data, by_rank):
     分出後每人進到自己那一列（|Y − field.Y| ≤ ROW_TOL）之後一直在那一列上、朝座位單調前進（座位在東側的右轉沿那一列往東；
     座位在西側的沿那一列南邊半格的列間空隙往西、到座位正南方才往北半格，所以進到那一列時就已經在座位上），到 field 停下，而且不越過自己那一列往北。"""
     M = _March(data['map']['march'])
+    ht = _head_tau(data)
     bad, worst_row = [], 0.0
     for p in data['persons']:
         if p['lie'] != 6 * (p['dadui'] - 1) + p['gateLane'] + 1:
@@ -418,7 +418,7 @@ def lane_map(data, by_rank):
             continue
         ps = sorted(ps, key=lambda p: p['gateLane'])
         t = min(p['t']['split'] for p in ps)
-        c, (tx, ty), _ = M.at(_tau(ps[0], t))
+        c, (tx, ty), _ = M.at(_tau(ps[0], t, ht))
         offs = [(q[0] - c[0]) * ty - (q[1] - c[1]) * tx for q in (_Track(p['path']).at(t) for p in ps)]   # 往左（左法向）為正
         if any(b >= a for a, b in zip(offs, offs[1:])):
             bad.append(dict(rank=r, why='order'))
@@ -515,7 +515,7 @@ def geometry(data):
 def check_all(data, coll=None):
     """coll：已算好的 (穿過站定者, 走路互撞, 穿過已坐好的人)，build.py 從避撞最後一輪帶進來；沒給就重算。"""
     persons = data['persons']
-    _set_head_tau(data)
+    ht = _head_tau(data)
     out = {}
     # 1. 碰撞
     if coll is None:
@@ -639,7 +639,7 @@ def check_all(data, coll=None):
         if max(es) - min(es) > SHIFT_TOL or len({p['gateLane'] for p in by_rank[r]}) != len(by_rank[r]):
             r_bad.append(dict(rank=r, who=[p['id'] for p in by_rank[r]][:6]))
         d0 = by_rank[r][0]['dadui']
-        rank_t.append(min(es) + _HEAD_TAU[1] - _HEAD_TAU[d0])          # 換算成經過大隊 1 隊頭的時刻
+        rank_t.append(min(es) + ht[1] - ht[d0])          # 換算成經過大隊 1 隊頭的時刻
     gaps = [b - a for a, b in zip(rank_t, rank_t[1:])]
     if gaps and min(gaps) < build.RANK_GAP - SHIFT_TOL:
         r_bad.append(dict(rank='gap', minGap=round(min(gaps), 3)))

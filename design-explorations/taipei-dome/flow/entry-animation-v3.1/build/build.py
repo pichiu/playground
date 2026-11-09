@@ -172,9 +172,8 @@ def schedule(G, people, R=None, lay=None):
     g_prev = None
     fill_all = max(assembly.values())                 # 11/9：九個大隊全部在集合位置站定，才從大隊 1 開始放行
     for d in sorted(lay['head']):
-        fill = max(fill_all, max(assembly[p['id']] for p in people if p['dadui'] == d))
         shift = tau_ref - tau_h[d]                    # 隊頭 → 大隊 1 隊頭的時間
-        g = fill + FILL_PAUSE + shift
+        g = fill_all + FILL_PAUSE + shift
         if g_prev is not None:
             g = max(g, g_prev + RANK_GAP)
         for r in range(lay['r0'][d], lay['r1'][d] + 1):

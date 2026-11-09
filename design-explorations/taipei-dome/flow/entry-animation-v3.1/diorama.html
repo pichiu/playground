@@ -2352,10 +2352,11 @@ function buildHud(){
 // 中心線時間 τ（相對中心線起點＝集合區最深處）：大隊 d 離開自己集合位置隊頭（t.enter）時 τ＝headTau[d]（build/march.py；版本 3.1 沒有迴廊候隊）
 function marchTau(p,t){return t-p.t.enter+M.march.headTau[p.dadui];}
 const CHAP_WIN=20,CHAP_STEP=0.05;
+const GATE_BAND=pairs(M.gate.band);
 const INREG={stair:(p,i,t)=>t>=HT[i].tS&&t<HT[i].tE,
     fan:(p,i,t)=>state(p,t)==='walk'&&t>=p.t.entry-1.5&&t<p.t.entry+0.8,
     queue:(p,i,t)=>state(p,t)==='wait',
-    gate:(p,i,t)=>{if(state(p,t)!=='enter')return false;const q=pos(p,t);return pip(q[0],q[1],pairs(M.gate.band));},
+    gate:(p,i,t)=>{if(state(p,t)!=='enter')return false;const q=pos(p,t);return pip(q[0],q[1],GATE_BAND);},
     north:(p,i,t)=>state(p,t)==='enter'&&marchTau(p,t)>=M.march.northTau};
 function chapterPeak(key,t0){const inReg=INREG[key];
   let best=null,a0=0,n0=0;const S=Math.round(CHAP_WIN/CHAP_STEP);

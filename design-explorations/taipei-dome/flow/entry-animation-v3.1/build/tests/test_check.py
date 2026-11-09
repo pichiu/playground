@@ -300,22 +300,18 @@ def test_check_detects_walking_over_seated(built):     # 穿過已坐好的人�
 
 def test_check_detects_assembly_rules(built):          # 版本 3.1 集合區：站齊前放行、走進六路帶（沒走通行帶）、站錯位置都算違反
     _, D = built
-    check._set_head_tau(D)
     assert check.assembly(D)['violations'] == 0
     D = _copy(built[1])
-    check._set_head_tau(D)
-    p = next(q for q in D['persons'] if q['dadui'] == 3)
-    p['t']['assembly'] = max(q['t']['enter'] for q in D['persons'] if q['dadui'] == 3) + 1   # 最後一位還沒到就放行
+    p = next(q for q in D['persons'] if q['dadui'] == 9)
+    p['t']['assembly'] = min(q['t']['enter'] for q in D['persons']) + 1                         # 大隊 9 最後一位還沒到，大隊 1 就放行
     assert check.assembly(D)['violations'] >= 1
     D = _copy(built[1])
-    check._set_head_tau(D)
     p = next(q for q in D['persons'] if q['dadui'] == 2 and q['lane'] == 'B')
     for q in p['path']:                                     # 通行帶那一段往場側挪 0.2：走進六路帶
         if p['t']['stair'] + 4 <= q[2] <= p['t']['entry'] - 3:
             q[0] += 0.2
     assert check.assembly(D)['violations'] >= 1
     D = _copy(built[1])
-    check._set_head_tau(D)
     bl = D['map']['staging']['blocks']
     bl[0]['uHead'], bl[1]['uHead'] = bl[1]['uHead'], bl[0]['uHead']                        # 集合位置順序與放行順序不一致
     assert check.assembly(D)['violations'] >= 1
