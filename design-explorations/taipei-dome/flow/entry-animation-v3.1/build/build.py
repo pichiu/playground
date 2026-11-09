@@ -235,20 +235,11 @@ def _at_time(path, t):
     return (q0[0] + (q1[0] - q0[0]) * f, q0[1] + (q1[1] - q0[1]) * f)
 
 
-def _arc_len(path, t):
-    """名目路徑從起點到 t 時刻的路程。"""
-    c = cum([q[:2] for q in path])
-    k = max(0, min(len(path) - 2, bisect.bisect_right([q[2] for q in path], t) - 1))
-    return c[k] + math.dist(path[k][:2], _at_time(path, t))
-
-
-def _time_at_len(path, L):
-    """名目路徑走到路程 L 的時刻（超出兩端就取端點時刻）。"""
-    c = cum([q[:2] for q in path])
-    k = max(0, min(len(path) - 2, bisect.bisect_right(c, L) - 1))
-    q0, q1 = path[k], path[k + 1]
-    f = max(0.0, min(1.0, (L - c[k]) / (c[k + 1] - c[k]))) if c[k + 1] > c[k] else 0.0
-    return q0[2] + (q1[2] - q0[2]) * f
+def _lerp(xs, ys, x):
+    """xs 遞增；x 對應的 ys（線性內插，超出兩端取端點）。"""
+    k = max(0, min(len(xs) - 2, bisect.bisect_right(xs, x) - 1))
+    f = max(0.0, min(1.0, (x - xs[k]) / (xs[k + 1] - xs[k]))) if xs[k + 1] > xs[k] else 0.0
+    return ys[k] + (ys[k + 1] - ys[k]) * f
 
 
 def align_holds(people, paths, sched):
@@ -265,10 +256,11 @@ def align_holds(people, paths, sched):
     - 座位在第 9 排與以內（field.X ≤ ALIGN_X）的人直接走到位：要是排程讓他也得停，就停止建置（不靠事後檢核）。
     回傳 holds：{id: (停下時刻, 出發時刻)}（只有真的停 ≥ WAIT_MIN 的人）、release：{大隊: 出發時刻}、heads：{大隊: [六路隊頭 id]}。"""
     holds, release, heads = {}, {}, {}
+    by = collections.defaultdict(list)
+    for p in people:
+        by[(p['dadui'], p['gateLane'])].append(p)
     for d in sorted({p['dadui'] for p in people}):
-        ps = [p for p in people if p['dadui'] == d]
-        lane = {j: sorted((p for p in ps if p['gateLane'] == j), key=lambda p: p['slot']) for j in range(6)}
-        lane = {j: v for j, v in lane.items() if v}
+        lane = {j: sorted(by[(d, j)], key=lambda p: p['slot']) for j in range(6) if by[(d, j)]}
         arrive_align = {}
         for j, v in lane.items():
             h = v[0]
@@ -279,32 +271,26 @@ def align_holds(people, paths, sched):
                                    and abs(q[0] - march.ALIGN_X) < 1e-6 and abs(q[1] - fy) < 1e-6)
         R = max(arrive_align.values())
         release[d], heads[d] = R, [lane[j][0]['id'] for j in sorted(lane)]
-        stop = {}                                        # id → 名目停下時刻（還沒決定停不停之前也記：給同一路後一位算）
-        for k in range(max(len(v) for v in lane.values())):
-            cand = []                                    # (人, 名目停下時刻)
-            for j, v in lane.items():
-                if k >= len(v):
-                    continue
-                p = v[k]
-                if k == 0:
-                    cand.append((p, arrive_align[j]))
-                    continue
-                lead = v[k - 1]
-                if lead['id'] not in holds:
-                    continue
-                hs_l = stop[lead['id']]
-                t_pl = hs_l + sched[p['id']]['enter'] - sched[lead['id']]['enter']   # 自己名目走到前一位停住處的時刻（同一路前段路線、速度剖面相同）
-                tc = _time_at_len(paths[p['id']], _arc_len(paths[p['id']], t_pl) - ALIGN_GAP)
-                cand.append((p, max(tc, hs_l)))
-            for p, hs in cand:
+        for j, v in lane.items():                        # 各路互相獨立：每人只看同一路前一位
+            for k, p in enumerate(v):
                 pid = p['id']
+                if k == 0:
+                    hs = arrive_align[j]
+                else:
+                    lead = v[k - 1]
+                    if lead['id'] not in holds:          # 前一位沒停，後面的人都不會停
+                        break
+                    hs_l = holds[lead['id']][0]
+                    path = paths[pid]
+                    ts, cs = [q[2] for q in path], cum([q[:2] for q in path])
+                    t_pl = hs_l + sched[pid]['enter'] - sched[lead['id']]['enter']   # 自己名目走到前一位停住處的時刻（同一路前段路線、速度剖面相同）
+                    hs = max(_lerp(cs, ts, _lerp(ts, cs, t_pl) - ALIGN_GAP), hs_l)
                 if R - hs < WAIT_MIN:
-                    continue
+                    break
                 if p['field']['X'] <= march.ALIGN_X + 1e-9:
                     raise SystemExit(f'第 9 排以內的 {pid} 被前面停住的人擋到（大隊 {d}）：ALIGN_GAP 或排距要改')
                 if hs <= sched[pid]['gate'] + 1e-9:
                     raise SystemExit(f'{pid} 要在穿過西一入口之前就停（大隊 {d}）')
-                stop[pid] = hs
                 holds[pid] = (hs, R)
     return holds, release, heads
 

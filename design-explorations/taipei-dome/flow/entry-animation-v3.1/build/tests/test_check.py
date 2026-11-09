@@ -349,8 +349,9 @@ def test_check_align_green(built):                      # 第 9 排對齊：每�
             assert p['pai'] >= 10 and p['t']['holdEnd'] == rel[p['dadui']]
         if p['pai'] <= 9:
             assert 'holdStart' not in p['t']
+    P = {p['id']: p for p in D['persons']}
     for d, ids in D['map']['align']['heads'].items():   # 六路隊頭：最晚到的那一位不停，其他五位都停
-        held = [i for i in ids if 'holdStart' in next(q for q in D['persons'] if q['id'] == i)['t']]
+        held = [i for i in ids if 'holdStart' in P[i]['t']]
         assert len(ids) == 6 and len(held) == 5
 
 
