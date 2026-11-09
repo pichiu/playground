@@ -87,7 +87,7 @@ body>.dome-nav.bar .dome-prefs{position:sticky;right:0;padding-left:8px;margin-r
  <div class="maps"><canvas id="cv" aria-label="版本 3.1 全場動線地圖"></canvas><div class="loading" id="loading">讀取動線資料…</div></div>
  <div class="hud">
   <div class="title" id="title"><h1>版本 3.1 · 指揮台</h1><p>1,609 人 · 白藍兩路下樓、經通行帶走到自己那一排後方迴轉、散成六路到各大隊集合位置，九隊站齊後依序放行、一排六人並肩右轉進門 · 動畫節奏非現場秒數</p>
-   <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集合位置整隊中</span><span><i class="ln" style="background:var(--dim);height:0;border-top:2px dashed var(--dim)"></i>通行帶（假設）</span><span><i style="border:2px solid var(--amber-ink)"></i>L7? L8? 圖面柱位與集合區衝突（待確認）</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
+   <div class="legend"><span><i class="ln" style="background:var(--white)"></i>白衣隊伍</span><span><i class="ln" style="background:var(--blue)"></i>藍衣隊伍</span><span><i class="ln dim" style="background:var(--blue)"></i>集合位置整隊中</span><span><i class="ln" style="background:var(--dim);height:0;border-top:2px dashed var(--dim)"></i>通行帶（假設）</span><span><b class="num" style="min-width:auto">5·201</b>集合位置：大隊 5，此刻 201 人在等（畫面擠時的寫法）</span><span><i class="ln" style="background:var(--amber)"></i>所選路別正在走的人</span></div>
   </div>
   <div class="clock"><b id="clock">0%</b><span class="phase" id="phase"></span></div>
   <div class="flows"><div class="flow"><div class="flow-bar" id="bar"></div><dl id="dl"></dl></div></div>
@@ -133,24 +133,14 @@ function phaseName(c){if(c.done===ds.P.length)return '全員到位';if(t<ds.D.me
  if(c.wait){const n=S.st.filter(o=>t>=o.full).length;return n===9?'九個大隊都已站齊，等放行':`集合區整隊中（${n} 個大隊已站齊）`;}
  return t>=S.stair[0].a?'大隊 1 下樓、往集合區':'大隊 1 離座';}
 function draw(){const v=view,c=v.begin(C.map),D=ds.D,P=ds.P,r=Math.max(1.1,.042*v.s);
- v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber,gateLanes:[C.white,C.blue],gateLanesA:.3,stagingInk:C.dim,stagingLabels:false});
- {const pc=(D.meta.checks.pillars||{}).where||{};for(const [k,w] of Object.entries(pc)){v.dot(w.X,w.Y,Math.max(3,.1*v.s),null,C['amber-ink'],2);{const r=Math.hypot(w.X,w.Y),k2=(r+.75)/r;v.stroke([w.X,w.Y,w.X*k2,w.Y*k2],C['amber-ink'],1);v.text(k+'?',w.X*(r+.85)/r,w.Y*(r+.85)/r,{color:C['amber-ink'],size:10,weight:700,halo:C.map});}}}window.__gateLanesDrawn=v.gateLanesDrawn;
- // 集合位置：標「大隊 d」，有人在等時加上此刻人數（橘）
- {const w={};for(const p of P)if(state(p,t)==='wait')w[p.dadui]=(w[p.dadui]||0)+1;
-  // 標籤依螢幕間距排：錨在集合位置中心，往場側推開固定 LBL_PX 像素（不壓在隊伍上）；相鄰兩個位置在螢幕上靠太近（手機、總覽）時改用精簡寫法「d·人數」
-  const BL=D.map.staging.blocks,LBL_PX=18,cen=BL.map(b=>{const q=Dome.pairs(b.poly);return [q.reduce((s,p)=>s+p[0],0)/q.length,q.reduce((s,p)=>s+p[1],0)/q.length];});
-  const gap=Math.min(...cen.slice(1).map((c,i)=>{const a=v.p(...cen[i]),b=v.p(...c);return Math.hypot(a[0]-b[0],a[1]-b[1]);})),tight=gap<90;
-  const c2=v.ctx,placed=[];
-  BL.forEach((b,i)=>{const n=w[b.dadui]||0,c=cen[i],p0=v.p(...c),p1=v.p(...b.label),L=Math.hypot(p1[0]-p0[0],p1[1]-p0[1])||1,ux=(p1[0]-p0[0])/L,uy=(p1[1]-p0[1])/L;
-   const s=tight?(n?`${b.dadui}·${n}`:`${b.dadui}`):(n?`大隊 ${b.dadui}　${n}`:`大隊 ${b.dadui}`);
-   c2.font='700 11px "Noto Sans TC",system-ui,sans-serif';const tw=c2.measureText(s).width+4,th=15;
-   let r=LBL_PX,box;   // 和已放好的標籤重疊就往外再推一層（最多 4 層）
-   for(let k=0;k<5;k++){const x=p0[0]+ux*r,y=p0[1]+uy*r;box=[ux>=0?x:x-tw,y-th/2,ux>=0?x+tw:x,y+th/2];if(!placed.some(q=>box[0]<q[2]&&box[2]>q[0]&&box[1]<q[3]&&box[3]>q[1]))break;r+=14;}
-   placed.push(box);
-   if(r>LBL_PX){c2.save();c2.globalAlpha=.6;c2.strokeStyle=n?C['amber-ink']:C.dim;c2.lineWidth=1;c2.beginPath();c2.moveTo(p0[0]+ux*8,p0[1]+uy*8);c2.lineTo(p0[0]+ux*(r-3),p0[1]+uy*(r-3));c2.stroke();c2.restore();}   // 被推遠的標籤用引線指回自己的集合位置
-   v.text(s,c[0],c[1],{color:n?C['amber-ink']:C.dim,size:11,weight:700,halo:C.map,align:ux>=0?'left':'right',dx:ux*r,dy:uy*r});});
-  window.__stageLabelsTight=tight;
-  window.__stageLabels=D.map.staging.blocks.length;}
+ // 集合位置標籤：「大隊 d　此刻在等的人數」（橘）；手機等擠的時候寫成「d·人數」（圖例有說明）。排的時候避開西一入口的字
+ const w={};for(const p of P)if(state(p,t)==='wait')w[p.dadui]=(w[p.dadui]||0)+1;
+ const G6=D.nodes.GATE6,g6=v.p(G6.X,G6.Y),g6w=v.measure(G6.label,{size:13,weight:900});
+ v.base(D.map,{floor:C.floor,fieldLine:C.line,stage:C.line,wall:C.faint,band:C.dim,bandA:.07,lane:C.teal,laneA:.06,stand:C.faint,gate:C.amber,gateLanes:[C.white,C.blue],gateLanesA:.3,
+  stagingInk:C.dim,stagingHot:C['amber-ink'],stagingHalo:C.map,stagingAvoid:[[g6[0]-14-g6w,g6[1]-10,g6[0]-14,g6[1]+10]],
+  stagingText:b=>{const n=w[b.dadui]||0;return {s:n?`大隊 ${b.dadui}　${n}`:`大隊 ${b.dadui}`,short:n?`${b.dadui}·${n}`:String(b.dadui),hot:n>0};}});
+ window.__gateLanesDrawn=v.gateLanesDrawn;window.__stageLabelBoxes=v.stagingBoxes;
+
  for(const s of D.map.stands)v.text(s.sec,...s.labelXY,{color:C.dim,size:10,dx:6});
  c.globalAlpha=.35;for(const p of P)if(state(p,t)!=='done')v.dot(p.field.X,p.field.Y,Math.max(.6,.03*v.s),null,C.faint,.6);c.globalAlpha=1;
  {const a=D.nodes.STAIR_TOP,b=D.nodes.STAIR_BOT;v.text('樓梯',(a.X+b.X)/2,(a.Y+b.Y)/2,{color:C.dim,size:12,weight:700,halo:C.map,align:'right',dx:-30,dy:8});}

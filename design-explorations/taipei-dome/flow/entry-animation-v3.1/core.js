@@ -86,6 +86,7 @@ function nav(current,mount){if(!document.getElementById('dome-nav-style')){const
   if(!prefsOff())el.append(prefsControl());
   if(mount)mount.append(el);else document.body.prepend(el);return el;}
 
+const FONT='"Noto Sans TC",system-ui,sans-serif';
 // 投影：rotate=true 時順時針轉 90°，與 app《我的走位》同向（甲舞台朝上）。
 class View{
   constructor(canvas,{rotate=false,pad=16}={}){this.c=canvas;this.ctx=canvas.getContext('2d');this.rotate=rotate;this.pad=pad;this.b=[-16,-12,12,12];this.cam=null;this.resize();this.ro=new ResizeObserver(()=>{this.resize();this.onresize&&this.onresize();});this.ro.observe(canvas);}
@@ -100,7 +101,8 @@ class View{
   stroke(flat,color,lw=1,dash=[],close=false){const c=this.ctx;this.path(flat,close);c.setLineDash(dash);c.strokeStyle=color;c.lineWidth=lw;c.stroke();c.setLineDash([]);}
   fill(flat,color,alpha=1){const c=this.ctx;this.path(flat,true);c.globalAlpha=alpha;c.fillStyle=color;c.fill();c.globalAlpha=1;}
   dot(x,y,r,fill,stroke,lw=1){const c=this.ctx,q=this.p(x,y);c.beginPath();c.arc(q[0],q[1],r,0,7);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=lw;c.stroke();}}
-  text(s,x,y,{color='#000',size=12,weight=500,align='center',base='middle',font='"Noto Sans TC",system-ui,sans-serif',halo=null,dx=0,dy=0}={}){const c=this.ctx,q=this.p(x,y);c.font=`${weight} ${size}px ${font}`;c.textAlign=align;c.textBaseline=base;if(halo){c.lineWidth=3.5;c.strokeStyle=halo;c.lineJoin='round';c.strokeText(s,q[0]+dx,q[1]+dy);}c.fillStyle=color;c.fillText(s,q[0]+dx,q[1]+dy);}
+  measure(s,{size=12,weight=500,font=FONT}={}){const c=this.ctx;c.font=`${weight} ${size}px ${font}`;return c.measureText(s).width;}   // 和 text() 同一個字型字串量寬度
+  text(s,x,y,{color='#000',size=12,weight=500,align='center',base='middle',font=FONT,halo=null,dx=0,dy=0}={}){const c=this.ctx,q=this.p(x,y);c.font=`${weight} ${size}px ${font}`;c.textAlign=align;c.textBaseline=base;if(halo){c.lineWidth=3.5;c.strokeStyle=halo;c.lineJoin='round';c.strokeText(s,q[0]+dx,q[1]+dy);}c.fillStyle=color;c.fillText(s,q[0]+dx,q[1]+dy);}
   // 場地底圖：m 是 D.map；pal 指定各層顏色，未給的層不畫。
   base(m,pal){
     if(pal.floor)this.fill(m.base.field[0],pal.floor,pal.floorA??1);
@@ -122,12 +124,24 @@ class View{
     if(pal.pillar)for(const p of m.pillars)this.dot(p.X,p.Y,Math.max(1.2,p.r*this.s*.6),pal.pillar);
   }
   // 集合區：pal.stagingLabels=false 時不寫字；pal.stagingHi=大隊號 時只強調那一隊
+  // 標籤（各頁共用）：錨在集合位置中心（b.center），往場側（b.label 的方向）推開 LBL_PX 像素，不壓在隊伍上；
+  // 螢幕上相鄰位置太近（手機、總覽）時改用精簡寫法（pal.stagingText 的 short，預設只寫隊號）；和已放好的標籤或 pal.stagingAvoid 的框重疊就再往外推一層並加引線。
+  // pal.stagingText(b) → {s, short, hot}：hot 時用 pal.stagingHot 色（指揮台：此刻有人在等）。排好的框留在 this.stagingBoxes（測試用）。
   staging(S,pal){const ink=pal.stagingInk||pal.band,c=this.ctx,labels=pal.stagingLabels??true,hi=pal.stagingHi??null;
     this.fill(S.band,pal.band,(pal.bandA??.18)*.8);
     this.fill(S.bypassBand,pal.band,(pal.bandA??.18)*.6);this.stroke(S.bypassBand,ink,1,[4,3],true);
     for(const b of S.blocks){const on=hi==null||hi===b.dadui;c.globalAlpha=on?.9:.35;this.stroke(b.poly,ink,hi===b.dadui?2:1,[],true);
-      this.stroke([...b.heads[0],...b.heads[5]],ink,2);c.globalAlpha=1;
-      if(labels&&on)this.text('大隊 '+b.dadui,b.label[0],b.label[1],{color:ink,size:11,weight:700,halo:pal.stagingHalo||null});}}
+      this.stroke([...b.heads[0],...b.heads[5]],ink,2);c.globalAlpha=1;}
+    this.stagingBoxes=[];if(!labels)return;
+    const LBL_PX=18,cen=S.blocks.map(b=>this.p(...b.center)),gap=Math.min(Infinity,...cen.slice(1).map((q,i)=>Math.hypot(q[0]-cen[i][0],q[1]-cen[i][1]))),tight=gap<90;
+    const txt=pal.stagingText||(b=>({s:'大隊 '+b.dadui,short:String(b.dadui)})),avoid=pal.stagingAvoid||[],placed=[...avoid];
+    S.blocks.forEach((b,i)=>{if(hi!=null&&hi!==b.dadui)return;const t=txt(b),s=tight?t.short:t.s,col=t.hot?(pal.stagingHot||ink):ink,p0=cen[i],p1=this.p(...b.label);
+      const L=Math.hypot(p1[0]-p0[0],p1[1]-p0[1])||1,ux=(p1[0]-p0[0])/L,uy=(p1[1]-p0[1])/L,tw=this.measure(s,{size:11,weight:700})+4,th=15;
+      let r=LBL_PX,box;for(let k=0;k<5;k++){const x=p0[0]+ux*r,y=p0[1]+uy*r;box=[ux>=0?x:x-tw,y-th/2,ux>=0?x+tw:x,y+th/2];if(!placed.some(q=>box[0]<q[2]&&box[2]>q[0]&&box[1]<q[3]&&box[3]>q[1]))break;r+=14;}
+      placed.push(box);
+      if(r>LBL_PX){c.save();c.globalAlpha=.6;c.strokeStyle=col;c.lineWidth=1;c.beginPath();c.moveTo(p0[0]+ux*8,p0[1]+uy*8);c.lineTo(p0[0]+ux*(r-3),p0[1]+uy*(r-3));c.stroke();c.restore();}
+      this.text(s,b.center[0],b.center[1],{color:col,size:11,weight:700,halo:pal.stagingHalo||null,align:ux>=0?'left':'right',dx:ux*r,dy:uy*r});});
+    this.stagingBoxes=placed.slice(avoid.length);this.stagingTight=tight;}
 }
 window.Dome={load,dataUrl,fail,nav,pos,state,counts,bounds,esc,View,pairs,LANE_NAME,NAV,onPrefs,isDark,fs,prefs};
 })();

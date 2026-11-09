@@ -29,7 +29,8 @@ FILL_PAUSE = 1.0        # 大隊全員在集合位置站定後，稍停這麼久
 GATE_DRAW_AFTER = 1.0   # 圖面六條線畫到穿過西一入口之後這麼久（秒）
 WAIT_MIN = 0.01         # 路徑上同一點停不到這麼久就不留停留點
 LANE_K = {'A': 0, 'B': 1}
-ASSUME_NO_PILLARS = {'L7', 'L8'}   # 11/9 企劃：先假設集合區裡沒有這兩根柱（版本 1 圖面的場邊柱，落在大隊 7、8 的集合位置），圖面與檢核都不放；現場若有，要改集合位置
+ASSUME_NO_PILLARS = {'L7', 'L8'}   # 11/9 企劃：先假設集合區裡沒有這兩根柱（版本 1 圖面的場邊柱，落在大隊 7、8 的集合位置）。圖面不畫；
+                                   # 另存在 map.pillarsAssumedAbsent，check.py 照樣算「若有這兩根柱會碰到多少人」，標成假設、不算衝突
 STAGE_LABEL = 'B2 集合區'
 
 
@@ -315,7 +316,9 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
               dict(key='descend', label='大隊 1 白藍兩路離座、下樓梯，經 B2 通行帶走到自己那一排後方迴轉、散成六路，到集合位置整隊', t0=T0, t1=t_go),
               dict(key='enter', label='依大隊 1→9 放行：集合位置隊頭一排六人並肩、一排緊跟一排，沿 B2 往西一入口、右轉進門、北行、梯次進列；後面的大隊照樣下樓、到自己的集合位置整隊', t0=t_go, t1=t_end)]
     st = staging_map(G, clocks)
-    m = dict(base['map'], pillars=[c for c in base['map']['pillars'] if c['id'] not in ASSUME_NO_PILLARS], **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
+    pillars = [c for c in base['map']['pillars'] if c['id'] not in ASSUME_NO_PILLARS]
+    absent = [c for c in base['map']['pillars'] if c['id'] in ASSUME_NO_PILLARS]
+    m = dict(base['map'], pillars=pillars, pillarsAssumedAbsent=absent, **G.stair_map(), gate=G.gate_map(), gateLanes=st.pop('lanes'), staging=st,
              march=march.export(G.march, clocks['split'], {d: clocks['tauHead'][d] for d in clocks['lay']['head']}))
     return dict(meta=meta, phases=phases, nodes=nodes, map=m, restSeats=rest, exits=exits,
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])
@@ -338,7 +341,8 @@ def staging_map(G, clocks):
         blocks.append(dict(dadui=d, uHead=uh, uTail=ut, ranks=lay['r1'][d] - lay['r0'][d] + 1,
                            heads=[flat([M.lane_xy(sh, j)]) for j in range(6)],
                            poly=flat(G.stage_band(ut + du + 0.02, uh + du - 0.02, -0.25, 0.25, 0.15)),
-                           label=flat([G.B2.off((uh + ut) / 2 + du, 0.42)])))
+                           center=flat([G.B2.off((uh + ut) / 2 + du, 0)]),            # 集合位置中心（標籤的錨點）
+                           label=flat([G.B2.off((uh + ut) / 2 + du, 0.42)])))         # 場側一點：標籤往這個方向推開
     # 11/9：每人在自己那一排附近迴轉。圖面的兩路畫到最深的迴轉點（最深那個大隊的最後一排）；uturn 是大隊 1 第一排的迴轉圓心（3D 章節取景用）
     u_deep = turn_point(G, lay['tail'][max(lay['tail'])])[1]
     u_first = turn_point(G, s_h1)[1]
@@ -377,6 +381,7 @@ RULES = [
 ASSUMPTIONS = [
     '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒、兩路錯開 0.17 秒、大隊交界加 0.8 秒；放行後 0.2 秒一排（排距約 1.7 m）；皆為動畫節奏，不是現場秒數',
     '集合區的大小是示意：圖面 B2 走廊只畫六路寬（±0.2 單位），從西一入口南側到圖面盡頭約 12 單位；九個大隊每路前後 0.04 單位（約 0.3 m）才排得進去，這是圖面點距，不是現場間距或容量；「九個大隊排得下」是現場觀察，未驗證',
+    '版本 1 圖面在集合區裡的兩根場邊柱 L7、L8（大隊 7、8 的集合位置）先假設不存在：圖面不畫、不算衝突；檢核仍列出若有柱子會碰到的人數，現場若有柱子要改集合位置',
     '通行帶畫在圖面走廊帶外（偏移 −0.30／−0.38），是假設：走廊實際寬度要能在六路旁再留兩人並行；每人在自己那一排後方轉 180° 也是假設（要能兩人並行迴轉；大隊 9 最後幾排在圖面盡頭附近，盡頭之後的邊界未知）',
     '整排並肩的線距：集合區、門洞與沿牆段 0.08 單位，北轉時漸變為座位列距 0.13；轉彎內圈半徑至少 0.08、外圈走步速；只在西一入口門洞穿過全壘打牆；離舞台線稿至少 0.15 單位，不走上舞台階梯',
     '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',

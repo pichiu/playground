@@ -271,8 +271,10 @@ def assembly(data):
 
 def pillars(data):
     """圖面柱位（map.pillars，版本 1 的「場邊柱」示意）與路徑的衝突：不算進 ok，列出來給現場確認。
-    每人路徑任一段離柱心小於柱半徑就算；分「站在柱上」（集合位置格位）與「走過柱子」。"""
-    pl = data['map']['pillars']
+    每人路徑任一段離柱心小於柱半徑就算；分「站在柱上」（集合位置格位）與「走過柱子」。
+    map.pillarsAssumedAbsent（假設不存在的柱，例如 L7、L8）照樣算，放在 assumedAbsent：若現場其實有柱，會碰到這些人。"""
+    absent_ids = {c['id'] for c in data['map'].get('pillarsAssumedAbsent', [])}
+    pl = data['map']['pillars'] + data['map'].get('pillarsAssumedAbsent', [])
     hit, stand = collections.defaultdict(set), collections.defaultdict(set)
     for p in data['persons']:
         a = p['path']
@@ -290,13 +292,14 @@ def pillars(data):
                 hit[c['id']].add(p['id'])
     B2 = Poly(pairs(data['map']['b2Corridor']))
     dad = {p['id']: p['dadui'] for p in data['persons']}
-    where = {}
+    where, assumed = {}, {}
     for c in pl:
         if c['id'] in hit:
             u, o, _ = B2.proj((c['X'], c['Y']))
-            where[c['id']] = dict(X=c['X'], Y=c['Y'], u=round(u, 3), off=round(o, 3), persons=len(hit[c['id']]), standing=len(stand[c['id']]),
+            (assumed if c['id'] in absent_ids else where)[c['id']] = dict(X=c['X'], Y=c['Y'], u=round(u, 3), off=round(o, 3), persons=len(hit[c['id']]), standing=len(stand[c['id']]),
                                   daduis=sorted({dad[i] for i in stand[c['id']]}))
-    return dict(conflicts=len(where), persons=len(set().union(*hit.values())) if hit else 0, where=where)
+    real = [hit[k] for k in where]
+    return dict(conflicts=len(where), persons=len(set().union(*real)) if real else 0, where=where, assumedAbsent=assumed)
 
 
 def formation(data, by_rank):
@@ -747,7 +750,8 @@ def main(path):
         print(f"[{'OK' if ok else 'NG'}] {name}: {val}（門檻 {thr}）")
     Pl = C['pillars']
     print(f"[{'待確認' if Pl['conflicts'] else 'OK'}] 圖面柱位與路徑衝突（不算進通過與否）: {Pl['conflicts']} 根柱、{Pl['persons']} 人經過"
-          + ''.join(f"；{k}（B2 u {v['u']}、偏移 {v['off']}）走過 {v['persons']} 人、站在柱上 {v['standing']} 人（大隊 {'、'.join(map(str, v['daduis'])) or '—'}）" for k, v in Pl['where'].items()))
+          + ''.join(f"；{k}（B2 u {v['u']}、偏移 {v['off']}）走過 {v['persons']} 人、站在柱上 {v['standing']} 人（大隊 {'、'.join(map(str, v['daduis'])) or '—'}）" for k, v in Pl['where'].items())
+          + ''.join(f"；{k} 假設沒有（若有：走過 {v['persons']} 人、站在柱上 {v['standing']} 人，大隊 {'、'.join(map(str, v['daduis'])) or '—'}）" for k, v in Pl.get('assumedAbsent', {}).items()))
     meta = data['meta'].get('checks') or {}
     same = bool(meta) and all(meta.get(k) == C.get(k) for k in COMPARED) and meta.get('ok') == C['ok']
     print('meta.checks 與重算一致' if same else 'meta.checks 與重算不一致或缺少', '；', '通過' if C['ok'] and same else '未通過')

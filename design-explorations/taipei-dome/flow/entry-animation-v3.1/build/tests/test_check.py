@@ -327,3 +327,13 @@ def test_check_detects_too_many_steps(built):           # 階梯：北行走第 
     q = p['path'][k]
     p['path'].insert(k, [-5.0, 3.1, q[2] - 0.001])       # Y 3.1 那一段，X −5.0 已經跨過 9 條階梯線
     assert check.geometry(D)['stepViolations'] >= 1
+
+
+def test_pillars_assumed_absent_are_reported(built):   # 11/9 假設沒有柱 L7、L8：圖面不放、不算衝突，但仍列出若有柱會碰到的人
+    _, D = built
+    import build
+    assert {c['id'] for c in D['map']['pillarsAssumedAbsent']} == build.ASSUME_NO_PILLARS
+    assert not {c['id'] for c in D['map']['pillars']} & build.ASSUME_NO_PILLARS
+    P = check.pillars(D)
+    assert P['conflicts'] == 0 and set(P['assumedAbsent']) == build.ASSUME_NO_PILLARS
+    assert all(v['standing'] > 0 for v in P['assumedAbsent'].values())
