@@ -27,9 +27,8 @@ STAGE_PAUSE = 1.0       # 迴廊候隊：前一大隊停好、下一大隊在門
 FILL_PAUSE = 1.0        # 大隊 1 把門前隊伍排滿後，稍停這麼久才開始推進
 GATE_DRAW_AFTER = 1.0   # 圖面六條線畫到穿過西一入口之後這麼久（秒）
 WAIT_MIN = 0.01         # 路徑上同一點停不到這麼久就不留停留點
-WEST_SAFE = 0.036       # 往西進列者的走法離人流與同一列其他往西者至少這麼遠才算可行（碰撞點距 0.03 加餘量）
-PLACE_STEP = 0.02       # 排不出可行走法時，這一排在分出點的時刻每次往後挪這麼多秒
-TURN_CLEAR = 0.1        # 轉向點：前一排同一路的人起步離開之後至少這麼久，下一排同一路的人才走到同一個轉向點（0.1 秒 × 步速 = 0.11 單位）
+WEST_SAFE = 0.036       # 往西進列者的走法離其他人至少這麼遠才算可行（碰撞點距 0.03 加餘量）
+WEST_WAITS = [k * 0.05 for k in range(61)]   # 往西進列者在自己那一列轉角可以先等多久再橫越（秒，由短到長試）
 LANE_K = {'A': 0, 'B': 1}
 DIRECT_LABEL = '門前隊伍（B2）'
 
@@ -68,20 +67,6 @@ def split_points(G, people):
         ps = [p for p in people if p['dadui'] == d]
         out[d] = M.split_s(max(p['field']['Y'] for p in ps))
     return out
-
-
-def turn_offsets(G, people, split):
-    """座位在第 10 排那條線以東（march.kind == 'align'）的人，從分出（t.split）走到切齊線上自己那一列（march.wait_point）要多久（秒）：
-    沿自己那一路往北到自己那一列，再往東到切齊線。同一排這些人都走到了才一起起步。其他人不等，不在結果裡。"""
-    M = march_of(G)
-    a = {}
-    for p in people:
-        seat = (p['field']['X'], p['field']['Y'])
-        if M.kind(p['gateLane'], seat) != 'align':
-            continue
-        x_split, y_split = M.lane_xy(split[p['dadui']], p['gateLane'])
-        a[p['id']] = (y_split - seat[1]) / V + (march.ALIGN_X - x_split) / V
-    return a
 
 
 def prepare(G, people):
@@ -161,6 +146,10 @@ def schedule(G, people, R=None):
             late[p['dadui']] = max(late.get(p['dadui'], 0.0), t - t_e)
         if not late:
             clocks['stairDelay'] = {d: round(v, 3) for d, v in extra.items()}
+            plans = plan_west(G, people, out, clocks)  # 往西進列的人最後排（不影響別人）
+            clocks['westPlan'] = {pid: pl for pid, (pl, _) in plans.items()}
+            for pid, (_, w0) in plans.items():
+                out[pid]['westWait'] = w0
             return out, clocks
         d = min(late)
         extra[d] = extra.get(d, 0.0) + late[d] + 0.05
@@ -202,71 +191,37 @@ def _schedule_once(G, people, R, extra):
         return hi
     M = march_of(G)
     split = split_points(G, people)
-    a_turn = turn_offsets(G, people, split)
-    a_rank = collections.defaultdict(dict)            # 排號 → {第幾路: 走到切齊線要多久}（只有座位在切齊線以東的人）
-    for p in people:
-        if p['id'] in a_turn:
-            a_rank[rank_of[p['id']]][p['gateLane']] = a_turn[p['id']]
-    walkers = collections.defaultdict(list)           # 排號 → 這一排往西進列的人
-    y_split = {d: M.lane_xy(s, 0)[1] for d, s in split.items()}
-    for p in people:
-        seat = (p['field']['X'], p['field']['Y'])
-        if M.kind(p['gateLane'], seat) == 'west':
-            (ax, yt), _ = M.turn_point(p['gateLane'], seat)
-            walkers[rank_of[p['id']]].append(dict(pid=p['id'], d=p['dadui'], lane=p['gateLane'], ax=ax, yg=yt, xs=seat[0], ys=seat[1]))
-    align_rel = {}                                    # (大隊, 第幾路) → 這一路上一個在切齊線等的人起步的時刻
-
-    dadui_of = {rank_of[p['id']]: p['dadui'] for p in people}
-    ts_of, plans, trajs = {}, {}, {}                  # 排號 → 在分出點的時刻；往西者 → 走法；往西者 → 絕對軌跡
-
-    def try_place(d, r, t):
-        """第 r 排在 t 到分出點時，這一排與前面還在橫越的往西者都排得出離人流、離同一列其他往西者 ≥ WEST_SAFE 的走法嗎？
-        回傳 (可行, 新的走法, 新的軌跡, 最差距離)。"""
-        ts = {rr: v for rr, v in ts_of.items() if dadui_of[rr] == d}   # 只看同一大隊（別的大隊不經過這幾列）
-        ts[r] = t
-        start = lambda w: ts[rank_of[w['pid']]] + (y_split[d] - w['yg']) / V   # 往西者走到自己那條空隙就直接起步（不等切齊）
-        act = [w for rr in ts if rr != r for w in walkers[rr]
-               if t + (y_split[d] - w['yg']) / V < start(w) + 2.0] + walkers[r]
-        new_p, new_t, worst = {}, {}, 9.0
-        for w in sorted(act, key=lambda w: (rank_of[w['pid']], w['lane'])):
-            rr = rank_of[w['pid']]
-            R0 = start(w)
-            dy = (y_split[d] - w['yg']) / V
-            passes = sorted(ts[q] + dy - R0 for q in ts if q != rr and -1.5 < ts[q] + dy - R0 < 3.0)
-            others = [[(x, y, tt - R0) for x, y, tt in (new_t.get(o['pid']) or trajs[o['pid']])]
-                      for q in ts for o in walkers[q] if o['lane'] == w['lane'] and o['pid'] != w['pid'] and (o['pid'] in new_t or o['pid'] in trajs)]
-            pl, sc = march.west_plan(w['ax'], w['yg'], w['xs'], 1.0, passes, others, scored=True)
-            new_p[w['pid']], new_t[w['pid']] = pl, march.west_traj(w['ax'], w['yg'], w['xs'], w['ys'], pl, R0)
-            worst = min(worst, sc)
-        return worst >= WEST_SAFE, new_p, new_t, worst
-
-    def place(d, r, lb):
-        """第 r 排在分出點的時刻：不早於 lb；這一排要在切齊線等的人，走到切齊線時同一路上一個在那裡等的人已經起步 TURN_CLEAR 秒
-        （同一路就是同一列，等的位置相同）；再往後挪到這一排與前面還在橫越的往西者都排得出可行走法為止。"""
-        for j, a in a_rank[r].items():
-            if (d, j) in align_rel:
-                lb = max(lb, align_rel[(d, j)] + TURN_CLEAR - a)
-        best = None
-        for k in range(150):
-            t = lb + k * PLACE_STEP
-            ok, new_p, new_t, worst = try_place(d, r, t)
-            if best is None or worst > best[3]:
-                best = (t, new_p, new_t, worst)
-            if ok:
-                break
-        t, new_p, new_t, worst = best if not ok else (t, new_p, new_t, worst)
-        if not ok:
-            print(f'  第 {r} 排（大隊 {d}）找不到 ≥ {WEST_SAFE} 的往西走法，最差 {worst:.3f}', file=sys.stderr)
-        ts_of[r] = t
-        plans.update(new_p)
-        trajs.update(new_t)
-        if a_rank[r]:
-            for j in a_rank[r]:
-                align_rel[(d, j)] = t + max(a_rank[r].values())
-        return t
     s_stage_end = M.sp0                               # 迴廊候隊：沿牆迴廊的北端（北轉弧開始）
-    stage = {}                                        # 排號 → (停在哪個 s, 從那裡再出發的時刻)
+    tau_end = M.tau_at_s(s_stage_end)
+    by_rank = collections.defaultdict(list)
+    for p in people:
+        by_rank[rank_of[p['id']]].append(p)
     daduis = sorted({p['dadui'] for p in people})
+    wins = collections.defaultdict(list)              # 大隊 → 該大隊各排在切齊線上「前面停」的時段 (開始, 結束)，依排序
+    tl = {}                                           # 每人 t.enter 之後的時間軸（timeline）
+
+    def run_rank(r, t0, hold=None):
+        """第 r 排在 t0 離開隊頭（hold：迴廊停的 (τ, 再出發的時刻)）：算每人的時間軸，並把這一排在切齊線上停的時段加進 wins。
+        前面停後面也停：同一大隊前面幾排（最後一個大隊另外加上前一大隊）有人在切齊線上等對齊時，這一排還沒走到自己那一列的人原地停住。"""
+        ps = by_rank[r]
+        d = ps[0]['dadui']
+        ws = sorted(wins[d])                          # 同一大隊前面幾排：一直適用
+        wp = sorted(wins.get(d - 1, []))              # 前一大隊：離開迴廊之後（最後一個大隊離開隊頭之後）才適用，免得前一大隊尾巴停住時被追上
+        for p in ps:
+            tl[p['id']] = timeline(M, p, split[d], t0, hold, ws, wp)
+        arr = [tl[p['id']]['tWait'] for p in ps if tl[p['id']]['tWait'] is not None]
+        if arr:
+            wins[d].append((min(arr), max(arr)))
+            for p in ps:
+                if tl[p['id']]['tWait'] is not None:
+                    tl[p['id']]['release'] = max(arr)
+
+    def real_at(pid, tau):
+        """這個人在走路時間 τ（相對 t.enter，不含停）那一刻的實際時刻。"""
+        x = tl[pid]
+        return x['t0'] + tau + sum(e - s for ts, s, e, _ in x['stops'] if ts < tau - 1e-12)
+
+    stage = {}                                        # 排號 → (停在哪個 s, 從那裡再出發的時刻)
     staged_ranks = {}                                 # 大隊 → 它在迴廊停的那些排號
     ranks = []
     for d_prev, d in zip([None] + daduis, daduis):
@@ -275,32 +230,39 @@ def _schedule_once(G, people, R, extra):
         r0, r1 = min(rank_of[p['id']] for p in ps), max(rank_of[p['id']] for p in ps)
         lo = 0.0
         if d_prev in staged_ranks:
-            # 迴廊候隊：前一大隊在迴廊停好、這一大隊在門前隊伍排滿，兩個都到齊後前一大隊才進列；
-            # 前一大隊每一排等它前面那一排走開 RANK_GAP 的距離才跟上；這一大隊第一排跟在前一大隊最後一排之後至少 RANK_GAP
+            # 迴廊候隊：前一大隊在迴廊停好、這一大隊在門前隊伍排滿，兩個都到齊後前一大隊整塊出發（每排間隔 RANK_GAP，緊密前進）；
+            # 之後前面停後面也停（run_rank）。這一大隊第一排要等前一大隊最後一排走過迴廊北端 0.3 秒以上才走到那裡
             rs = staged_ranks[d_prev]
             staged = max(ranks[r] + M.tau_at_s(stage[r][0]) for r in rs)
             rel = max(staged, fill) + STAGE_PAUSE
-            tau_end = M.tau_at_s(s_stage_end)
             prev, target = None, rel
             for i, r in enumerate(rs):
                 s_r = stage[r][0]
-                g_i = RANK_GAP if i else 0.0               # 北行段再拉開多少由 place 決定（切齊線上同一路要先走開、往西者要排得出走法）
-                target += g_i
+                target += RANK_GAP if i else 0.0
                 go = max(ranks[r] + M.tau_at_s(s_r), target - (tau_end - M.tau_at_s(s_r)))
                 if prev is not None:
-                    go = max(go, prev[1] + g_i - (M.tau_at_s(prev[0]) - M.tau_at_s(s_r)))
-                to_split = M.tau_at_s(split[d_prev]) - M.tau_at_s(s_r)
-                go = place(d_prev, r, go + to_split) - to_split
-                target = go + tau_end - M.tau_at_s(s_r)
+                    go = max(go, prev[1] + RANK_GAP - (M.tau_at_s(prev[0]) - M.tau_at_s(s_r)))
                 stage[r] = (s_r, go)
                 prev = (s_r, go)
-            lo = prev[1] - M.tau_at_s(prev[0]) + RANK_GAP
+                run_rank(r, ranks[r], (M.tau_at_s(s_r), go))
+            last = by_rank[rs[-1]][0]['id']
+            lo = max(prev[1] - M.tau_at_s(prev[0]) + RANK_GAP, real_at(last, tau_end + 0.3) - tau_end)
         for r in range(r0, r1 + 1):
             behind = ranks[-1] + RANK_GAP if ranks else 0.0
+            if d == daduis[-1] and ranks and by_rank[r - 1][0]['id'] in tl:   # 前一排途中停過：等它實際走開 RANK_GAP 的距離
+                behind = max(behind, real_at(by_rank[r - 1][0]['id'], RANK_GAP))
             g0 = max(reach[r], behind, max(fill + FILL_PAUSE, lo) if r == r0 else 0.0)
-            if d == daduis[-1]:                       # 最後一個大隊不停：在這裡就排定分出點的時刻
-                g0 = place(d, r, g0 + M.tau_at_s(split[d])) - M.tau_at_s(split[d])
+            if d == daduis[-1]:                       # 最後一個大隊不停：前面停的時候，隊頭這一排也等
+                ws = sorted(wins[d] + wins.get(d - 1, []))
+                moved = True
+                while moved:                          # 出發後 RANK_GAP 內就會遇到停（或正在停）：等那次停結束再離開隊頭，
+                    moved = False                     # 免得停在隊頭前一步、下一排補到隊頭時靠太近
+                    for a, b in ws:
+                        if a - RANK_GAP - 1e-9 <= g0 < b:
+                            g0, moved = b, True
             ranks.append(g0)
+            if d == daduis[-1]:
+                run_rank(r, g0)
         if d != daduis[-1]:                           # 最後一個大隊後面沒有人要等，不停
             staged_ranks[d] = list(range(r0, r1 + 1))
             if s_stage_end - (r1 - r0) * STAGE_D < M.s_walk:
@@ -310,33 +272,125 @@ def _schedule_once(G, people, R, extra):
     out = {}
     for p in people:
         pid, r = p['id'], rank_of[p['id']]
-        t_e, g = entry[pid], ranks[r]
-        t_split = g + M.tau_at_s(split[p['dadui']])
-        hold = None
-        if r in stage:                                # 迴廊停過：停的那段時間加到之後
-            hold = (g + M.tau_at_s(stage[r][0]), stage[r][1])
-            t_split += hold[1] - hold[0]
-        out[pid] = dict(leave=stair[pid] - R[pid]['d_top'] / V, stair=stair[pid], entry=t_e, assembly=caught(p, ranks), enter=g,
-                        gate=g + M.tau_gate[p['gateLane']], split=t_split)
-        if hold:
-            out[pid]['holdStart'], out[pid]['holdEnd'] = hold
-        # 座位在第 10 排那條線以東：走到切齊線停下，同一排這些人都到了才一起起步（停的起訖；最後到的那位不必停）
-        if pid in a_turn:
-            out[pid]['alignStart'], out[pid]['alignEnd'] = t_split + a_turn[pid], t_split + max(a_rank[r].values())
-    rank_split = {}
+        x = tl[pid]
+        tau_split = M.tau_at_s(split[p['dadui']])
+        out[pid] = dict(leave=stair[pid] - R[pid]['d_top'] / V, stair=stair[pid], entry=entry[pid], assembly=caught(p, ranks), enter=ranks[r],
+                        gate=real_at(pid, M.tau_gate[p['gateLane']]), split=real_at(pid, tau_split), tl=x)
+        hs = [(s, e) for _, s, e, k in x['stops'] if k == 'hold']
+        if hs:
+            out[pid]['holdStart'], out[pid]['holdEnd'] = hs[0][0], hs[-1][1]
+        out[pid]['waits'] = [(s, e) for _, s, e, k in x['stops'] if k == 'freeze']
+        if x['tWait'] is not None:                    # 座位在第 10 排以東：在切齊線上等同一排到齊（最後到的那位不必停）
+            out[pid]['alignStart'], out[pid]['alignEnd'] = x['tWait'], x['release']
+    if any(abs(out[p['id']]['enter'] - tl[p['id']]['t0']) > 1e-9 for p in people):
+        raise SystemExit('排程內部不一致：離開隊頭的時刻和時間軸不同')
+    blk = {d: merge_windows(list(wins.get(d, [])) + list(wins.get(d - 1, []))) for d in daduis}
     for p in people:
-        rank_split[rank_of[p['id']]] = out[p['id']]['split']
-    bad = [r for r, v in rank_split.items() if r in ts_of and abs(v - ts_of[r]) > 1e-6]
-    if bad:
-        raise SystemExit(f'排程內部不一致：第 {bad[:3]} 排的分出時刻和排定的不同')
-    y_split = {d: M.lane_xy(s, 0)[1] for d, s in split.items()}
+        out[p['id']]['tl']['W'] = blk[p['dadui']]
     return out, dict(tStairStart=T_S0, tGateStart=min(v['gate'] for v in out.values()), ranks=ranks, rankOf=rank_of, split=split, stage=stage,
-                     rankSplit=rank_split, ySplit=y_split, westPlan=plans)
+                     wins={d: list(v) for d, v in wins.items()})
 
 
-def person_path(G, p, r, t, ranks, rank, s_split, f_lat=None, stage=None, passes=None, plan=None):
+def merge_windows(ws):
+    """停的時段取聯集、排好。"""
+    out = []
+    for a, b in sorted(ws):
+        if out and a <= out[-1][1] + 1e-9:
+            out[-1] = (out[-1][0], max(out[-1][1], b))
+        else:
+            out.append((a, b))
+    return out
+
+
+class BlockClock:
+    """大隊的「走路時鐘」：實際時刻扣掉這個大隊（與前一大隊）停的時段。往西進列的人和往北走的人都跟著停，
+    所以在這個時鐘上大家都不停，往西的走法在這個時鐘上排（march.west_plan_obs），再換回實際時刻、插入停。"""
+
+    def __init__(self, W):
+        self.W = W
+        self.cum = [0.0]
+        for a, b in W:
+            self.cum.append(self.cum[-1] + b - a)
+
+    def b(self, t):
+        k = bisect.bisect_right([a for a, _ in self.W], t)
+        frozen = self.cum[k - 1] if k else 0.0
+        if k:
+            a, e = self.W[k - 1]
+            frozen += min(t, e) - a if t < e else 0.0
+            frozen = self.cum[k - 1] + (min(t, e) - a) if t < e else self.cum[k]
+        return t - frozen
+
+    def t(self, bb):
+        """走路時鐘 bb 對應的實際時刻（停的時段裡取結束那一刻：之後就開始走）。"""
+        t = bb
+        for (a, e), c in zip(self.W, self.cum):
+            if a - c <= bb + 1e-12:
+                t = bb + c + (e - a) if a - c < bb - 1e-12 else bb + c
+            else:
+                break
+        return t
+
+
+def timeline(M, p, s_split, t0, hold, ws, wp=()):
+    """一個人 t.enter 之後的時間軸：走路時間 τ（相對 t.enter，不含停）與實際時刻的對應。
+    stops = [(τ, 開始, 結束, 種類)]：'hold' 迴廊停、'freeze' 前面停後面也停（走到自己那一列的轉向點之前；座位在第 10 排以東的人
+    到走到切齊線為止）。ws：同一大隊前面幾排停的時段；wp：前一大隊停的時段，只在迴廊停完之後適用。
+    tTurn：走到轉向點的實際時刻；tWait：座位在第 10 排以東的人走到切齊線的時刻（其他人 None）。"""
+    seat = (p['field']['X'], p['field']['Y'])
+    j = p['gateLane']
+    (ax, yt), _ = M.turn_point(j, seat)
+    tau_split = M.tau_at_s(s_split)
+    y_split = M.lane_xy(s_split, j)[1]
+    tau_turn = tau_split + (y_split - yt) / V
+    kind = M.kind(j, seat)
+    tau_wait = tau_turn + (march.ALIGN_X - ax) / V if kind == 'align' else None
+    st = dict(t=t0, tau=0.0, stops=[])
+
+    def stop(tau, a, b, k):
+        if b - a < 1e-9:
+            return
+        if st['stops'] and abs(st['stops'][-1][0] - tau) < 1e-12 and abs(st['stops'][-1][2] - a) < 1e-9:
+            t_, a_, _, k_ = st['stops'][-1]
+            st['stops'][-1] = (t_, a_, b, k_)        # 接著上一段停（迴廊停完緊接著前面停）
+        else:
+            st['stops'].append((tau, a, b, k))
+
+    def move_to(tau_target, wl):
+        while st['tau'] < tau_target - 1e-12:
+            dt = tau_target - st['tau']
+            w = next(((a, b) for a, b in wl if b > st['t'] + 1e-9 and a < st['t'] + dt - 1e-9), None)
+            if w is None:
+                st['t'] += dt
+                st['tau'] = tau_target
+                return
+            if w[0] > st['t']:
+                st['tau'] += w[0] - st['t']
+                st['t'] = w[0]
+            stop(st['tau'], st['t'], w[1], 'freeze')
+            st['t'] = w[1]
+
+    if hold:
+        tau_h, go = hold
+        move_to(tau_h, ws)
+        b = max(go, st['t'])
+        stop(tau_h, st['t'], b, 'hold')
+        st['t'] = b
+    both = sorted(list(ws) + list(wp))
+    move_to(tau_turn, both)
+    t_turn = st['t']
+    t_wait = None
+    if tau_wait is not None:
+        move_to(tau_wait, both)
+        t_wait = st['t']
+    return dict(t0=t0, stops=st['stops'], sSplit=s_split, tauSplit=tau_split, tauTurn=tau_turn, tTurn=t_turn, kind=kind, corner=(ax, yt),
+                tauWait=tau_wait, tWait=t_wait, release=None)
+
+
+def person_path(G, p, r, t, ranks, rank, plan=None):
     """座位 → 自己那條線的起點 → 步速追上隊伍 → 跟著隊伍（慢行或站住）到隊頭
-    → 一排六人並肩沿 march 中心線（整排轉進西一入口、沿牆、北轉、沿第 5–10 排地標直線北行）→ 在自己大隊列區南緣分出 → 沿自己那一路走到自己那一列 → 座位（步速）。"""
+    → 一排六人並肩沿 march 中心線（整排轉進西一入口、沿牆、北轉、沿第 5–10 排地標直線北行）→ 在自己大隊列區南緣分出
+    → 沿自己那一路走到自己那一列 → 座位（步速）。t.enter 之後依時間軸 t['tl'] 插入停：迴廊停、前面停後面也停、切齊線上等到齊、往西者在轉角等。"""
     line = G.line_poly(p['gateLane'])
     path = list(timed(r['to'], t['leave']))
     s_join = (t['assembly'] - t['entry']) * V
@@ -355,36 +409,173 @@ def person_path(G, p, r, t, ranks, rank, s_split, f_lat=None, stage=None, passes
         pts = _line_pts(line, s0, s1)
         for x, y, s in pts[1:]:
             path.append((x, y, t0 + (t1 - t0) * ((s - s0) / (s1 - s0) if s1 - s0 > 1e-9 else 1.0)))
-    M = march_of(G)
-    j = p['gateLane']
-    st = stage.get(rank) if stage else None
-    if st:                                            # 迴廊候隊：走到停點、站到再出發的時刻、再走到分出點
-        s_r, go = st
-        path += [(x, y, t['enter'] + tau) for x, y, tau in M.lane_track(j, s_r)[1:]]
-        tau_r = M.tau_at_s(s_r)
-        path += [(x, y, go + tau - tau_r) for x, y, tau in M.lane_track(j, s_split, s_start=s_r)]
-    else:
-        path += [(x, y, t['enter'] + tau) for x, y, tau in M.lane_track(j, s_split)[1:]]
-    _, _, tx, ty, _ = M.C.at(s_split)
-    tt, last = path[-1][2], path[-1]
-    approach, depart = M.tail(last[:2], (tx, ty), (p['field']['X'], p['field']['Y']), f_lat, passes, None if f_lat else plan)
-    for k, seg in enumerate((approach, depart)):
-        if k == 1 and 'alignEnd' in t:                # 在切齊線上：站到同一排都切齊（t.alignEnd）才起步
-            tt = max(tt, t['alignEnd'])
-            path.append((last[0], last[1], tt))
-        for q in seg:
-            tt += math.dist(last[:2], q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
-            path.append((q[0], q[1], tt))
-            last = path[-1]
+    path += after_enter(G, p, t['tl'], plan, t.get('westWait', 0.0))[1:]
     rounded = [[round(x, 3), round(y, 3), round(z, 3)] for x, y, z in path]
     clean = [rounded[0]]
     for q in rounded[1:]:
         if q[:2] == clean[-1][:2] and q[2] - clean[-1][2] < WAIT_MIN:
-            continue
+            if len(clean) >= 2 and clean[-2][:2] == clean[-1][:2]:
+                clean[-1] = [clean[-1][0], clean[-1][1], q[2]]   # 接在一段停後面的短停：併進那一段停（刪掉會讓下一段變慢）
+                continue
+            if q[2] < t['enter'] - 1e-9 or q[2] - clean[-1][2] < 0.0015:
+                continue                              # 進場前的短停、四捨五入造成的重複點：省略
         if q[2] <= clean[-1][2] and q[:2] != clean[-1][:2]:
             q = [q[0], q[1], round(clean[-1][2] + 0.001, 3)]
         clean.append(q)
     return clean
+
+
+def after_enter(G, p, tl, plan=None, west_wait=0.0, upto_corner=False):
+    """t.enter 之後的路線（含 t.enter 那一點）：(x, y, 實際時刻)。基準路線用走路時間 τ（不含停）排好，再依時間軸插入停。
+    upto_corner：只到轉向點（座位在第 10 排以東的人到切齊線）為止，給往西進列者排走法時當障礙物用。"""
+    M = march_of(G)
+    seat = (p['field']['X'], p['field']['Y'])
+    j = p['gateLane']
+    s_split = tl['sSplit']
+    base = [(x, y, tau) for x, y, tau in M.lane_track(j, s_split)]
+    _, _, tx, ty, _ = M.C.at(s_split)
+    plan_pts = None if tl['kind'] != 'west' else (plan if plan is not None else march.west_plan(tl['corner'][0], tl['corner'][1], seat[0]))
+    approach, depart = M.tail(base[-1][:2], (tx, ty), seat, plan=plan_pts)
+    stops = [(a, b_, c, k) for a, b_, c, k in tl['stops']]
+    tau, last = base[-1][2], base[-1]
+    for q in approach:
+        tau += math.dist(last[:2], q[:2]) / V
+        base.append((q[0], q[1], tau))
+        last = base[-1]
+    if tl['kind'] == 'align' and tl['release'] is not None:
+        stops.append((tau, tl['tWait'], tl['release'], 'align'))
+    if tl['kind'] == 'west':
+        pre = realize(tl['t0'], base, sorted(stops))
+        if upto_corner:
+            return pre
+        return pre + west_depart(tl, base[-1][:2], depart, west_wait, seat)
+    if not upto_corner:
+        for q in depart:
+            tau += math.dist(last[:2], q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
+            base.append((q[0], q[1], tau))
+            last = base[-1]
+    return realize(tl['t0'], base, sorted(stops))
+
+
+def west_depart(tl, corner, depart, w0, seat):
+    """往西進列者轉角之後：在走路時鐘上先站 w0，照 depart 走（含速度倍數），再換回實際時刻；這段時間大隊停的時段他也停。"""
+    BC = BlockClock(tl.get('W', []))
+    b = BC.b(tl['tTurn']) + w0
+    pts, last = [], corner
+    bts = []
+    for q in depart:
+        b += math.dist(last, q[:2]) / (V * (q[2] if len(q) > 2 else 1.0))
+        bts.append((q[0], q[1], b))
+        last = q[:2]
+    seq = [(corner[0], corner[1], BC.b(tl['tTurn']))] + [(corner[0], corner[1], BC.b(tl['tTurn']) + w0)] + bts
+    out = []
+    for (x0, y0, b0), (x1, y1, b1) in zip(seq, seq[1:]):
+        t0, t1 = BC.t(b0), BC.t(b1)
+        for a, e in tl.get('W', []):                 # 這一段裡大隊停的時段：在那一點站住
+            if t0 - 1e-9 <= a < t1 - 1e-9:
+                f = (BC.b(a) - b0) / (b1 - b0) if b1 > b0 else 0.0
+                px, py = x0 + (x1 - x0) * f, y0 + (y1 - y0) * f
+                out += [(px, py, a), (px, py, e)]
+        out.append((x1, y1, t1))
+    return out
+
+
+def realize(t0, base, stops):
+    """基準路線 [(x, y, τ)]（τ = 走路時間，不含停）加上停 [(τ, 開始, 結束, 種類)] → [(x, y, 實際時刻)]。"""
+    out, shift, si = [], 0.0, 0
+    prev = None
+    for x, y, tau in base:
+        while si < len(stops) and stops[si][0] <= tau + 1e-12:
+            ts, a, b, _ = stops[si]
+            if prev is None or tau - prev[2] < 1e-12:
+                px, py = x, y
+            else:
+                f = (ts - prev[2]) / (tau - prev[2])
+                px, py = prev[0] + (x - prev[0]) * f, prev[1] + (y - prev[1]) * f
+            if abs(t0 + ts + shift - a) > 1e-6:
+                raise SystemExit(f'時間軸不一致：τ {ts:.3f} 應在 {a:.3f}，算出 {t0 + ts + shift:.3f}')
+            out += [(px, py, a), (px, py, b)]
+            shift += b - a
+            si += 1
+        out.append((x, y, t0 + tau + shift))
+        prev = (x, y, tau)
+    if si < len(stops):
+        ts, a, b, _ = stops[si]
+        if abs(ts - prev[2]) < 1e-9:
+            out.append((prev[0], prev[1], b))
+    return out
+
+
+def plan_west(G, people, sched, clocks):
+    """往西進列的人最後排：其他人的時間軸都定了（往西的人不影響別人停不停），依走到轉角的先後，
+    每人拿同一大隊其他人的實際軌跡當障礙物（還沒排的往西者只算到轉角為止），試在轉角先等 WEST_WAITS，
+    找第一個離所有人都 ≥ WEST_SAFE 的走法（march.west_plan_obs）。回傳 {往西者: (走法, 先等幾秒)}。"""
+    import numpy as np
+    M = march_of(G)
+    P = {p['id']: p for p in people}
+    full, pre = {}, {}
+    for p in people:
+        tl = sched[p['id']]['tl']
+        if tl['kind'] == 'west':
+            pre[p['id']] = np.array(after_enter(G, p, tl, upto_corner=True))
+        else:
+            full[p['id']] = np.array(after_enter(G, p, tl))
+    out = {}
+    walkers = sorted((pid for pid in pre), key=lambda pid: sched[pid]['tl']['tTurn'])
+    DT, HOR = 0.01, 4.5
+    clk = {}
+    for pid in walkers:
+        p, tl = P[pid], sched[pid]['tl']
+        (ax, yg), seat = tl['corner'], (P[pid]['field']['X'], P[pid]['field']['Y'])
+        BC = clk.setdefault(p['dadui'], BlockClock(tl.get('W', [])))
+        tc = tl['tTurn']
+        x0, x1, y0, y1 = seat[0] - 0.15, ax + 0.15, yg - 0.2, yg + 0.15
+        obs = []
+        for qid, arr in list(full.items()) + [(k, v) for k, v in pre.items() if k != pid]:
+            if P[qid]['dadui'] != p['dadui']:
+                continue
+            m = (arr[:, 2] >= tc - 0.5) & (arr[:, 2] <= tc + HOR + 3.5)
+            if not m.any():
+                if arr[-1, 2] < tc:              # 已經坐好：坐著的人當成一直在那裡
+                    m = np.zeros(len(arr), bool)
+                    m[-1] = True
+                else:
+                    continue
+            sub = arr[max(0, np.argmax(m) - 1):]
+            if sub[:, 0].max() < x0 or sub[:, 0].min() > x1 or sub[:, 1].max() < y0 or sub[:, 1].min() > y1:
+                continue                              # 這段軌跡的外框和橫越範圍不重疊（只看轉折點會漏掉直直穿過範圍的路線）
+            obs.append(arr)
+        bc = BC.b(tc)                                 # 在大隊的走路時鐘上排：停的時段大家一起停，相對位置不變
+        T = np.arange(0.0, HOR + 3.5, DT) + bc
+        OX = np.full((len(obs), len(T)), np.nan)
+        OY = np.full((len(obs), len(T)), np.nan)
+        for k, arr in enumerate(obs):
+            bt = np.array([BC.b(v) for v in arr[:, 2]])
+            keep = np.r_[np.diff(bt) > 1e-9, True]    # 停的那段（走路時鐘不動）只留最後一點
+            bt, ax_, ay_ = bt[keep], arr[keep, 0], arr[keep, 1]
+            ok = T >= bt[0]
+            OX[k, ok] = np.interp(T[ok], bt, ax_)
+            OY[k, ok] = np.interp(T[ok], bt, ay_)
+        best = None
+        for w0 in WEST_WAITS:
+            k1 = int(round(w0 / DT))
+            if obs and k1 > 0:
+                d_stand = np.nanmin(np.hypot(OX[:, :k1 + 1] - ax, OY[:, :k1 + 1] - yg)) if np.isfinite(OX[:, :k1 + 1]).any() else 9.0
+                if d_stand < WEST_SAFE:
+                    break                             # 在轉角等下去會被後面的人撞到：不能再等更久
+            pl, sc = march.west_plan_obs(ax, yg, seat[0], seat[1], OX, OY, DT, w0)
+            if best is None or sc > best[2]:
+                best = (pl, w0, sc)
+            if sc >= WEST_SAFE:
+                best = (pl, w0, sc)
+                break
+        if best[2] < WEST_SAFE:
+            print(f'  {pid} 找不到 ≥ {WEST_SAFE} 的往西走法，最差 {best[2]:.3f}（等 {best[1]:.2f} 秒）', file=sys.stderr)
+        out[pid] = (best[0], best[1])
+        tl2 = dict(tl)
+        full[pid] = np.array(after_enter(G, p, tl2, best[0], best[1]))
+        del pre[pid]
+    return out
 
 
 def _line_pts(line, s0, s1):
@@ -403,12 +594,14 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
     persons = []
     for p in people:
         r, t = R[p['id']], sched[p['id']]
-        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], clocks['split'][p['dadui']], (slow or {}).get(p['id']), clocks.get('stage'),
-                           None, (clocks.get('westPlan') or {}).get(p['id']))
+        path = person_path(G, p, r, t, clocks['ranks'], clocks['rankOf'][p['id']], (clocks.get('westPlan') or {}).get(p['id']))
         tt = dict(leave=round(t['leave'], 3), stair=round(t['stair'], 3), entry=round(t['entry'], 3), assembly=round(t['assembly'], 3), enter=round(t['enter'], 3),
                   gate=round(t['gate'], 3), split=round(t['split'], 3), arrive=path[-1][2])
         if 'holdStart' in t:                           # 迴廊候隊：在沿牆迴廊停的起訖
             tt['holdStart'], tt['holdEnd'] = round(t['holdStart'], 3), round(t['holdEnd'], 3)
+        ws = _path_waits(path, tt)                     # 其他停：前面停後面也停、往西者在轉角等（起訖，從路徑讀出）
+        if ws:
+            tt['waits'] = ws
         if 'alignStart' in t:                          # 座位在第 10 排那條線以東：在切齊線上等同一排到齊的起訖
             tt['alignStart'], tt['alignEnd'] = round(t['alignStart'], 3), round(t['alignEnd'], 3)
         persons.append(dict(id=p['id'], lie=p['lie'], pai=p['pai'], dadui=p['dadui'], costume=p['costume'], a=p['a'],
@@ -485,6 +678,26 @@ def assemble(base, planj, G, R, sched, clocks, checks=None, slow=None):
                 lanes=planj['lanes'], groups=groups, files=files, persons=persons, others=base['others'])
 
 
+def _path_waits(path, tt):
+    """路徑上 t.enter 之後站住的每一段（起、訖），扣掉迴廊候隊與切齊線上等對齊那兩段。"""
+    known = []
+    if 'holdStart' in tt:
+        known.append((tt['holdStart'], tt['holdEnd']))
+    if 'alignStart' in tt:
+        known.append((tt['alignStart'], tt['alignEnd']))
+    out = []
+    for q0, q1 in zip(path, path[1:]):
+        if q0[2] < tt['enter'] - 1e-9 or q0[:2] != q1[:2] or q1[2] - q0[2] < 0.0015:
+            continue
+        if any(abs(q0[2] - a) < 2e-3 and abs(q1[2] - b) < 2e-3 for a, b in known):
+            continue
+        if out and abs(out[-1][1] - q0[2]) < 1e-9:
+            out[-1][1] = q1[2]
+        else:
+            out.append([q0[2], q1[2]])
+    return out
+
+
 def _lanes_after_queue(G):
     """圖面六條線在隊頭之後接著畫：整排平移線，到穿過西一入口之後 GATE_DRAW_AFTER 秒。"""
     M = march_of(G)
@@ -500,10 +713,10 @@ RULES = [
     '不進 B2 集結區、不在樓梯或 B1 走廊候隊：下樓後白衣散到北三條線、藍衣散到南三條線，在樓梯口到西一入口這段 B2 走廊（舞台後方）排成六條線的門前隊伍；每個大隊從新的一排開始，整個大隊排滿門前隊伍才出發，一排六人並肩、一排緊跟一排離開隊頭',
     '迴廊候隊：每個大隊進門後在沿全壘打牆內側的迴廊停好（隊頭停在北轉前，後面往回排），等下一個大隊在門前隊伍排滿，才繼續走、進列；下一個大隊緊跟在後進門，到迴廊停好；最後一個大隊不停',
     '整排轉彎：一排六人從隊頭到自己大隊的列區南緣全程並肩——左轉進西一入口、穿過門洞、右轉沿全壘打牆內側、左轉北行、沿第 5–10 排地標一條直線往北；轉彎時整排一起轉，內圈走小步、外圈走大步，轉過來仍是六人並肩；第 1 路（白衣列 6k−5）永遠在行進方向左側，北行時在西側（第 5 排地標旁）、進列時對到大隊第一列；不閃舞台、不上舞台階梯，六路都在地面',
-    '走到自己那列再轉、第 10 排對齊：到了自己大隊列區南緣，每人沿自己那一路（兩欄之間的空隙）繼續往北，走到自己那一列才轉；座位在第 10 排以東的人往東走到第 10 排那條線停下，同一排這些人在線上對齊、都到了才一起起步往東到位；座位在自己那一路與第 10 排之間的直接往東到位；座位在自己那一路西側的在那一列南邊半格的空隙往西、到座位正南方再往北半格進列（橫越還在往北走的人時，在空隙裡稍微偏移或放慢錯開）；北行時壓過的是後面大隊還空著的座位',
+    '走到自己那列再轉、第 10 排對齊：到了自己大隊列區南緣，每人沿自己那一路（兩欄之間的空隙）繼續往北，走到自己那一列才轉；座位在第 10 排以東的人往東走到第 10 排那條線停下，同一排這些人在線上對齊、都到了才一起起步往東到位，等的時候後面整個大隊（還沒走到自己那一列的人）跟著停，前面起步再一起走；座位在自己那一路與第 10 排之間的直接往東到位；座位在自己那一路西側的在那一列南邊半格的空隙往西、到座位正南方再往北半格進列（橫越還在往北走的人時，在空隙裡稍微偏移或放慢錯開）；北行時壓過的是後面大隊還空著的座位',
 ]
 ASSUMPTIONS = [
-    '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒（一個接一個緊跟）、兩路錯開 0.17 秒、大隊交界加 0.8 秒（之後的大隊再等門前隊伍有空位才下樓）；北行段每排間隔視切齊線上同一路先走開而定（最長約 1.3 秒）；門前隊伍前後間距 0.075 單位、排滿後 0.2 秒一排（排距約 1.7 m）；迴廊停好時排距約 1.3 m；皆為動畫節奏，不是現場秒數',
+    '1 單位 ≈ 7.6 m；步速 1.1 單位/秒；樓梯同一路相鄰兩人 0.2 秒（一個接一個緊跟）、兩路錯開 0.17 秒、大隊交界加 0.8 秒（之後的大隊再等門前隊伍有空位才下樓）；整個大隊緊密前進（每排間隔 0.2 秒），前面那一排在第 10 排那條線對齊時後面跟著停（每次約 1.2 秒）；門前隊伍前後間距 0.075 單位、排滿後 0.2 秒一排（排距約 1.7 m）；迴廊停好時排距約 1.3 m；皆為動畫節奏，不是現場秒數',
     '整排並肩的線距：門前隊伍、門洞與沿牆段 0.08 單位（牆和舞台南翼之間扣掉舞台淨距只剩約 0.45，放不下更寬的排），北轉時漸變為座位列距 0.13；轉彎內圈半徑至少 0.08、外圈走步速；只在西一入口門洞穿過全壘打牆；離舞台線稿至少 0.15 單位，不走上舞台階梯',
     '座位、看台幾何、走道口、西一入口與場內路徑沿用版本 1 的示意圖面；保留不坐：139 的 34 席給台東（第 1–10 排 1–3 號、第 11–12 排 4–5 號）、144 第 1–6 排 72 席',
     '樓梯照企劃圖 6白 的綠色 L 形：直段是樓梯（順著 B1 走廊往南直下），橫段是樓梯下的 B2 平台；西一入口 4 扇門、可 12 人並排；長度與寬度為示意',

@@ -492,7 +492,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
     <div class="eyebrow">怎麼看・3 步驟</div>
     <h2 id="help-h">1,609 位小人依序進場</h2>
     <ol>
-      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿第 5–10 排地標直線北行，走到自己那列再轉進座位；座位在第 10 排以東的人先在第 10 排那條線切齊、同一排到齊才一起起步。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
+      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿第 5–10 排地標直線北行，走到自己那列再轉進座位；座位在第 10 排以東的人先在第 10 排那條線切齊、同一排到齊才一起起步，這時後面整個大隊跟著停。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
       <li><span class="n" aria-hidden="true">2</span><div><strong>按章節鈕</strong><span class="d">離座、下樓梯、門前隊伍、穿過西一入口、迴廊候隊、北行進列、全部入座：跳到那個時間，鏡頭飛到特寫。拖曳轉鏡頭，<kbd>Shift</kbd>＋方向鍵也可以。</span></div></li>
       <li><span class="n" aria-hidden="true">3</span><div><strong>點一個小人，或搜尋「列 14 排 7」</strong><span class="d">鏡頭跟著他走，卡片顯示他的六步路線；清單可以跟隨一整列。<kbd>Esc</kbd> 或拖曳鏡頭解除。</span></div></li>
     </ol>
@@ -1707,7 +1707,9 @@ function stepsOf(p){const s=p.t,ex=EXIT_BY_SEC.get(p.exit);let tExit=null;for(co
 const STEP_TXT={'-1':'還在休息區座位上，輪到才起身。','0':'從座位起身，走向出口。','1':'走出看台出口，上 B1 走廊。','2':'沿 B1 走廊走，下樓梯到 B2，不停。','3':'在牆外門前隊伍等候。','4':'和同一排六人並肩轉進西一入口。','5':'到場內位置，面向甲舞台。'};
 // playground #23：「集」「進」兩步的說明照新版 me.html（每個大隊排滿門前隊伍才出發、進門後在沿牆迴廊停好等下一大隊排滿）；
 // 步驟的時間邊界 me.html 沒有改（迴廊候隊在「進」這一步裡），「進」的說明再依 t.holdStart／t.holdEnd 分成三段
+const frozen=(p,t)=>(p.t.waits||[]).some(w=>t>=w[0]&&t<w[1]);   // 前面停後面也停（或往西者在轉角先等）
 function stepTxt(k,p,t){const s=p.t,nx=p.dadui+1,hold=s.holdStart!=null;
+  if(k===4&&frozen(p,t)&&!(s.alignStart!=null&&t>=s.alignStart))return '前面那一排在第 10 排那條線對齊，整個大隊跟著停一下，前面起步再一起走。';
   if(k===3)return `在牆外門前隊伍等候：要等整個大隊排滿才出發，之後一排緊跟一排${hold?`；進門後在沿牆迴廊停好，等大隊 ${nx} 排滿再進列`:''}。`;
   if(k===4){if(!hold)return s.alignStart!=null&&t>=s.alignStart&&t<s.alignEnd?'走到自己那列、往東走到第 10 排那條線切齊，等同一排都到齊才一起起步。':'和同一排六人並肩轉進西一入口，沿牆迴廊直接北行（最後一個大隊不停），沿第 5–10 排地標直線北行，到自己那列再轉進座位'+(s.alignStart!=null?'（座位在第 10 排以東：先在第 10 排那條線切齊、同一排到齊才一起起步）':'')+'。';
     if(t<s.holdStart)return '和同一排六人並肩轉進西一入口，沿牆迴廊走到停的位置。';
@@ -1715,7 +1717,7 @@ function stepTxt(k,p,t){const s=p.t,nx=p.dadui+1,hold=s.holdStart!=null;
     if(s.alignStart!=null&&t>=s.alignStart&&t<s.alignEnd)return '走到自己那列、往東走到第 10 排那條線切齊，等同一排都到齊才一起起步。';
     return '迴廊放行：整排沿第 5–10 排地標直線北行，到自己那列再轉進座位'+(s.alignStart!=null?'（座位在第 10 排以東：先在第 10 排那條線切齊、同一排到齊才一起起步）':'')+'。';}
   return STEP_TXT[String(k)];}
-const stepSub=(k,p,t)=>k!==4?0:aligning(p,t)?4:p.t.holdStart==null?0:t<p.t.holdStart?1:t<p.t.holdEnd?2:3;   // 說明文字分段：迴廊前／停／放行，與轉向點等到齊
+const stepSub=(k,p,t)=>k!==4?0:aligning(p,t)?4:frozen(p,t)?5:p.t.holdStart==null?0:t<p.t.holdStart?1:t<p.t.holdEnd?2:3;   // 說明文字分段：迴廊前／停／放行，與轉向點等到齊
 const card={i:-1,steps:null,cur:-2,sub:-1,bd:new Float64Array(6)};
 // 判斷「目前步驟」用的單調邊界（資料的邊界照 me.html 不改）：53 人的「走」（進到 B1 走廊）早於「出」（leave+0.8），
 // 直接用會從「起」跳到「走」、「出」永遠不亮。邊界不晚於前一步時，改成前一步邊界＋0.15，讓每一步都會依序亮起；點步驟跳時間也用這組。

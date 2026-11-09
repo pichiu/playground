@@ -381,6 +381,49 @@ def west_plan(ax, yg, xs, f_cap=1.0, passes=None, trajs=(), scored=False):
     return (beam[0][3], beam[0][0]) if scored else beam[0][3]
 
 
+def west_plan_obs(ax, yg, xs, ys, OX, OY, dt, w0=0.0):
+    """往西進列者的走法（build.plan_west 用）：從 (ax, yg) 在相對時刻 w0 起步，往西到 (xs, yg) 再往北半格進座位 (xs, ys)。
+    OX、OY：其他人在時間格（相對走到轉角的時刻，每 dt 秒）上的位置（還沒出現是 NaN）。
+    折點與速度的選法同 west_plan（beam search），分數是離所有人最近的距離。回傳 (折點, 最近距離)。"""
+    import numpy as np
+    n_cols = int(round((ax - xs) / SP_SEAT - 0.5))
+    wps = [ax - (k + 0.5) * SP_SEAT for k in range(max(0, n_cols))] + [xs]
+    nT = OX.shape[1] if OX.size else 0
+
+    def seg(p0, t0, p1, t1):
+        if not OX.size:
+            return 9.0
+        k0, k1 = int(math.ceil(t0 / dt - 1e-9)), min(nT - 1, int(math.floor(t1 / dt + 1e-9)))
+        if k1 < k0:
+            return 9.0
+        ks = np.arange(k0, k1 + 1)
+        f = (ks * dt - t0) / (t1 - t0) if t1 > t0 else np.zeros(len(ks))
+        wx, wy = p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f
+        d = np.hypot(OX[:, ks] - wx, OY[:, ks] - wy)
+        return float(np.nanmin(d)) if np.isfinite(d).any() else 9.0
+
+    beam = [(9.0, w0, 0.0, [])]
+    for i, x in enumerate(wps):
+        last = i == len(wps) - 1
+        cand = {}
+        for score, t, dy0, pts in beam:
+            p0 = (pts[-1][0], pts[-1][1]) if pts else (ax, yg)
+            for dy in ((0.0,) if last else WEST_DY):
+                p1 = (x, yg + dy)
+                d = math.dist(p0, p1)
+                for f in (WEST_F if abs(dy - dy0) < 1e-9 else (1.0,)):
+                    t1 = t + d / (V * f)
+                    sc = min(score, seg(p0, t, p1, t1))
+                    if last:                              # 最後往北半格進座位，之後坐著（坐 1 秒內也不能有人擦過）
+                        t2 = t1 + math.dist(p1, (xs, ys)) / V
+                        sc = min(sc, seg(p1, t1, (xs, ys), t2), seg((xs, ys), t2, (xs, ys), t2 + 1.0))
+                    key = (round(dy, 4), round(t1, 2))
+                    if key not in cand or cand[key][0] < sc:
+                        cand[key] = (sc, t1, dy, pts + [(x, yg + dy, f)])
+        beam = sorted(cand.values(), key=lambda c: (-c[0], c[1]))[:WEST_BEAM]
+    return beam[0][3], beam[0][0]
+
+
 def west_traj(ax, yg, xs, ys, plan, t0):
     """往西進列者的絕對軌跡：(ax, yg) 在 t0 起步，照 plan 走到 (xs, yg)，再往北半格進座位 (xs, ys)，之後坐著。"""
     tr, last, t = [(ax, yg, t0)], (ax, yg), t0

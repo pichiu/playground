@@ -43,7 +43,7 @@ def test_lane_b_staggered(base):
 
 def test_total_length_band(base):
     people, (S, clocks) = _sched(base)
-    assert 15 < clocks['tGateStart'] < 60 and 300 < max(v['gate'] for v in S.values()) < 400   # 第 10 排切齊、到齊才起步：北行段排距拉長，全長約 368 秒
+    assert 15 < clocks['tGateStart'] < 60 and 300 < max(v['gate'] for v in S.values()) < 400   # 第 10 排切齊、整塊走、前面停後面也停：全長約 350 秒
 
 
 def test_ranks_fill_then_continuous(base):             # 每個大隊排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP
@@ -53,8 +53,11 @@ def test_ranks_fill_then_continuous(base):             # 每個大隊排滿門�
     G = routes.Geometry(base)
     M = build.march_of(G)
     # 整排並肩：所有排同一個速度剖面，穿過西一入口牆線的時刻 = t.enter + 該線的 τ
-    assert all(abs(S[p['id']]['enter'] - ranks[rank[p['id']]]) < 1e-9 and abs(S[p['id']]['gate'] - S[p['id']]['enter'] - M.tau_gate[p['gateLane']]) < 1e-9 for p in people)
-    held = lambda v: v.get('holdEnd', 0.0) - v.get('holdStart', 0.0)            # 迴廊候隊停的時間
+    last = max(p['dadui'] for p in people)
+    frozen = lambda p: sum(min(b, S[p['id']]['gate']) - a for a, b in S[p['id']].get('waits', []) if a < S[p['id']]['gate'])   # 最後一個大隊過門前可能跟著前面停
+    assert all(abs(S[p['id']]['enter'] - ranks[rank[p['id']]]) < 1e-9 for p in people)
+    assert all(abs(S[p['id']]['gate'] - S[p['id']]['enter'] - M.tau_gate[p['gateLane']] - (frozen(p) if p['dadui'] == last else 0.0)) < 1e-9 for p in people)
+    held = lambda v: sum(e - a for _, a, e, _k in v['tl']['stops'] if a < v['split'])   # 分出前停的時間：迴廊候隊＋前面停後面也停
     assert all(abs(S[p['id']]['split'] - S[p['id']]['enter'] - held(S[p['id']]) - M.tau_at_s(clocks['split'][p['dadui']])) < 1e-9 for p in people)
     assert min(b - a for a, b in zip(ranks, ranks[1:])) >= build.RANK_GAP - 1e-9
     for d in range(1, 10):                              # 每個大隊排滿門前隊伍才出發
