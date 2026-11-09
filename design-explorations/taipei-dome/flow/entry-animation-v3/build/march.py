@@ -22,6 +22,7 @@ SEAT_X0 = -4.934                         # 座位欄的網格原點（pai 1 那�
 # 就走在第 5–10 排地標東側緊鄰的欄間空隙（lane j 貼著第 5+j 排），離任何座位半格；最西的第 1 路離舞台階梯 0.24 以上。
 NORTH_X = SEAT_X0 + 7 * SP_SEAT
 NORTH = [(NORTH_X, 1.2)]
+ALIGN_X = NORTH_X + 2.5 * SP_SEAT           # 切齊線：第 10 排地標東側那條欄間空隙（第 6 路北行的線）；座位在它以東的人轉進自己那一列後走到這條線切齊
 R_GATE_IN, R_WALL, R_NORTH = 0.35, 0.45, 0.45
 SPLIT_AHEAD = 0.12                       # 大隊在最南一列之南這麼遠處分出
 NORTH_TY = -0.2                          # 中心線切線 ty < 這個值算「往北走」（北行段）；分出點一定在北行直線上（含大隊 9），不在就停止建置
@@ -220,30 +221,51 @@ class March:
 
     @staticmethod
     def turn_point(j, seat):
-        """第 j 路的人走到自己那一列要停下轉向的點，與是否往東：第 j 路在欄間空隙 x = NORTH_X + (j − 2.5) 欄；
-        座位在東側就停在自己那一列上 (x, 座位 Y)，往東；座位在西側就停在那一列南邊半格的列間空隙 (x, 座位 Y + 半格)，往西。"""
+        """第 j 路的人走到自己那一列的轉向點，與是否往東：第 j 路在欄間空隙 x = NORTH_X + (j − 2.5) 欄；
+        座位在東側就在自己那一列上 (x, 座位 Y) 右轉往東；座位在西側就在那一列南邊半格的列間空隙 (x, 座位 Y + 半格) 左轉往西。"""
         ax = NORTH_X + (j - 2.5) * SP_SEAT
         east = ax < seat[0]
         return (ax, seat[1] if east else seat[1] + GAP_H), east
+
+    @staticmethod
+    def kind(j, seat):
+        """分出後的走法：'align' 座位在第 10 排那條線（ALIGN_X）以東：轉進自己那一列後往東走到那條線切齊、同一排到齊才一起起步；
+        'east' 座位在自己那一路與那條線之間：轉進自己那一列直接往東到座位；'west' 座位在自己那一路西側：走列南邊半格的空隙往西。"""
+        (ax, _), east = March.turn_point(j, seat)
+        if not east:
+            return 'west'
+        return 'align' if seat[0] > ALIGN_X + 1e-6 else 'east'
+
+    @staticmethod
+    def wait_point(j, seat):
+        """'align' 的人在第 10 排那條線上等到齊的位置（自己那一列與 ALIGN_X 的交點）；其他人不等，回傳 None。"""
+        return (ALIGN_X, seat[1]) if March.kind(j, seat) == 'align' else None
 
     def tail(self, p0, heading, seat, f_lat=None, passes=None, plan=None):
         """分出之後的個人路線（不含 p0），分成兩段：(approach, depart)，點是 (x, y) 或 (x, y, 速度倍數)，沒寫倍數就是步速。
         座位都在同一個網格上（欄距、列距都是 SP_SEAT，原點 SEAT_X0），「欄間空隙」（座位欄 ± 半格）與「列間空隙」（座位列 ± 半格）
         離任何座位都是半格（GAP_H = 0.066），走在那裡不會擦過已坐好的人，也不會擦過正坐下的同排的人。
-        approach：沿自己那一路（欄間空隙）直直往北，走到自己那一列的轉向點（turn_point）停下。
-        depart：同一排六人都轉好之後一起起步（等多久由 build.schedule 算，這裡不管時間）——
-        1. 座位在東側：沿自己那一列往東到座位（同一列由東往西坐，經過的座位都還空著）。
-        2. 座位在西側：沿那一列南邊半格的列間空隙往西（west_plan 錯開還在往北走的人流；passes 是人流經過這條空隙的時刻，
-           相對起步時刻；plan 是 build.schedule 已經排好的走法），到座位正南方再往北半格進座位。f_lat：build.avoid 指定的往西那一段速度上限。
+        每人先沿自己那一路（欄間空隙）直直往北，走到自己那一列（kind 決定之後怎麼走）：
+        - 'align'：右轉沿自己那一列往東，走到第 10 排那條線（ALIGN_X，第 6 路北行的那條空隙）停下（approach 到這裡為止）；
+          同一排這類的人都在線上切齊了才一起起步（等多久由 build.schedule 算），往東到座位（depart）。
+        - 'east'：右轉沿自己那一列直接往東到座位（approach 到轉向點，depart 是座位，中間不等）。
+          同一列由東往西坐，經過的座位都還空著。
+        - 'west'：在那一列南邊半格的列間空隙左轉往西（west_plan 錯開還在往北走的人流；passes 是人流經過這條空隙的時刻，
+          相對起步時刻；plan 是 build.schedule 已經排好的走法），到座位正南方再往北半格進座位。f_lat：build.avoid 指定的往西那一段速度上限。
         路線上任何一點離舞台線稿不到 STAGE_MIN 就停止建置（座位或參數改了，產生時就知道，不必等 check.py）。"""
         if heading[1] >= NORTH_TY:
             raise SystemExit('分出點不在北行直線上')
         j = int(round((p0[0] - NORTH_X) / SP_SEAT + 2.5))
-        (ax, yt), east = self.turn_point(j, seat)
+        (ax, yt), _ = self.turn_point(j, seat)
         if abs(ax - p0[0]) > 1e-6:
             raise SystemExit(f'分出點 x {p0[0]:.4f} 不在第 {j} 路的欄間空隙上')
+        k = self.kind(j, seat)
         approach = [(ax, yt)]
-        if east:
+        if k == 'align':
+            if ALIGN_X > ax + 1e-9:
+                approach.append((ALIGN_X, yt))
+            depart = [tuple(seat)]
+        elif k == 'east':
             depart = [tuple(seat)]
         else:
             depart = list(plan if plan is not None else west_plan(ax, yt, seat[0], f_lat if f_lat is not None else 1.0, passes)) + [tuple(seat)]

@@ -483,7 +483,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
     <div class="eyebrow">怎麼看・3 步驟</div>
     <h2 id="help-h">1,609 位小人依序進場</h2>
     <ol>
-      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿第 5–10 排地標直線北行，走到自己那列再轉進座位。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
+      <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、下樓梯、在牆外排成門前隊伍，一排六人並肩穿過西一入口、在沿牆迴廊停好等下一大隊，再沿第 5–10 排地標直線北行，走到自己那列再轉進座位；座位在第 10 排以東的人先在第 10 排那條線切齊、同一排到齊才一起起步。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
       <li><span class="n" aria-hidden="true">2</span><div><strong>按章節鈕</strong><span class="d">離座、下樓梯、門前隊伍、穿過西一入口、迴廊候隊、北行進列、全部入座：跳到那個時間，鏡頭飛到特寫。拖曳轉鏡頭，<kbd>Shift</kbd>＋方向鍵也可以。</span></div></li>
       <li><span class="n" aria-hidden="true">3</span><div><strong>點一個小人，或搜尋「列 14 排 7」</strong><span class="d">鏡頭跟著他走，卡片顯示他的六步路線；清單可以跟隨一整列。<kbd>Esc</kbd> 或拖曳鏡頭解除。</span></div></li>
     </ol>
@@ -1410,7 +1410,7 @@ function wPart(arr,o,px,py,pz,ca,sa,K,lx,ly,lz,th){const ct=Math.cos(th),st=Math
 function treadTopAt(x,y){const L=x>built.stairXMid?(built.stairProfile.A.x>built.stairXMid?'A':'B'):(built.stairProfile.A.x>built.stairXMid?'B':'A'),a=built.treadTops[L];
   for(let j=0;j<a.length;j++)if(y>a[j][0]&&y<=a[j][1])return a[j][2];return -1;}
 // 某人在 t 之前最後一段有位移的 path 方向（只在 seek 定格且當下站住時用，代替「上一幀的 yaw」）
-// 走到自己那一列的轉向點、等同一排到齊（t.alignStart–t.alignEnd）：人已經轉好，面向接下來要走的方向（下一段有位移的 path 方向）
+// 在第 10 排那條線上切齊、等同一排到齊（t.alignStart–t.alignEnd）：面向接下來要走的方向（下一段有位移的 path 方向）
 function nextDirYaw(p,t){const a=p.path;for(let j=0;j<a.length-1;j++){if(a[j+1][2]<=t)continue;const dx=a[j+1][0]-a[j][0],dy=a[j+1][1]-a[j][1];if(Math.hypot(dx,dy)>1e-4)return Math.atan2(dx,dy);}return null;}
 const aligning=(p,t)=>p.t.alignStart!=null&&t>=p.t.alignStart-1e-3&&t<p.t.alignEnd;
 function lastDirYaw(p,t){const a=p.path;let lo=0,hi=a.length-1;if(t<=a[0][2])hi=1;else if(t>=a[hi][2])lo=hi-1;else while(hi-lo>1){const m=(lo+hi)>>1;if(a[m][2]<=t)lo=m;else hi=m;}
@@ -1434,7 +1434,7 @@ function updatePeople(t,dtAnim,snap){const n=P.length,K=zoomK(),kChanged=K!==peo
     else{const a=pos(p,t+DT_DIR),b=pos(p,t-DT_DIR),dx=a[0]-b[0],dz=a[1]-b[1],dist=Math.hypot(dx,dz);
       gait=clamp(dist/(2*DT_DIR)/spd,0,1);
       if(dist>=1e-4){const tgt=Math.atan2(dx,dz);if(snap||prev===255)yaw=tgt;else yaw+=clamp(wrapPi(tgt-yaw),-YAW_MAX,YAW_MAX);}
-      else if(aligning(p,t)){const tg=nextDirYaw(p,t);if(tg!=null){if(snap||prev===255)yaw=tg;else yaw+=clamp(wrapPi(tg-yaw),-YAW_MAX,YAW_MAX);}}   // 轉向點：轉好、面向要走的方向等到齊
+      else if(aligning(p,t)){const tg=nextDirYaw(p,t);if(tg!=null){if(snap||prev===255)yaw=tg;else yaw+=clamp(wrapPi(tg-yaw),-YAW_MAX,YAW_MAX);}}   // 切齊線：面向要走的方向等到齊
       else if(snap||prev===255)yaw=lastDirYaw(p,t);   // 站住：保留上一個 yaw；定格時沒有「上一個」，用最後一段位移方向
       pm.settle[i]=0;}
     yaw=wrapPi(yaw);pm.yaw[i]=yaw;pm.gait[i]=gait;pm.px[i]=px;pm.pz[i]=pz;pm.h[i]=h;
@@ -1699,11 +1699,11 @@ const STEP_TXT={'-1':'還在休息區座位上，輪到才起身。','0':'從座
 // 步驟的時間邊界 me.html 沒有改（迴廊候隊在「進」這一步裡），「進」的說明再依 t.holdStart／t.holdEnd 分成三段
 function stepTxt(k,p,t){const s=p.t,nx=p.dadui+1,hold=s.holdStart!=null;
   if(k===3)return `在牆外門前隊伍等候：要等整個大隊排滿才出發，之後一排緊跟一排${hold?`；進門後在沿牆迴廊停好，等大隊 ${nx} 排滿再進列`:''}。`;
-  if(k===4){if(!hold)return s.alignStart!=null&&t>=s.alignStart&&t<s.alignEnd?'走到自己那列轉好，等同一排六人都轉好才一起起步。':'和同一排六人並肩轉進西一入口，沿牆迴廊直接北行（最後一個大隊不停），沿第 5–10 排地標直線北行，走到自己那列轉好、等同一排都轉好才一起起步進座位。';
+  if(k===4){if(!hold)return s.alignStart!=null&&t>=s.alignStart&&t<s.alignEnd?'走到自己那列、往東走到第 10 排那條線切齊，等同一排都到齊才一起起步。':'和同一排六人並肩轉進西一入口，沿牆迴廊直接北行（最後一個大隊不停），沿第 5–10 排地標直線北行，到自己那列再轉進座位'+(s.alignStart!=null?'（座位在第 10 排以東：先在第 10 排那條線切齊、同一排到齊才一起起步）':'')+'。';
     if(t<s.holdStart)return '和同一排六人並肩轉進西一入口，沿牆迴廊走到停的位置。';
     if(t<s.holdEnd)return `在沿牆迴廊停好，等大隊 ${nx} 排滿門前隊伍再走。`;
-    if(s.alignStart!=null&&t>=s.alignStart&&t<s.alignEnd)return '走到自己那列轉好，等同一排六人都轉好才一起起步。';
-    return '迴廊放行：整排沿第 5–10 排地標直線北行，走到自己那列轉好、等同一排六人都轉好才一起起步進座位。';}
+    if(s.alignStart!=null&&t>=s.alignStart&&t<s.alignEnd)return '走到自己那列、往東走到第 10 排那條線切齊，等同一排都到齊才一起起步。';
+    return '迴廊放行：整排沿第 5–10 排地標直線北行，到自己那列再轉進座位'+(s.alignStart!=null?'（座位在第 10 排以東：先在第 10 排那條線切齊、同一排到齊才一起起步）':'')+'。';}
   return STEP_TXT[String(k)];}
 const stepSub=(k,p,t)=>k!==4?0:aligning(p,t)?4:p.t.holdStart==null?0:t<p.t.holdStart?1:t<p.t.holdEnd?2:3;   // 說明文字分段：迴廊前／停／放行，與轉向點等到齊
 const card={i:-1,steps:null,cur:-2,sub:-1,bd:new Float64Array(6)};

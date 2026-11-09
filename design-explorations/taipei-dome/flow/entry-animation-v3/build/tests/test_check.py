@@ -32,7 +32,7 @@ def test_check_all_green(built):
     assert C['seats']['unique'] == 1609 and C['seats']['illegal'] == 0 == C['seats']['orderViolations'] == C['seats']['wrongSection'] == C['seats']['orderCoverage']
     assert C['capacity']['142'] == dict(used=255, capacity=255, fieldsOk=True)
     assert all(v['minGap'] >= check.GAP_MIN and v['maxGapWithin'] <= check.GAP_MAX and v['maxGapBoundaryNet'] <= check.BOUNDARY_MAX for v in C['continuity']['stair'].values())   # 交界扣掉等門前隊伍空位的延後
-    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithin'] <= check.GATE_GAP_MAX and v['maxGapBoundary'] <= check.GATE_BOUNDARY_MAX for v in C['continuity']['gate'].values())
+    assert all(v['minGap'] >= check.GATE_GAP_MIN and v['maxGapWithinHeld'] <= check.GATE_GAP_MAX and v['maxGapWithin'] <= check.GATE_GAP_MAX_LAST and v['maxGapBoundary'] <= check.GATE_BOUNDARY_MAX for v in C['continuity']['gate'].values())
     assert D['meta']['checks']['ok'] is True and all(D['meta']['checks'][k] == C[k] for k in check.COMPARED)
 
 

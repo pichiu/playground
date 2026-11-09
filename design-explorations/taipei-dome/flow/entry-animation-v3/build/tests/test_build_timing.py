@@ -43,7 +43,7 @@ def test_lane_b_staggered(base):
 
 def test_total_length_band(base):
     people, (S, clocks) = _sched(base)
-    assert 15 < clocks['tGateStart'] < 60 and 360 < max(v['gate'] for v in S.values()) < 410   # 到齊才起步：北行段排距約 0.6 秒，全長約 397 秒
+    assert 15 < clocks['tGateStart'] < 60 and 300 < max(v['gate'] for v in S.values()) < 400   # 第 10 排切齊、到齊才起步：北行段排距拉長，全長約 368 秒
 
 
 def test_ranks_fill_then_continuous(base):             # 每個大隊排滿門前隊伍才出發；之後一排六人一起離開隊頭，排與排至少 RANK_GAP

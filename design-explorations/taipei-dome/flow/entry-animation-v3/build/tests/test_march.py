@@ -117,20 +117,29 @@ def test_west_plan_needs_offsets():                     # 等速直走過 5 條�
     assert _plan_min(ax, yg, xs, march.west_plan(ax, yg, xs)) > 0.035
 
 
-def test_tail_turns_at_own_row(base):                   # 分出後沿自己那一路往北，走到自己那一列的轉向點停下（approach），之後直行（depart）：東側沿列、西側走列南邊半格的空隙
+def test_tail_turns_at_own_row(base):                   # 分出後沿自己那一路往北到自己那一列才轉；座位在第 10 排以東走到切齊線停下，其餘直接到座位
     G, M = _m(base)
     ax = march.NORTH_X + 0.5 * march.SP_SEAT                                     # 第 4 路（貼第 8 排）
     p0, north = (ax, 6.2), (0.0, -1.0)
     ys = 5.5
     near = lambda q, r: math.dist(q[:2], r) < 1e-9
-    seat_e = (ax + 3.5 * march.SP_SEAT, ys)
+    seat_a = (march.ALIGN_X + 1.5 * march.SP_SEAT, ys)                          # 第 10 排以東：切齊
+    assert M.kind(3, seat_a) == 'align' and near(M.wait_point(3, seat_a), (march.ALIGN_X, ys))
+    app, dep = M.tail(p0, north, seat_a)
+    assert len(app) == 2 and near(app[0], (ax, ys)) and near(app[1], (march.ALIGN_X, ys))   # 正北到自己那一列、往東到切齊線
+    assert len(dep) == 1 and near(dep[0], seat_a)
+    seat_e = (ax + 1.5 * march.SP_SEAT, ys)                                      # 自己那一路與第 10 排之間：直接往東
+    assert M.kind(3, seat_e) == 'east' and M.wait_point(3, seat_e) is None
     app, dep = M.tail(p0, north, seat_e)
-    assert len(app) == 1 and near(app[0], (ax, ys)) and app[0] == M.turn_point(3, seat_e)[0]   # 停在自己那一列上，正北直走過來
-    assert len(dep) == 1 and near(dep[0], seat_e)                                # 往東直行到座位
-    seat_w = (ax - 2.5 * march.SP_SEAT, ys)
+    assert len(app) == 1 and near(app[0], (ax, ys)) and len(dep) == 1 and near(dep[0], seat_e)
+    seat_w = (ax - 2.5 * march.SP_SEAT, ys)                                      # 西側：列南邊半格的空隙往西
+    assert M.kind(3, seat_w) == 'west'
     app, dep = M.tail(p0, north, seat_w)
-    assert len(app) == 1 and near(app[0], (ax, ys + march.GAP_H))                # 停在自己那一列南邊半格
+    assert len(app) == 1 and near(app[0], (ax, ys + march.GAP_H))
     assert near(dep[-1], seat_w) and near(dep[-2], (seat_w[0], ys + march.GAP_H))
+    seat_6 = (march.ALIGN_X + 0.5 * march.SP_SEAT, ys)                          # 第 6 路本來就在切齊線上：不必往東，直接停
+    app, _ = M.tail((march.ALIGN_X, 6.2), north, seat_6)
+    assert len(app) == 1 and near(app[0], (march.ALIGN_X, ys))
     try:
         M.tail(p0, (1.0, 0.0), (ax, ys))
     except SystemExit:

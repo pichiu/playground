@@ -22,9 +22,10 @@ from geo import Poly, pairs
 GAP_MIN, GAP_MAX = round(build.HEADWAY - 0.15, 3), round(build.HEADWAY + 0.15, 3)   # 樓梯口節拍容許 ± 0.15（避撞平移）
 BOUNDARY_MAX = 7.0                 # 大隊交界的外框；每一處交界另外要等於規則值 HEADWAY×人數差 + HEADWAY + DADUI_GAP（± RULE_SLACK），那才是緊的檢核（現在最多約 3.6 秒）
 GATE_GAP_MIN = round(build.RANK_GAP - 0.01, 3)   # 西一入口每條線：一排接一排（整排並肩段所有排同一個速度剖面，不再平移；容許四捨五入）
-GATE_GAP_MAX = round(build.RANK_GAP + 0.6, 3)    # 同一大隊內：隊伍不停就是 RANK_GAP，容許避撞平移與短暫停住
+GATE_GAP_MAX = round(build.RANK_GAP + 0.6, 3)    # 同一大隊內（在迴廊停的大隊）：隊伍不停就是 RANK_GAP，容許避撞平移與短暫停住
+GATE_GAP_MAX_LAST = 1.5            # 最後一個大隊不在迴廊停，隊頭就照北行段的間隔出發（切齊線上同一路要先走開，實測最長 1.3 秒）
 RULE_SLACK = 0.4                   # 交界規則值 = 節拍 ×（兩路該大隊人數差）+ 節拍 + 大隊空檔（build.HEADWAY、build.DADUI_GAP），容許錯開與避撞平移 0.4（spec §4）
-GATE_BOUNDARY_MAX = 25.0           # 西一入口每條線兩個大隊之間的空檔上限：下一大隊要等前一大隊離開沿牆迴廊才進門；北行段「到齊才一起起步」後每排間隔約 0.6 秒，前一大隊放行要約 20 秒（實測最長 21.4 秒）
+GATE_BOUNDARY_MAX = 45.0           # 西一入口每條線兩個大隊之間的空檔上限：下一大隊要等前一大隊離開沿牆迴廊才進門；北行段要等切齊線上同一路先走開、往西者排得出走法，前一大隊放行約 30 秒（實測最長 36.3 秒）
 SHIFT_TOL = 0.01                   # 同一排離開隊頭的時刻差、排距的容許（避撞不再平移時間線，只容許四捨五入；舊版 0.16）
 WAIT_SLACK = 0.05                  # 步速段的時間不得超過路程 / 步速 + 這麼多（座標與時刻四捨五入的誤差）
 POPULATION = 1609
@@ -342,15 +343,18 @@ def lane_map(data, by_rank):
         if any(abs(q[1] - fy) > ROW_TOL for q in row) or not toward:
             bad.append(dict(who=p['id'], why='east'))
     for r, ps in by_rank.items():
-        # 到齊才一起起步：同一排的 t.alignEnd 相同、不早於任何人的 t.alignStart；
-        # 每人 t.alignStart 那一刻在自己那一路的轉向點（march.turn_point），站到 t.alignEnd 才離開
-        ends = {p['t'].get('alignEnd') for p in ps}
-        if None in ends or max(ends) - min(ends) > 2e-3 or any(p['t']['alignStart'] > min(ends) + 2e-3 for p in ps):
+        # 切齊才一起起步：座位在第 10 排那條線以東的人（march.kind == 'align'）都有 t.alignStart／t.alignEnd，其他人沒有；
+        # 同一排這些人的 t.alignEnd 相同、不早於任何人的 t.alignStart；每人 t.alignStart 那一刻在切齊線上自己那一列（march.wait_point），站到 t.alignEnd 才離開
+        al = [p for p in ps if march.March.kind(p['gateLane'], (p['field']['X'], p['field']['Y'])) == 'align']
+        if any(('alignStart' in p['t']) != (p in al) for p in ps):
+            bad.append(dict(rank=r, why='align kind'))
+        ends = {p['t'].get('alignEnd') for p in al}
+        if al and (None in ends or max(ends) - min(ends) > 2e-3 or any(p['t']['alignStart'] > min(ends) + 2e-3 for p in al)):
             bad.append(dict(rank=r, why='align'))
-        for p in ps:
+        for p in al:
             if 'alignStart' not in p['t']:
                 continue
-            (tx_, ty_), _ = march.March.turn_point(p['gateLane'], (p['field']['X'], p['field']['Y']))
+            tx_, ty_ = march.March.wait_point(p['gateLane'], (p['field']['X'], p['field']['Y']))
             tr = _Track(p['path'])
             for tq in (p['t']['alignStart'], p['t']['alignEnd']):
                 if math.dist(tr.at(tq), (tx_, ty_)) > 0.003:
@@ -498,6 +502,9 @@ def check_all(data, coll=None):
     for j in range(6):
         ps = sorted((p for p in persons if p['gateLane'] == j), key=lambda p: p['gateIdx'])
         gate[str(j)] = _gaps(ps, 'gate', 'dadui')
+        last = max(p['dadui'] for p in persons)
+        held = [b['t']['gate'] - a['t']['gate'] for a, b in zip(ps, ps[1:]) if a['dadui'] == b['dadui'] != last]
+        gate[str(j)]['maxGapWithinHeld'] = round(max(held), 3) if held else 0.0
     n_ld = collections.Counter((p['lane'], p['dadui']) for p in persons)
     delay = {int(k): v for k, v in (data['meta'].get('stairDelay') or {}).items()}   # 樓梯時鐘為了等門前隊伍有空位而延後的秒數（build.schedule）
     rule_bad, net = [], {L: 0.0 for L in plan.LANES}
@@ -513,7 +520,7 @@ def check_all(data, coll=None):
     for L in plan.LANES:
         stair[L]['maxGapBoundaryNet'] = round(net[L], 3)            # 扣掉等門前隊伍空位的延後之後的交界空檔
     cont_ok = not rule_bad and all(v['maxGapBoundary'] <= GATE_BOUNDARY_MAX for v in gate.values()) and all(v['orderOk'] and v['minGap'] >= GAP_MIN and v['maxGapWithin'] <= GAP_MAX and v['maxGapBoundaryNet'] <= BOUNDARY_MAX for v in stair.values()) and \
-        all(v['orderOk'] and v['minGap'] >= GATE_GAP_MIN and v['maxGapWithin'] <= GATE_GAP_MAX for v in gate.values())
+        all(v['orderOk'] and v['minGap'] >= GATE_GAP_MIN and v['maxGapWithinHeld'] <= GATE_GAP_MAX and v['maxGapWithin'] <= GATE_GAP_MAX_LAST for v in gate.values())
     out['continuity'] = dict(stair=stair, gate=gate, stairDelay={str(k): v for k, v in sorted(delay.items())}, boundaryRuleViolations=len(rule_bad), boundaryExamples=rule_bad[:3], ok=cont_ok)
     # 3b. 步速與門前隊伍：離座 → 線起點 → 追上隊伍 全程步速；隊伍裡（t.assembly → t.enter）只在自己那條線上慢行或站住、
     #     不快過 build.SLOW、不排到側移完成之前；離開隊頭之後不快過步速（整排轉彎時內圈放慢），除了迴廊候隊（t.holdStart → t.holdEnd）不停；分出（t.split）之後步速
@@ -676,7 +683,7 @@ def main(path):
          '0 / 0', A['upstreamViolations'] == 0 == A['notFullSwitches']),
         ('路徑交叉（B2 六列 / B1 兩路）', f"{Rt['crossings']}", '0', Rt['crossings'] == 0),
         ('不斷拍', f"樓梯 {rng(Cn['stair'].values())}，交界扣掉等門前隊伍空位的延後 ≤ {max(v['maxGapBoundaryNet'] for v in Cn['stair'].values())}（延後 {max(Cn['stairDelay'].values(), default=0)} 秒以內；超出規則值 {Cn['boundaryRuleViolations']} 處）；西一入口 {rng(Cn['gate'].values())}",
-         f'樓梯 {GAP_MIN}–{GAP_MAX}、交界 ≤ {BOUNDARY_MAX}；西一入口 ≥ {GATE_GAP_MIN}、大隊內 ≤ {GATE_GAP_MAX}、大隊間 ≤ {GATE_BOUNDARY_MAX}', Cn['ok']),
+         f'樓梯 {GAP_MIN}–{GAP_MAX}、交界 ≤ {BOUNDARY_MAX}；西一入口 ≥ {GATE_GAP_MIN}、大隊內 ≤ {GATE_GAP_MAX}（最後一個大隊 ≤ {GATE_GAP_MAX_LAST}）、大隊間 ≤ {GATE_BOUNDARY_MAX}', Cn['ok']),
         ('步速與門前隊伍（隊伍裡只在自己那條線慢行或站住；之後除了迴廊候隊不停、不快過步速）', f"{C['pace']['violations']}（每人在隊伍裡 {C['pace']['minBlock']}–{C['pace']['maxBlock']} 秒；t.gate 與穿牆時刻差 ≤ {C['pace']['gateTimeErr']}）", '0', C['pace']['violations'] == 0),
         ('一排六人一起進門（每個大隊排滿才出發、排距、前後間距）', f"{C['ranks']['violations']}（{C['ranks']['n']} 排；同排最大差 {C['ranks']['maxSkew']} 秒；排距 ≥ {C['ranks']['minGap']}；前後 ≥ {C['ranks']['minSpacing']}）", '0', C['ranks']['violations'] == 0),
         ('並肩（t.enter → 分出，每 0.1 秒）', f"{F['violations']}（{F['samples']} 次取樣；偏離橫排 ≤ {F['maxAngle']}°、間距誤差 ≤ {F['maxSpacingErr']}、中心偏 ≤ {F['maxCenterOff']}、離平移線 ≤ {F['maxTrackDev']}）",
