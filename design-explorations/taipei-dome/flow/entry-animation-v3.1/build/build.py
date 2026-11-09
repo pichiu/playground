@@ -237,23 +237,18 @@ def _at_time(path, t):
 
 def _arc_len(path, t):
     """名目路徑從起點到 t 時刻的路程。"""
-    c = 0.0
-    for q0, q1 in zip(path, path[1:]):
-        if q1[2] >= t:
-            return c + math.dist(q0[:2], _at_time([q0, q1], t))
-        c += math.dist(q0[:2], q1[:2])
-    return c
+    c = cum([q[:2] for q in path])
+    k = max(0, min(len(path) - 2, bisect.bisect_right([q[2] for q in path], t) - 1))
+    return c[k] + math.dist(path[k][:2], _at_time(path, t))
 
 
 def _time_at_len(path, L):
-    """名目路徑走到路程 L 的時刻（路程 ≤ 0 回起點時刻）。"""
-    c = 0.0
-    for q0, q1 in zip(path, path[1:]):
-        d = math.dist(q0[:2], q1[:2])
-        if c + d >= L and d > 0:
-            return q0[2] + (q1[2] - q0[2]) * (L - c) / d
-        c += d
-    return path[-1][2]
+    """名目路徑走到路程 L 的時刻（超出兩端就取端點時刻）。"""
+    c = cum([q[:2] for q in path])
+    k = max(0, min(len(path) - 2, bisect.bisect_right(c, L) - 1))
+    q0, q1 = path[k], path[k + 1]
+    f = max(0.0, min(1.0, (L - c[k]) / (c[k + 1] - c[k]))) if c[k + 1] > c[k] else 0.0
+    return q0[2] + (q1[2] - q0[2]) * f
 
 
 def align_holds(people, paths, sched):
@@ -286,13 +281,13 @@ def align_holds(people, paths, sched):
         release[d], heads[d] = R, [lane[j][0]['id'] for j in sorted(lane)]
         stop = {}                                        # id → 名目停下時刻（還沒決定停不停之前也記：給同一路後一位算）
         for k in range(max(len(v) for v in lane.values())):
-            cand = {}
+            cand = []                                    # (人, 名目停下時刻)
             for j, v in lane.items():
                 if k >= len(v):
                     continue
                 p = v[k]
                 if k == 0:
-                    cand[p['id']] = arrive_align[j]
+                    cand.append((p, arrive_align[j]))
                     continue
                 lead = v[k - 1]
                 if lead['id'] not in holds:
@@ -300,11 +295,11 @@ def align_holds(people, paths, sched):
                 hs_l = stop[lead['id']]
                 t_pl = hs_l + sched[p['id']]['enter'] - sched[lead['id']]['enter']   # 自己名目走到前一位停住處的時刻（同一路前段路線、速度剖面相同）
                 tc = _time_at_len(paths[p['id']], _arc_len(paths[p['id']], t_pl) - ALIGN_GAP)
-                cand[p['id']] = max(tc, hs_l)
-            for pid, hs in cand.items():
+                cand.append((p, max(tc, hs_l)))
+            for p, hs in cand:
+                pid = p['id']
                 if R - hs < WAIT_MIN:
                     continue
-                p = next(q for q in ps if q['id'] == pid)
                 if p['field']['X'] <= march.ALIGN_X + 1e-9:
                     raise SystemExit(f'第 9 排以內的 {pid} 被前面停住的人擋到（大隊 {d}）：ALIGN_GAP 或排距要改')
                 if hs <= sched[pid]['gate'] + 1e-9:

@@ -27,7 +27,7 @@ WALK_TOL = 0.04                          # insideWalk 折線簡化的容許誤�
 SEAT_X0 = -4.934                         # 座位欄的網格原點（pai 1 那一欄）；欄距 = SP_SEAT
 # 北行段：沿牆段轉北之後一條直線往北，不閃舞台、不上階梯。中心線在第 7 排（pai 7）那一欄上，六路（半整數偏移）
 # 就走在第 4–9 排地標東側緊鄰的欄間空隙（lane j 貼著第 4+j 排），離任何座位半格（11/9 由第 5–10 排整體往西移一欄）。
-# 最西的第 1 路在 y ≈ 3.1 離舞台東側階梯 0.111（不跨任何階梯線），所以 STAGE_MIN 由 0.15 放寬到 0.10，見 STAGE_MIN。
+# 最西的第 1 路在 y ≈ 3.1 離舞台東側階梯 0.111（不跨任何階梯線），所以那條線上用 STAGE_MIN_NORTH 0.10，其餘仍 STAGE_MIN 0.15。
 NORTH_X = SEAT_X0 + 6 * SP_SEAT
 NORTH = [(NORTH_X, 1.2)]
 # 北轉圓角 0.45 → 0.42（11/9）：北行線往西一欄後，沿牆段延長線與北行線的交點往北移，0.45 的弧要到 y 7.937 才結束，
@@ -37,8 +37,9 @@ SPLIT_AHEAD = 0.12                       # 大隊在最南一列之南這麼遠�
 NORTH_TY = -0.2                          # 中心線切線 ty < 這個值算「往北走」（北行段）；分出點一定在北行直線上（含大隊 9），不在就停止建置
 TURN_R = 0.08                            # 分出後各人轉進自己那一列的轉彎半徑
 GAP_H = SP_SEAT / 2                      # 半格：兩列（兩欄）中間的空隙離座位的距離
-STAGE_MIN = 0.10                         # 分出後的路線離舞台線稿至少這麼遠（和 check.py 的 STAGE_MIN 相同；產生時就檢查，不靠事後檢核）。
-                                         # 11/9 由 0.15 放寬：第 1 路改走第 4 排地標東側後，在舞台東側階梯旁最近 0.111（約 0.84 m），仍在地面、不跨階梯線
+STAGE_MIN = 0.15                         # 分出後的路線離舞台線稿至少這麼遠（和 check.py 的 STAGE_MIN 相同；產生時就檢查，不靠事後檢核）
+STAGE_MIN_NORTH = 0.10                   # 11/9 例外（同 check.STAGE_MIN_NORTH）：第 1 路的北行線（第 4 排地標東側空隙）在舞台東側階梯旁最近 0.111（約 0.84 m），
+                                         # 仍在地面、不跨階梯線；只有在那條線上的點用這個門檻
 # 第 9 排對齊（11/9）：分出後轉進自己那一列往東的人，座位在第 9 排以東（第 10 排起）的，隊頭先走到第 9 排東側那條欄間空隙
 # （= 第 6 路北行的那條線）停住；同一大隊六列隊頭都到了才一起往東走。第 9 排與以內的人直接到位、不停（見 build.align_holds）。
 ALIGN_PAI = 9
@@ -296,8 +297,9 @@ class March:
             n = max(1, int(math.ceil(math.dist(prev[:2], q[:2]) / 0.02)))
             for k in range(1, n + 1):
                 x, y = prev[0] + (q[0] - prev[0]) * k / n, prev[1] + (q[1] - prev[1]) * k / n
-                if self.stage_clear((x, y)) < STAGE_MIN:
-                    raise SystemExit(f'座位 {seat} 的進列路線在 ({x:.3f}, {y:.3f}) 離舞台不到 {STAGE_MIN}')
+                lim = STAGE_MIN_NORTH if abs(x - (NORTH_X - 2.5 * SP_SEAT)) <= GAP_H else STAGE_MIN   # 同 check.NORTH_LINE_TOL：第 1 路北行線兩側半格，含它在階梯旁轉進列的彎
+                if self.stage_clear((x, y)) < lim:
+                    raise SystemExit(f'座位 {seat} 的進列路線在 ({x:.3f}, {y:.3f}) 離舞台不到 {lim}')
             prev = q
 
 

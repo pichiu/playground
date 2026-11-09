@@ -39,8 +39,10 @@ SPEED_EPS = 1e-6                   # 中心線取樣（9 位小數）重算的�
 PATH_SPEED_ABS = 0.004             # 路徑（3 位小數）逐段速度：路程 ≤ V·Δt + 這麼多（四捨五入誤差）
 ROW_TOL = 0.005                    # 進列時 Y 與 field.Y
 STAGE_OFF_TOL = 0.02               # 集合區六路的偏移（B2 走廊折線在 u 6.9（截過的 u）有一個折角，中心線倒圓角後離折線最多約 0.02）
-STAGE_MIN = 0.10                   # 離舞台線稿（base.stage 中 X < −4.5 的部分）。11/9 由 0.15 放寬：北行改走第 4–9 排地標後，
-                                   # 第 1 路在 y ≈ 3.1 離舞台東側階梯 0.111（約 0.84 m），不跨階梯線（MAX_STEPS 仍是 0）；其餘路段都還 ≥ 0.15
+STAGE_MIN = 0.15                   # 離舞台線稿（base.stage 中 X < −4.5 的部分）
+STAGE_MIN_NORTH = 0.10             # 11/9 例外：北行改走第 4–9 排地標後，第 1 路那條北行線（x = map.march 北行直線的 lane 0）在 y ≈ 3.1
+                                   # 離舞台東側階梯 0.111（約 0.84 m），不跨階梯線（MAX_STEPS 仍是 0）；只有在那條線上的點用這個門檻，其餘仍 ≥ STAGE_MIN
+NORTH_LINE_TOL = 0.0658            # 第 1 路北行線兩側半格（到第 4、5 排座位欄為止，= march.GAP_H）：含第 1 路在階梯旁轉進列的彎
 STAGE_X = -4.5
 SUBDIV = 0.02                      # 幾何避讓：路徑每 0.02 細分
 STAIR_BOX = (-5.6, -4.3, 0.8, 4.5) # 數「跨過幾條階梯線」的範圍（x0, x1, y0, y1）：場內舞台東緣這一帶
@@ -525,7 +527,10 @@ def geometry(data):
             xx = SB[:, 0] + (SB[:, 2] - SB[:, 0]) * (Q[:, 1:2] - ay) / (by - ay)
         steps[idx] = (span & (xx > Q[:, 0:1]) & (xx < x1)).sum(1)
     bad_steps = int((steps > MAX_STEPS).sum())
-    near_out = int((best < STAGE_MIN).sum())
+    m = data['map']['march']
+    x_l0 = m['x'][-1] + m['ty'][-1] * 2.5 * m['sp'][-1]          # 北行直線（中心線最後一點）上的第 1 路 x
+    on_north = np.abs(P[:, 0] - x_l0) <= NORTH_LINE_TOL
+    near_out = int((best < np.where(on_north, STAGE_MIN_NORTH, STAGE_MIN)).sum())
     k = int(best.argmin()) if len(best) else 0
     min_stage = float(best[k]) if len(best) else 9.0
     return dict(points=int(len(P)), minStage=round(min(min_stage, 9.0), 4), stageNear=near_out, wallOutside=wall_out,
@@ -596,11 +601,14 @@ def align(data):
                 L, prev = 0.0, q_f
                 for q in a_f[i0 + 1:]:
                     seg = math.dist(prev[:2], q[:2])
-                    if math.dist(prev[:2], q_lead[:2]) + math.dist(q_lead[:2], q[:2]) - seg < 1e-6:   # 前一位停在這一段上
+                    if math.dist(prev[:2], q_lead[:2]) + math.dist(q_lead[:2], q[:2]) - seg < ALIGN_TOL:   # 前一位停在這一段上（路徑存三位小數）
                         L += math.dist(prev[:2], q_lead[:2])
                         break
                     L += seg
                     prev = q
+                else:                                     # 前一位停的位置不在後一位的路線上：同一路應該共用前段路線
+                    bad.append(dict(why='gapOffPath', at=list(q_lead[:2])))
+                    continue
                 min_gap = min(min_gap, L)
     if min_gap < A['gap'] - ALIGN_TOL:
         bad.append(dict(why='gap', minGap=round(min_gap, 4)))
@@ -839,7 +847,7 @@ def main(path):
         ('lane 對應（lane j → 列 6k−5+j、進列後在自己那一列朝座位走）', f"{Lm['violations']}（進列後 Y 偏差 ≤ {Lm['maxRowDev']}）", f'0（≤ {ROW_TOL}）', Lm['violations'] == 0),
         ('B2 集合區（九個集合位置依序不重疊、入口前留空、站在自己那一路那一格、到位前不停、兩路走通行帶、九隊站齊才依序放行）', f"{St['violations']}（{St['blocks']} 個位置；到位前最長停留 {St['maxWaitBeforeSlot']} 秒；通行帶越界 {St['bypassViolations']}；動畫裡同時有人在集合區的大隊最多 {St['peakDaduiInArea']} 個）", '0', St['violations'] == 0),
         ('幾何避讓（只在門洞穿牆、離舞台、不上階梯）', f"{Ge['violations']}（門洞外穿牆 {Ge['wallOutside']}；離舞台最近 {Ge['minStage']}，< {STAGE_MIN} 的點 {Ge['stageNear']}；走上階梯最多 {Ge['maxSteps']} 階、越界 {Ge['stepViolations']}）",
-         f'0（≥ {STAGE_MIN}；上階梯 {MAX_STEPS} 階）', Ge['violations'] == 0),
+         f'0（≥ {STAGE_MIN}，第 1 路北行線 ≥ {STAGE_MIN_NORTH}；上階梯 {MAX_STEPS} 階）', Ge['violations'] == 0),
         ('第 9 排對齊（隊頭停在第 9 排、對齊、到齊一起出發；第 9 排以內不停）', f"{Al['violations']}（停住 {Al['holders']} 人、最長 {Al['maxHold']} 秒；最後一位隊頭到達與出發差 ≤ {Al['maxReleaseErr']}；停住前後間距 ≥ {Al['minGap']}）",
          f"0（間距 ≥ {data['map']['align']['gap']}）", Al['violations'] == 0),
         ('座位唯一 / 違規席 / 區不符 / 順序違反 / 名單不符', f"{S['unique']} / {S['illegal']} / {S['wrongSection']} / {S['orderViolations']} / {S['orderCoverage']}", f'{POPULATION} / 0 / 0 / 0 / 0',

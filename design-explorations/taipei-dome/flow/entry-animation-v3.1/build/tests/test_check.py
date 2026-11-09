@@ -229,7 +229,7 @@ def test_wheel_items_green(built):                     # 整排轉彎新增的�
     assert F['violations'] == 0 and F['maxAngle'] <= check.ANGLE_MAX and F['maxSpacingErr'] <= check.SPACING_TOL and F['maxCenterOff'] <= check.CENTER_TOL
     assert W['violations'] == 0 and W['maxSpeed'] <= D['meta']['speedUnitPerSec'] + check.SPEED_EPS and W['minInnerR'] >= 0.08 and W['minInnerSpeed'] > 0
     assert L['violations'] == 0 and L['maxRowDev'] <= check.ROW_TOL
-    assert G['violations'] == 0 and G['minStage'] >= check.STAGE_MIN and G['wallOutside'] == 0
+    assert G['violations'] == 0 and G['minStage'] >= check.STAGE_MIN_NORTH and G['wallOutside'] == 0
 
 
 def test_check_detects_broken_rank(built):             # 並肩：把一人在沿牆段往旁邊推 0.03，排就不齊

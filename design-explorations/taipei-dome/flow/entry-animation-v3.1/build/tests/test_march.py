@@ -80,7 +80,7 @@ def test_north_line_off_stage(base):                    # 北行直線上六路�
         if s < M.sp1:
             continue
         for j in range(6):
-            assert M.stage_clear(M.lane_xy(s, j)) >= march.STAGE_MIN
+            assert M.stage_clear(M.lane_xy(s, j)) >= (march.STAGE_MIN_NORTH if j == 0 else march.STAGE_MIN)   # 第 1 路北行線是 11/9 的例外
 
 
 def _plan_min(ax, yg, xs, pl):

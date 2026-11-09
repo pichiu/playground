@@ -2364,7 +2364,7 @@ const CHAPTERS=(()=>{let f1=1e9,n1=1e9;for(const p of P)if(p.dadui===1){f1=Math.
   const pk=(key,t0)=>{const r=chapterPeak(key,t0);return {t:r.t,t0,peak:r};};
   return [{key:'leave',name:'離座',full:'離座',t:D.meta.t0,t0:D.meta.t0,shot:'exit'},
     {key:'stair',name:'下樓梯',full:'下樓梯',...pk('stair',D.groups[0].tStairFirst),shot:'stair'},
-    // 版本 3.1：兩路轉六路（原始時間＝大隊 1 第一人到六路起點前 1.5 秒）、集合區（大隊 1 白衣全員站定）、穿過西一入口、北行進列（大隊 1 排頭在第 9 排對齊、一起出發）
+    // 版本 3.1：兩路轉六路（原始時間＝大隊 1 第一人到六路起點前 1.5 秒）、集合區（大隊 1 白衣全員站定）、穿過西一入口、北行進列（大隊 1 排頭在第 9 排對齊、一起出發；t0＝大隊 1 第一排到北轉，只記在 debug.chapters）
     {key:'fan',name:'兩路轉六路',full:'在自己那一排後方迴轉、白藍各散成三路',...pk('fan',f1),shot:'fan'},
     {key:'queue',name:'集合區',full:'B2 集合區（九個集合位置）',...pk('queue',D.groups[0].tAssembly),shot:'queue'},
     {key:'gate',name:'穿過西一入口',full:'放行、右轉穿過西一入口',...pk('gate',D.meta.tGateStart),shot:'gate'},
