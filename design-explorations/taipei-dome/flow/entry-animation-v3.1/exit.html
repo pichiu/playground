@@ -158,7 +158,7 @@ const {esc}=Dome;
 const BLUE=['#d3e3f8','#b2cdf1','#8fb4e9','#6c9ae0','#3a6bbd','#2c5aa8','#244b92','#1d3d7a','#162f62'];
 const WARM=['#fbf4e3','#f4e8c6','#ecd9a7','#e2c98a','#d6b86f','#c7a65a','#b59348','#86672a','#6d5320'];
 // 合心區色：區別讀 persons[].a（高雄 1-1–49-11、屏東 50-11–7-14、嘉義 8-14–54-15、台南 1-16–50-22、桃竹 1-23–28-34，列-位置）。
-const AREAS=[{name:'高雄',c:'#b8442e',ink:'#ffffff'},{name:'屏東',c:'#e9c46a',ink:'#1b2629'},{name:'嘉義',c:'#7cbf8a',ink:'#1b2629'},{name:'台南',c:'#2f6690',ink:'#ffffff'},{name:'桃竹',c:'#7d4a8c',ink:'#ffffff'}];
+const AREAS=[{name:'高雄',c:'#b8442e',ink:'#ffffff'},{name:'屏東',c:'#e9c46a',ink:'#1b2629'},{name:'嘉義',c:'#7cbf8a',ink:'#1b2629'},{name:'台南',c:'#7a5232',ink:'#ffffff'},{name:'桃竹',c:'#7d4a8c',ink:'#ffffff'}];
 const AREA=Object.fromEntries(AREAS.map(a=>[a.name,a]));
 let paint='dadui';   // dadui＝藍白大隊色；area＝合心區色
 const colorOf=p=>paint==='area'?AREA[p.a].c:(p.costume==='藍'?BLUE:WARM)[p.dadui-1];
