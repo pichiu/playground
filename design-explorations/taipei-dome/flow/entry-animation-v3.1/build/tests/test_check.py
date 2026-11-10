@@ -1,3 +1,4 @@
+import collections
 import json
 import subprocess
 import sys
@@ -229,7 +230,7 @@ def test_wheel_items_green(built):                     # 整排轉彎新增的�
     assert F['violations'] == 0 and F['maxAngle'] <= check.ANGLE_MAX and F['maxSpacingErr'] <= check.SPACING_TOL and F['maxCenterOff'] <= check.CENTER_TOL
     assert W['violations'] == 0 and W['maxSpeed'] <= D['meta']['speedUnitPerSec'] + check.SPEED_EPS and W['minInnerR'] >= 0.08 and W['minInnerSpeed'] > 0
     assert L['violations'] == 0 and L['maxRowDev'] <= check.ROW_TOL
-    assert G['violations'] == 0 and G['minStage'] >= check.STAGE_MIN and G['wallOutside'] == 0
+    assert G['violations'] == 0 and G['minStage'] >= check.STAGE_MIN_NORTH and G['wallOutside'] == 0
 
 
 def test_check_detects_broken_rank(built):             # 並肩：把一人在沿牆段往旁邊推 0.03，排就不齊
@@ -317,7 +318,7 @@ def test_check_detects_assembly_rules(built):          # 版本 3.1 集合區：
     assert check.assembly(D)['violations'] >= 1
 
 
-def test_check_detects_too_many_steps(built):           # 階梯：北行走第 5–10 排地標的直線，一階都不上；走上階梯就算越界
+def test_check_detects_too_many_steps(built):           # 階梯：北行走第 4–9 排地標的直線，一階都不上；走上階梯就算越界
     _, D = built
     D = _copy(D)
     G = check.geometry(D)
@@ -337,3 +338,43 @@ def test_pillars_assumed_absent_are_reported(built):   # 11/9 假設沒有柱 L7
     P = check.pillars(D)
     assert P['conflicts'] == 0 and set(P['assumedAbsent']) == build.ASSUME_NO_PILLARS
     assert all(v['standing'] > 0 for v in P['assumedAbsent'].values())
+
+
+def test_check_align_green(built):                      # 第 9 排對齊：第 10 排以東每一排六人同時過第 9 排、依序；第 9 排以內不對齊
+    _, D = built
+    A = check.align(D)
+    assert A['violations'] == 0 and A['maxCrossErr'] <= check.RELEASE_TOL and A['minQueueGap'] > 0.03   # 進門前排隊是允許的（11/9），不在這裡設限
+    X, ranks = D['map']['align']['x'], D['map']['align']['ranks']
+    assert A['ranks'] == sum(len(v) for v in ranks.values())
+    first = collections.Counter(p['dadui'] for p in D['persons'] if p['slot'] == 0 and p['field']['X'] > X)
+    assert set(first.values()) == {6}                                          # 每個大隊第一排六列都在第 10 排以東
+
+
+def test_check_detects_align_tampering(built):          # 竄改：一排裡有人提早過線、沒記排隊時段卻停、對齊線挪開、排的順序顛倒
+    _, D = built
+    D = _copy(D)
+    X = D['map']['align']['x']
+    p = next(q for q in D['persons'] if q['field']['X'] > X and q['slot'] == 3 and q['gateLane'] == 4)
+    D['map']['align']['ranks'][str(p['dadui'])][3] -= 0.1
+    assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    p = next(q for q in D['persons'] if 'holdStart' in q['t'] and any(a[:2] == b[:2] for a, b in zip(q['path'], q['path'][1:]) if a[2] > q['t']['enter']))
+    del p['t']['holdStart'], p['t']['holdEnd']
+    assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    D['map']['align']['x'] += 0.05
+    assert check.align(D)['violations'] >= 1
+    D = _copy(built[1])
+    r = D['map']['align']['ranks']['2']
+    r[1], r[2] = r[2], r[1]
+    assert check.align(D)['violations'] >= 1
+
+
+def test_tau_until_queue(built):                        # 中心線時間 τ 只用到開始排隊為止：並肩、lane 對應只驗到那裡
+    _, D = built
+    ht = check._head_tau(D)
+    p = next(q for q in D['persons'] if 'holdStart' not in q['t'])
+    assert check._free_until(p) == float('inf')
+    assert abs(check._tau(p, p['t']['enter'], ht) - ht[p['dadui']]) < 1e-9
+    q = next(q for q in D['persons'] if 'holdStart' in q['t'])
+    assert check._free_until(q) == q['t']['holdStart']

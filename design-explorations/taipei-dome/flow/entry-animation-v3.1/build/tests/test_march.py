@@ -67,9 +67,9 @@ def test_splits_south_of_rows(base):                    # 每個大隊（含大�
         x, y, tx, ty, _ = M.C.at(s)
         assert s >= M.sp1 - 1e-9 and abs(tx) < 1e-9 and ty < march.NORTH_TY      # 正北直線上（北轉弧之後）
         assert all(M.lane_xy(s, j)[1] > y_south + march.GAP_H - 1e-9 for j in range(6))
-        for j in range(6):                                                         # 六路在第 5–10 排東側的欄間空隙
+        for j in range(6):                                                         # 六路在第 4–9 排東側的欄間空隙（11/9 往西一欄）
             k = (M.lane_xy(s, j)[0] - march.SEAT_X0) / march.SP_SEAT
-            assert abs(k - (4.5 + j)) < 1e-6
+            assert abs(k - (3.5 + j)) < 1e-6
     assert all(ys[d] < ys[d + 1] for d in range(1, 9))
     assert all(sp[d] > sp[d + 1] for d in range(1, 9))
 
@@ -80,7 +80,7 @@ def test_north_line_off_stage(base):                    # 北行直線上六路�
         if s < M.sp1:
             continue
         for j in range(6):
-            assert M.stage_clear(M.lane_xy(s, j)) >= march.STAGE_MIN
+            assert M.stage_clear(M.lane_xy(s, j)) >= (march.STAGE_MIN_NORTH if j == 0 else march.STAGE_MIN)   # 第 1 路北行線是 11/9 的例外
 
 
 def _plan_min(ax, yg, xs, pl):
@@ -121,7 +121,7 @@ def test_west_plan_needs_offsets():                     # 等速直走過 5 條�
 
 def test_tail_turns_at_own_row(base):                   # 分出後沿自己那一路往北，走到自己那一列才轉：東側右轉沿列、西側走列南邊半格的空隙
     G, M = _m(base)
-    ax = march.NORTH_X + 0.5 * march.SP_SEAT                                     # 第 4 路（貼第 8 排）
+    ax = march.NORTH_X + 0.5 * march.SP_SEAT                                     # 第 4 路（貼第 7 排）
     p0, north = (ax, 6.2), (0.0, -1.0)
     ys = 5.5
     east = M.tail(p0, north, (ax + 3.5 * march.SP_SEAT, ys))
@@ -146,3 +146,25 @@ def test_lane_to_row(base):                             # lane j → 列 6k−5+
     for d in range(1, 10):
         ys = [min(p['field']['Y'] for p in people if p['dadui'] == d and p['gateLane'] == j) for j in range(6)]
         assert ys == sorted(ys)
+
+
+def test_align_line_is_lane6_gap():                      # 第 9 排對齊線 = 第 9 排東側的欄間空隙 = 第 6 路北行的那條線
+    assert abs(march.ALIGN_X - (march.SEAT_X0 + 8 * march.SP_SEAT + march.GAP_H)) < 1e-12
+    assert abs(march.ALIGN_X - (march.NORTH_X + 2.5 * march.SP_SEAT)) < 1e-12
+
+
+def test_tail_passes_align_point(base):                 # 第 10 排起的人經過 (ALIGN_X, 列 Y)；第 9 排以內的不經過；第 6 路在那條線上直接轉（不倒圓）
+    G, M = _m(base)
+    north, ys = (0.0, -1.0), 5.5
+    has = lambda pts: any(math.dist(q[:2], (march.ALIGN_X, ys)) < 1e-9 for q in pts)
+    for j in range(6):
+        ax = march.NORTH_X + (j - 2.5) * march.SP_SEAT
+        p0 = (ax, 6.2)
+        far = M.tail(p0, north, (march.ALIGN_X + 3 * march.GAP_H, ys))             # 第 10 排以東
+        assert has(far) and all(q[1] >= ys - 1e-9 for q in far)
+        xs9 = march.ALIGN_X - march.GAP_H                                            # 第 9 排
+        if xs9 > ax:
+            assert not has(M.tail(p0, north, (xs9, ys)))
+    ax5 = march.ALIGN_X
+    pts = M.tail((ax5, 6.2), north, (ax5 + 3 * march.GAP_H, ys))
+    assert math.dist(pts[0][:2], (ax5, ys)) < 1e-9                                  # 第 6 路：直直往北到自己那一列，轉角就是對齊點
