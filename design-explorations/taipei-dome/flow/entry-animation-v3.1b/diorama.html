@@ -415,7 +415,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
   <section id="brand" class="ui glass" aria-label="說明">
     <div class="eyebrow">B1 看台 → B2 → 西一入口</div>
     <h1>入經藏</h1>
-    <p class="sub">進場微縮模型・版本 3.1 B2 集合區</p>
+    <p class="sub">進場微縮模型・版本 3.1b B1 整隊（提案）</p>
     <!-- 第三輪決定 3C：「其他頁面」選單鈕（只在 playground 頁面版、資料由 Dome.load 讀入時顯示；artifact 版沒有其他頁） -->
     <button id="pages-btn" class="btn" type="button" aria-label="其他頁面" title="其他頁面" aria-controls="pages-menu" aria-expanded="false" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg></button>
     <button id="help-btn" class="btn" type="button" aria-label="說明：怎麼看這個模型" aria-controls="help" aria-expanded="false">?</button>
@@ -425,7 +425,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
     </details>
   </section>
 
-  <nav id="pages-menu" class="ui" aria-label="進場動線版本 3.1 各頁" hidden><div class="pm-h" aria-hidden="true">版本 3.1 各頁</div><ul id="pages-list"></ul></nav>
+  <nav id="pages-menu" class="ui" aria-label="進場動線版本 3.1b 各頁" hidden><div class="pm-h" aria-hidden="true">版本 3.1b 各頁</div><ul id="pages-list"></ul></nav>
 
   <nav id="cams" class="ui glass" aria-label="章節與鏡頭"></nav>
 
@@ -493,7 +493,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
     <h2 id="help-h">1,609 位小人依序進場</h2>
     <ol>
       <li><span class="n" aria-hidden="true">1</span><div><strong>播放、拖進度條</strong><span class="d">從 B1 看台起身、白藍兩路下樓梯，沿 B2 通行帶走到自己那一排後方迴轉、散成六路，到自己大隊的集合位置整隊；九個大隊都站齊後依序放行，一排六人並肩右轉穿過西一入口，再沿第 4–9 排地標直線北行，走到自己那列再轉；第 10 排以東的人每一排都在第 9 排對齊再一起走。進度用百分比，不是秒數；<kbd>空白鍵</kbd> 播放／暫停，<kbd>←</kbd><kbd>→</kbd> 跳 1%。</span></div></li>
-      <li><span class="n" aria-hidden="true">2</span><div><strong>按章節鈕</strong><span class="d">離座、下樓梯、兩路轉六路、集合區、穿過西一入口、北行進列、全部入座：跳到那個時間，鏡頭飛到特寫。拖曳轉鏡頭，<kbd>Shift</kbd>＋方向鍵也可以。</span></div></li>
+      <li><span class="n" aria-hidden="true">2</span><div><strong>按章節鈕</strong><span class="d">離座、B1 整隊、兩路兩路拉下、整隊迴轉、集合區、穿過西一入口、北行進列、全部入座：跳到那個時間，鏡頭飛到特寫。拖曳轉鏡頭，<kbd>Shift</kbd>＋方向鍵也可以。</span></div></li>
       <li><span class="n" aria-hidden="true">3</span><div><strong>點一個小人，或搜尋「列 14 排 7」</strong><span class="d">鏡頭跟著他走，卡片顯示他的六步路線；清單可以跟隨一整列。<kbd>Esc</kbd> 或拖曳鏡頭解除。</span></div></li>
     </ol>
     <p class="disc phases" id="help-phases"></p>
@@ -504,7 +504,7 @@ body.has-pages #brand h1,body.has-pages #brand .eyebrow{padding-right:96px}
 
 <div id="loader" role="status" aria-live="polite">
   <div class="ld-in">
-    <div class="eyebrow">入經藏・版本 3.1 B2 集合區</div>
+    <div class="eyebrow">入經藏・版本 3.1b B1 整隊（提案）</div>
     <h1>入經藏</h1>
     <div class="sub" id="ld-sub">正在擺放 1,609 位小人…</div>
     <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -990,6 +990,8 @@ function buildGateLanes(){const pos=[],colr=[],S=M.staging;
       const q=[[a[0]+na[0],y,a[1]+na[1]],[a[0]-na[0],y,a[1]-na[1]],[b[0]-nb[0],y,b[1]-nb[1]],[b[0]+nb[0],y,b[1]+nb[1]]];
       for(const k of [0,2,1,0,3,2])pos.push(...q[k]),colr.push(col.r,col.g,col.b);}};
   for(const b of S.blocks)strip([b.heads[0],b.heads[5]],0.012,0.017,'#8f7b6a');
+  if(S.turns)for(const tr of S.turns)for(const a of tr.arcs)strip(pairs(a),0.008,0.018,'#8f7b6a');   // 3.1b：每個大隊隊尾後方的整隊迴轉
+  if(S.b1){groundParts.push(flat(pairs(S.b1.front),H1+0.0135,'#d3c2af'));groundParts.push(flat(pairs(S.b1.back),H1+0.0125,'#e6dccf'));strip([S.b1.heads[0],S.b1.heads[5]],0.012,H1+0.017,'#8f7b6a');}   // 3.1b：B1 整隊點與後隊
   [['A',0],['B',1]].forEach(([L,k])=>{const pts=pairs(S.files[L]);if(!k)strip(pts,0.024,0.019,'#8f7b6a');strip(pts,0.016,0.02,k?C.blueCoat:C.cream);});
   M.gateLanes.forEach((l,j)=>{const pts=pairs(l);if(j<3)strip(pts,0.024,0.019,'#8f7b6a');strip(pts,0.016,0.02,j<3?C.cream:C.blueCoat);});
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colr,3));g.computeVertexNormals();
@@ -1884,6 +1886,7 @@ function buildLabels(){
   const b2=pairs(M.b2Corridor),m2=b2[Math.round(b2.length*.32)];label('B2 走廊',m2[0]-0.45,0.12,m2[1],'soft',70);
   // 九個集合位置：「大隊 d」標在位置的場側（版本 3.1）
   for(const b of M.staging.blocks)label('大隊 '+b.dadui,b.label[0],0.12,b.label[1],'soft',66);
+  if(M.staging.b1)label('B1 整隊點',M.staging.b1.frontLabel[0],H1+0.12,M.staging.b1.frontLabel[1],'soft',70);
 }
 // 螢幕空間避讓：
 //  (1) 方位標籤部分超出畫面就貼齊邊緣；
@@ -2210,11 +2213,14 @@ function shots(){
       for(const L of ['A','B']){const i=P.findIndex(p=>p.lane===L),a=P[i].path;let acc=0;for(let j=HT[i].k;j>0&&acc<0.5;j--){acc+=Math.hypot(a[j][0]-a[j-1][0],a[j][1]-a[j-1][1]);o.push(V3(a[j-1][0],H1+0.25,a[j-1][1]));}}
       return [...o,V3(ST.X,H1,ST.Y),V3(ST.X,H1+0.25,ST.Y),V3(SB.X,0,SB.Y),...sq(c,0.5)];},
     // 版本 3.1 集合區：集合區六路帶、西一入口門洞，加上章節時間當下全部 wait（在集合位置）的人
+    // 3.1b：B1 整隊點與後隊、樓梯頂，加上章節時間當下在 B1 站著的人（地面與頭頂兩層）
+    b1:()=>{const t=CHAPTERS.find(c=>c.key==='b1').t,o=[...fl(M.staging.b1.front,H1),...fl(M.staging.b1.back,H1),V3(ST.X,H1,ST.Y),V3(ST.X,H1+0.25,ST.Y)];
+      for(const p of P)if(INREG.b1(p,0,t)){const q=pos(p,t);o.push(V3(q[0],H1,q[1]),V3(q[0],H1+0.25,q[1]));}return o;},
     queue:()=>{const t=CHAPTERS.find(c=>c.key==='queue').t,o=[...fl(M.staging.band),...fl(M.gate.band),...fl(M.gate.band,WALL_H),V3(N.GATE6_IN.X,0,N.GATE6_IN.Y)];
       for(const p of P)if(state(p,t)==='wait'){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}return o;},
     // 版本 3.1 兩路轉六路：大隊 1 第一排的迴轉點（staging.uturn）與大隊 1、2 的集合位置，加上章節時間當下正在迴轉、散開的人
     fan:()=>{const t=CHAPTERS.find(c=>c.key==='fan').t,S=M.staging,o=[];const c=pairs(S.uturn)[0];o.push(...sq(c,0.55));
-      for(const b of S.blocks.slice(0,2))o.push(...fl(b.poly));   // 11/9：每人在自己那一排後方迴轉，章節時間是大隊 1 的迴轉
+      for(const b of S.blocks.slice(0,2))o.push(...fl(b.poly));for(const a of S.turns[0].arcs)o.push(...fl(a));   // 11/9：每人在自己那一排後方迴轉，章節時間是大隊 1 的迴轉
       for(const p of P)if(INREG.fan(p,0,t)){const q=pos(p,t);o.push(V3(q[0],0,q[1]),V3(q[0],0.16,q[1]));}return o;},
     // 第 4 階段「穿過西一入口」：門洞（gate.band）、牆外隊頭 GATE6、牆內 GATE6_IN，加上進門後最前面一小段沿牆通道
     // 收尾回合：手機要看到入口內側與沿牆通道起點——加上 insideWalk 從入口起前 20%（依弧長，外擴通道半寬 0.22）
@@ -2247,7 +2253,8 @@ function shots(){
     // 收尾回合：橫式也改成直接用資料點的投影外框 fit（目標＝扣掉面板的可視矩形中心），樓梯下方 1.0 單位的路線不會落到 HUD 下
     stair:{name:'樓梯',view:()=>portrait()?pv('stair',deg(55)):fitBest(focus.stair(),dirFrom(hDir(null,[0.82,0.57]),deg(55)),24,16)},
     queue:{name:'集合區',view:()=>portrait()?pv('queue',deg(55)):fitBest(focus.queue(),dirFrom(hDir(null,[0.6,0.8]),deg(55)),24,12)},
-    fan:{name:'兩路轉六路',view:()=>portrait()?pv('fan',deg(55)):fitBest(focus.fan(),dirFrom(hDir(null,[0.2,0.98]),deg(55)),24,12)},
+    b1:{name:'B1 整隊',view:()=>portrait()?pv('b1',deg(55)):fitBest(focus.b1(),dirFrom(hDir(null,[0.82,0.57]),deg(55)),24,16)},
+    fan:{name:'整隊迴轉',view:()=>portrait()?pv('fan',deg(55)):fitBest(focus.fan(),dirFrom(hDir(null,[0.2,0.98]),deg(55)),24,12)},
     // 收尾回合：橫式也直接用資料點的投影外框 fit（目標＝扣掉面板的可視矩形中心）；原本目標固定在 GATE_MID，844×390 時入口內側的通道起點會落到面板下
     // pg23 第二輪審查：直式改從正南、俯角 46°——原本（SOUTH、48°）左轉進門洞時螢幕上前後排距 ÷ 同排間距只有 1.48，排看起來像一路一路（tests/pg23/ranks.js）
     gate:{name:'西一入口',view:()=>portrait()?fitBest(focus.gate(),dirFrom([0,1],deg(46)),24,12):fitBest(focus.gate(),dirFrom(hDir(null,[0.93,0.37]),deg(48)),24,12)},
@@ -2361,6 +2368,7 @@ const pastNorth=(p,t)=>t>=p.t.north;
 const CHAP_WIN=20,CHAP_STEP=0.05;
 const GATE_BAND=pairs(M.gate.band);
 const INREG={stair:(p,i,t)=>t>=HT[i].tS&&t<HT[i].tE,
+    b1:(p,i,t)=>t>=p.t.b1&&t<p.t.b1Go,
     fan:(p,i,t)=>state(p,t)==='walk'&&t>=p.t.entry-1.5&&t<p.t.entry+0.8,
     queue:(p,i,t)=>state(p,t)==='wait',
     gate:(p,i,t)=>{if(state(p,t)!=='enter')return false;const q=pos(p,t);return pip(q[0],q[1],GATE_BAND);}};
@@ -2373,9 +2381,10 @@ function chapterPeak(key,t0){const inReg=INREG[key];
 const CHAPTERS=(()=>{let f1=1e9,n1=1e9;for(const p of P)if(p.dadui===1){f1=Math.min(f1,p.t.entry-1.5);n1=Math.min(n1,p.t.enter+M.march.northTau-M.march.headTau[1]);}
   const pk=(key,t0)=>{const r=chapterPeak(key,t0);return {t:r.t,t0,peak:r};};
   return [{key:'leave',name:'離座',full:'離座',t:D.meta.t0,t0:D.meta.t0,shot:'exit'},
-    {key:'stair',name:'下樓梯',full:'下樓梯',...pk('stair',D.groups[0].tStairFirst),shot:'stair'},
+    {key:'b1',name:'B1 整隊',full:'在 B1 整隊點依大隊排成六路、後隊在後面排',...pk('b1',Math.max(...P.filter(p=>p.dadui===1).map(p=>p.t.b1))),shot:'b1'},
+    {key:'stair',name:'兩路兩路拉下',full:'5、6 路 → 3、4 路 → 1、2 路，一對一對下樓梯',...pk('stair',D.groups[0].tStairFirst),shot:'stair'},
     // 版本 3.1：兩路轉六路（原始時間＝大隊 1 第一人到六路起點前 1.5 秒）、集合區（大隊 1 白衣全員站定）、穿過西一入口、北行進列（大隊 1 第 4 排在第 9 排對齊過線；t0＝大隊 1 第一排到北轉，只記在 debug.chapters）
-    {key:'fan',name:'兩路轉六路',full:'在自己那一排後方迴轉、白藍各散成三路',...pk('fan',f1),shot:'fan'},
+    {key:'fan',name:'整隊迴轉',full:'在自己大隊隊尾後方，一對一對整隊左轉 180°、走回自己那一路',...pk('fan',f1),shot:'fan'},
     {key:'queue',name:'集合區',full:'B2 集合區（九個集合位置）',...pk('queue',D.groups[0].tAssembly),shot:'queue'},
     {key:'gate',name:'穿過西一入口',full:'放行、右轉穿過西一入口',...pk('gate',D.meta.tGateStart),shot:'gate'},
     // 北行進列：時間取大隊 1 第 4 排在第 9 排對齊、一起過線的那一刻（map.align.ranks）：前三排已經並排往東，後面的排在線前排隊
